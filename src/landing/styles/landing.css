@@ -1,0 +1,154 @@
+.landing-page {
+  @apply min-h-screen bg-white;
+}
+
+.navbar {
+  @apply fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200;
+}
+
+.navbar.scrolled {
+  @apply bg-white/95 shadow-lg;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-fade-in-delay {
+  animation: fadeIn 0.6s ease-out 0.2s forwards;
+}
+
+.animate-fade-in-delay-2 {
+  animation: fadeIn 0.6s ease-out 0.4s forwards;
+}
+
+/* Efeitos de hover */
+.hover-scale {
+  @apply transition-transform duration-300 hover:scale-105;
+}
+
+.hover-lift {
+  @apply transition-transform duration-300 hover:-translate-y-1;
+}
+
+/* Glassmorphism */
+.glass-card {
+  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl;
+}
+
+/* Gradientes */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600;
+}
+
+/* Seções */
+.section {
+  @apply py-24;
+}
+
+.section-title {
+  @apply text-3xl sm:text-4xl font-bold text-center mb-4;
+}
+
+.section-subtitle {
+  @apply text-xl text-gray-600 text-center max-w-2xl mx-auto mb-12;
+}
+
+/* Cards */
+.feature-card {
+  @apply p-6 rounded-xl bg-white shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+.pricing-card {
+  @apply relative p-8 rounded-2xl transition-all duration-300;
+}
+
+.pricing-card.popular {
+  @apply bg-blue-600;
+}
+
+/* Botões */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 border-2 border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-300;
+}
+
+/* FAQ */
+.faq-item {
+  @apply bg-white rounded-xl shadow-sm overflow-hidden;
+}
+
+.faq-item button {
+  @apply w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors;
+}
+
+.faq-item button span:first-child {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.faq-item button span:last-child {
+  @apply transform transition-transform;
+}
+
+.faq-item button[aria-expanded="true"] span:last-child {
+  @apply rotate-180;
+}
+
+/* Footer */
+.footer {
+  @apply bg-gray-900 py-12;
+}
+
+.footer-link {
+  @apply text-gray-400 hover:text-white transition-colors;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .section {
+    @apply py-16;
+  }
+  
+  .section-title {
+    @apply text-2xl;
+  }
+  
+  .section-subtitle {
+    @apply text-lg;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+}
+
+/* Background Patterns */
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+} 

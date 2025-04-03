@@ -1,0 +1,282 @@
+
+import { CanvasElement } from "@/types/canvasTypes";
+import { ComponentType } from "@/utils/types";
+
+export const getDefaultContent = (componentType: string) => {
+  console.log(`Getting default content for component type: ${componentType}`);
+  switch(componentType) {
+    case ComponentType.Text:
+      return { 
+        title: "Você distrai facilmente?", 
+        description: "Este é um texto explicativo que descreve o propósito desta seção." 
+      };
+    case ComponentType.MultipleChoice:
+      return { 
+        title: "Você distrai facilmente?",
+        options: [
+          { id: crypto.randomUUID(), text: "Distrai-se facilmente", emoji: "😵" },
+          { id: crypto.randomUUID(), text: "Ocasionalmente, perde a concentração", emoji: "😊" },
+          { id: crypto.randomUUID(), text: "Raramente perde a concentração", emoji: "🙂" },
+          { id: crypto.randomUUID(), text: "Muito concentrado", emoji: "🧐" },
+        ]
+      };
+    case ComponentType.MultipleChoiceImage:
+      return {
+        title: "Escolha uma opção",
+        options: [
+          { 
+            id: crypto.randomUUID(), 
+            text: "Masculino", 
+            image: "/placeholder.svg",
+            style: { 
+              backgroundColor: "#0F172A",
+              aspectRatio: "1:1" as "1:1" | "16:9" | "9:16" | "4:3"
+            },
+            navigation: { type: "next" as "next" | "step" | "url" }
+          },
+          { 
+            id: crypto.randomUUID(), 
+            text: "Feminino", 
+            image: "/placeholder.svg",
+            style: { 
+              backgroundColor: "#0F172A",
+              aspectRatio: "1:1" as "1:1" | "16:9" | "9:16" | "4:3"
+            },
+            navigation: { type: "next" as "next" | "step" | "url" }
+          }
+        ]
+      };
+    case ComponentType.Button:
+      return { buttonText: "Continuar" };
+    case ComponentType.Image:
+      return { imageUrl: "/placeholder.svg" };
+    case ComponentType.Carousel:
+      return { 
+        options: [
+          { id: crypto.randomUUID(), text: "Imagem 1", image: "/placeholder.svg" },
+          { id: crypto.randomUUID(), text: "Imagem 2", image: "/placeholder.svg" },
+          { id: crypto.randomUUID(), text: "Imagem 3", image: "/placeholder.svg" },
+        ]
+      };
+    case ComponentType.Height:
+      return { height: 170 };
+    case ComponentType.Weight:
+      return { weight: 70 };
+    case ComponentType.Comparison:
+      return { 
+        title: "Comparação de opções",
+        items: [
+          { id: crypto.randomUUID(), name: "Opção A", value: 100, color: "#22c55e" },
+          { id: crypto.randomUUID(), name: "Opção B", value: 30, color: "#ef4444" }
+        ],
+        showDetailedComparison: false,
+        comparisonMetrics: [
+          { id: crypto.randomUUID(), name: "Nível de interação", valueA: 100, valueB: 10 },
+          { id: crypto.randomUUID(), name: "Taxa de conversão", valueA: 76, valueB: 31 }
+        ]
+      };
+    case ComponentType.Arguments:
+      return { 
+        title: "Principais benefícios",
+        description: "Descubra o que nosso produto pode fazer por você",
+        showCheckmarks: true,
+        style: {
+          titleAlign: "center",
+          descriptionAlign: "center",
+          checkmarkColor: "#22c55e"
+        },
+        arguments: [
+          { id: crypto.randomUUID(), text: "Melhora a produtividade em até 40%" },
+          { id: crypto.randomUUID(), text: "Reduz custos operacionais" },
+          { id: crypto.randomUUID(), text: "Fácil de implementar e usar" },
+          { id: crypto.randomUUID(), text: "Suporte técnico 24/7" }
+        ]
+      };
+    case ComponentType.Rating:
+      return { 
+        title: "Avalie sua experiência",
+        description: "Nos diga o que você achou",
+        rating: 3,
+        maxRating: 5,
+        interactive: true,
+        minLabel: "Ruim",
+        maxLabel: "Excelente",
+        style: {
+          titleAlignment: "center",
+          starColor: "#FFD700",
+          starSize: "medium",
+          showLabels: true
+        }
+      };
+    case ComponentType.Graphics:
+      return { 
+        title: "Gráfico",
+        description: "Visualização de dados",
+        chartType: "bar",
+        chartData: [
+          { name: "Categoria A", value: 400, color: "#8B5CF6" },
+          { name: "Categoria B", value: 300, color: "#0EA5E9" },
+          { name: "Categoria C", value: 200, color: "#F97316" },
+          { name: "Categoria D", value: 100, color: "#D946EF" }
+        ],
+        showLegend: true,
+        showTooltip: true,
+        showGrid: true,
+        showLabels: true,
+        style: {
+          titleAlign: "center",
+          descriptionAlign: "center"
+        }
+      };
+    case ComponentType.Testimonials:
+      return { 
+        title: "O que nossos clientes dizem",
+        style: {
+          displayStyle: "rectangular",
+          titleAlignment: "center",
+          backgroundColor: "white",
+          borderColor: "#e5e7eb"
+        },
+        testimonials: [
+          { 
+            id: crypto.randomUUID(), 
+            name: "Maria Silva", 
+            role: "Empreendedora",
+            text: "Este produto mudou completamente a forma como trabalho. Muito mais produtividade!", 
+            rating: 5
+          }
+        ]
+      };
+    case ComponentType.Level:
+      return { 
+        title: "Nível de Experiência", 
+        value: 3, 
+        maxValue: 5, 
+        valueDescription: "Avalie seu nível de experiência",
+        style: {
+          primaryColor: "#8B5CF6",
+          titleAlignment: "center",
+          showLabels: true,
+          showPercentage: false
+        }
+      };
+    case ComponentType.Capture:
+      return { 
+        title: "Inscreva-se na nossa newsletter", 
+        description: "Receba as últimas atualizações diretamente na sua caixa de entrada.",
+        placeholder: "Seu endereço de email", 
+        buttonText: "Inscrever-se",
+        successMessage: "Obrigado por se inscrever!",
+        captureType: "email",
+        style: {
+          primaryColor: "#8B5CF6",
+          titleAlignment: "center"
+        }
+      };
+    case ComponentType.Loading:
+      return { 
+        title: "Carregando...", 
+        description: "Por favor, aguarde enquanto processamos sua solicitação.",
+        style: {
+          loadingStyle: "spinner",
+          primaryColor: "#8B5CF6",
+          titleAlignment: "center",
+          size: "medium"
+        }
+      };
+    case ComponentType.Cartesian:
+      return {
+        title: "Nível de sucesso com a LeadFlux",
+        xAxisLabel: "Baixo",
+        yAxisLabel: "Alto",
+        lowerLabel: "Sem a LeadFlux",
+        upperLabel: "Com a LeadFlux",
+        showComparison: true,
+        lowerLabelPosition: { x: 10, y: 75 },
+        upperLabelPosition: { x: 90, y: 15 },
+        chartPoints: [
+          { x: 0, y: 2, label: "Sem a LeadFlux" },
+          { x: 1, y: 3 },
+          { x: 2, y: 4 },
+          { x: 3, y: 6 },
+          { x: 4, y: 9 },
+          { x: 5, y: 11, label: "Com a LeadFlux" }
+        ],
+        comparisonData: [
+          {
+            title: "Nível de Faturamento",
+            leftLabel: "Médio",
+            leftValue: 50,
+            rightLabel: "Alto",
+            rightValue: 90,
+          },
+          {
+            title: "Nível de Lucro",
+            leftLabel: "Baixo",
+            leftValue: 25,
+            rightLabel: "Alto", 
+            rightValue: 70,
+          },
+          {
+            title: "Taxa de conversão",
+            leftLabel: "Baixa",
+            leftValue: 31,
+            rightLabel: "Alta",
+            rightValue: 76,
+          }
+        ]
+      };
+    case ComponentType.Spacer:
+      return { height: 50 };
+    default:
+      return {};
+  }
+};
+
+export const testimonialDefaultSettings = {
+  title: "O que nossos clientes dizem",
+  testimonials: [
+    {
+      id: crypto.randomUUID(),
+      name: "Maria Silva",
+      role: "CEO / Empresa ABC",
+      text: "Este produto revolucionou a maneira como trabalhamos. Economizamos tempo e conseguimos resultados incríveis!",
+      rating: 5
+    }
+  ],
+  style: {
+    displayStyle: "rectangular",
+    titleAlignment: "center",
+    backgroundColor: "white",
+    borderColor: "#e5e7eb"
+  }
+};
+
+export const getExampleElements = (): CanvasElement[] => {
+  return [
+    {
+      id: crypto.randomUUID(),
+      type: ComponentType.Text,
+      content: { 
+        title: "Você distrai facilmente?"
+      }
+    },
+    {
+      id: crypto.randomUUID(),
+      type: ComponentType.MultipleChoice,
+      content: { 
+        options: [
+          { id: crypto.randomUUID(), text: "Distrai-se facilmente", emoji: "😵" },
+          { id: crypto.randomUUID(), text: "Ocasionalmente, perde a concentração", emoji: "😊" },
+          { id: crypto.randomUUID(), text: "Raramente perde a concentração", emoji: "🙂" },
+          { id: crypto.randomUUID(), text: "Muito concentrado", emoji: "🧐" },
+        ]
+      }
+    },
+    {
+      id: crypto.randomUUID(),
+      type: ComponentType.Button,
+      content: { buttonText: "Continuar" }
+    }
+  ];
+};

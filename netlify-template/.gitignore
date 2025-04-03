@@ -1,0 +1,18 @@
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build files
+dist
+build
+.netlify
+
+# MacOS
+.DS_Store
+
+# Editor files
+.idea
+.vscode
+*.swp
+*.swo 
