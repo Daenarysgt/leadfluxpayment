@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const ElementsSidebar = () => {
   const { toast } = useToast();
@@ -123,39 +124,48 @@ const ElementsSidebar = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-        <div className="px-3 pt-2 flex-shrink-0">
-          <TabsList className="w-full grid grid-cols-2 h-8">
-            <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
-            <TabsTrigger value="favoritos" className="text-xs">Favoritos</TabsTrigger>
-          </TabsList>
-        </div>
+      <ScrollArea className="h-full">
+        <div className="p-4 pb-24">
+          <Input
+            placeholder="Buscar elementos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
+          />
 
-        <TabsContent value="todos" className="flex-1 overflow-y-auto pb-8">
-          <div className="px-3 py-2">
-            <h4 className="text-xs font-semibold text-gray-500 mb-1">BÁSICOS</h4>
-          </div>
-          <div className="border-t">
-            {filteredBasic.map(renderComponentItem)}
-          </div>
-          
-          <div className="px-3 py-2 mt-2">
-            <h4 className="text-xs font-semibold text-gray-500 mb-1">AVANÇADOS</h4>
-          </div>
-          <div className="border-t">
-            {filteredAdvanced.map(renderComponentItem)}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="favoritos" className="flex-1 overflow-y-auto p-3">
-          <div className="flex flex-col items-center justify-center h-40 text-center">
-            <p className="text-sm text-gray-500">Seus componentes favoritos aparecerão aqui</p>
-            <Button variant="link" size="sm" className="mt-2">
-              Adicionar favoritos
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+          <Tabs defaultValue="todos" className="w-full">
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="todos" className="flex-1">Todos</TabsTrigger>
+              <TabsTrigger value="favoritos" className="flex-1">Favoritos</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="todos" className="flex-1 overflow-y-auto pb-8">
+              <div className="px-3 py-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">BÁSICOS</h4>
+              </div>
+              <div className="border-t">
+                {filteredBasic.map(renderComponentItem)}
+              </div>
+              
+              <div className="px-3 py-2 mt-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">AVANÇADOS</h4>
+              </div>
+              <div className="border-t">
+                {filteredAdvanced.map(renderComponentItem)}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="favoritos" className="flex-1 overflow-y-auto p-3">
+              <div className="flex flex-col items-center justify-center h-40 text-center">
+                <p className="text-sm text-gray-500">Seus componentes favoritos aparecerão aqui</p>
+                <Button variant="link" size="sm" className="mt-2">
+                  Adicionar favoritos
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </ScrollArea>
     </div>
   );
 };
