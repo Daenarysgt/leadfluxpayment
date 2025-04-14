@@ -33,9 +33,9 @@ const BuilderContent = ({
   onCloseElementConfig
 }: BuilderContentProps) => {
   return (
-    <div className="flex flex-1">
-      <ResizablePanelGroup direction="horizontal" className="min-h-0 h-full">
-        <ResizablePanel defaultSize={30} minSize={25} maxSize={40} className="min-h-0">
+    <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
           <div className="flex h-full">
             <StepsSidebar />
             <ElementsSidebar />
@@ -44,35 +44,31 @@ const BuilderContent = ({
         
         <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
         
-        <ResizablePanel defaultSize={selectedElement ? 40 : 70} className="min-h-0">
-          <div className="flex flex-col h-full">
-            {previewActive ? (
-              <BuilderPreview isMobile={viewMode === 'mobile'} />
-            ) : (
-              <div className="flex-1 relative">
-                <ScrollArea className="absolute inset-0">
-                  <div className="p-6">
-                    <BuilderCanvas 
-                      key={`canvas-${canvasKey}-${currentStep}`}
-                      isMobile={viewMode === 'mobile'} 
-                      onElementSelect={onElementSelect}
-                      selectedElementId={selectedElement?.id || null}
-                      elementUpdates={selectedElement || undefined}
-                      elements={localCanvasElements}
-                      onElementsChange={onElementsChange}
-                    />
-                  </div>
-                </ScrollArea>
+        <ResizablePanel defaultSize={selectedElement ? 40 : 70}>
+          {previewActive ? (
+            <BuilderPreview isMobile={viewMode === 'mobile'} />
+          ) : (
+            <ScrollArea className="h-[calc(100vh-64px)]">
+              <div className="p-6">
+                <BuilderCanvas 
+                  key={`canvas-${canvasKey}-${currentStep}`}
+                  isMobile={viewMode === 'mobile'} 
+                  onElementSelect={onElementSelect}
+                  selectedElementId={selectedElement?.id || null}
+                  elementUpdates={selectedElement || undefined}
+                  elements={localCanvasElements}
+                  onElementsChange={onElementsChange}
+                />
               </div>
-            )}
-          </div>
+            </ScrollArea>
+          )}
         </ResizablePanel>
         
         {selectedElement && !previewActive && (
           <>
             <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
             
-            <ResizablePanel defaultSize={30} minSize={25} maxSize={40} className="min-h-0">
+            <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
               <ElementConfigSidebar 
                 selectedElement={selectedElement}
                 onUpdate={onElementUpdate}
