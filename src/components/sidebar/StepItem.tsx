@@ -58,9 +58,10 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit }: StepIte
         <div className={`
           w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
           ${isActive 
-            ? 'bg-violet-500 text-white' 
-            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+            ? 'bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500 text-white' 
+            : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-blue-500/10 group-hover:via-violet-500/10 group-hover:to-pink-500/10 group-hover:text-violet-700'
           }
+          transition-all duration-300
         `}>
           {index + 1}
         </div>

@@ -65,8 +65,8 @@ const StepEditor = ({ step, onComplete }: StepEditorProps) => {
       className="flex items-center space-x-2 p-3" 
       onClick={e => e.stopPropagation()}
     >
-      <div className="w-6 h-6 flex items-center justify-center rounded-md bg-violet-100 text-violet-600 text-sm font-medium mr-1">
-        <Save className="h-3.5 w-3.5" />
+      <div className="w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-1 bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500">
+        <Save className="h-3.5 w-3.5 text-white" />
       </div>
       <Input 
         ref={inputRef}
