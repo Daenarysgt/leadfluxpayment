@@ -45,23 +45,25 @@ const BuilderContent = ({
         <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
         
         <ResizablePanel defaultSize={selectedElement ? 40 : 70} className="min-h-0">
-          <div className="h-full overflow-hidden">
+          <div className="flex flex-col h-full">
             {previewActive ? (
               <BuilderPreview isMobile={viewMode === 'mobile'} />
             ) : (
-              <ScrollArea className="h-full">
-                <div className="p-4">
-                  <BuilderCanvas 
-                    key={`canvas-${canvasKey}-${currentStep}`}
-                    isMobile={viewMode === 'mobile'} 
-                    onElementSelect={onElementSelect}
-                    selectedElementId={selectedElement?.id || null}
-                    elementUpdates={selectedElement || undefined}
-                    elements={localCanvasElements}
-                    onElementsChange={onElementsChange}
-                  />
-                </div>
-              </ScrollArea>
+              <div className="flex-1 relative">
+                <ScrollArea className="absolute inset-0">
+                  <div className="p-6">
+                    <BuilderCanvas 
+                      key={`canvas-${canvasKey}-${currentStep}`}
+                      isMobile={viewMode === 'mobile'} 
+                      onElementSelect={onElementSelect}
+                      selectedElementId={selectedElement?.id || null}
+                      elementUpdates={selectedElement || undefined}
+                      elements={localCanvasElements}
+                      onElementsChange={onElementsChange}
+                    />
+                  </div>
+                </ScrollArea>
+              </div>
             )}
           </div>
         </ResizablePanel>
