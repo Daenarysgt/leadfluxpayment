@@ -127,7 +127,7 @@ export default function Pricing() {
               key={plan.name}
               className={`rounded-2xl p-8 ${
                 plan.popular
-                  ? 'bg-gradient-to-b from-[#00e676] to-[#00c853] ring-4 ring-[#00c853] ring-opacity-20'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 ring-4 ring-purple-600 ring-opacity-20'
                   : 'bg-white'
               }`}
             >
@@ -162,7 +162,7 @@ export default function Pricing() {
                     <div className={`flex-shrink-0 ${
                       plan.popular 
                         ? 'text-white' 
-                        : 'text-[#00e676]'
+                        : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600'
                     }`}>
                       <Icons.CheckIcon className="h-6 w-6" />
                     </div>
