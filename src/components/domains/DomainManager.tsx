@@ -22,7 +22,7 @@ export function DomainManager({ funnelId }: { funnelId: string }) {
 
     async function loadDomains() {
         try {
-            const data = await domainsService.listDomains();
+            const data = await domainsService.listDomains(funnelId);
             setDomains(data);
         } catch (error) {
             toast({

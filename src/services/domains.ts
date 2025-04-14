@@ -51,15 +51,17 @@ export const domainsService = {
         return domain;
     },
 
-    // Listar domínios do usuário
-    async listDomains(): Promise<Domain[]> {
-        const { data: domains, error } = await supabase
-            .from('domains')
-            .select('*')
-            .order('created_at', { ascending: false });
+    // Listar domínios
+    async listDomains(funnelId?: string) {
+        let query = supabase.from('domains').select('*');
+        
+        if (funnelId) {
+            query = query.eq('funnel_id', funnelId);
+        }
 
+        const { data, error } = await query;
         if (error) throw error;
-        return domains;
+        return data;
     },
 
     // Remover domínio
