@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save } from "lucide-react";
@@ -21,10 +20,7 @@ const StepEditor = ({ step, onComplete }: StepEditorProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    // Focus the input when the component mounts
     inputRef.current?.focus();
-    
-    // Select all text
     if (inputRef.current) {
       inputRef.current.setSelectionRange(0, stepName.length);
     }
@@ -41,7 +37,6 @@ const StepEditor = ({ step, onComplete }: StepEditorProps) => {
     
     setStepName(newValue);
     
-    // Preserve cursor position
     requestAnimationFrame(() => {
       if (inputRef.current && document.activeElement === inputRef.current) {
         try {
@@ -66,12 +61,19 @@ const StepEditor = ({ step, onComplete }: StepEditorProps) => {
   };
   
   return (
-    <div className="flex-1 flex items-center space-x-2 px-3 py-2" onClick={e => e.stopPropagation()}>
+    <div 
+      className="flex items-center space-x-2 p-3" 
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="w-6 h-6 flex items-center justify-center rounded-md bg-violet-100 text-violet-600 text-sm font-medium mr-1">
+        <Save className="h-3.5 w-3.5" />
+      </div>
       <Input 
         ref={inputRef}
         value={stepName}
         onChange={handleInputChange}
-        className="h-7 py-1 text-sm"
+        className="h-8 text-sm bg-white focus:ring-2 focus:ring-violet-200 border-gray-200"
+        placeholder="Nome da etapa..."
         onKeyDown={e => {
           if (e.key === 'Enter') {
             handleSave(e);
@@ -81,12 +83,12 @@ const StepEditor = ({ step, onComplete }: StepEditorProps) => {
         }}
       />
       <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-6 w-6" 
+        variant="ghost"
+        size="sm"
+        className="h-8 px-3 text-violet-600 hover:text-violet-700 hover:bg-violet-50"
         onClick={handleSave}
       >
-        <Save className="h-3.5 w-3.5 text-green-600" />
+        Salvar
       </Button>
     </div>
   );

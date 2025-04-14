@@ -1,8 +1,6 @@
-
 import { Button } from "@/components/ui/button";
-import { ChevronRight, X, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useCallback, useState } from "react";
+import { Edit2, Trash2 } from "lucide-react";
+import { useState } from "react";
 import StepEditor from "./StepEditor";
 
 interface StepItemProps {
@@ -17,74 +15,84 @@ interface StepItemProps {
   onEdit: (step: { id: string; title: string }, e: React.MouseEvent) => void;
 }
 
-const StepItem = ({ 
-  step, 
-  index, 
-  isActive, 
-  onSelect, 
-  onDelete, 
-  onEdit 
-}: StepItemProps) => {
+const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit }: StepItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  
-  const handleEdit = useCallback((e: React.MouseEvent) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
-  }, []);
-  
-  const handleEditComplete = useCallback(() => {
-    setIsEditing(false);
-  }, []);
-  
-  const handleDelete = useCallback((e: React.MouseEvent) => {
-    // Importante: Pare a propagação para evitar que o evento de click atinja o contêiner
-    e.stopPropagation();
-    
-    // Log detalhado para depuração
-    console.log(`StepItem - Solicitando exclusão da etapa "${step.title}" no índice ESPECÍFICO ${index}`);
-    
-    // Chamar a função de exclusão passando o índice específico desta etapa
-    onDelete(index, e);
-  }, [index, step.title, onDelete]);
-  
+  };
+
   if (isEditing) {
     return (
-      <StepEditor 
-        step={step} 
-        onComplete={handleEditComplete}
-      />
+      <div 
+        className={`
+          rounded-lg border ${isActive ? 'border-violet-200 bg-violet-50/50' : 'border-gray-200 bg-white'} 
+          shadow-sm transition-all duration-200
+        `}
+      >
+        <StepEditor 
+          step={step} 
+          onComplete={() => setIsEditing(false)} 
+        />
+      </div>
     );
   }
-  
+
   return (
-    <div 
-      className={cn(
-        "px-3 py-3 cursor-pointer hover:bg-gray-50 transition-colors border-l-2 flex items-center justify-between",
-        isActive 
-          ? "border-l-violet-600 bg-violet-50 text-violet-700 font-medium" 
-          : "border-l-transparent"
-      )}
+    <div
+      className={`
+        group flex items-center justify-between rounded-lg border 
+        ${isActive 
+          ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
+          : 'border-transparent bg-transparent hover:border-gray-200 hover:bg-white hover:shadow-sm'
+        }
+        cursor-pointer transition-all duration-200
+      `}
       onClick={() => onSelect(index)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <span>{step.title}</span>
-      <div className="flex items-center space-x-1">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 opacity-50 hover:opacity-100" 
-          onClick={handleEdit}
+      <div className="flex-1 flex items-center p-3">
+        <div className={`
+          w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
+          ${isActive 
+            ? 'bg-violet-500 text-white' 
+            : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
+          }
+        `}>
+          {index + 1}
+        </div>
+        <span className={`
+          font-medium truncate
+          ${isActive ? 'text-violet-900' : 'text-gray-700'}
+        `}>
+          {step.title}
+        </span>
+      </div>
+      
+      <div className={`
+        flex items-center gap-1 pr-2
+        ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
+        transition-opacity duration-200
+      `}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 text-gray-500 hover:text-violet-600"
+          onClick={handleEditClick}
         >
-          <Pencil className="h-3.5 w-3.5 text-gray-600" />
+          <Edit2 className="h-3.5 w-3.5" />
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 opacity-50 hover:opacity-100" 
-          onClick={handleDelete}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 text-gray-500 hover:text-red-600"
+          onClick={(e) => onDelete(index, e)}
         >
-          <X className="h-3.5 w-3.5 text-red-600" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
-        {isActive && <ChevronRight className="h-3.5 w-3.5 ml-1" />}
       </div>
     </div>
   );
