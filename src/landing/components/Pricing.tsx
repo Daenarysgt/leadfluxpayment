@@ -4,111 +4,120 @@ import { useState } from 'react';
 
 const plans = [
   {
-    name: 'Starter',
-    monthlyPrice: 'R$97',
-    annualPrice: 'R$970',
-    description: 'Perfeito para começar a capturar leads',
+    name: 'inlead BASIC',
+    monthlyPrice: 'R$99',
+    annualPrice: 'R$989,40',
+    oldAnnualPrice: 'R$1164,00',
+    description: 'Perfeito para começar tranquilo e atingir seus objetivos gradualmente.',
     features: [
-      'Até 1.000 leads por mês',
-      'Páginas de captura ilimitadas',
-      'Integrações básicas',
-      'Suporte por email'
+      'Até 2 funis',
+      'Até 5 mil leads na conta',
+      'Componentes interativos',
+      'Domínio próprio',
+      'Pixel e Scripts de trackeamento',
+      'Gestão e downloads dos leads'
     ],
-    cta: 'Começar agora',
+    cta: 'Selecionar',
     color: 'white',
     popular: false
   },
   {
-    name: 'Professional',
-    monthlyPrice: 'R$197',
-    annualPrice: 'R$1.970',
-    description: 'Para times que precisam de mais poder',
+    name: 'inlead PRO',
+    monthlyPrice: 'R$199',
+    annualPrice: 'R$2009,40',
+    oldAnnualPrice: 'R$2364,00',
+    description: 'Para quem já tem experiência de mercado e testes de performance.',
     features: [
-      'Até 10.000 leads por mês',
-      'Páginas de captura ilimitadas',
-      'Todas as integrações',
-      'Suporte prioritário',
-      'Automações avançadas',
-      'Relatórios personalizados'
+      'Até 5 funis',
+      'Até 10 mil leads na conta',
+      'Componentes interativos',
+      'Webhook',
+      'Domínio próprio',
+      'Pixel e Scripts de trackeamento',
+      'Gestão e downloads dos leads'
     ],
-    cta: 'Começar agora',
+    cta: 'Selecionar',
     color: 'gradient',
     popular: true
   },
   {
-    name: 'Elite',
-    monthlyPrice: 'R$297',
-    annualPrice: 'R$2.970',
-    description: 'Para empresas em crescimento',
+    name: 'inlead ELITE',
+    monthlyPrice: 'R$299',
+    annualPrice: 'R$3029,40',
+    oldAnnualPrice: 'R$3564,00',
+    description: 'Feito para quem precisa de escala e possui demanda de terceiros.',
     features: [
-      'Até 50.000 leads por mês',
-      'Todas as features do Professional',
-      'API dedicada',
-      'Suporte prioritário 24/5',
-      'Setup assistido',
-      'Treinamento da equipe'
+      'Até 10 funis',
+      'Até 25 mil leads na conta',
+      'Componentes interativos',
+      'Webhook',
+      'Domínio próprio',
+      'Pixel e Scripts de trackeamento',
+      'Gestão e downloads dos leads',
+      'Compartilhamento de funis',
+      'Edição compartilhada'
     ],
-    cta: 'Começar agora',
+    cta: 'Selecionar',
     color: 'white',
     popular: false
   },
   {
-    name: 'Enterprise',
-    monthlyPrice: 'R$497',
-    annualPrice: 'R$4.970',
-    description: 'Soluções customizadas para grandes empresas',
+    name: 'inlead SCALE',
+    monthlyPrice: 'R$499',
+    annualPrice: 'R$5069,40',
+    oldAnnualPrice: 'R$5964,00',
+    description: 'Perfeito para líderes do mercado que buscam inovação constante.',
     features: [
-      'Leads ilimitados',
-      'Todas as features do Elite',
-      'API dedicada',
-      'Suporte 24/7',
-      'Setup assistido premium',
-      'SLA garantido'
+      'Até 25 funis',
+      'Até 100 mil leads na conta',
+      'Componentes interativos',
+      'Webhook',
+      'Domínio próprio',
+      'Pixel e Scripts de trackeamento',
+      'Gestão e downloads dos leads',
+      'Suporte com video chamadas',
+      'Compartilhamento de funis',
+      'Edição compartilhada'
     ],
-    cta: 'Falar com vendas',
+    cta: 'Selecionar',
     color: 'white',
     popular: false
   }
 ];
 
 export default function Pricing() {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(true);
 
   return (
     <section id="pricing" className="py-24 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl lg:text-5xl">
-            Planos para todos os{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-              tamanhos
-            </span>
+          <h2 className="text-4xl font-bold text-gray-900">
+            Planos
           </h2>
-          <p className="mt-4 text-xl text-gray-600">
-            Escolha o plano ideal para o seu negócio
-          </p>
 
           {/* Billing Switch */}
           <div className="mt-8 flex items-center justify-center gap-3">
-            <span className={`text-sm ${!isAnnual ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>Mensal</span>
             <button
-              onClick={() => setIsAnnual(!isAnnual)}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isAnnual ? 'bg-purple-600' : 'bg-gray-200'
+              onClick={() => setIsAnnual(true)}
+              className={`px-4 py-2 rounded-l-lg ${
+                isAnnual 
+                  ? 'bg-black text-white' 
+                  : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  isAnnual ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
+              Anual <span className="text-blue-400 ml-1">-15%</span>
             </button>
-            <span className={`text-sm ${isAnnual ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>
-              Anual
-              <span className="ml-1.5 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                Economize 20%
-              </span>
-            </span>
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-4 py-2 rounded-r-lg ${
+                !isAnnual 
+                  ? 'bg-black text-white' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              Mensal
+            </button>
           </div>
         </div>
 
@@ -118,23 +127,32 @@ export default function Pricing() {
               key={plan.name}
               className={`rounded-2xl p-8 ${
                 plan.popular
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 ring-4 ring-purple-600 ring-opacity-20'
+                  ? 'bg-gradient-to-b from-[#00e676] to-[#00c853] ring-4 ring-[#00c853] ring-opacity-20'
                   : 'bg-white'
               }`}
             >
               <h3 className={`text-2xl font-semibold ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
                 {plan.name}
                 {plan.popular && (
-                  <span className="ml-2 inline-block px-3 py-1 text-sm bg-white bg-opacity-20 rounded-full text-white">
-                    Mais Popular
+                  <span className="ml-2 inline-block px-3 py-1 text-sm bg-black rounded-full text-white">
+                    destaque
                   </span>
                 )}
               </h3>
               <p className={`mt-4 text-sm ${plan.popular ? 'text-gray-100' : 'text-gray-500'}`}>
                 {plan.description}
               </p>
-              <p className={`mt-8 ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
-                <span className="text-4xl font-bold">{isAnnual ? plan.annualPrice : plan.monthlyPrice}</span>
+              
+              {isAnnual && (
+                <p className={`mt-4 text-sm line-through ${plan.popular ? 'text-gray-200' : 'text-gray-400'}`}>
+                  R$ {plan.oldAnnualPrice}
+                </p>
+              )}
+              
+              <p className={`mt-2 ${plan.popular ? 'text-white' : 'text-gray-900'}`}>
+                <span className="text-4xl font-bold">
+                  {isAnnual ? plan.annualPrice : plan.monthlyPrice}
+                </span>
                 <span className="text-base font-medium">/{isAnnual ? 'ano' : 'mês'}</span>
               </p>
 
@@ -144,7 +162,7 @@ export default function Pricing() {
                     <div className={`flex-shrink-0 ${
                       plan.popular 
                         ? 'text-white' 
-                        : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600'
+                        : 'text-[#00e676]'
                     }`}>
                       <Icons.CheckIcon className="h-6 w-6" />
                     </div>
@@ -159,9 +177,9 @@ export default function Pricing() {
                 <Link
                   to="/register"
                   className={`block w-full py-3 px-6 text-center rounded-lg text-base font-medium transition-all duration-200 ${
-                    plan.color === 'gradient'
-                      ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 bg-white hover:bg-gray-50'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                    plan.popular
+                      ? 'bg-black text-white hover:bg-gray-900'
+                      : 'bg-black text-white hover:bg-gray-900'
                   }`}
                 >
                   {plan.cta}
@@ -169,15 +187,6 @@ export default function Pricing() {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <Link
-            to="/faq"
-            className="text-base font-medium text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            Dúvidas frequentes sobre nossos planos →
-          </Link>
         </div>
       </div>
     </section>
