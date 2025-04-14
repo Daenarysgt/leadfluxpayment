@@ -24,16 +24,11 @@ import {
   Ruler,
   Weight,
   SlidersHorizontal,
-  Star,
-  Search
+  Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface ElementsSidebarProps {
-  // Add any props if needed
-}
 
 const ElementsSidebar = () => {
   const { toast } = useToast();
@@ -115,152 +110,64 @@ const ElementsSidebar = () => {
   };
   
   return (
-    <div className="w-[280px] border-r bg-white">
-      <div className="p-4 border-b">
-        <h2 className="font-semibold text-lg text-gray-800 mb-1">Elementos</h2>
-        <p className="text-sm text-gray-500 mb-4">Arraste e solte na sua página</p>
-        
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Buscar elementos..." 
-            className="pl-9 h-9 bg-gray-50/80 border-gray-200 focus:bg-white"
+    <div className="border-l bg-white flex flex-col h-screen overflow-hidden">
+      <div className="p-3 border-b bg-gray-50 flex-shrink-0">
+        <h3 className="font-medium text-sm text-gray-700">ELEMENTOS</h3>
+        <div className="mt-2">
+          <Input
+            type="text"
+            placeholder="Buscar elementos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-8 text-sm"
           />
         </div>
       </div>
+      
+      <ScrollArea className="h-full">
+        <div className="p-4 pb-24">
+          <Input
+            placeholder="Buscar elementos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-4"
+          />
 
-      <Tabs defaultValue="todos" className="w-full">
-        <div className="px-4 border-b">
-          <TabsList className="w-full justify-start gap-2 h-12 bg-transparent">
-            <TabsTrigger 
-              value="todos"
-              className={cn(
-                "rounded-md data-[state=active]:bg-gray-100/80",
-                "data-[state=active]:shadow-none text-sm px-3"
-              )}
-            >
-              Todos
-            </TabsTrigger>
-            <TabsTrigger 
-              value="favoritos"
-              className={cn(
-                "rounded-md data-[state=active]:bg-gray-100/80",
-                "data-[state=active]:shadow-none text-sm px-3"
-              )}
-            >
-              <Star className="h-4 w-4 mr-1" />
-              Favoritos
-            </TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="todos" className="w-full">
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="todos" className="flex-1">Todos</TabsTrigger>
+              <TabsTrigger value="favoritos" className="flex-1">Favoritos</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="todos" className="flex-1 overflow-y-auto pb-8">
+              <div className="px-3 py-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">BÁSICOS</h4>
+              </div>
+              <div className="border-t">
+                {filteredBasic.map(renderComponentItem)}
+              </div>
+              
+              <div className="px-3 py-2 mt-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">AVANÇADOS</h4>
+              </div>
+              <div className="border-t">
+                {filteredAdvanced.map(renderComponentItem)}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="favoritos" className="flex-1 overflow-y-auto p-3">
+              <div className="flex flex-col items-center justify-center h-40 text-center">
+                <p className="text-sm text-gray-500">Seus componentes favoritos aparecerão aqui</p>
+                <Button variant="link" size="sm" className="mt-2">
+                  Adicionar favoritos
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-
-        <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="p-4">
-            <div className="space-y-4">
-              {/* Seção Básicos */}
-              <div>
-                <h3 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Básicos</h3>
-                <div className="grid gap-2">
-                  <ElementItem
-                    icon="📝"
-                    label="Múltipla Escolha"
-                    description="Pergunta com opções"
-                  />
-                  <ElementItem
-                    icon="🖼️"
-                    label="Múltipla Escolha com Imagem"
-                    description="Opções com imagens"
-                  />
-                  <ElementItem
-                    icon="📄"
-                    label="Texto"
-                    description="Campo de texto livre"
-                  />
-                  <ElementItem
-                    icon="🌄"
-                    label="Imagem"
-                    description="Upload de imagem"
-                  />
-                  <ElementItem
-                    icon="🎯"
-                    label="Botão"
-                    description="Botão de ação"
-                  />
-                </div>
-              </div>
-
-              {/* Seção Avançados */}
-              <div>
-                <h3 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Avançados</h3>
-                <div className="grid gap-2">
-                  <ElementItem
-                    icon="📊"
-                    label="Gráficos"
-                    description="Visualização de dados"
-                  />
-                  <ElementItem
-                    icon="📋"
-                    label="Argumentos"
-                    description="Lista de argumentos"
-                  />
-                  <ElementItem
-                    icon="💬"
-                    label="Depoimentos"
-                    description="Feedback de usuários"
-                  />
-                  <ElementItem
-                    icon="📈"
-                    label="Nível"
-                    description="Indicador de progresso"
-                  />
-                </div>
-              </div>
-
-              {/* Seção Especiais */}
-              <div>
-                <h3 className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Especiais</h3>
-                <div className="grid gap-2">
-                  <ElementItem
-                    icon="📸"
-                    label="Captura"
-                    description="Captura de tela"
-                  />
-                  <ElementItem
-                    icon="⏳"
-                    label="Loading"
-                    description="Indicador de carregamento"
-                  />
-                  <ElementItem
-                    icon="🎯"
-                    label="Cartesiano"
-                    description="Gráfico cartesiano"
-                  />
-                  <ElementItem
-                    icon="⭐"
-                    label="Avaliação"
-                    description="Sistema de estrelas"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </ScrollArea>
-      </Tabs>
+      </ScrollArea>
     </div>
   );
 };
-
-// Componente auxiliar para os itens
-const ElementItem = ({ icon, label, description }: { icon: string; label: string; description: string }) => (
-  <div className="group flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50 cursor-move transition-all duration-200">
-    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-md bg-gray-50 group-hover:bg-white transition-colors">
-      <span className="text-xl">{icon}</span>
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-gray-800">{label}</p>
-      <p className="text-xs text-gray-500 truncate">{description}</p>
-    </div>
-  </div>
-);
 
 export default ElementsSidebar;
