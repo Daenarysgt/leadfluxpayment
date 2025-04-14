@@ -10,9 +10,9 @@ const CheckIcon = () => (
 const plans = [
   {
     name: 'leadflux BASIC',
-    monthlyPrice: 'R$99',
-    annualPrice: 'R$989,40',
-    oldAnnualPrice: 'R$1164,00',
+    monthlyPrice: 'R$97,00',
+    annualPrice: 'R$997,00',
+    oldAnnualPrice: 'R$1.164,00',
     description: 'Perfeito para começar tranquilo e atingir seus objetivos gradualmente.',
     features: [
       'Até 2 funis',
@@ -28,9 +28,9 @@ const plans = [
   },
   {
     name: 'leadflux PRO',
-    monthlyPrice: 'R$199',
-    annualPrice: 'R$2009,40',
-    oldAnnualPrice: 'R$2364,00',
+    monthlyPrice: 'R$197,00',
+    annualPrice: 'R$1.997,00',
+    oldAnnualPrice: 'R$2.364,00',
     description: 'Para quem já tem experiência de mercado e testes de performance.',
     features: [
       'Até 5 funis',
@@ -47,9 +47,9 @@ const plans = [
   },
   {
     name: 'leadflux ELITE',
-    monthlyPrice: 'R$299',
-    annualPrice: 'R$3029,40',
-    oldAnnualPrice: 'R$3564,00',
+    monthlyPrice: 'R$297,00',
+    annualPrice: 'R$2.997,00',
+    oldAnnualPrice: 'R$3.564,00',
     description: 'Feito para quem precisa de escala e possui demanda de terceiros.',
     features: [
       'Até 10 funis',
@@ -68,9 +68,9 @@ const plans = [
   },
   {
     name: 'leadflux SCALE',
-    monthlyPrice: 'R$499',
-    annualPrice: 'R$5069,40',
-    oldAnnualPrice: 'R$5964,00',
+    monthlyPrice: 'R$497,00',
+    annualPrice: 'R$4.997,00',
+    oldAnnualPrice: 'R$5.964,00',
     description: 'Perfeito para líderes do mercado que buscam inovação constante.',
     features: [
       'Até 25 funis',
@@ -151,7 +151,7 @@ export default function Pricing() {
                 
                 {isAnnual && (
                   <p className={`mt-4 text-sm line-through ${plan.popular ? 'text-gray-200' : 'text-gray-400'}`}>
-                    R$ {plan.oldAnnualPrice}
+                    {plan.oldAnnualPrice}
                   </p>
                 )}
                 
