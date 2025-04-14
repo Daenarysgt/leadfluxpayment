@@ -169,7 +169,7 @@ export default function Pricing() {
                     <div className={`flex-shrink-0 ${
                       plan.popular 
                         ? 'text-white' 
-                        : 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600'
+                        : 'text-black'
                     }`}>
                       <CheckIcon />
                     </div>
