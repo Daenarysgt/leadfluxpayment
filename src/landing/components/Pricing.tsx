@@ -15,7 +15,7 @@ const plans = [
     oldAnnualPrice: 'R$1.164,00',
     description: 'Perfeito para começar tranquilo e atingir seus objetivos gradualmente.',
     features: [
-      'Até 2 funis',
+      'Até 3 funis',
       'Até 5 mil leads na conta',
       'Componentes interativos',
       'Domínio próprio',
@@ -33,7 +33,7 @@ const plans = [
     oldAnnualPrice: 'R$2.364,00',
     description: 'Para quem já tem experiência de mercado e testes de performance.',
     features: [
-      'Até 5 funis',
+      'Até 6 funis',
       'Até 10 mil leads na conta',
       'Componentes interativos',
       'Webhook',
@@ -52,7 +52,7 @@ const plans = [
     oldAnnualPrice: 'R$3.564,00',
     description: 'Feito para quem precisa de escala e possui demanda de terceiros.',
     features: [
-      'Até 10 funis',
+      'Até 12 funis',
       'Até 25 mil leads na conta',
       'Componentes interativos',
       'Webhook',
@@ -73,7 +73,7 @@ const plans = [
     oldAnnualPrice: 'R$5.964,00',
     description: 'Perfeito para líderes do mercado que buscam inovação constante.',
     features: [
-      'Até 25 funis',
+      'Até 30 funis',
       'Até 100 mil leads na conta',
       'Componentes interativos',
       'Webhook',
