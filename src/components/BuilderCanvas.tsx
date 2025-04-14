@@ -162,7 +162,7 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto min-h-[300px] rounded-lg px-4 pt-4", 
+          "w-full mx-auto min-h-[calc(100vh-200px)] rounded-lg", 
           isMobile ? "max-w-[375px]" : "max-w-[600px]"
         )}
         style={{

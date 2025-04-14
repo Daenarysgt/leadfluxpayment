@@ -5,6 +5,7 @@ import ElementConfigSidebar from "@/components/ElementConfigSidebar";
 import BuilderCanvas from "@/components/BuilderCanvas";
 import BuilderPreview from "@/components/builder/BuilderPreview";
 import { CanvasElement } from "@/types/canvasTypes";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface BuilderContentProps {
   viewMode: "desktop" | "mobile";
@@ -48,15 +49,19 @@ const BuilderContent = ({
             {previewActive ? (
               <BuilderPreview isMobile={viewMode === 'mobile'} />
             ) : (
-              <BuilderCanvas 
-                key={`canvas-${canvasKey}-${currentStep}`}
-                isMobile={viewMode === 'mobile'} 
-                onElementSelect={onElementSelect}
-                selectedElementId={selectedElement?.id || null}
-                elementUpdates={selectedElement || undefined}
-                elements={localCanvasElements}
-                onElementsChange={onElementsChange}
-              />
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  <BuilderCanvas 
+                    key={`canvas-${canvasKey}-${currentStep}`}
+                    isMobile={viewMode === 'mobile'} 
+                    onElementSelect={onElementSelect}
+                    selectedElementId={selectedElement?.id || null}
+                    elementUpdates={selectedElement || undefined}
+                    elements={localCanvasElements}
+                    onElementsChange={onElementsChange}
+                  />
+                </div>
+              </ScrollArea>
             )}
           </div>
         </ResizablePanel>
