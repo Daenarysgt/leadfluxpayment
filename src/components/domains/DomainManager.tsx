@@ -120,55 +120,70 @@ export function DomainManager({ funnelId }: { funnelId: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {/* Formulário para adicionar domínio */}
-                <form onSubmit={handleAddDomain} className="flex gap-2 mb-4">
-                    <Input
-                        placeholder="exemplo.com.br"
-                        value={newDomain}
-                        onChange={(e) => setNewDomain(e.target.value)}
-                        disabled={loading}
-                    />
-                    <Button type="submit" disabled={loading}>
-                        Adicionar
-                    </Button>
-                </form>
+                {domains.length === 0 ? (
+                    // Formulário para adicionar domínio (mostrado apenas se não houver domínios)
+                    <form onSubmit={handleAddDomain} className="flex gap-2 mb-4">
+                        <Input
+                            placeholder="exemplo.com.br"
+                            value={newDomain}
+                            onChange={(e) => setNewDomain(e.target.value)}
+                            disabled={loading}
+                        />
+                        <Button type="submit" disabled={loading}>
+                            Adicionar
+                        </Button>
+                    </form>
+                ) : (
+                    // Mensagem informativa quando já existe um domínio
+                    <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                            <div>
+                                <h4 className="font-medium text-blue-900">Um domínio já está conectado</h4>
+                                <p className="text-sm text-blue-700 mt-1">
+                                    Para adicionar um novo domínio, primeiro remova o domínio existente.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Lista de domínios */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {domains.map((domain) => (
                         <div
                             key={domain.id}
-                            className="flex items-center justify-between p-4 border rounded-lg"
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 {domain.status === 'active' ? (
-                                    <CheckCircle className="text-green-500" />
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
                                 ) : (
-                                    <AlertCircle className="text-yellow-500" />
+                                    <AlertCircle className="h-5 w-5 text-yellow-500" />
                                 )}
-                                <span>{domain.domain}</span>
+                                <div>
+                                    <p className="font-medium">{domain.domain}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {domain.status === 'active' ? 'Ativo' : 'Pendente'}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500">
-                                    {domain.status === 'active' ? 'Ativo' : 'Pendente'}
-                                </span>
-                                
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-8 h-8 p-0"
-                                    onClick={() => handleVerifyDomain(domain)}
-                                    disabled={isVerifying === domain.id}
-                                >
-                                    <RefreshCw 
-                                        className={cn(
+                            <div className="flex items-center gap-2">
+                                {domain.status === 'pending' && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-8 h-8 p-0"
+                                        onClick={() => handleVerifyDomain(domain)}
+                                        disabled={isVerifying === domain.id}
+                                    >
+                                        <RefreshCw className={cn(
                                             "h-4 w-4",
                                             isVerifying === domain.id && "animate-spin"
-                                        )} 
-                                    />
-                                </Button>
-
+                                        )} />
+                                    </Button>
+                                )}
                                 <Button
                                     variant="ghost"
                                     size="sm"

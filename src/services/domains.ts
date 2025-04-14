@@ -21,20 +21,30 @@ const publicSupabase = createClient(
 export const domainsService = {
     // Adicionar novo domínio
     async addDomain(data: DomainFormData): Promise<Domain> {
-        // 1. Validar domínio
-        if (!this.isValidDomain(data.domain)) {
-            throw new Error('Invalid domain format');
+        // 1. Verificar se já existe um domínio para este funil
+        const { data: existingDomains } = await supabase
+            .from('domains')
+            .select('*')
+            .eq('funnel_id', data.funnel_id);
+
+        if (existingDomains && existingDomains.length > 0) {
+            throw new Error('Este funil já possui um domínio conectado. Por favor, remova o domínio existente antes de adicionar um novo.');
         }
 
-        // 2. Configurar na Vercel
+        // 2. Validar domínio
+        if (!this.isValidDomain(data.domain)) {
+            throw new Error('Formato de domínio inválido');
+        }
+
+        // 3. Configurar na Vercel
         const vercelDomain = await this.configureVercelDomain(data.domain);
 
-        // 3. Obter o usuário atual
+        // 4. Obter o usuário atual
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
-        if (!user) throw new Error('User not authenticated');
+        if (!user) throw new Error('Usuário não autenticado');
 
-        // 4. Salvar no Supabase
+        // 5. Salvar no Supabase
         const { data: domain, error } = await supabase
             .from('domains')
             .insert({
