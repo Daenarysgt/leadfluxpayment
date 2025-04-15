@@ -27,7 +27,14 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           }
 
           console.log('🔍 Verificando assinatura do usuário...');
-          const subscription = await paymentService.getCurrentSubscription();
+          const subscription = await paymentService.getCurrentSubscription().catch(async (error) => {
+            if (error.message === 'Usuário não autenticado') {
+              console.log('⏳ Token não disponível, aguardando 1s e tentando novamente...');
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return await paymentService.getCurrentSubscription();
+            }
+            throw error;
+          });
           
           // Verifica se o componente ainda está montado antes de atualizar o estado
           if (!isMounted) return;

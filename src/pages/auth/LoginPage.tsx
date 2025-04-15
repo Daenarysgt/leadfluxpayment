@@ -23,6 +23,9 @@ const LoginPage = () => {
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
       
+      // Pequeno delay para garantir que o token esteja propagado
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Verificar se há um plano selecionado armazenado no localStorage
       console.log('🔍 Verificando plano no localStorage...');
       const storedPlanInfo = localStorage.getItem('selectedPlanInfo');

@@ -103,8 +103,8 @@ export const paymentService = {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.access_token) {
-        console.log('Usuário não autenticado ao verificar assinatura');
-        return null;
+        console.log('❌ Token não disponível ao verificar assinatura');
+        throw new Error('Usuário não autenticado');
       }
       
       // Obter informações da assinatura
