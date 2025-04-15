@@ -192,7 +192,7 @@ router.get('/subscription/diagnostic', async (req, res) => {
     // Verificar assinatura no banco de dados
     const { data: dbSubscription, error: dbError } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select('id, user_id, subscription_id, status, current_period_start, current_period_end, cancel_at_period_end, plan_id, stripe_customer_id')
       .eq('user_id', user.id)
       .single();
       
@@ -362,22 +362,10 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       });
     }
 
-    // Buscar detalhes da assinatura
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    // Verificar se a assinatura está ativa
-    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-      console.error(`❌ Assinatura ${subscriptionId} não está ativa. Status: ${subscription.status}`);
-      return res.json({ 
-        success: false, 
-        error: `Assinatura não está ativa. Status atual: ${subscription.status}` 
-      });
-    }
-    
     // Buscar assinatura no banco de dados
     const { data: dbSubscription, error } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select('id, user_id, subscription_id, status, current_period_start, current_period_end, cancel_at_period_end, plan_id, stripe_customer_id')
       .eq('subscription_id', subscriptionId)
       .single();
 
@@ -387,20 +375,20 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         console.log('⚠️ Assinatura não encontrada no banco. Tentando sincronizar com webhook...');
         
         // Verificar se a assinatura existe no Stripe e está válida
-        if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
+        if (session && session.status === 'complete') {
           console.log('✅ Assinatura encontrada no Stripe, tentando criar no banco de dados...');
           
           // Aguardar mais tempo para o webhook processar (5 segundos)
           await new Promise(resolve => setTimeout(resolve, 5000));
         
-        // Tentar novamente
-        const { data: retrySubscription, error: retryError } = await supabase
-          .from('subscriptions')
-          .select('*')
+          // Tentar novamente
+          const { data: retrySubscription, error: retryError } = await supabase
+            .from('subscriptions')
+            .select('*')
             .eq('subscription_id', subscriptionId)
-          .single();
+            .single();
           
-        if (retryError) {
+          if (retryError) {
             console.log('⚠️ Assinatura ainda não encontrada após espera. Tentando uma última vez...');
             
             // Se ainda não foi criada, vamos criar manualmente como fallback
@@ -417,7 +405,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
               const { data: existingCheck, error: checkError } = await supabase
                 .from('subscriptions')
                 .select('id')
-                .eq('subscription_id', subscription.id)
+                .eq('subscription_id', session.subscription)
                 .maybeSingle();
                 
               if (checkError) {
@@ -430,10 +418,10 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                 
                 const subscriptionData = {
                   plan_id: planId,
-                  status: subscription.status,
-                  current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-                  current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  status: session.status,
+                  current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
+                  current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
+                  cancel_at_period_end: (session as any).cancel_at_period_end || false,
                   updated_at: new Date().toISOString()
                 };
                 
@@ -454,8 +442,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                   planId: planId,
                   subscription: {
                     id: subscriptionId,
-                    status: subscription.status,
-                    currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                    status: session.status,
+                    currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
                   }
                 });
               }
@@ -477,12 +465,12 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                 
                 const subscriptionData = {
                   plan_id: planId,
-                  subscription_id: subscription.id,
-                  stripe_customer_id: subscription.customer,
-                  status: subscription.status,
-                  current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-                  current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  subscription_id: session.subscription,
+                  stripe_customer_id: session.customer,
+                  status: session.status,
+                  current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
+                  current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
+                  cancel_at_period_end: (session as any).cancel_at_period_end || false,
                   updated_at: new Date().toISOString()
                 };
                 
@@ -503,8 +491,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                   planId: planId,
                   subscription: {
                     id: subscriptionId,
-                    status: subscription.status,
-                    currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                    status: session.status,
+                    currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
                   }
                 });
               }
@@ -516,12 +504,12 @@ router.get('/verify-session/:sessionId', async (req, res) => {
               const subscriptionData = {
                 user_id: userId,
                 plan_id: planId,
-                subscription_id: subscription.id,
-                stripe_customer_id: subscription.customer,
-                status: subscription.status,
-                current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-                current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-                cancel_at_period_end: subscription.cancel_at_period_end,
+                subscription_id: session.subscription,
+                stripe_customer_id: session.customer,
+                status: session.status,
+                current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
+                current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
+                cancel_at_period_end: (session as any).cancel_at_period_end || false,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -550,8 +538,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                 planId: planId,
                 subscription: {
                   id: subscriptionId,
-                  status: subscription.status,
-                  currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                  status: session.status,
+                  currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
                 }
               });
             } catch (fallbackError: any) {
@@ -571,8 +559,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
             planId: session.metadata?.planId,
             subscription: {
               id: subscriptionId,
-              status: subscription.status,
-              currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+              status: session.status,
+              currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
             }
           });
         }
@@ -591,7 +579,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       userId: user.id,
       planId: session.metadata?.planId,
       subscriptionId,
-      subscriptionStatus: subscription.status
+      subscriptionStatus: session.status
     });
 
     // Retornar informações sobre a assinatura
@@ -600,8 +588,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       planId: session.metadata?.planId,
       subscription: {
         id: subscriptionId,
-        status: subscription.status,
-        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+        status: session.status,
+        currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
       }
     });
   } catch (error: any) {

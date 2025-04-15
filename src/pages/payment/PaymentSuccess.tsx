@@ -82,10 +82,10 @@ export default function PaymentSuccess() {
           description: `Aguarde enquanto finalizamos o processamento. Tentativa ${retryCount + 1}/4.`,
         });
         
-        // Esperar 5 segundos e tentar novamente
+        // Esperar 10 segundos e tentar novamente (aumentado de 5 para 10)
         setTimeout(() => {
           verifyPayment(true);
-        }, 5000);
+        }, 10000);
       } else if (result.error?.includes('válida no Stripe, mas não foi possível sincronizar') && retryCount < 5) {
         // Problema de sincronização com o banco - tentar novamente com intervalo maior
         console.log('⚠️ Assinatura válida no Stripe, mas problemas de sincronização. Tentando novamente...');
@@ -96,10 +96,10 @@ export default function PaymentSuccess() {
           description: `Seu pagamento foi aprovado! Estamos sincronizando com nosso sistema. Tentativa ${retryCount + 1}/6.`,
         });
         
-        // Aumentar o intervalo para 7 segundos
+        // Aumentar o intervalo para 15 segundos (aumentado de 7 para 15)
         setTimeout(() => {
           verifyPayment(true);
-        }, 7000);
+        }, 15000);
       } else {
         console.error('❌ Falha na verificação do pagamento:', result);
         setStatus('error');
