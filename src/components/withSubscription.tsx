@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { paymentService } from '@/services/paymentService';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 export const withSubscription = (WrappedComponent: React.ComponentType) => {
   return (props: any) => {
     const [isLoading, setIsLoading] = useState(true);
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [noSubscription, setNoSubscription] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
       let isMounted = true;
       const checkSubscription = async () => {
         try {
+          console.log('🔍 Verificando assinatura do usuário...');
           const subscription = await paymentService.getCurrentSubscription();
           
           // Verifica se o componente ainda está montado antes de atualizar o estado
@@ -22,51 +25,35 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           
           // Verifica se tem assinatura ativa
           if (!subscription) {
-            console.log('Usuário sem assinatura ativa');
-            navigate('/pricing', { 
-              state: { 
-                message: 'É necessário ter uma assinatura ativa para acessar esta área.'
-              }
-            });
+            console.log('⚠️ Usuário sem assinatura ativa');
+            setNoSubscription(true);
+            setIsLoading(false);
             return;
           }
           
           // Verifica se o status da assinatura é ativo
           if (subscription.status !== 'active') {
-            console.log(`Assinatura encontrada, mas status não é ativo: ${subscription.status}`);
-            navigate('/pricing', { 
-              state: { 
-                message: `Sua assinatura atual está com status "${subscription.status}". É necessário uma assinatura ativa.`
-              }
-            });
+            console.log(`⚠️ Assinatura encontrada, mas status não é ativo: ${subscription.status}`);
+            setNoSubscription(true);
+            setIsLoading(false);
             return;
           }
           
           // Assinatura ativa encontrada
+          console.log('✅ Assinatura ativa encontrada:', subscription);
           setHasActiveSubscription(true);
         } catch (error) {
           if (!isMounted) return;
           
-          console.error('Erro ao verificar assinatura:', error);
+          console.error('❌ Erro ao verificar assinatura:', error);
           setError('Não foi possível verificar sua assinatura. Por favor, tente novamente.');
           
           // Mostrar toast de erro
           toast({
             variant: 'destructive',
             title: 'Erro ao verificar assinatura',
-            description: 'Houve um problema ao verificar sua assinatura. Você será redirecionado.'
+            description: 'Houve um problema ao verificar sua assinatura. Tente novamente.'
           });
-          
-          // Redirecionar para página de preços após um breve intervalo
-          setTimeout(() => {
-            if (isMounted) {
-              navigate('/pricing', { 
-                state: { 
-                  message: 'Erro ao verificar assinatura. Por favor, tente novamente.'
-                }
-              });
-            }
-          }, 2000);
         } finally {
           if (isMounted) {
             setIsLoading(false);
@@ -88,6 +75,41 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-gray-500 mx-auto mb-4" />
             <p className="text-gray-600">Verificando sua assinatura...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (noSubscription) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-lg">
+            <div className="text-amber-500 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Assinatura necessária</h2>
+            <p className="text-gray-600 mb-6">
+              Para acessar esta área, você precisa ter uma assinatura ativa. Escolha um plano para continuar.
+            </p>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                Ver Planos
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+                className="w-full"
+              >
+                Voltar para Dashboard
+              </Button>
+            </div>
           </div>
         </div>
       );

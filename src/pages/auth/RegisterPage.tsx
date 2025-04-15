@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,26 @@ const RegisterPage = () => {
   const location = useLocation();
   const { selectedPlan } = location.state as LocationState || {};
 
+  useEffect(() => {
+    try {
+      const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+      if (storedPlanInfoStr) {
+        const storedPlanInfo = JSON.parse(storedPlanInfoStr);
+        console.log('📋 Plano do localStorage disponível na página de registro:', storedPlanInfo);
+      } else {
+        console.log('ℹ️ Nenhum plano encontrado no localStorage na página de registro');
+      }
+    } catch (e) {
+      console.error('❌ Erro ao verificar localStorage na página de registro:', e);
+    }
+    
+    if (selectedPlan) {
+      console.log('🔄 Plano recebido via navegação:', selectedPlan);
+    } else {
+      console.log('ℹ️ Nenhum plano recebido via navegação');
+    }
+  }, [selectedPlan]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
@@ -33,8 +53,34 @@ const RegisterPage = () => {
     }
 
     try {
-      await signUp(email, password, selectedPlan);
+      console.log('👤 Tentando registrar usuário:', email);
+      
+      let planFromStorage = null;
+      try {
+        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+        if (storedPlanInfoStr) {
+          planFromStorage = JSON.parse(storedPlanInfoStr);
+          console.log('💾 Usando plano do localStorage para registro:', planFromStorage);
+        }
+      } catch (e) {
+        console.error('❌ Erro ao ler localStorage antes do registro:', e);
+      }
+      
+      const finalPlan = selectedPlan || (planFromStorage ? {
+        id: planFromStorage.planId,
+        interval: planFromStorage.interval
+      } : undefined);
+      
+      if (finalPlan) {
+        console.log('✅ Registrando com plano:', finalPlan);
+      } else {
+        console.log('ℹ️ Registrando sem plano associado');
+      }
+      
+      await signUp(email, password, finalPlan);
+      console.log('✅ Registro concluído com sucesso');
     } catch (err) {
+      console.error('❌ Erro no registro:', err);
       setPasswordError('Erro ao criar conta. Tente novamente.');
     }
   };

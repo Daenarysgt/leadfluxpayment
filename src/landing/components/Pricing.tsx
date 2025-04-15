@@ -66,16 +66,23 @@ export default function Pricing() {
       setSelectedPlan(plan.id);
       setProcessingPlanId(plan.id);
 
+      // Dados a serem salvos no localStorage
+      const planData = {
+        planId: plan.id,
+        interval: isAnnual ? 'year' : 'month',
+        timestamp: Date.now(),
+        planName: plan.name // Adicionando o nome do plano para facilitar a depuração
+      };
+      
+      // Salvando no localStorage antes de qualquer coisa
+      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+      console.log('💾 Dados do plano salvos no localStorage:', planData);
+
       // Verificar se o usuário está logado
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // Salvar informações do plano selecionado no localStorage
-        localStorage.setItem('selectedPlanInfo', JSON.stringify({
-          planId: plan.id,
-          interval: isAnnual ? 'year' : 'month',
-          timestamp: Date.now() // Para verificar se a seleção não está muito antiga
-        }));
+        console.log('👤 Usuário não autenticado, redirecionando para registro');
         
         // Se não estiver logado, redireciona para registro
         navigate('/register', { 
@@ -88,6 +95,8 @@ export default function Pricing() {
         return;
       }
 
+      console.log('👤 Usuário autenticado, redirecionando para checkout');
+      
       // Se estiver logado, redirecionar para página de checkout
       navigate('/checkout', {
         state: {

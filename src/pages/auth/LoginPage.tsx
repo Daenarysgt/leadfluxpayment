@@ -18,19 +18,29 @@ const LoginPage = () => {
     setError('');
     
     try {
+      console.log('🔑 Tentando fazer login com email:', email);
       await signIn(email, password);
+      console.log('✅ Login bem-sucedido');
       
       // Verificar se há um plano selecionado armazenado no localStorage
+      console.log('🔍 Verificando plano no localStorage...');
       const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+      console.log('📦 Dados brutos do localStorage:', storedPlanInfo);
       
       if (storedPlanInfo) {
         try {
           const planInfo = JSON.parse(storedPlanInfo);
+          console.log('📋 Plano encontrado no localStorage:', planInfo);
           
           // Verificar se a seleção não está muito antiga (24 horas)
           const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
           
           if (isRecent && planInfo.planId) {
+            console.log('🔄 Dados válidos, redirecionando para checkout com:', {
+              planId: planInfo.planId,
+              interval: planInfo.interval
+            });
+            
             // Remover do localStorage após usar
             localStorage.removeItem('selectedPlanInfo');
             
@@ -42,17 +52,24 @@ const LoginPage = () => {
               }
             });
             return;
+          } else {
+            console.log('⚠️ Dados do plano muito antigos ou inválidos:', planInfo);
+            localStorage.removeItem('selectedPlanInfo');
           }
         } catch (parseError) {
-          console.error('Erro ao processar informações do plano:', parseError);
+          console.error('❌ Erro ao processar informações do plano:', parseError);
           // Se houver erro na leitura, apenas limpar
           localStorage.removeItem('selectedPlanInfo');
         }
+      } else {
+        console.log('ℹ️ Nenhum plano encontrado no localStorage');
       }
       
       // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard
+      console.log('🏠 Redirecionando para dashboard');
       navigate('/dashboard');
     } catch (err) {
+      console.error('❌ Erro no login:', err);
       setError('Email ou senha inválidos');
     }
   };
