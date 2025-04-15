@@ -406,12 +406,23 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           throw new Error('Assinatura não encontrada no Stripe.');
         }
 
-        console.log('📝 Dados para criar assinatura:', {
-          userId: session.metadata.userId,
-          planId: session.metadata.planId,
-          subscriptionId,
-          customerId: session.customer,
-          status: stripeSubscription.status
+        // DEBUG: Investigar valores temporais
+        console.log('🕒 Valores temporais brutos do Stripe:', {
+          current_period_start: (stripeSubscription as any).current_period_start,
+          current_period_end: (stripeSubscription as any).current_period_end,
+          type_start: typeof (stripeSubscription as any).current_period_start,
+          type_end: typeof (stripeSubscription as any).current_period_end
+        });
+
+        // DEBUG: Verificar conversão de timestamp
+        const startDate = new Date((stripeSubscription as any).current_period_start * 1000);
+        const endDate = new Date((stripeSubscription as any).current_period_end * 1000);
+
+        console.log('🕒 Datas convertidas:', {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          isValidStart: !isNaN(startDate.getTime()),
+          isValidEnd: !isNaN(endDate.getTime())
         });
 
         const subscriptionData = {
@@ -420,12 +431,19 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
           status: stripeSubscription.status,
-          current_period_start: new Date((stripeSubscription as any).current_period_start * 1000).toISOString(),
-          current_period_end: new Date((stripeSubscription as any).current_period_end * 1000).toISOString(),
+          current_period_start: startDate.toISOString(),
+          current_period_end: endDate.toISOString(),
           cancel_at_period_end: stripeSubscription.cancel_at_period_end,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
+
+        // DEBUG: Verificar objeto final
+        console.log('📝 Dados finais para inserção:', {
+          ...subscriptionData,
+          current_period_start_valid: !isNaN(new Date(subscriptionData.current_period_start).getTime()),
+          current_period_end_valid: !isNaN(new Date(subscriptionData.current_period_end).getTime())
+        });
 
         // Verificar novamente se a assinatura já não foi criada (race condition)
         const { data: finalCheck } = await supabase
