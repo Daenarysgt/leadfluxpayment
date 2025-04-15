@@ -83,23 +83,28 @@ export const useAuth = () => {
       setUser(data.user);
       setSession(data.session);
       
-      // Verificar se tem plano selecionado via serviço de checkout
-      const checkoutData = checkoutStateService.getPlanSelection();
-      
-      if (checkoutData) {
-        console.log('🔄 Plano encontrado após login, redirecionando para checkout:', checkoutData);
+      try {
+        // Verificar se tem plano selecionado via serviço de checkout
+        const checkoutData = checkoutStateService.getPlanSelection();
         
-        // Redirecionar para checkout
-        navigate('/checkout', {
-          state: {
-            planId: checkoutData.planId,
-            interval: checkoutData.interval,
-            checkoutSessionId: checkoutData.checkoutSessionId
-          },
-          replace: true
-        });
-        
-        return { success: true, redirectedToCheckout: true };
+        if (checkoutData) {
+          console.log('🔄 Plano encontrado após login, redirecionando para checkout:', checkoutData);
+          
+          // Redirecionar para checkout
+          navigate('/checkout', {
+            state: {
+              planId: checkoutData.planId,
+              interval: checkoutData.interval,
+              checkoutSessionId: checkoutData.checkoutSessionId
+            },
+            replace: true
+          });
+          
+          return { success: true, redirectedToCheckout: true };
+        }
+      } catch (err) {
+        console.error('❌ Erro ao verificar plano após login:', err);
+        // Continuar com o fluxo normal mesmo se houver erro
       }
       
       return { success: true };
@@ -118,10 +123,15 @@ export const useAuth = () => {
     try {
       // Se temos selectedPlan nos parâmetros, salvar no serviço de checkout
       if (selectedPlan) {
-        checkoutStateService.savePlanSelection({
-          planId: selectedPlan.id,
-          interval: selectedPlan.interval
-        });
+        try {
+          checkoutStateService.savePlanSelection({
+            planId: selectedPlan.id,
+            interval: selectedPlan.interval
+          });
+        } catch (err) {
+          console.error('❌ Erro ao salvar plano durante registro:', err);
+          // Continuar mesmo se houver erro
+        }
       }
       
       const { data, error } = await supabase.auth.signUp({
@@ -324,22 +334,27 @@ export const useAuth = () => {
       setUser(data.user);
       setSession(data.session);
       
-      // Verificar se há um plano a seguir usando o serviço de checkout
-      const checkoutData = checkoutStateService.getPlanSelection();
-      
-      if (checkoutData) {
-        console.log('✅ Plano encontrado após verificação de email, redirecionando para checkout:', checkoutData);
+      try {
+        // Verificar se há um plano a seguir usando o serviço de checkout
+        const checkoutData = checkoutStateService.getPlanSelection();
         
-        navigate('/checkout', { 
-          state: { 
-            planId: checkoutData.planId,
-            interval: checkoutData.interval,
-            checkoutSessionId: checkoutData.checkoutSessionId
-          },
-          replace: true
-        });
-        
-        return { success: true };
+        if (checkoutData) {
+          console.log('✅ Plano encontrado após verificação de email, redirecionando para checkout:', checkoutData);
+          
+          navigate('/checkout', { 
+            state: { 
+              planId: checkoutData.planId,
+              interval: checkoutData.interval,
+              checkoutSessionId: checkoutData.checkoutSessionId
+            },
+            replace: true
+          });
+          
+          return { success: true };
+        }
+      } catch (err) {
+        console.error('❌ Erro ao verificar plano após verificação de email:', err);
+        // Continuar com o fluxo normal mesmo se houver erro
       }
       
       // Se não houver plano, ir para o dashboard

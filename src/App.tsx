@@ -120,26 +120,33 @@ const App = () => {
 
   // Efeito para capturar parâmetros de checkout na URL
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const checkoutData = params.get('checkout');
+    // Verificação de segurança para ambiente
+    if (typeof window === 'undefined') return;
     
-    if (checkoutData) {
-      try {
-        // Decodificar os dados do plano da URL
-        const planData = checkoutStateService.decodeDataFromUrl(checkoutData);
-        if (planData) {
-          console.log('📝 Dados do plano recuperados da URL:', planData);
-          
-          // Salvar os dados decodificados no serviço de checkout
-          checkoutStateService.savePlanSelection({
-            planId: planData.planId,
-            interval: planData.interval,
-            planName: planData.planName
-          });
+    try {
+      const params = new URLSearchParams(location.search);
+      const checkoutData = params.get('checkout');
+      
+      if (checkoutData) {
+        try {
+          // Decodificar os dados do plano da URL
+          const planData = checkoutStateService.decodeDataFromUrl(checkoutData);
+          if (planData) {
+            console.log('📝 Dados do plano recuperados da URL:', planData);
+            
+            // Salvar os dados decodificados no serviço de checkout
+            checkoutStateService.savePlanSelection({
+              planId: planData.planId,
+              interval: planData.interval,
+              planName: planData.planName
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro ao processar dados de checkout da URL:', error);
         }
-      } catch (error) {
-        console.error('❌ Erro ao processar dados de checkout da URL:', error);
       }
+    } catch (error) {
+      console.error('❌ Erro ao processar URL:', error);
     }
   }, [location.search]);
 

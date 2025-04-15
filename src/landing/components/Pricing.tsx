@@ -68,14 +68,19 @@ export default function Pricing() {
       setProcessingPlanId(plan.id);
 
       // Salvar dados do plano no serviço de checkout
-      checkoutStateService.savePlanSelection({
-        planId: plan.id,
-        interval: isAnnual ? 'year' : 'month',
-        planName: plan.name
-      });
+      try {
+        checkoutStateService.savePlanSelection({
+          planId: plan.id,
+          interval: isAnnual ? 'year' : 'month',
+          planName: plan.name
+        });
+        
+        console.log('💾 Dados do plano salvos via serviço de checkout');
+      } catch (err) {
+        console.error('❌ Erro ao salvar dados do plano:', err);
+        // Continuar mesmo se houver erro
+      }
       
-      console.log('💾 Dados do plano salvos via serviço de checkout');
-
       // Verificar se o usuário está logado
       const { data: { session } } = await supabase.auth.getSession();
       

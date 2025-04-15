@@ -44,14 +44,25 @@ export default function Register() {
         });
         
         // Salvar no serviço de checkout para garantir persistência
-        checkoutStateService.savePlanSelection({
-          planId: locationState.selectedPlan,
-          interval: locationState.interval
-        });
+        try {
+          checkoutStateService.savePlanSelection({
+            planId: locationState.selectedPlan,
+            interval: locationState.interval
+          });
+        } catch (err) {
+          console.error('❌ Erro ao salvar dados do plano:', err);
+          // Continuar mesmo se houver erro
+        }
       }
       // Se não tiver no estado da navegação, verificar o serviço de checkout
-      else if (checkoutStateService.hasPlanSelection()) {
-        console.log('🔍 Usando dados do plano do serviço de checkout para registro');
+      else {
+        try {
+          if (checkoutStateService.hasPlanSelection()) {
+            console.log('🔍 Usando dados do plano do serviço de checkout para registro');
+          }
+        } catch (err) {
+          console.error('❌ Erro ao verificar plano existente:', err);
+        }
       }
       
       // Registrar o usuário

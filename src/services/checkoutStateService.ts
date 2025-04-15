@@ -18,6 +18,9 @@ export const checkoutStateService = {
    */
   savePlanSelection(planData: Omit<CheckoutPlanData, 'timestamp' | 'checkoutSessionId'>): void {
     try {
+      // Verificar se estamos em um ambiente com window
+      if (typeof window === 'undefined') return;
+
       // Adicionar timestamp e ID de sessão
       const checkoutData: CheckoutPlanData = {
         ...planData,
@@ -26,10 +29,10 @@ export const checkoutStateService = {
       };
       
       // Salvar em localStorage para persistência de longo prazo
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(checkoutData));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(checkoutData));
       
       // Salvar em sessionStorage para persistência durante a sessão atual
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(checkoutData));
+      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(checkoutData));
       
       console.log('✅ Dados do plano salvos em múltiplas camadas:', checkoutData);
     } catch (error) {
@@ -43,8 +46,11 @@ export const checkoutStateService = {
    */
   getPlanSelection(): CheckoutPlanData | null {
     try {
+      // Verificar se estamos em um ambiente com window
+      if (typeof window === 'undefined') return null;
+
       // 1. Tentar sessionStorage primeiro (mais confiável durante navegação)
-      const sessionData = sessionStorage.getItem(SESSION_KEY);
+      const sessionData = window.sessionStorage.getItem(SESSION_KEY);
       if (sessionData) {
         const parsedData = JSON.parse(sessionData) as CheckoutPlanData;
         console.log('📋 Dados do plano encontrados no sessionStorage:', parsedData);
@@ -52,7 +58,7 @@ export const checkoutStateService = {
       }
       
       // 2. Tentar localStorage como fallback
-      const localData = localStorage.getItem(STORAGE_KEY);
+      const localData = window.localStorage.getItem(STORAGE_KEY);
       if (localData) {
         const parsedData = JSON.parse(localData) as CheckoutPlanData;
         
@@ -63,7 +69,7 @@ export const checkoutStateService = {
           console.log('📋 Dados do plano encontrados no localStorage:', parsedData);
           
           // Sincronizar com sessionStorage para garantir consistência
-          sessionStorage.setItem(SESSION_KEY, localData);
+          window.sessionStorage.setItem(SESSION_KEY, localData);
           
           return parsedData;
         } else {
@@ -86,8 +92,11 @@ export const checkoutStateService = {
    */
   clearPlanSelection(): void {
     try {
-      localStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem(SESSION_KEY);
+      // Verificar se estamos em um ambiente com window
+      if (typeof window === 'undefined') return;
+
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.sessionStorage.removeItem(SESSION_KEY);
       console.log('🧹 Dados do plano limpos de todas as fontes');
     } catch (error) {
       console.error('❌ Erro ao limpar dados do plano:', error);
