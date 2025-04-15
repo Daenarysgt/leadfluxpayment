@@ -57,9 +57,9 @@ export const CheckoutPage: React.FC = () => {
             cleanParams.set('timestamp', urlTimestamp.toString());
           }
           
-          navigate(`/login?${cleanParams.toString()}`);
+          navigate(`/login?${cleanParams.toString()}`, { replace: true });
         } else {
-          navigate('/login');
+          navigate('/login', { replace: true });
         }
         return;
       }
@@ -159,7 +159,7 @@ export const CheckoutPage: React.FC = () => {
           description: "Não foi possível identificar o plano selecionado. Por favor, selecione novamente.",
           variant: "destructive",
         });
-        navigate('/pricing');
+        navigate('/pricing', { replace: true });
         return;
       }
 

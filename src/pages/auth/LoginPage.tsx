@@ -26,7 +26,13 @@ const LoginPage = () => {
     
     try {
       console.log('🔑 Tentando fazer login com email:', email);
-      await signIn(email, password);
+      const result = await signIn(email, password);
+      
+      if (!result.success) {
+        setError(result.error || 'Email ou senha inválidos');
+        return;
+      }
+      
       console.log('✅ Login bem-sucedido');
       
       // Verificar se temos parâmetros de redirecionamento na URL
@@ -52,8 +58,10 @@ const LoginPage = () => {
           cleanParams.set('timestamp', timestamp);
         }
         
-        // Preservar todos os parâmetros na URL
-        navigate(`/checkout?${cleanParams.toString()}`);
+        // Redirecionar para checkout com replace:true para impedir loops de navegação
+        navigate(`/checkout?${cleanParams.toString()}`, { 
+          replace: true 
+        });
         return;
       }
       
@@ -98,11 +106,13 @@ const LoginPage = () => {
             }
             
             // Redirecionar para o checkout com as informações do plano
+            // usar replace: true para evitar problemas com histórico de navegação
             navigate(`/checkout?${params.toString()}`, {
               state: {
                 planId: planInfo.planId,
                 interval: planInfo.interval || 'month'
-              }
+              },
+              replace: true
             });
             return;
           } else {
@@ -122,7 +132,7 @@ const LoginPage = () => {
       
       // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard
       console.log('🏠 Redirecionando para dashboard');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('❌ Erro no login:', err);
       setError('Email ou senha inválidos');
