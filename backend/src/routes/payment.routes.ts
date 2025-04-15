@@ -442,13 +442,12 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           status: stripeSubscription.status
         });
 
-        // Função auxiliar para converter timestamp do Stripe para ISO string
-        function convertStripeTimestamp(timestamp: number | undefined | null): string {
+        // Função auxiliar para converter timestamp do Stripe para Unix timestamp
+        function getUnixTimestamp(timestamp: number | undefined | null): number {
           if (!timestamp) {
-            return new Date().toISOString(); // Valor default se não existir
+            return Math.floor(Date.now() / 1000); // Valor default se não existir
           }
-          // Stripe usa segundos, precisamos converter para milissegundos
-          return new Date(timestamp * 1000).toISOString();
+          return timestamp; // O Stripe já retorna em Unix timestamp
         }
 
         // DEBUG: Investigar valores temporais
@@ -462,12 +461,12 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           typeEnd: typeof rawEnd
         });
 
-        // Converter timestamps para ISO strings
-        const currentPeriodStart = convertStripeTimestamp(rawStart);
-        const currentPeriodEnd = convertStripeTimestamp(rawEnd);
-        const now = new Date().toISOString();
+        // Usar os timestamps diretamente do Stripe (já são Unix timestamps)
+        const currentPeriodStart = getUnixTimestamp(rawStart);
+        const currentPeriodEnd = getUnixTimestamp(rawEnd);
+        const now = Math.floor(Date.now() / 1000);
 
-        console.log('🕒 PONTO 8: Timestamps convertidos:', {
+        console.log('🕒 PONTO 8: Timestamps como Unix:', {
           currentPeriodStart,
           currentPeriodEnd,
           now
@@ -640,15 +639,15 @@ async function handleCheckoutCompleted(session: any) {
     throw new Error('Erro ao verificar assinatura existente');
   }
 
-  // Função auxiliar para converter timestamp do Stripe para ISO string
-  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+  // Função auxiliar para garantir timestamp Unix válido
+  function getUnixTimestamp(timestamp: number | undefined | null): number {
     if (!timestamp) {
-      return new Date().toISOString();
+      return Math.floor(Date.now() / 1000);
     }
-    return new Date(timestamp * 1000).toISOString();
+    return timestamp;
   }
 
-  const now = new Date().toISOString();
+  const now = Math.floor(Date.now() / 1000);
   
   const subscriptionData = {
     user_id: userId,
@@ -656,8 +655,8 @@ async function handleCheckoutCompleted(session: any) {
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
     status: subscription.status || 'incomplete',
-    current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
-    current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+    current_period_start: getUnixTimestamp((subscription as any).current_period_start),
+    current_period_end: getUnixTimestamp((subscription as any).current_period_end),
     cancel_at_period_end: subscription.cancel_at_period_end || false,
     updated_at: now
   };
@@ -704,11 +703,11 @@ async function handleInvoicePaid(invoice: any) {
   // Obter detalhes da assinatura atualizada
   const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
 
-  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+  function getUnixTimestamp(timestamp: number | undefined | null): number {
     if (!timestamp) {
-      return new Date().toISOString();
+      return Math.floor(Date.now() / 1000);
     }
-    return new Date(timestamp * 1000).toISOString();
+    return timestamp;
   }
   
   // Atualizar a assinatura no banco de dados
@@ -716,10 +715,10 @@ async function handleInvoicePaid(invoice: any) {
     .from('subscriptions')
     .update({
       status: subscription.status || 'incomplete',
-      current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
-      current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+      current_period_start: getUnixTimestamp((subscription as any).current_period_start),
+      current_period_end: getUnixTimestamp((subscription as any).current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: new Date().toISOString()
+      updated_at: Math.floor(Date.now() / 1000)
     })
     .eq('subscription_id', subscription.id);
   
@@ -734,11 +733,11 @@ async function handleInvoicePaid(invoice: any) {
 async function handleSubscriptionUpdated(subscription: any) {
   console.log('🔄 Assinatura atualizada, sincronizando mudanças...');
   
-  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+  function getUnixTimestamp(timestamp: number | undefined | null): number {
     if (!timestamp) {
-      return new Date().toISOString();
+      return Math.floor(Date.now() / 1000);
     }
-    return new Date(timestamp * 1000).toISOString();
+    return timestamp;
   }
   
   // Atualizar a assinatura no banco de dados
@@ -746,10 +745,10 @@ async function handleSubscriptionUpdated(subscription: any) {
     .from('subscriptions')
     .update({
       status: subscription.status || 'incomplete',
-      current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
-      current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+      current_period_start: getUnixTimestamp((subscription as any).current_period_start),
+      current_period_end: getUnixTimestamp((subscription as any).current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: new Date().toISOString()
+      updated_at: Math.floor(Date.now() / 1000)
     })
     .eq('subscription_id', subscription.id);
   
@@ -769,7 +768,7 @@ async function handleSubscriptionDeleted(subscription: any) {
     .from('subscriptions')
     .update({
       status: 'canceled',
-      updated_at: new Date().toISOString()
+      updated_at: Math.floor(Date.now() / 1000)
     })
     .eq('subscription_id', subscription.id);
   
