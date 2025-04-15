@@ -1,6 +1,50 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { toast } from '../components/ui/use-toast';
 
 export default function Login() {
+  const { signIn, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    try {
+      const result = await signIn(email, password);
+      
+      if (result.success) {
+        console.log('Login bem-sucedido');
+        toast({
+          title: "Login realizado",
+          description: "Seja bem-vindo!",
+        });
+        
+        // Se não foi redirecionado para checkout pelo hook (quando há plano no localStorage),
+        // verificar se temos um returnTo na location state ou redirecionar para dashboard
+        if (!result.redirectedToCheckout) {
+          const returnTo = location.state?.returnTo || '/dashboard';
+          navigate(returnTo, { replace: true });
+        }
+      } else {
+        setError(result.error || 'Ocorreu um erro ao fazer login.');
+      }
+    } catch (err) {
+      console.error('Erro no login:', err);
+      setError('Ocorreu um erro inesperado. Tente novamente.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -16,7 +60,13 @@ export default function Login() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 sm:px-10">
-          <form className="space-y-6">
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              {error}
+            </div>
+          )}
+          
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
@@ -26,6 +76,8 @@ export default function Login() {
                   id="email"
                   name="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 focus:border-transparent"
@@ -43,6 +95,8 @@ export default function Login() {
                   id="password"
                   name="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 focus:border-transparent"
@@ -62,9 +116,10 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-70"
               >
-                Entrar
+                {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </div>
           </form>

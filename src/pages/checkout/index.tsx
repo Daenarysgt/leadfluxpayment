@@ -14,6 +14,7 @@ interface StoredPlanInfo {
   planId: string;
   interval: 'month' | 'year';
   timestamp: number;
+  planName?: string;
 }
 
 export const CheckoutPage: React.FC = () => {
@@ -22,77 +23,117 @@ export const CheckoutPage: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutInitiated, setCheckoutInitiated] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    
-    // Tenta obter o plano do estado de navegação
-    const state = location.state as LocationState | null;
-    
-    // Se não tiver no estado, tenta obter do localStorage
-    let planId: string | null = null;
-    let interval: 'month' | 'year' = 'month';
-    
-    if (state?.planId && state?.interval) {
-      console.log('Plano obtido do estado da navegação:', state);
-      planId = state.planId;
-      interval = state.interval;
-    } else {
-      // Tenta obter do localStorage
-      try {
-        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
-        if (storedPlanInfoStr) {
-          const storedPlanInfo = JSON.parse(storedPlanInfoStr) as StoredPlanInfo;
-          // Verifica se é recente (menos de 24h)
-          if (Date.now() - storedPlanInfo.timestamp < 24 * 60 * 60 * 1000) {
-            console.log('Plano obtido do localStorage:', storedPlanInfo);
-            planId = storedPlanInfo.planId;
-            interval = storedPlanInfo.interval;
-            // Remove do localStorage para evitar uso futuro indevido
-            localStorage.removeItem('selectedPlanInfo');
-          }
-        }
-      } catch (e) {
-        console.error('Erro ao processar dados do plano no localStorage:', e);
-        localStorage.removeItem('selectedPlanInfo');
+    const initCheckout = async () => {
+      // Se já iniciou o checkout, não faça novamente
+      if (checkoutInitiated) return;
+      
+      // Verifica autenticação
+      if (!user) {
+        console.log('❌ Usuário não autenticado, redirecionando para login');
+        navigate('/login');
+        return;
       }
-    }
-    
-    if (!planId) {
-      console.error('Nenhum plano encontrado para checkout');
-      toast({
-        title: "Erro no checkout",
-        description: "Não foi possível identificar o plano selecionado. Por favor, selecione novamente.",
-        variant: "destructive",
+      
+      // Log para depuração - Verificação completa do estado
+      console.log('📌 Estado do componente de checkout:', {
+        user: user?.id,
+        locationState: location.state,
+        hasLocalStorage: !!localStorage.getItem('selectedPlanInfo')
       });
-      navigate('/pricing');
-      return;
-    }
+      
+      // Tenta obter o plano do estado de navegação
+      const state = location.state as LocationState | null;
+      
+      // Se não tiver no estado, tenta obter do localStorage
+      let planId: string | null = null;
+      let interval: 'month' | 'year' = 'month';
+      let planSource = '';
+      
+      if (state?.planId && state?.interval) {
+        console.log('✅ Plano obtido do estado da navegação:', state);
+        planId = state.planId;
+        interval = state.interval;
+        planSource = 'navigation-state';
+      } else {
+        // Tenta obter do localStorage com tratamento de erro melhorado
+        try {
+          const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+          
+          if (storedPlanInfoStr) {
+            console.log('🔍 Verificando dados do plano no localStorage:', storedPlanInfoStr);
+            
+            const storedPlanInfo = JSON.parse(storedPlanInfoStr) as StoredPlanInfo;
+            
+            // Verificação mais rigorosa dos dados
+            if (!storedPlanInfo.planId) {
+              throw new Error('Dados do plano inválidos: ID do plano ausente');
+            }
+            
+            // Verificar se é recente (menos de 1 hora)
+            const ageInHours = (Date.now() - storedPlanInfo.timestamp) / (1000 * 60 * 60);
+            
+            if (ageInHours > 24) {
+              console.log(`⚠️ Dados do plano muito antigos (${ageInHours.toFixed(2)} horas), ignorando`);
+              localStorage.removeItem('selectedPlanInfo');
+              throw new Error('Dados do plano muito antigos');
+            }
+            
+            console.log('✅ Plano obtido do localStorage:', storedPlanInfo);
+            planId = storedPlanInfo.planId;
+            interval = storedPlanInfo.interval || 'month';
+            planSource = 'local-storage';
+          } else {
+            console.log('⚠️ Nenhum dado de plano encontrado no localStorage');
+          }
+        } catch (e) {
+          console.error('❌ Erro ao processar dados do plano no localStorage:', e);
+          localStorage.removeItem('selectedPlanInfo');
+        }
+      }
+      
+      // Se não encontrou o plano, redirecionar para página de preços
+      if (!planId) {
+        console.error('❌ Nenhum plano encontrado para checkout');
+        toast({
+          title: "Erro no checkout",
+          description: "Não foi possível identificar o plano selecionado. Por favor, selecione novamente.",
+          variant: "destructive",
+        });
+        navigate('/pricing');
+        return;
+      }
 
-    const createCheckoutSession = async () => {
+      // Marcar que o checkout foi iniciado (para evitar duplicações)
+      setCheckoutInitiated(true);
+
+      // Criar a sessão de checkout
       try {
         setLoading(true);
         // Log para depuração
-        console.log('Criando sessão de checkout com:', { planId, interval });
+        console.log('🔄 Criando sessão de checkout com:', { planId, interval, source: planSource });
+        
+        // Agora é seguro remover do localStorage
+        localStorage.removeItem('selectedPlanInfo');
         
         const { url } = await paymentService.createCheckoutSession(planId, interval);
         if (url) {
+          console.log('✅ Sessão de checkout criada, redirecionando para:', url);
           window.location.href = url;
         } else {
           throw new Error('Não foi possível criar a sessão de checkout');
         }
       } catch (error) {
-        console.error('Erro ao criar sessão de checkout:', error);
+        console.error('❌ Erro ao criar sessão de checkout:', error);
         setError('Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.');
         setLoading(false);
       }
     };
 
-    createCheckoutSession();
-  }, [user, location.state, navigate]);
+    initCheckout();
+  }, [user, location.state, navigate, checkoutInitiated]);
 
   if (loading) {
     return (

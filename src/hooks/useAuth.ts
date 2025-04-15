@@ -82,6 +82,38 @@ export const useAuth = () => {
       setUser(data.user);
       setSession(data.session);
       
+      // Verificar se tem plano selecionado no localStorage após login bem-sucedido
+      try {
+        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+        if (storedPlanInfoStr) {
+          const storedPlanInfo = JSON.parse(storedPlanInfoStr);
+          
+          // Verificar se é recente (menos de 24h)
+          if (Date.now() - storedPlanInfo.timestamp < 24 * 60 * 60 * 1000) {
+            console.log('🔄 Plano encontrado após login, redirecionando para checkout:', storedPlanInfo);
+            
+            // Não remover do localStorage ainda - deixar para a página de checkout fazer isso
+            // Isso garante que mesmo se o redirecionamento falhar, os dados não serão perdidos
+            
+            // Redirecionar para checkout
+            navigate('/checkout', {
+              state: {
+                planId: storedPlanInfo.planId,
+                interval: storedPlanInfo.interval || 'month'
+              },
+              replace: true
+            });
+            return { success: true, redirectedToCheckout: true };
+          } else {
+            // Se os dados forem muito antigos, remover
+            localStorage.removeItem('selectedPlanInfo');
+          }
+        }
+      } catch (parseError) {
+        console.error('Erro ao processar dados do plano no localStorage após login:', parseError);
+        // Continuar com o fluxo normal se houver erro
+      }
+      
       return { success: true };
     } catch (error) {
       setError(getErrorMessage(error));
