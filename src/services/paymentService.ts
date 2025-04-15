@@ -10,6 +10,13 @@ const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
  */
 export const paymentService = {
   /**
+   * Obtém a sessão do usuário atual
+   */
+  async getUserSession() {
+    return await supabase.auth.getSession();
+  },
+
+  /**
    * Cria uma sessão de checkout do Stripe para o plano selecionado
    */
   async createCheckoutSession(planId: string, interval: 'month' | 'year'): Promise<{ url: string }> {
@@ -50,6 +57,7 @@ export const paymentService = {
   async verifyPaymentStatus(sessionId: string): Promise<{
     success: boolean;
     planId?: string;
+    error?: string;
     subscription?: {
       id: string;
       status: string;
@@ -187,6 +195,36 @@ export const paymentService = {
       return response.data;
     } catch (error) {
       console.error('Erro ao cancelar assinatura:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Realiza um diagnóstico completo da assinatura do usuário
+   * Útil para debugar problemas com o fluxo de pagamento
+   */
+  async diagnosticSubscription(): Promise<any> {
+    try {
+      // Obter token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
+      
+      // Chamar endpoint de diagnóstico
+      const response = await axios.get(
+        `${API_URL}/payment/subscription/diagnostic`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao executar diagnóstico de assinatura:', error);
       throw error;
     }
   }
