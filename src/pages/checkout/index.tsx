@@ -195,22 +195,74 @@ export const CheckoutPage: React.FC = () => {
       // Criar a sessão de checkout
       try {
         setLoading(true);
-        // Log para depuração
-        console.log('🔄 Criando sessão de checkout com:', { planId: selectedPlanId, interval: selectedInterval, source: planSource });
+        // Log detalhado para depuração
+        console.log('🔄 Criando sessão de checkout com:', { 
+          planId: selectedPlanId, 
+          interval: selectedInterval, 
+          source: planSource,
+          planTypeOf: typeof selectedPlanId,
+          intervalTypeOf: typeof selectedInterval,
+          planLength: selectedPlanId ? selectedPlanId.length : 0,
+          planTrimmed: selectedPlanId ? selectedPlanId.trim() : null
+        });
         
         // Agora é seguro remover do localStorage e sessionStorage
         localStorage.removeItem('selectedPlanInfo');
         sessionStorage.removeItem('selectedPlanInfo_backup');
         
-        const { url } = await paymentService.createCheckoutSession(selectedPlanId, selectedInterval);
-        if (url) {
-          console.log('✅ Sessão de checkout criada, redirecionando para:', url);
-          window.location.href = url;
-        } else {
-          throw new Error('Não foi possível criar a sessão de checkout');
+        try {
+          // Verificar se o usuário está autenticado
+          const { data: { session: authSession } } = await supabase.auth.getSession();
+          
+          if (!authSession) {
+            console.error('❌ Usuário não está autenticado ao criar sessão de checkout');
+            setError('Você precisa estar logado para continuar. Por favor, faça login novamente.');
+            setLoading(false);
+            return;
+          }
+          
+          console.log('✅ Usuário autenticado, token JWT válido:', !!authSession.access_token);
+          
+          // Criar a sessão de checkout
+          const { url } = await paymentService.createCheckoutSession(selectedPlanId, selectedInterval);
+          
+          if (url) {
+            console.log('✅ Sessão de checkout criada, redirecionando para:', url);
+            window.location.href = url;
+          } else {
+            throw new Error('Não foi possível criar a sessão de checkout: resposta sem URL');
+          }
+        } catch (checkoutError: any) {
+          // Análise detalhada do erro
+          console.error('❌ Erro detalhado ao criar sessão de checkout:', {
+            message: checkoutError.message,
+            response: checkoutError.response ? {
+              status: checkoutError.response.status,
+              data: checkoutError.response.data
+            } : 'Sem resposta do servidor',
+            request: checkoutError.request ? 'Requisição enviada mas sem resposta' : 'Erro ao configurar requisição'
+          });
+          
+          // Mensagem de erro específica baseada no tipo de erro
+          if (checkoutError.response) {
+            // Erro de resposta HTTP
+            if (checkoutError.response.status === 400) {
+              setError('Erro na solicitação: dados do plano inválidos ou desatualizados. Por favor, selecione o plano novamente.');
+            } else if (checkoutError.response.status === 401) {
+              setError('Sua sessão expirou. Por favor, faça login novamente.');
+            } else if (checkoutError.response.status === 429) {
+              setError('Muitas tentativas em um curto período. Por favor, aguarde alguns minutos e tente novamente.');
+            } else {
+              setError(`Erro na comunicação com o servidor (${checkoutError.response.status}). Por favor, tente novamente.`);
+            }
+          } else {
+            setError('Ocorreu um erro ao processar o pagamento. Por favor, tente novamente ou contate o suporte.');
+          }
+          
+          setLoading(false);
         }
       } catch (error) {
-        console.error('❌ Erro ao criar sessão de checkout:', error);
+        console.error('❌ Erro ao iniciar criação de sessão de checkout:', error);
         setError('Ocorreu um erro ao processar o pagamento. Por favor, tente novamente.');
         setLoading(false);
       }

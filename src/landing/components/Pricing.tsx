@@ -5,6 +5,7 @@ import { Loader2, CheckCircle } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { toast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -32,6 +33,7 @@ export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { user, session } = useAuth();
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -61,76 +63,85 @@ export default function Pricing() {
     fetchPlans();
   }, []);
 
-  const handlePlanSelect = async (plan: Plan) => {
-    try {
-      setSelectedPlan(plan.id);
-      setProcessingPlanId(plan.id);
+  const handleSelectPlan = (plan: Plan) => {
+    console.log(`📋 Plano selecionado: ${plan.name} (${plan.id})`, plan);
 
-      // Dados a serem salvos no localStorage
-      const planData = {
-        planId: plan.id,
-        interval: isAnnual ? 'year' : 'month',
-        timestamp: Date.now(),
-        planName: plan.name // Adicionando o nome do plano para facilitar a depuração
-      };
-      
-      // Salvando no localStorage antes de qualquer coisa
-      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
-      // Redundância - salvar também no sessionStorage
-      sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
-      console.log('💾 Dados do plano salvos no localStorage e sessionStorage:', planData);
+    // Validar o plano selecionado
+    if (!plan || !plan.id) {
+      console.error('❌ Plano inválido selecionado');
+      toast({
+        title: "Erro ao selecionar plano",
+        description: "Ocorreu um erro ao selecionar o plano. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      // Verificar se o usuário está logado
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('👤 Usuário não autenticado, redirecionando para registro');
-        
-        // Se não estiver logado, redireciona para registro com parâmetros na URL
-        // Codificar os dados do plano como parâmetros de URL para maior confiabilidade
-        const planParams = new URLSearchParams();
-        planParams.set('plan_id', plan.id);
-        planParams.set('interval', isAnnual ? 'year' : 'month');
-        planParams.set('plan_name', encodeURIComponent(plan.name));
-        planParams.set('timestamp', Date.now().toString());
-        
-        navigate(`/register?${planParams.toString()}`, { 
-          state: { 
-            returnTo: '/checkout',
-            selectedPlan: plan.id,
-            interval: isAnnual ? 'year' : 'month'
-          } 
-        });
-        return;
-      }
+    // Verificação do estado de autenticação
+    console.log('👤 Estado de autenticação:', { usuarioLogado: !!session, userId: user?.id });
 
-      console.log('👤 Usuário autenticado, redirecionando para checkout');
+    if (!session) {
+      console.log('👤 Usuário não autenticado, redirecionando para registro');
       
-      // Se estiver logado, redirecionar para página de checkout com parâmetros na URL
+      // Se não estiver logado, redireciona para registro com parâmetros na URL
+      // Codificar os dados do plano como parâmetros de URL para maior confiabilidade
       const planParams = new URLSearchParams();
       planParams.set('plan_id', plan.id);
       planParams.set('interval', isAnnual ? 'year' : 'month');
       planParams.set('plan_name', encodeURIComponent(plan.name));
       planParams.set('timestamp', Date.now().toString());
       
-      navigate(`/checkout?${planParams.toString()}`, {
-        state: {
-          planId: plan.id,
+      // Salvar também no localStorage para maior segurança
+      const planData = {
+        planId: plan.id,
+        interval: isAnnual ? 'year' : 'month',
+        planName: plan.name,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+      
+      // Backup no sessionStorage caso o localStorage seja limpo
+      sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+      
+      console.log('💾 Dados do plano salvos para uso após registro:', planData);
+      
+      navigate(`/register?${planParams.toString()}`, { 
+        state: { 
+          returnTo: '/checkout',
+          selectedPlan: plan.id,
           interval: isAnnual ? 'year' : 'month'
-        }
+        } 
       });
-
-    } catch (err) {
-      console.error('Erro ao processar plano:', err);
-      toast({
-        title: "Erro ao processar",
-        description: "Não foi possível processar sua seleção. Tente novamente mais tarde.",
-        variant: "destructive",
-      });
-      setSelectedPlan(null);
-    } finally {
-      setProcessingPlanId(null);
+      return;
     }
+
+    console.log('👤 Usuário autenticado, redirecionando para checkout');
+    
+    // Se estiver logado, redirecionar para página de checkout com parâmetros na URL
+    const planParams = new URLSearchParams();
+    planParams.set('plan_id', plan.id);
+    planParams.set('interval', isAnnual ? 'year' : 'month');
+    planParams.set('plan_name', encodeURIComponent(plan.name));
+    planParams.set('timestamp', Date.now().toString());
+    
+    // Salvar também no localStorage para maior segurança
+    const planData = {
+      planId: plan.id,
+      interval: isAnnual ? 'year' : 'month',
+      planName: plan.name, 
+      timestamp: Date.now()
+    };
+    localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+    sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+    
+    console.log('💾 Dados do plano salvos antes de redirecionar para checkout:', planData);
+    
+    navigate(`/checkout?${planParams.toString()}`, {
+      state: {
+        planId: plan.id,
+        interval: isAnnual ? 'year' : 'month'
+      }
+    });
   };
 
   if (isLoading) {
@@ -265,7 +276,7 @@ export default function Pricing() {
 
                 <div className="mt-10">
                   <button
-                    onClick={() => handlePlanSelect(plan)}
+                    onClick={() => handleSelectPlan(plan)}
                     disabled={processingPlanId === plan.id}
                     className={`w-full py-3 px-6 text-center rounded-lg text-base font-medium 
                       transition-all duration-300 relative overflow-hidden

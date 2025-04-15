@@ -21,6 +21,17 @@ export const paymentService = {
    */
   async createCheckoutSession(planId: string, interval: 'month' | 'year'): Promise<{ url: string }> {
     try {
+      // Verificação adicional dos parâmetros para evitar erros de validação
+      if (!planId || typeof planId !== 'string') {
+        throw new Error(`ID do plano inválido: ${planId}`);
+      }
+      
+      if (!interval || (interval !== 'month' && interval !== 'year')) {
+        throw new Error(`Intervalo inválido: ${interval}`);
+      }
+      
+      console.log('🔑 Iniciando criação de sessão de checkout, verificando autenticação...');
+      
       // Obter token de autenticação
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -28,25 +39,74 @@ export const paymentService = {
         throw new Error('Usuário não autenticado');
       }
       
-      // Fazer requisição para API backend
-      const response = await axios.post(
-        `${API_URL}/payment/create-checkout-session`,
-        { 
-          planId, 
-          interval,
-          successUrl: `${APP_URL}/payment/success`,
-          cancelUrl: `${APP_URL}/payment/canceled`
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        }
-      );
+      console.log('✅ Usuário autenticado, enviando requisição com os seguintes dados:', {
+        planId: planId.trim(),
+        interval,
+        successUrl: `${APP_URL}/payment/success`,
+        cancelUrl: `${APP_URL}/payment/canceled`,
+        tokenPresente: !!session.access_token,
+        tokenLength: session.access_token.length,
+        api_url: API_URL
+      });
       
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao criar sessão de checkout:', error);
+      // Fazer requisição para API backend com tratamento melhorado de erros
+      try {
+        const response = await axios.post(
+          `${API_URL}/payment/create-checkout-session`,
+          { 
+            planId: planId.trim(), // Garantir que não há espaços extras
+            interval,
+            successUrl: `${APP_URL}/payment/success`,
+            cancelUrl: `${APP_URL}/payment/canceled`
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 segundos de timeout
+          }
+        );
+        
+        console.log('✅ Resposta recebida do servidor:', {
+          status: response.status,
+          checkoutUrl: response.data?.url
+        });
+        
+        return response.data;
+      } catch (axiosError: any) {
+        // Melhorar detalhamento do erro para diagnóstico
+        if (axiosError.response) {
+          // O servidor retornou uma resposta com código de erro
+          console.error('❌ Erro na resposta do servidor:', {
+            status: axiosError.response.status,
+            data: axiosError.response.data,
+            headers: axiosError.response.headers
+          });
+          
+          if (axiosError.response.status === 400) {
+            throw new Error(`Dados inválidos: ${JSON.stringify(axiosError.response.data)}`);
+          } else if (axiosError.response.status === 401) {
+            throw new Error('Token de autenticação inválido ou expirado');
+          } else if (axiosError.response.status === 429) {
+            throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
+          } else {
+            throw new Error(`Erro do servidor: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`);
+          }
+        } else if (axiosError.request) {
+          // A requisição foi feita mas não houve resposta
+          console.error('❌ Sem resposta do servidor:', axiosError.request);
+          throw new Error('Servidor não respondeu à requisição. Verifique sua conexão com a internet.');
+        } else {
+          // Erro na configuração da requisição
+          console.error('❌ Erro na configuração da requisição:', axiosError.message);
+          throw new Error(`Erro ao configurar requisição: ${axiosError.message}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao criar sessão de checkout:', error);
+      
+      // Repassar o erro para ser tratado pelo componente
       throw error;
     }
   },
