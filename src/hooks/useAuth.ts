@@ -85,13 +85,21 @@ export const useAuth = () => {
           emailRedirectTo: `${window.location.origin}/dashboard`,
         } 
       });
+      
       if (error) throw error;
+      
+      console.log('Registro bem-sucedido:', data);
+      
       if (data.user) {
         setUser(data.user);
         // Redirecionar para a página de verificação em vez do dashboard
+        console.log('Redirecionando para página de verificação OTP');
         navigate('/verify-otp', { state: { email } });
+      } else {
+        console.log('Usuário não foi criado corretamente');
       }
     } catch (error) {
+      console.error('Erro no registro:', error);
       setError(getErrorMessage(error));
     } finally {
       setLoading(false);
