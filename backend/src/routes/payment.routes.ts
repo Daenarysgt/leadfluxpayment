@@ -167,7 +167,7 @@ router.get('/subscription', async (req, res) => {
 
     try {
       // Tenta buscar assinatura no Stripe
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
       
       console.log('✅ Assinatura Stripe recuperada:', {
         id: stripeSubscription.id,
@@ -177,15 +177,15 @@ router.get('/subscription', async (req, res) => {
       
       // Converte o timestamp Unix para uma data ISO para a resposta
       // Apenas para exibição ao cliente - internamente continuamos armazenando como inteiro
-      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
 
       // Retorna os detalhes da assinatura
-      return res.json({
-        planId: subscription.plan_id,
-        status: stripeSubscription.status,
-        currentPeriodEnd,
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-      });
+    return res.json({
+      planId: subscription.plan_id,
+      status: stripeSubscription.status,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+    });
     } catch (stripeError: any) {
       // Se o Stripe não encontrar a assinatura ou outro erro do Stripe
       console.error('❌ Erro ao buscar assinatura no Stripe:', stripeError);
@@ -494,11 +494,11 @@ router.get('/verify-session/:sessionId', async (req, res) => {
     
     while (retryAttempts < maxRetries) {
       const { data: subData, error: subError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('subscription_id', subscriptionId)
-        .single();
-        
+      .from('subscriptions')
+      .select('*')
+      .eq('subscription_id', subscriptionId)
+      .single();
+
       if (subData) {
         dbSubscription = subData;
         break;
@@ -597,7 +597,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         }
         
         // Preparar dados com validação extra
-        const subscriptionData = {
+              const subscriptionData = {
           user_id: session.metadata.userId,
           plan_id: session.metadata.planId,
           subscription_id: subscriptionId,
@@ -612,13 +612,13 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         };
             
         console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
-        
-        // Inserir no banco
+              
+              // Inserir no banco
         console.log('💾 PONTO 11: Tentando inserir no banco...');
         
         // Usar "upsert" com opções corretas
         const { error: upsertError } = await supabase
-          .from('subscriptions')
+                .from('subscriptions')
           .upsert(
             subscriptionData,
             { 
@@ -638,11 +638,11 @@ router.get('/verify-session/:sessionId', async (req, res) => {
 
         console.log('✅ PONTO 13: Upsert bem-sucedido!');
         
-        return res.json({
-          success: true,
+              return res.json({
+                success: true,
           planId: session.metadata.planId,
-          subscription: {
-            id: subscriptionId,
+                subscription: {
+                  id: subscriptionId,
             status: stripeSubscription.status,
             // Convertendo o timestamp para resposta ao cliente
             currentPeriodEnd: new Date(current_period_end * 1000).toISOString()
@@ -654,8 +654,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           stack: error.stack,
           originalError: error
         });
-        return res.json({
-          success: false,
+        return res.json({ 
+          success: false, 
           error: `Falha ao sincronizar assinatura com o banco de dados: ${error.message}`
         });
       }
@@ -857,7 +857,7 @@ async function handleCheckoutCompleted(session: any) {
 
   // Usar upsert para evitar erro de duplicação
   const { data, error: upsertError } = await supabase
-    .from('subscriptions')
+      .from('subscriptions')
     .upsert(subscriptionData, {
       onConflict: 'subscription_id',
       ignoreDuplicates: false
@@ -881,7 +881,7 @@ async function handleInvoicePaid(invoice: any) {
   
   // Obter detalhes da assinatura atualizada
   const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-
+  
   // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
     if (timestamp === undefined || timestamp === null) {
