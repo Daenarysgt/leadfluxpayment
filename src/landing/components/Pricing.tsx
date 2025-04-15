@@ -5,7 +5,6 @@ import { Loader2, CheckCircle } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { toast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { checkoutStateService } from '@/services/checkoutStateService';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -67,20 +66,18 @@ export default function Pricing() {
       setSelectedPlan(plan.id);
       setProcessingPlanId(plan.id);
 
-      // Salvar dados do plano no serviço de checkout
-      try {
-        checkoutStateService.savePlanSelection({
-          planId: plan.id,
-          interval: isAnnual ? 'year' : 'month',
-          planName: plan.name
-        });
-        
-        console.log('💾 Dados do plano salvos via serviço de checkout');
-      } catch (err) {
-        console.error('❌ Erro ao salvar dados do plano:', err);
-        // Continuar mesmo se houver erro
-      }
+      // Dados a serem salvos no localStorage
+      const planData = {
+        planId: plan.id,
+        interval: isAnnual ? 'year' : 'month',
+        timestamp: Date.now(),
+        planName: plan.name // Adicionando o nome do plano para facilitar a depuração
+      };
       
+      // Salvando no localStorage antes de qualquer coisa
+      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+      console.log('💾 Dados do plano salvos no localStorage:', planData);
+
       // Verificar se o usuário está logado
       const { data: { session } } = await supabase.auth.getSession();
       

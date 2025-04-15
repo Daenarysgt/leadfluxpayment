@@ -1,91 +1,6 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { toast } from '@/components/ui/use-toast';
-import { checkoutStateService } from '@/services/checkoutStateService';
-
-interface LocationState {
-  returnTo?: string;
-  selectedPlan?: string;
-  interval?: 'month' | 'year';
-}
+import { Link } from 'react-router-dom';
 
 export default function Register() {
-  const { signUp, loading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email || !password || !confirmPassword) {
-      setError('Por favor, preencha todos os campos.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
-      return;
-    }
-
-    try {
-      const locationState = location.state as LocationState | null;
-      
-      // Verificar se temos dados do plano no estado da navegação
-      if (locationState?.selectedPlan && locationState?.interval) {
-        console.log('🔍 Dados do plano encontrados no estado da navegação:', {
-          planId: locationState.selectedPlan,
-          interval: locationState.interval
-        });
-        
-        // Salvar no serviço de checkout para garantir persistência
-        try {
-          checkoutStateService.savePlanSelection({
-            planId: locationState.selectedPlan,
-            interval: locationState.interval
-          });
-        } catch (err) {
-          console.error('❌ Erro ao salvar dados do plano:', err);
-          // Continuar mesmo se houver erro
-        }
-      }
-      // Se não tiver no estado da navegação, verificar o serviço de checkout
-      else {
-        try {
-          if (checkoutStateService.hasPlanSelection()) {
-            console.log('🔍 Usando dados do plano do serviço de checkout para registro');
-          }
-        } catch (err) {
-          console.error('❌ Erro ao verificar plano existente:', err);
-        }
-      }
-      
-      // Registrar o usuário
-      const result = await signUp(email, password);
-      
-      if (result.success) {
-        console.log('✅ Registro bem-sucedido');
-        toast({
-          title: "Conta criada",
-          description: "Seja bem-vindo!",
-        });
-        
-        // O redirecionamento será tratado pelo signUp se tiver confirmação de email
-        // ou será redirecionado para o checkout se tiver um plano selecionado
-      } else {
-        setError(result.error || 'Ocorreu um erro no registro.');
-      }
-    } catch (err) {
-      console.error('❌ Erro no registro:', err);
-      setError('Ocorreu um erro inesperado. Tente novamente.');
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -101,13 +16,7 @@ export default function Register() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 sm:px-10">
-          {error && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
-          
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
@@ -119,8 +28,6 @@ export default function Register() {
                   type="email"
                   autoComplete="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 focus:border-transparent"
                   placeholder="seu@email.com"
                 />
@@ -138,8 +45,6 @@ export default function Register() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 focus:border-transparent"
                   placeholder="••••••••"
                 />
@@ -157,8 +62,6 @@ export default function Register() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-opacity-50 focus:border-transparent"
                   placeholder="••••••••"
                 />
@@ -168,10 +71,9 @@ export default function Register() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-2 px-4 rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-70"
+                className="w-full flex justify-center py-2 px-4 rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
-                {loading ? 'Processando...' : 'Criar Conta'}
+                Criar Conta
               </button>
             </div>
           </form>

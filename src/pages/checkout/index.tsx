@@ -4,12 +4,17 @@ import { paymentService } from '../../services/paymentService';
 import { useAuth } from '../../hooks/useAuth';
 import { Spinner } from '../../components/Spinner';
 import { toast } from '@/components/ui/use-toast';
-import { checkoutStateService } from '@/services/checkoutStateService';
 
 interface LocationState {
   planId: string;
   interval: 'month' | 'year';
-  checkoutSessionId?: string;
+}
+
+interface StoredPlanInfo {
+  planId: string;
+  interval: 'month' | 'year';
+  timestamp: number;
+  planName?: string;
 }
 
 export const CheckoutPage: React.FC = () => {
@@ -36,37 +41,56 @@ export const CheckoutPage: React.FC = () => {
       console.log('📌 Estado do componente de checkout:', {
         user: user?.id,
         locationState: location.state,
-        hasCheckoutData: checkoutStateService.hasPlanSelection()
+        hasLocalStorage: !!localStorage.getItem('selectedPlanInfo')
       });
       
-      // Estratégia para obter os dados do plano em ordem de prioridade:
-      // 1. Do estado da navegação (vindo do redirect)
-      // 2. Do serviço centralizado de checkout (que verifica sessionStorage e localStorage)
+      // Tenta obter o plano do estado de navegação
+      const state = location.state as LocationState | null;
       
+      // Se não tiver no estado, tenta obter do localStorage
       let planId: string | null = null;
       let interval: 'month' | 'year' = 'month';
       let planSource = '';
       
-      // 1. Verificar estado da navegação
-      const state = location.state as LocationState | null;
       if (state?.planId && state?.interval) {
         console.log('✅ Plano obtido do estado da navegação:', state);
         planId = state.planId;
         interval = state.interval;
         planSource = 'navigation-state';
-      }
-      // 2. Verificar serviço de checkout
-      else {
+      } else {
+        // Tenta obter do localStorage com tratamento de erro melhorado
         try {
-          const checkoutData = checkoutStateService.getPlanSelection();
-          if (checkoutData) {
-            console.log('✅ Plano obtido do serviço de checkout:', checkoutData);
-            planId = checkoutData.planId;
-            interval = checkoutData.interval;
-            planSource = 'checkout-service';
+          const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+          
+          if (storedPlanInfoStr) {
+            console.log('🔍 Verificando dados do plano no localStorage:', storedPlanInfoStr);
+            
+            const storedPlanInfo = JSON.parse(storedPlanInfoStr) as StoredPlanInfo;
+            
+            // Verificação mais rigorosa dos dados
+            if (!storedPlanInfo.planId) {
+              throw new Error('Dados do plano inválidos: ID do plano ausente');
+            }
+            
+            // Verificar se é recente (menos de 1 hora)
+            const ageInHours = (Date.now() - storedPlanInfo.timestamp) / (1000 * 60 * 60);
+            
+            if (ageInHours > 24) {
+              console.log(`⚠️ Dados do plano muito antigos (${ageInHours.toFixed(2)} horas), ignorando`);
+              localStorage.removeItem('selectedPlanInfo');
+              throw new Error('Dados do plano muito antigos');
+            }
+            
+            console.log('✅ Plano obtido do localStorage:', storedPlanInfo);
+            planId = storedPlanInfo.planId;
+            interval = storedPlanInfo.interval || 'month';
+            planSource = 'local-storage';
+          } else {
+            console.log('⚠️ Nenhum dado de plano encontrado no localStorage');
           }
-        } catch (err) {
-          console.error('❌ Erro ao obter dados do plano do serviço de checkout:', err);
+        } catch (e) {
+          console.error('❌ Erro ao processar dados do plano no localStorage:', e);
+          localStorage.removeItem('selectedPlanInfo');
         }
       }
       
@@ -91,12 +115,8 @@ export const CheckoutPage: React.FC = () => {
         // Log para depuração
         console.log('🔄 Criando sessão de checkout com:', { planId, interval, source: planSource });
         
-        // Limpar dados de checkout agora que vamos criar a sessão no Stripe
-        try {
-          checkoutStateService.clearPlanSelection();
-        } catch (err) {
-          console.error('❌ Erro ao limpar dados do plano:', err);
-        }
+        // Agora é seguro remover do localStorage
+        localStorage.removeItem('selectedPlanInfo');
         
         const { url } = await paymentService.createCheckoutSession(planId, interval);
         if (url) {
