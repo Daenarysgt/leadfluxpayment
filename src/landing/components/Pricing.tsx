@@ -23,6 +23,7 @@ interface Plan {
   stripe_price_id_monthly: string;
   stripe_price_id_annual: string;
   is_popular?: boolean;
+  backendId: string;
 }
 
 export default function Pricing() {
@@ -45,11 +46,26 @@ export default function Pricing() {
 
         if (error) throw error;
         
-        const plansWithPopular = data?.map(plan => ({
-          ...plan,
-          is_popular: plan.name.toLowerCase().includes('pro'),
-          features: Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
-        })) || [];
+        const plansWithPopular = data?.map(plan => {
+          // Determinar o ID do plano baseado no nome
+          // O backend espera 'basic', 'pro', 'elite' ou 'scale' como ID
+          let backendId = 'basic'; // valor padrão
+          const planName = plan.name.toLowerCase();
+          
+          if (planName.includes('basic')) backendId = 'basic';
+          else if (planName.includes('pro')) backendId = 'pro';
+          else if (planName.includes('elite')) backendId = 'elite';
+          else if (planName.includes('scale')) backendId = 'scale';
+          
+          console.log(`📋 Mapeando plano: ${plan.name} -> ID: ${backendId}`);
+          
+          return {
+            ...plan,
+            backendId, // Adicionar ID para o backend
+            is_popular: plan.name.toLowerCase().includes('pro'),
+            features: Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
+          };
+        }) || [];
         
         setPlans(plansWithPopular);
       } catch (err) {
@@ -79,6 +95,10 @@ export default function Pricing() {
 
     // Verificação do estado de autenticação
     console.log('👤 Estado de autenticação:', { usuarioLogado: !!session, userId: user?.id });
+    
+    // Usar o ID que o backend espera (basic, pro, elite, scale)
+    const correctPlanId = plan.backendId || 'basic';
+    console.log(`🔄 Usando ID do plano para o backend: ${correctPlanId}`);
 
     if (!session) {
       console.log('👤 Usuário não autenticado, redirecionando para registro');
@@ -86,14 +106,14 @@ export default function Pricing() {
       // Se não estiver logado, redireciona para registro com parâmetros na URL
       // Codificar os dados do plano como parâmetros de URL para maior confiabilidade
       const planParams = new URLSearchParams();
-      planParams.set('plan_id', plan.id);
+      planParams.set('plan_id', correctPlanId);
       planParams.set('interval', isAnnual ? 'year' : 'month');
       planParams.set('plan_name', encodeURIComponent(plan.name));
       planParams.set('timestamp', Date.now().toString());
       
       // Salvar também no localStorage para maior segurança
       const planData = {
-        planId: plan.id,
+        planId: correctPlanId,
         interval: isAnnual ? 'year' : 'month',
         planName: plan.name,
         timestamp: Date.now()
@@ -108,7 +128,7 @@ export default function Pricing() {
       navigate(`/register?${planParams.toString()}`, { 
         state: { 
           returnTo: '/checkout',
-          selectedPlan: plan.id,
+          selectedPlan: correctPlanId,
           interval: isAnnual ? 'year' : 'month'
         } 
       });
@@ -119,14 +139,14 @@ export default function Pricing() {
     
     // Se estiver logado, redirecionar para página de checkout com parâmetros na URL
     const planParams = new URLSearchParams();
-    planParams.set('plan_id', plan.id);
+    planParams.set('plan_id', correctPlanId);
     planParams.set('interval', isAnnual ? 'year' : 'month');
     planParams.set('plan_name', encodeURIComponent(plan.name));
     planParams.set('timestamp', Date.now().toString());
     
     // Salvar também no localStorage para maior segurança
     const planData = {
-      planId: plan.id,
+      planId: correctPlanId,
       interval: isAnnual ? 'year' : 'month',
       planName: plan.name, 
       timestamp: Date.now()
@@ -138,7 +158,7 @@ export default function Pricing() {
     
     navigate(`/checkout?${planParams.toString()}`, {
       state: {
-        planId: plan.id,
+        planId: correctPlanId,
         interval: isAnnual ? 'year' : 'month'
       }
     });
