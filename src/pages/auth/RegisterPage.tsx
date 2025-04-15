@@ -26,14 +26,27 @@ const RegisterPage = () => {
   useEffect(() => {
     try {
       const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
-      if (storedPlanInfoStr) {
-        const storedPlanInfo = JSON.parse(storedPlanInfoStr);
-        console.log('📋 Plano do localStorage disponível na página de registro:', storedPlanInfo);
+      let storageSource = 'localStorage';
+      let storedPlanInfo = null;
+      
+      // Se não encontrou no localStorage, tenta no sessionStorage
+      if (!storedPlanInfoStr) {
+        const sessionStoredPlanInfoStr = sessionStorage.getItem('selectedPlanInfo_backup');
+        if (sessionStoredPlanInfoStr) {
+          storedPlanInfo = JSON.parse(sessionStoredPlanInfoStr);
+          storageSource = 'sessionStorage';
+          console.log('📋 Plano do sessionStorage disponível na página de registro:', storedPlanInfo);
+        }
       } else {
-        console.log('ℹ️ Nenhum plano encontrado no localStorage na página de registro');
+        storedPlanInfo = JSON.parse(storedPlanInfoStr);
+        console.log('📋 Plano do localStorage disponível na página de registro:', storedPlanInfo);
+      }
+      
+      if (!storedPlanInfo) {
+        console.log('ℹ️ Nenhum plano encontrado no localStorage ou sessionStorage na página de registro');
       }
     } catch (e) {
-      console.error('❌ Erro ao verificar localStorage na página de registro:', e);
+      console.error('❌ Erro ao verificar storages na página de registro:', e);
     }
     
     if (selectedPlan) {
@@ -56,14 +69,26 @@ const RegisterPage = () => {
       console.log('👤 Tentando registrar usuário:', email);
       
       let planFromStorage = null;
+      let storageSource = '';
+      
+      // Verificar primeiro no localStorage
       try {
         const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
         if (storedPlanInfoStr) {
           planFromStorage = JSON.parse(storedPlanInfoStr);
+          storageSource = 'localStorage';
           console.log('💾 Usando plano do localStorage para registro:', planFromStorage);
+        } else {
+          // Se não encontrou no localStorage, verificar no sessionStorage
+          const sessionStoredPlanInfoStr = sessionStorage.getItem('selectedPlanInfo_backup');
+          if (sessionStoredPlanInfoStr) {
+            planFromStorage = JSON.parse(sessionStoredPlanInfoStr);
+            storageSource = 'sessionStorage';
+            console.log('💾 Usando plano do sessionStorage para registro:', planFromStorage);
+          }
         }
       } catch (e) {
-        console.error('❌ Erro ao ler localStorage antes do registro:', e);
+        console.error('❌ Erro ao ler os storages antes do registro:', e);
       }
       
       const finalPlan = selectedPlan || (planFromStorage ? {

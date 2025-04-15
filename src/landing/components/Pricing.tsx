@@ -76,7 +76,9 @@ export default function Pricing() {
       
       // Salvando no localStorage antes de qualquer coisa
       localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
-      console.log('💾 Dados do plano salvos no localStorage:', planData);
+      // Redundância - salvar também no sessionStorage
+      sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+      console.log('💾 Dados do plano salvos no localStorage e sessionStorage:', planData);
 
       // Verificar se o usuário está logado
       const { data: { session } } = await supabase.auth.getSession();

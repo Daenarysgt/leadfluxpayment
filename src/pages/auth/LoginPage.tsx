@@ -22,15 +22,23 @@ const LoginPage = () => {
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
       
-      // Verificar se há um plano selecionado armazenado no localStorage
-      console.log('🔍 Verificando plano no localStorage...');
-      const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
-      console.log('📦 Dados brutos do localStorage:', storedPlanInfo);
+      // Verificar se há um plano selecionado armazenado no localStorage ou sessionStorage
+      console.log('🔍 Verificando plano no localStorage e sessionStorage...');
+      let storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+      let storageSource = 'localStorage';
+      
+      // Se não encontrou no localStorage, tenta no sessionStorage
+      if (!storedPlanInfo) {
+        storedPlanInfo = sessionStorage.getItem('selectedPlanInfo_backup');
+        storageSource = 'sessionStorage';
+      }
+      
+      console.log(`📦 Dados brutos do ${storageSource}:`, storedPlanInfo);
       
       if (storedPlanInfo) {
         try {
           const planInfo = JSON.parse(storedPlanInfo);
-          console.log('📋 Plano encontrado no localStorage:', planInfo);
+          console.log(`📋 Plano encontrado no ${storageSource}:`, planInfo);
           
           // Verificar se a seleção não está muito antiga (24 horas)
           const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
@@ -41,8 +49,9 @@ const LoginPage = () => {
               interval: planInfo.interval
             });
             
-            // Remover do localStorage após usar
+            // Remover dos storages após usar
             localStorage.removeItem('selectedPlanInfo');
+            sessionStorage.removeItem('selectedPlanInfo_backup');
             
             // Redirecionar para o checkout com as informações do plano
             navigate('/checkout', {
@@ -55,14 +64,16 @@ const LoginPage = () => {
           } else {
             console.log('⚠️ Dados do plano muito antigos ou inválidos:', planInfo);
             localStorage.removeItem('selectedPlanInfo');
+            sessionStorage.removeItem('selectedPlanInfo_backup');
           }
         } catch (parseError) {
           console.error('❌ Erro ao processar informações do plano:', parseError);
           // Se houver erro na leitura, apenas limpar
           localStorage.removeItem('selectedPlanInfo');
+          sessionStorage.removeItem('selectedPlanInfo_backup');
         }
       } else {
-        console.log('ℹ️ Nenhum plano encontrado no localStorage');
+        console.log('ℹ️ Nenhum plano encontrado no localStorage ou sessionStorage');
       }
       
       // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard

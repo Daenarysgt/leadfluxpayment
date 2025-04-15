@@ -41,13 +41,14 @@ export const CheckoutPage: React.FC = () => {
       console.log('📌 Estado do componente de checkout:', {
         user: user?.id,
         locationState: location.state,
-        hasLocalStorage: !!localStorage.getItem('selectedPlanInfo')
+        hasLocalStorage: !!localStorage.getItem('selectedPlanInfo'),
+        hasSessionStorage: !!sessionStorage.getItem('selectedPlanInfo_backup')
       });
       
       // Tenta obter o plano do estado de navegação
       const state = location.state as LocationState | null;
       
-      // Se não tiver no estado, tenta obter do localStorage
+      // Se não tiver no estado, tenta obter do localStorage ou sessionStorage
       let planId: string | null = null;
       let interval: 'month' | 'year' = 'month';
       let planSource = '';
@@ -58,12 +59,19 @@ export const CheckoutPage: React.FC = () => {
         interval = state.interval;
         planSource = 'navigation-state';
       } else {
-        // Tenta obter do localStorage com tratamento de erro melhorado
-        try {
-          const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
-          
-          if (storedPlanInfoStr) {
-            console.log('🔍 Verificando dados do plano no localStorage:', storedPlanInfoStr);
+        // Primeiro tenta no localStorage
+        let storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+        let storageSource = 'localStorage';
+        
+        // Se não encontrou no localStorage, tenta no sessionStorage
+        if (!storedPlanInfoStr) {
+          storedPlanInfoStr = sessionStorage.getItem('selectedPlanInfo_backup');
+          storageSource = 'sessionStorage';
+        }
+        
+        if (storedPlanInfoStr) {
+          try {
+            console.log(`🔍 Verificando dados do plano no ${storageSource}:`, storedPlanInfoStr);
             
             const storedPlanInfo = JSON.parse(storedPlanInfoStr) as StoredPlanInfo;
             
@@ -78,19 +86,21 @@ export const CheckoutPage: React.FC = () => {
             if (ageInHours > 24) {
               console.log(`⚠️ Dados do plano muito antigos (${ageInHours.toFixed(2)} horas), ignorando`);
               localStorage.removeItem('selectedPlanInfo');
+              sessionStorage.removeItem('selectedPlanInfo_backup');
               throw new Error('Dados do plano muito antigos');
             }
             
-            console.log('✅ Plano obtido do localStorage:', storedPlanInfo);
+            console.log(`✅ Plano obtido do ${storageSource}:`, storedPlanInfo);
             planId = storedPlanInfo.planId;
             interval = storedPlanInfo.interval || 'month';
-            planSource = 'local-storage';
-          } else {
-            console.log('⚠️ Nenhum dado de plano encontrado no localStorage');
+            planSource = storageSource;
+          } catch (e) {
+            console.error(`❌ Erro ao processar dados do plano no ${storageSource}:`, e);
+            localStorage.removeItem('selectedPlanInfo');
+            sessionStorage.removeItem('selectedPlanInfo_backup');
           }
-        } catch (e) {
-          console.error('❌ Erro ao processar dados do plano no localStorage:', e);
-          localStorage.removeItem('selectedPlanInfo');
+        } else {
+          console.log('⚠️ Nenhum dado de plano encontrado no localStorage ou sessionStorage');
         }
       }
       
@@ -115,8 +125,9 @@ export const CheckoutPage: React.FC = () => {
         // Log para depuração
         console.log('🔄 Criando sessão de checkout com:', { planId, interval, source: planSource });
         
-        // Agora é seguro remover do localStorage
+        // Agora é seguro remover do localStorage e sessionStorage
         localStorage.removeItem('selectedPlanInfo');
+        sessionStorage.removeItem('selectedPlanInfo_backup');
         
         const { url } = await paymentService.createCheckoutSession(planId, interval);
         if (url) {

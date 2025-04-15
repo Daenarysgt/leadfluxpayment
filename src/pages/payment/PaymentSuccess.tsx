@@ -51,9 +51,13 @@ export default function PaymentSuccess() {
         if (result.success) {
           console.log('✅ Pagamento confirmado com sucesso!', result);
           setStatus('success');
-          // Atualizar o cache local da assinatura
+          // Atualizar o cache local da assinatura com redundância
           localStorage.setItem('subscription_status', 'active');
           localStorage.setItem('subscription_planId', result.planId || '');
+          // Adicionar redundância no sessionStorage
+          sessionStorage.setItem('subscription_status_backup', 'active');
+          sessionStorage.setItem('subscription_planId_backup', result.planId || '');
+          console.log('💾 Status de assinatura salvo em múltiplos storages para segurança');
           
           toast({
             title: "Assinatura ativada com sucesso!",
