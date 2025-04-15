@@ -113,6 +113,7 @@ const App = () => {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/verify-otp" element={<VerifyOtpPage />} />
+                <Route path="/pricing" element={<LandingPage />} />
                 
                 {/* Rota pública para acessar funis pelo slug */}
                 <Route path="/f/:slug" element={<PublicFunnel />} />

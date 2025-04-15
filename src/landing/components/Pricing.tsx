@@ -212,7 +212,7 @@ export default function Pricing() {
                   
                   {isAnnual && (
                     <p className={`mt-4 text-sm line-through ${plan.is_popular ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {`R$${(plan.price_annual * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                      {`R$${(plan.price_monthly * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </p>
                   )}
                   
