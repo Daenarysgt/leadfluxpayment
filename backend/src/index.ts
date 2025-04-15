@@ -117,7 +117,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .upsert({
         user_id: userId,
         plan_id: planId,
-        stripe_subscription_id: subscriptionId,
+        subscription_id: subscriptionId,
         stripe_customer_id: session.customer as string,
         status: subscription.status,
         current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
@@ -159,7 +159,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         cancel_at_period_end: subscription.cancel_at_period_end,
         updated_at: new Date().toISOString()
       })
-      .eq('stripe_subscription_id', subscription.id);
+      .eq('subscription_id', subscription.id);
 
     if (error) {
       console.error('Erro ao atualizar assinatura:', error);
@@ -184,7 +184,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         status: 'canceled',
         updated_at: new Date().toISOString()
       })
-      .eq('stripe_subscription_id', subscription.id);
+      .eq('subscription_id', subscription.id);
 
     if (error) {
       console.error('Erro ao marcar assinatura como cancelada:', error);
@@ -217,7 +217,7 @@ async function handleInvoicePaid(invoice: any) {
         status: 'active',
         updated_at: new Date().toISOString()
       })
-      .eq('stripe_subscription_id', subscriptionId);
+      .eq('subscription_id', subscriptionId);
     
     if (error) {
       console.error('❌ Erro ao atualizar status da assinatura após pagamento:', error);

@@ -67,7 +67,7 @@ router.post('/create-checkout-session', async (req, res) => {
 
     if (existingSubscription && existingSubscription.status === 'active') {
       console.log('⚠️ Usuário já possui assinatura ativa:', {
-        subscriptionId: existingSubscription.stripe_subscription_id,
+        subscriptionId: existingSubscription.subscription_id,
         planId: existingSubscription.plan_id
       });
       // Aqui poderia implementar um fluxo de upgrade/downgrade
@@ -143,7 +143,7 @@ router.get('/subscription', async (req, res) => {
 
     try {
       // Tenta buscar assinatura no Stripe
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
     const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
 
       // Retorna os detalhes da assinatura
@@ -231,7 +231,7 @@ router.get('/subscription/diagnostic', async (req, res) => {
     // Se existir assinatura no banco, verificar no Stripe
     if (diagnostic.databaseSubscription.exists && dbSubscription) {
       try {
-        const stripeSubscription = await stripe.subscriptions.retrieve(dbSubscription.stripe_subscription_id);
+        const stripeSubscription = await stripe.subscriptions.retrieve(dbSubscription.subscription_id);
         
         // Atualizar com dados do Stripe
         diagnostic.stripeSubscription.exists = true;
@@ -378,7 +378,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
     const { data: dbSubscription, error } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('stripe_subscription_id', subscriptionId)
+      .eq('subscription_id', subscriptionId)
       .single();
 
     if (error) {
@@ -393,7 +393,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         const { data: retrySubscription, error: retryError } = await supabase
           .from('subscriptions')
           .select('*')
-          .eq('stripe_subscription_id', subscriptionId)
+          .eq('subscription_id', subscriptionId)
           .single();
           
         if (retryError) {
@@ -537,7 +537,7 @@ async function handleCheckoutCompleted(session: any) {
   const subscriptionData = {
     user_id: userId,
     plan_id: planId,
-    stripe_subscription_id: subscription.id,
+    subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
     status: subscription.status,
     current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
@@ -598,7 +598,7 @@ async function handleInvoicePaid(invoice: any) {
       cancel_at_period_end: subscription.cancel_at_period_end,
       updated_at: new Date().toISOString()
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('subscription_id', subscription.id);
   
   if (error) {
     console.error('❌ Erro ao atualizar período da assinatura:', error);
@@ -621,7 +621,7 @@ async function handleSubscriptionUpdated(subscription: any) {
       cancel_at_period_end: subscription.cancel_at_period_end,
       updated_at: new Date().toISOString()
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('subscription_id', subscription.id);
   
   if (error) {
     console.error('❌ Erro ao sincronizar atualização da assinatura:', error);
@@ -641,7 +641,7 @@ async function handleSubscriptionDeleted(subscription: any) {
       status: 'canceled',
       updated_at: new Date().toISOString()
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('subscription_id', subscription.id);
   
   if (error) {
     console.error('❌ Erro ao marcar assinatura como cancelada:', error);
