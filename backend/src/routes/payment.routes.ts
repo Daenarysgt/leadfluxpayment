@@ -465,7 +465,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         const rawStart = (stripeSubscription as any).current_period_start;
         const rawEnd = (stripeSubscription as any).current_period_end;
         
-        console.log('🕒 Valores temporais no webhook:', {
+        console.log('🕒 PONTO 7: Valores temporais brutos:', {
           rawStart,
           rawEnd,
           typeStart: typeof rawStart,
@@ -477,14 +477,20 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         const current_period_end = getUnixTimestamp(rawEnd);
         const now = Math.floor(Date.now() / 1000);
         
-        console.log('🕒 Timestamps convertidos no webhook:', {
+        console.log('🕒 PONTO 8: Timestamps como Unix:', {
           current_period_start,
           current_period_end,
-          types: {
-            start: typeof current_period_start,
-            end: typeof current_period_end
-          }
+          now
         });
+
+        // Garantir que os valores são do tipo inteiro
+        if (!Number.isInteger(current_period_start) || !Number.isInteger(current_period_end)) {
+          console.error('❌ PONTO 9: Erro - timestamps não são números inteiros:', {
+            current_period_start,
+            current_period_end
+          });
+          throw new Error('Timestamps inválidos recebidos do Stripe');
+        }
         
         // Preparar dados com validação extra
         const subscriptionData = {
@@ -493,20 +499,15 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
           status: stripeSubscription.status || 'incomplete',
-          current_period_start: Number(current_period_start),
-          current_period_end: Number(current_period_end),
+          // Forçar valores inteiros
+          current_period_start: Math.floor(Number(current_period_start)),
+          current_period_end: Math.floor(Number(current_period_end)),
           cancel_at_period_end: stripeSubscription.cancel_at_period_end || false,
-          created_at: Number(now),
-          updated_at: Number(now)
+          created_at: Math.floor(Number(now)),
+          updated_at: Math.floor(Number(now))
         };
             
-        console.log('📝 PONTO 10: Dados preparados para inserção:', {
-          ...subscriptionData,
-          current_period_start_type: typeof subscriptionData.current_period_start,
-          current_period_end_type: typeof subscriptionData.current_period_end,
-          created_at_type: typeof subscriptionData.created_at,
-          updated_at_type: typeof subscriptionData.updated_at
-        });
+        console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
         
         // Inserir no banco
         console.log('💾 PONTO 11: Tentando inserir no banco...');
@@ -539,7 +540,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           subscription: {
             id: subscriptionId,
             status: stripeSubscription.status,
-            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000).toISOString()
+            // Convertendo o timestamp para resposta ao cliente
+            currentPeriodEnd: new Date(current_period_end * 1000).toISOString()
           }
         });
       } catch (error: any) {
@@ -566,6 +568,12 @@ router.get('/verify-session/:sessionId', async (req, res) => {
 
     // Buscar dados atualizados da assinatura no Stripe
     const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    // Garantir que o timestamp do período final é um número
+    const endTimestamp = (stripeSubscription as any).current_period_end;
+    const currentPeriodEnd = Number.isFinite(Number(endTimestamp)) 
+      ? new Date(Number(endTimestamp) * 1000).toISOString()
+      : new Date().toISOString(); // Fallback para data atual se inválido
 
     // Retornar informações sobre a assinatura
     return res.json({
@@ -574,7 +582,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       subscription: {
         id: subscriptionId,
         status: stripeSubscription.status,
-        currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000).toISOString()
+        currentPeriodEnd
       }
     });
   } catch (error: any) {
@@ -662,7 +670,7 @@ async function handleCheckoutCompleted(session: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    // Garantir que é um número
+    // Garantir que é um número inteiro
     const numericTimestamp = Number(timestamp);
     
     if (isNaN(numericTimestamp)) {
@@ -671,7 +679,7 @@ async function handleCheckoutCompleted(session: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    return numericTimestamp;
+    return Math.floor(numericTimestamp);
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -700,17 +708,26 @@ async function handleCheckoutCompleted(session: any) {
     }
   });
   
+  // Garantir que os valores são do tipo inteiro
+  if (!Number.isInteger(current_period_start) || !Number.isInteger(current_period_end)) {
+    console.error('❌ Erro - timestamps não são números inteiros:', {
+      current_period_start,
+      current_period_end
+    });
+    throw new Error('Timestamps inválidos recebidos do Stripe');
+  }
+  
   const subscriptionData = {
     user_id: userId,
     plan_id: planId,
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
     status: subscription.status || 'incomplete',
-    current_period_start: Number(current_period_start),
-    current_period_end: Number(current_period_end),
+    current_period_start: Math.floor(current_period_start),
+    current_period_end: Math.floor(current_period_end),
     cancel_at_period_end: subscription.cancel_at_period_end || false,
-    created_at: Number(now),
-    updated_at: Number(now)
+    created_at: Math.floor(now),
+    updated_at: Math.floor(now)
   };
 
   // Usar upsert para evitar erro de duplicação
@@ -747,7 +764,7 @@ async function handleInvoicePaid(invoice: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    // Garantir que é um número
+    // Garantir que é um número inteiro
     const numericTimestamp = Number(timestamp);
     
     if (isNaN(numericTimestamp)) {
@@ -756,7 +773,7 @@ async function handleInvoicePaid(invoice: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    return numericTimestamp;
+    return Math.floor(numericTimestamp);
   }
   
   // Extrair e validar timestamps
@@ -764,26 +781,45 @@ async function handleInvoicePaid(invoice: any) {
   const rawEnd = (subscription as any).current_period_end;
   const now = Math.floor(Date.now() / 1000);
   
+  console.log('🕒 Valores temporais em handleInvoicePaid:', {
+    rawStart,
+    rawEnd,
+    typeStart: typeof rawStart,
+    typeEnd: typeof rawEnd
+  });
+  
   // Validar timestamps
   const current_period_start = getUnixTimestamp(rawStart);
   const current_period_end = getUnixTimestamp(rawEnd);
   
-  console.log('🕒 Timestamps validados em handleInvoicePaid:', {
+  console.log('🕒 Timestamps convertidos em handleInvoicePaid:', {
     current_period_start,
     current_period_end
   });
   
-  // Atualizar a assinatura no banco de dados
+  // Garantir que os valores são do tipo inteiro
+  if (!Number.isInteger(current_period_start) || !Number.isInteger(current_period_end)) {
+    console.error('❌ Erro - timestamps não são números inteiros em handleInvoicePaid:', {
+      current_period_start,
+      current_period_end
+    });
+    throw new Error('Timestamps inválidos recebidos do Stripe em handleInvoicePaid');
+  }
+  
+  // Atualizar a assinatura no banco de dados com upsert para maior segurança
   const { error } = await supabase
     .from('subscriptions')
-    .update({
+    .upsert({
+      subscription_id: subscription.id,
       status: subscription.status || 'incomplete',
-      current_period_start: Number(current_period_start),
-      current_period_end: Number(current_period_end),
+      current_period_start: Math.floor(current_period_start),
+      current_period_end: Math.floor(current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: Number(now)
-    })
-    .eq('subscription_id', subscription.id);
+      updated_at: Math.floor(now)
+    }, {
+      onConflict: 'subscription_id',
+      ignoreDuplicates: false
+    });
   
   if (error) {
     console.error('❌ Erro ao atualizar período da assinatura:', error);
@@ -803,7 +839,7 @@ async function handleSubscriptionUpdated(subscription: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    // Garantir que é um número
+    // Garantir que é um número inteiro
     const numericTimestamp = Number(timestamp);
     
     if (isNaN(numericTimestamp)) {
@@ -812,13 +848,20 @@ async function handleSubscriptionUpdated(subscription: any) {
       return Math.floor(Date.now() / 1000);
     }
     
-    return numericTimestamp;
+    return Math.floor(numericTimestamp);
   }
   
   // Extrair e validar timestamps
   const rawStart = (subscription as any).current_period_start;
   const rawEnd = (subscription as any).current_period_end;
   const now = Math.floor(Date.now() / 1000);
+  
+  console.log('🕒 Valores temporais em handleSubscriptionUpdated:', {
+    rawStart,
+    rawEnd,
+    typeStart: typeof rawStart,
+    typeEnd: typeof rawEnd
+  });
   
   // Validar timestamps
   const current_period_start = getUnixTimestamp(rawStart);
@@ -829,17 +872,29 @@ async function handleSubscriptionUpdated(subscription: any) {
     current_period_end
   });
   
-  // Atualizar a assinatura no banco de dados
+  // Garantir que os valores são do tipo inteiro
+  if (!Number.isInteger(current_period_start) || !Number.isInteger(current_period_end)) {
+    console.error('❌ Erro - timestamps não são números inteiros em handleSubscriptionUpdated:', {
+      current_period_start,
+      current_period_end
+    });
+    throw new Error('Timestamps inválidos recebidos do Stripe em handleSubscriptionUpdated');
+  }
+  
+  // Atualizar a assinatura no banco de dados com upsert para maior segurança
   const { error } = await supabase
     .from('subscriptions')
-    .update({
+    .upsert({
+      subscription_id: subscription.id,
       status: subscription.status || 'incomplete',
-      current_period_start: Number(current_period_start),
-      current_period_end: Number(current_period_end),
+      current_period_start: Math.floor(current_period_start),
+      current_period_end: Math.floor(current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: Number(now)
-    })
-    .eq('subscription_id', subscription.id);
+      updated_at: Math.floor(now)
+    }, {
+      onConflict: 'subscription_id',
+      ignoreDuplicates: false
+    });
   
   if (error) {
     console.error('❌ Erro ao sincronizar atualização da assinatura:', error);
@@ -852,14 +907,19 @@ async function handleSubscriptionUpdated(subscription: any) {
 async function handleSubscriptionDeleted(subscription: any) {
   console.log('❌ Assinatura cancelada, atualizando status...');
   
+  const now = Math.floor(Date.now() / 1000);
+  
   // Marcar a assinatura como cancelada/inativa no banco de dados
   const { error } = await supabase
     .from('subscriptions')
-    .update({
+    .upsert({
+      subscription_id: subscription.id,
       status: 'canceled',
-      updated_at: Math.floor(Date.now() / 1000)
-    })
-    .eq('subscription_id', subscription.id);
+      updated_at: now
+    }, {
+      onConflict: 'subscription_id',
+      ignoreDuplicates: false
+    });
   
   if (error) {
     console.error('❌ Erro ao marcar assinatura como cancelada:', error);
