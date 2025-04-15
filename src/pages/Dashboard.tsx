@@ -247,9 +247,14 @@ const Dashboard = () => {
                     className="pl-9 w-[300px] bg-muted/50 border-none focus-visible:ring-1"
                   />
                 </div>
-                <Button variant="ghost" size="sm" className="relative p-2">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative p-2"
+                  onClick={() => navigate('/diagnostic')}
+                >
+                  <span className="sr-only">Diagnóstico</span>
+                  <Settings className="h-4 w-4" />
                 </Button>
               </div>
             </div>

@@ -28,6 +28,7 @@ import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 import { CheckoutPage } from '@/pages/checkout';
 import Account from '@/pages/Account';
+import DiagnosticPage from '@/pages/DiagnosticPage';
 import { useNavigate } from 'react-router-dom';
 
 // Configure the query client with caching options
@@ -162,6 +163,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/diagnostic"
+                  element={
+                    <ProtectedRoute>
+                      <DiagnosticPage />
                     </ProtectedRoute>
                   }
                 />

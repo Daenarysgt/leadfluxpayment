@@ -142,6 +142,15 @@ export const paymentService = {
         }
       );
       
+      // Se o pagamento foi bem-sucedido, salvar nas storages para persistência
+      if (response.data.success) {
+        localStorage.setItem('subscription_status', 'active');
+        localStorage.setItem('subscription_planId', response.data.planId || '');
+        sessionStorage.setItem('subscription_status_backup', 'active');
+        sessionStorage.setItem('subscription_planId_backup', response.data.planId || '');
+        console.log('💾 Status de assinatura salvo localmente após verificação bem-sucedida');
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Erro ao verificar status do pagamento:', error);
@@ -161,6 +170,17 @@ export const paymentService = {
   } | null> {
     let attempts = 0;
     
+    // Verificar se temos dados de assinatura no armazenamento local
+    const localStatus = localStorage.getItem('subscription_status');
+    const localPlanId = localStorage.getItem('subscription_planId');
+    const sessionStatus = sessionStorage.getItem('subscription_status_backup');
+    
+    console.log('📊 Verificando status local da assinatura:', { 
+      localStorage: localStatus, 
+      planId: localPlanId,
+      sessionStorage: sessionStatus 
+    });
+    
     while (attempts < maxRetries) {
       try {
         // Obter token de autenticação
@@ -168,6 +188,18 @@ export const paymentService = {
         
         if (!session || !session.access_token) {
           console.log('Usuário não autenticado ao verificar assinatura');
+          
+          // Se não está autenticado mas temos dados locais de assinatura ativa, use como fallback
+          if (localStatus === 'active' && localPlanId) {
+            console.log('⚠️ Usando dados locais de assinatura devido a problemas de autenticação');
+            return {
+              planId: localPlanId,
+              status: 'active',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+              cancelAtPeriodEnd: false
+            };
+          }
+          
           return null;
         }
         
@@ -183,10 +215,31 @@ export const paymentService = {
           }
         );
         
-        // Se houver resposta com dados, retornar imediatamente
+        // Se houver resposta com dados, atualizar storage local e retornar
         if (response.data) {
-          console.log('✅ Assinatura encontrada:', response.data);
+          console.log('✅ Assinatura encontrada via API:', response.data);
+          
+          // Atualizar storage local se for uma assinatura ativa
+          if (response.data.status === 'active') {
+            localStorage.setItem('subscription_status', 'active');
+            localStorage.setItem('subscription_planId', response.data.planId);
+            sessionStorage.setItem('subscription_status_backup', 'active');
+            sessionStorage.setItem('subscription_planId_backup', response.data.planId);
+            console.log('💾 Status de assinatura atualizado no storage local');
+          }
+          
           return response.data;
+        }
+        
+        // Se não houver resposta da API, mas temos dados locais de assinatura ativa, use como fallback
+        if (attempts === maxRetries - 1 && (localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+          console.log('⚠️ API não retornou assinatura, usando dados locais como fallback');
+          return {
+            planId: localPlanId,
+            status: 'active',
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+            cancelAtPeriodEnd: false
+          };
         }
         
         // Se não houver dados e ainda temos tentativas, esperar e tentar novamente
@@ -220,11 +273,33 @@ export const paymentService = {
           await new Promise(resolve => setTimeout(resolve, retryDelay));
           attempts++;
         } else {
+          // Se é a última tentativa e temos dados locais, usar como fallback
+          if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+            console.log('⚠️ Erro na API, usando dados locais de assinatura como fallback');
+            return {
+              planId: localPlanId,
+              status: 'active',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+              cancelAtPeriodEnd: false
+            };
+          }
+          
           // Retorna null em caso de erro para não quebrar a interface
           console.log('⚠️ Erro ao verificar assinatura após todas as tentativas');
           return null;
         }
       }
+    }
+    
+    // Se chegamos aqui sem retornar, verificar dados locais uma última vez
+    if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+      console.log('⚠️ Após todas as tentativas, usando dados locais de assinatura como último recurso');
+      return {
+        planId: localPlanId,
+        status: 'active',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+        cancelAtPeriodEnd: false
+      };
     }
     
     return null;

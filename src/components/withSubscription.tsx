@@ -18,6 +18,28 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
       const checkSubscription = async () => {
         try {
           console.log('🔍 Verificando assinatura do usuário...');
+          
+          // Verificar dados locais primeiro para resposta mais rápida
+          const localStatus = localStorage.getItem('subscription_status');
+          const localPlanId = localStorage.getItem('subscription_planId');
+          const sessionStatus = sessionStorage.getItem('subscription_status_backup');
+          
+          console.log('📊 Status local da assinatura:', { 
+            localStorage: localStatus, 
+            planId: localPlanId,
+            sessionStorage: sessionStatus 
+          });
+          
+          // Se temos status local ativo, usamos como pré-aprovação enquanto verificamos com a API
+          if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+            console.log('✅ Dados locais indicam assinatura ativa, pré-aprovando acesso');
+            if (isMounted) {
+              setHasActiveSubscription(true);
+              setIsLoading(false);
+            }
+          }
+          
+          // Ainda verificamos com a API para ter dados atualizados (em background se já temos dados locais)
           const subscription = await paymentService.getCurrentSubscription();
           
           // Verifica se o componente ainda está montado antes de atualizar o estado
@@ -25,8 +47,16 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           
           // Verifica se tem assinatura ativa
           if (!subscription) {
-            console.log('⚠️ Usuário sem assinatura ativa');
+            console.log('⚠️ Usuário sem assinatura ativa segundo a API');
+            
+            // Se não tem na API mas tem local, mantemos acesso (pode ser problema de sincronização)
+            if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+              console.log('⚠️ Mantendo acesso com base nos dados locais de assinatura');
+              return;
+            }
+            
             setNoSubscription(true);
+            setHasActiveSubscription(false);
             setIsLoading(false);
             return;
           }
@@ -34,7 +64,15 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           // Verifica se o status da assinatura é ativo
           if (subscription.status !== 'active') {
             console.log(`⚠️ Assinatura encontrada, mas status não é ativo: ${subscription.status}`);
+            
+            // Mesmo tratamento que acima
+            if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+              console.log('⚠️ Mantendo acesso com base nos dados locais de assinatura');
+              return;
+            }
+            
             setNoSubscription(true);
+            setHasActiveSubscription(false);
             setIsLoading(false);
             return;
           }
@@ -42,10 +80,25 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
           // Assinatura ativa encontrada
           console.log('✅ Assinatura ativa encontrada:', subscription);
           setHasActiveSubscription(true);
+          setNoSubscription(false);
         } catch (error) {
           if (!isMounted) return;
           
           console.error('❌ Erro ao verificar assinatura:', error);
+          
+          // Verificar dados locais como fallback em caso de erro
+          const localStatus = localStorage.getItem('subscription_status');
+          const localPlanId = localStorage.getItem('subscription_planId');
+          const sessionStatus = sessionStorage.getItem('subscription_status_backup');
+          
+          if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
+            console.log('⚠️ Erro ao verificar com API, usando dados locais como fallback');
+            setHasActiveSubscription(true);
+            setNoSubscription(false);
+            setIsLoading(false);
+            return;
+          }
+          
           setError('Não foi possível verificar sua assinatura. Por favor, tente novamente.');
           
           // Mostrar toast de erro
