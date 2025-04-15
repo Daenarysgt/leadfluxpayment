@@ -60,4 +60,9 @@ router.post('/', auth, async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+// Rotas básicas para funis
+router.get('/basic', (req, res) => {
+  res.json({ message: 'Lista de funis' });
+});
+
 export default router; 
