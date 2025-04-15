@@ -28,6 +28,7 @@ import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 import { CheckoutPage } from '@/pages/checkout';
 import Account from '@/pages/Account';
+import { useNavigate } from 'react-router-dom';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -42,16 +43,38 @@ const queryClient = new QueryClient({
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, session } = useAuth();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     // Check session on route change
     const checkSession = async () => {
-      await supabase.auth.getSession();
+      try {
+        const { data } = await supabase.auth.getSession();
+        const sessionData = data.session;
+        
+        // Verificar se o usuário existe mas precisa confirmar email
+        if (sessionData?.user && sessionData.user.email && !sessionData.user.email_confirmed_at) {
+          console.log('⚠️ Usuário não confirmou email. Redirecionando para verificação OTP...');
+          navigate('/verify-otp', { 
+            state: { 
+              email: sessionData.user.email,
+              message: 'Seu email ainda não foi confirmado. Por favor, verifique seu código OTP.'
+            }
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Erro ao verificar sessão:', error);
+      } finally {
+        setChecking(false);
+      }
     };
+    
     checkSession();
-  }, []);
+  }, [navigate]);
 
-  if (loading) {
+  if (loading || checking) {
     return <div>Carregando...</div>;
   }
 

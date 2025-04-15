@@ -105,12 +105,38 @@ export const useAuth = () => {
               id: selectedPlan.id,
               interval: selectedPlan.interval
             } : null
-          }
+          },
+          // Garantir que um email de verificação seja enviado
+          emailRedirectTo: `${window.location.origin}/verify-otp`
         }
       });
       
       if (error) throw error;
       
+      // Forçar envio do email OTP
+      try {
+        await supabase.auth.resend({
+          type: 'signup',
+          email,
+        });
+        console.log('✅ Email de verificação enviado para:', email);
+      } catch (resendError) {
+        console.error('❌ Erro ao reenviar email de verificação:', resendError);
+        // Continuar mesmo se o reenvio falhar
+      }
+      
+      // SEMPRE redirecionar para verificação de OTP
+      // Isso garante que o fluxo de verificação seja sempre executado
+      navigate('/verify-otp', { 
+        state: { 
+          email,
+          message: 'Um email de confirmação foi enviado para o seu endereço. Por favor, verifique.',
+          selectedPlan
+        }
+      });
+      return { success: true, requiresEmailConfirmation: true };
+      
+      /* Comentando o código antigo que permitia pular a verificação OTP
       // Para usuários que precisam confirmar email
       if (data.user?.identities?.length === 0 || data.user?.email_confirmed_at === null) {
         navigate('/verify-otp', { 
@@ -170,6 +196,7 @@ export const useAuth = () => {
       // Se não tiver plano, ir para dashboard
       navigate('/dashboard', { replace: true });
       return { success: true };
+      */
     } catch (error) {
       setError(getErrorMessage(error));
       return { success: false, error: getErrorMessage(error) };
@@ -253,17 +280,58 @@ export const useAuth = () => {
         return { success: true, message: 'Um novo email de verificação foi enviado.' };
       }
       
+      console.log('📝 Tentando verificar OTP para email:', email);
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'signup'
       });
       
-      if (error) throw error;
+      if (error) {
+        // Se for um erro indicando que o email já foi confirmado
+        if (error.message?.includes('Email already confirmed')) {
+          console.log('✅ Email já confirmado, tentando login automático');
+          
+          // Tentar fazer login automático
+          try {
+            // Primeiro verificamos se o usuário já está logado
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            
+            if (currentUser) {
+              console.log('✅ Usuário já está logado:', currentUser.id);
+              setUser(currentUser);
+              
+              const { data: { session: currentSession } } = await supabase.auth.getSession();
+              if (currentSession) {
+                setSession(currentSession);
+              }
+            } else {
+              // Se não estiver logado, não podemos fazer nada aqui, 
+              // pois não temos a senha do usuário
+              console.log('⚠️ Usuário não está logado e o email já foi confirmado');
+              return { 
+                success: false, 
+                error: 'Seu email já foi confirmado. Por favor, faça login normalmente.' 
+              };
+            }
+          } catch (loginError) {
+            console.error('❌ Erro ao fazer login automático:', loginError);
+          }
+        } else {
+          // Se for qualquer outro erro, lançar exceção
+          console.error('❌ Erro ao verificar OTP:', error);
+          throw error;
+        }
+      }
       
-      if (data.user) {
+      // Se chegou aqui, ou o OTP foi verificado com sucesso, ou conseguimos fazer login
+      if (data?.user) {
+        console.log('✅ Usuário autenticado após verificação de OTP:', data.user.id);
         setUser(data.user);
-        setSession(data.session);
+        
+        if (data.session) {
+          setSession(data.session);
+        }
         
         // Verificar se há um plano selecionado no localStorage
         try {
@@ -310,9 +378,14 @@ export const useAuth = () => {
         // Se não houver plano selecionado, redirecionar para dashboard
         navigate('/dashboard', { replace: true });
         return { success: true };
+      } else {
+        // Se chegou aqui mas não tem usuário nos dados retornados, 
+        // provavelmente o e-mail já foi confirmado
+        console.log('⚠️ Verificação concluída, mas não há usuário nos dados retornados');
+        // Tentar redirecionar para o dashboard
+        navigate('/dashboard', { replace: true });
+        return { success: true };
       }
-      
-      return { success: true };
     } catch (error) {
       setError(getErrorMessage(error));
       return { success: false, error: getErrorMessage(error) };
