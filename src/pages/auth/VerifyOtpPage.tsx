@@ -145,7 +145,7 @@ const VerifyOtpPage = () => {
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={(e) => handlePaste(e)}
-                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-bold bg-background/50 border-border/50 focus:border-primary/50 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-bold bg-white border-2 border-gray-300 shadow-sm focus:border-blue-500 transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                   autoFocus={index === 0}
                 />
