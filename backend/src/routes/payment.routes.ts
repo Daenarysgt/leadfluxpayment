@@ -442,6 +442,15 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           status: stripeSubscription.status
         });
 
+        // Função auxiliar para converter timestamp do Stripe para ISO string
+        function convertStripeTimestamp(timestamp: number | undefined | null): string {
+          if (!timestamp) {
+            return new Date().toISOString(); // Valor default se não existir
+          }
+          // Stripe usa segundos, precisamos converter para milissegundos
+          return new Date(timestamp * 1000).toISOString();
+        }
+
         // DEBUG: Investigar valores temporais
         const rawStart = (stripeSubscription as any).current_period_start;
         const rawEnd = (stripeSubscription as any).current_period_end;
@@ -453,18 +462,29 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           typeEnd: typeof rawEnd
         });
 
-        // Armazenar como timestamps Unix (números inteiros)
+        // Converter timestamps para ISO strings
+        const currentPeriodStart = convertStripeTimestamp(rawStart);
+        const currentPeriodEnd = convertStripeTimestamp(rawEnd);
+        const now = new Date().toISOString();
+
+        console.log('🕒 PONTO 8: Timestamps convertidos:', {
+          currentPeriodStart,
+          currentPeriodEnd,
+          now
+        });
+
+        // Preparar dados para inserção garantindo valores válidos
         const subscriptionData = {
           user_id: session.metadata.userId,
           plan_id: session.metadata.planId,
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
-          status: stripeSubscription.status,
-          current_period_start: rawStart,
-          current_period_end: rawEnd,
-          cancel_at_period_end: stripeSubscription.cancel_at_period_end,
-          created_at: Math.floor(Date.now() / 1000),
-          updated_at: Math.floor(Date.now() / 1000)
+          status: stripeSubscription.status || 'incomplete',
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd,
+          cancel_at_period_end: stripeSubscription.cancel_at_period_end || false,
+          created_at: now,
+          updated_at: now
         };
               
         console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
@@ -620,16 +640,26 @@ async function handleCheckoutCompleted(session: any) {
     throw new Error('Erro ao verificar assinatura existente');
   }
 
+  // Função auxiliar para converter timestamp do Stripe para ISO string
+  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+    if (!timestamp) {
+      return new Date().toISOString();
+    }
+    return new Date(timestamp * 1000).toISOString();
+  }
+
+  const now = new Date().toISOString();
+  
   const subscriptionData = {
     user_id: userId,
     plan_id: planId,
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
-    status: subscription.status,
-    current_period_start: (subscription as any).current_period_start,
-    current_period_end: (subscription as any).current_period_end,
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    updated_at: Math.floor(Date.now() / 1000)
+    status: subscription.status || 'incomplete',
+    current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
+    current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+    cancel_at_period_end: subscription.cancel_at_period_end || false,
+    updated_at: now
   };
 
   if (existingSubscription) {
@@ -651,7 +681,7 @@ async function handleCheckoutCompleted(session: any) {
       .from('subscriptions')
       .insert({
         ...subscriptionData,
-        created_at: Math.floor(Date.now() / 1000)
+        created_at: now
       });
     
     if (insertError) {
@@ -673,16 +703,23 @@ async function handleInvoicePaid(invoice: any) {
   
   // Obter detalhes da assinatura atualizada
   const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+
+  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+    if (!timestamp) {
+      return new Date().toISOString();
+    }
+    return new Date(timestamp * 1000).toISOString();
+  }
   
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
-      status: subscription.status,
-      current_period_start: (subscription as any).current_period_start,
-      current_period_end: (subscription as any).current_period_end,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: Math.floor(Date.now() / 1000)
+      status: subscription.status || 'incomplete',
+      current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
+      current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
+      updated_at: new Date().toISOString()
     })
     .eq('subscription_id', subscription.id);
   
@@ -697,15 +734,22 @@ async function handleInvoicePaid(invoice: any) {
 async function handleSubscriptionUpdated(subscription: any) {
   console.log('🔄 Assinatura atualizada, sincronizando mudanças...');
   
+  function convertStripeTimestamp(timestamp: number | undefined | null): string {
+    if (!timestamp) {
+      return new Date().toISOString();
+    }
+    return new Date(timestamp * 1000).toISOString();
+  }
+  
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
-      status: subscription.status,
-      current_period_start: (subscription as any).current_period_start,
-      current_period_end: (subscription as any).current_period_end,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: Math.floor(Date.now() / 1000)
+      status: subscription.status || 'incomplete',
+      current_period_start: convertStripeTimestamp((subscription as any).current_period_start),
+      current_period_end: convertStripeTimestamp((subscription as any).current_period_end),
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
+      updated_at: new Date().toISOString()
     })
     .eq('subscription_id', subscription.id);
   
