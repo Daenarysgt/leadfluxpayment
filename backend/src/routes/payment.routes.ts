@@ -450,45 +450,23 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           rawStart,
           rawEnd,
           typeStart: typeof rawStart,
-          typeEnd: typeof rawEnd,
-          asNumber: Number(rawStart),
-          asNumberEnd: Number(rawEnd)
+          typeEnd: typeof rawEnd
         });
 
-        // Garantir que os timestamps sejam números antes da conversão
-        const startTimestamp = typeof rawStart === 'number' ? rawStart : Number(rawStart);
-        const endTimestamp = typeof rawEnd === 'number' ? rawEnd : Number(rawEnd);
-
-        if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
-          throw new Error('Timestamps inválidos recebidos do Stripe');
-        }
-
-        // Converter para Date usando os timestamps validados
-        const startDate = new Date(startTimestamp * 1000);
-        const endDate = new Date(endTimestamp * 1000);
-
-        console.log('✅ PONTO 9: Datas convertidas:', {
-          startTimestamp,
-          endTimestamp,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          isValidStart: !isNaN(startDate.getTime()),
-          isValidEnd: !isNaN(endDate.getTime())
-        });
-
+        // Armazenar como timestamps Unix (números inteiros)
         const subscriptionData = {
           user_id: session.metadata.userId,
           plan_id: session.metadata.planId,
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
           status: stripeSubscription.status,
-          current_period_start: startDate.toISOString(),
-          current_period_end: endDate.toISOString(),
+          current_period_start: rawStart,
+          current_period_end: rawEnd,
           cancel_at_period_end: stripeSubscription.cancel_at_period_end,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          created_at: Math.floor(Date.now() / 1000),
+          updated_at: Math.floor(Date.now() / 1000)
         };
-
+              
         console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
 
         // Inserir no banco
@@ -642,49 +620,16 @@ async function handleCheckoutCompleted(session: any) {
     throw new Error('Erro ao verificar assinatura existente');
   }
 
-  // Garantir que os timestamps sejam números antes da conversão
-  const rawStart = (subscription as any).current_period_start;
-  const rawEnd = (subscription as any).current_period_end;
-  
-  console.log('🕒 Webhook - Valores temporais brutos:', {
-    rawStart,
-    rawEnd,
-    typeStart: typeof rawStart,
-    typeEnd: typeof rawEnd,
-    asNumber: Number(rawStart),
-    asNumberEnd: Number(rawEnd)
-  });
-
-  const startTimestamp = typeof rawStart === 'number' ? rawStart : Number(rawStart);
-  const endTimestamp = typeof rawEnd === 'number' ? rawEnd : Number(rawEnd);
-
-  if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
-    throw new Error('Timestamps inválidos recebidos do Stripe no webhook');
-  }
-
-  // Converter para Date usando os timestamps validados
-  const startDate = new Date(startTimestamp * 1000);
-  const endDate = new Date(endTimestamp * 1000);
-
-  console.log('✅ Webhook - Datas convertidas:', {
-    startTimestamp,
-    endTimestamp,
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    isValidStart: !isNaN(startDate.getTime()),
-    isValidEnd: !isNaN(endDate.getTime())
-  });
-  
   const subscriptionData = {
     user_id: userId,
     plan_id: planId,
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
     status: subscription.status,
-    current_period_start: startDate.toISOString(),
-    current_period_end: endDate.toISOString(),
+    current_period_start: (subscription as any).current_period_start,
+    current_period_end: (subscription as any).current_period_end,
     cancel_at_period_end: subscription.cancel_at_period_end,
-    updated_at: new Date().toISOString()
+    updated_at: Math.floor(Date.now() / 1000)
   };
 
   if (existingSubscription) {
@@ -706,7 +651,7 @@ async function handleCheckoutCompleted(session: any) {
       .from('subscriptions')
       .insert({
         ...subscriptionData,
-        created_at: new Date().toISOString()
+        created_at: Math.floor(Date.now() / 1000)
       });
     
     if (insertError) {
@@ -728,31 +673,16 @@ async function handleInvoicePaid(invoice: any) {
   
   // Obter detalhes da assinatura atualizada
   const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-
-  // Garantir que os timestamps sejam números antes da conversão
-  const rawStart = (subscription as any).current_period_start;
-  const rawEnd = (subscription as any).current_period_end;
-  
-  const startTimestamp = typeof rawStart === 'number' ? rawStart : Number(rawStart);
-  const endTimestamp = typeof rawEnd === 'number' ? rawEnd : Number(rawEnd);
-
-  if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
-    throw new Error('Timestamps inválidos recebidos do Stripe no webhook de fatura');
-  }
-
-  // Converter para Date usando os timestamps validados
-  const startDate = new Date(startTimestamp * 1000);
-  const endDate = new Date(endTimestamp * 1000);
   
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: startDate.toISOString(),
-      current_period_end: endDate.toISOString(),
+      current_period_start: (subscription as any).current_period_start,
+      current_period_end: (subscription as any).current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: new Date().toISOString()
+      updated_at: Math.floor(Date.now() / 1000)
     })
     .eq('subscription_id', subscription.id);
   
@@ -767,30 +697,15 @@ async function handleInvoicePaid(invoice: any) {
 async function handleSubscriptionUpdated(subscription: any) {
   console.log('🔄 Assinatura atualizada, sincronizando mudanças...');
   
-  // Garantir que os timestamps sejam números antes da conversão
-  const rawStart = (subscription as any).current_period_start;
-  const rawEnd = (subscription as any).current_period_end;
-  
-  const startTimestamp = typeof rawStart === 'number' ? rawStart : Number(rawStart);
-  const endTimestamp = typeof rawEnd === 'number' ? rawEnd : Number(rawEnd);
-
-  if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
-    throw new Error('Timestamps inválidos recebidos do Stripe no webhook de atualização');
-  }
-
-  // Converter para Date usando os timestamps validados
-  const startDate = new Date(startTimestamp * 1000);
-  const endDate = new Date(endTimestamp * 1000);
-  
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: startDate.toISOString(),
-      current_period_end: endDate.toISOString(),
+      current_period_start: (subscription as any).current_period_start,
+      current_period_end: (subscription as any).current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      updated_at: new Date().toISOString()
+      updated_at: Math.floor(Date.now() / 1000)
     })
     .eq('subscription_id', subscription.id);
   
