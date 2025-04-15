@@ -362,213 +362,72 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       });
     }
 
-    // Buscar assinatura no banco de dados
-    const { data: dbSubscription, error } = await supabase
-      .from('subscriptions')
-      .select('id, user_id, subscription_id, status, current_period_start, current_period_end, cancel_at_period_end, plan_id, stripe_customer_id')
-      .eq('subscription_id', subscriptionId)
-      .single();
+    // Buscar assinatura no banco de dados com mais tentativas
+    let dbSubscription = null;
+    let retryAttempts = 0;
+    const maxRetries = 3;
+    
+    while (retryAttempts < maxRetries) {
+      const { data: subData, error: subError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('subscription_id', subscriptionId)
+        .single();
+        
+      if (subData) {
+        dbSubscription = subData;
+        break;
+      }
+      
+      console.log(`⏳ Tentativa ${retryAttempts + 1}/${maxRetries} de buscar assinatura no banco...`);
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos entre tentativas
+      retryAttempts++;
+    }
 
-    if (error) {
-      console.error('❌ Erro ao buscar assinatura no banco:', error);
-      if (error.code === 'PGRST116') { // Código para "not found"
-        console.log('⚠️ Assinatura não encontrada no banco. Tentando sincronizar com webhook...');
+    // Se não encontrou após todas as tentativas, criar manualmente
+    if (!dbSubscription) {
+      console.log('⚠️ Assinatura não encontrada após tentativas, criando manualmente...');
+      
+      try {
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
         
-        // Verificar se a assinatura existe no Stripe e está válida
-        if (session && session.status === 'complete') {
-          console.log('✅ Assinatura encontrada no Stripe, tentando criar no banco de dados...');
-          
-          // Aguardar mais tempo para o webhook processar (5 segundos)
-          await new Promise(resolve => setTimeout(resolve, 5000));
-        
-          // Tentar novamente
-          const { data: retrySubscription, error: retryError } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('subscription_id', subscriptionId)
-            .single();
-          
-          if (retryError) {
-            console.log('⚠️ Assinatura ainda não encontrada após espera. Tentando uma última vez...');
-            
-            // Se ainda não foi criada, vamos criar manualmente como fallback
-            try {
-              // Obter metadados relevantes da sessão
-              const planId = session.metadata?.planId || 'basic';
-              const userId = session.metadata?.userId;
-              
-              if (!userId) {
-                throw new Error('ID do usuário não encontrado nos metadados da sessão');
-              }
-              
-              // Verificar se já não existe uma assinatura com este ID
-              const { data: existingCheck, error: checkError } = await supabase
-                .from('subscriptions')
-                .select('id')
-                .eq('subscription_id', session.subscription)
-                .maybeSingle();
-                
-              if (checkError) {
-                console.error('❌ Erro ao verificar existência de assinatura:', checkError);
-              }
-              
-              // Se já existe, tente atualizar em vez de inserir
-              if (existingCheck) {
-                console.log('ℹ️ Assinatura já existe com ID diferente, tentando atualizar...');
-                
-                const subscriptionData = {
-                  plan_id: planId,
-                  status: session.status,
-                  current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
-                  current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
-                  cancel_at_period_end: (session as any).cancel_at_period_end || false,
-                  updated_at: new Date().toISOString()
-                };
-                
-                const { error: updateError } = await supabase
-                  .from('subscriptions')
-                  .update(subscriptionData)
-                  .eq('id', existingCheck.id);
-                  
-                if (updateError) {
-                  console.error('❌ Falha ao atualizar assinatura:', updateError);
-                  throw new Error(`Falha ao atualizar: ${updateError.message}`);
-                }
-                
-                console.log('✅ Assinatura atualizada manualmente com sucesso!');
-                
-                return res.json({
-                  success: true,
-                  planId: planId,
-                  subscription: {
-                    id: subscriptionId,
-                    status: session.status,
-                    currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
-                  }
-                });
-              }
-              
-              // Se ainda não existe, tenta também pelo user_id
-              const { data: userCheck, error: userCheckError } = await supabase
-                .from('subscriptions')
-                .select('id')
-                .eq('user_id', userId)
-                .maybeSingle();
-                
-              if (userCheckError) {
-                console.error('❌ Erro ao verificar assinatura pelo user_id:', userCheckError);
-              }
-              
-              // Se existe pelo user_id, faz update
-              if (userCheck) {
-                console.log('ℹ️ Usuário já tem assinatura, atualizando...');
-                
-                const subscriptionData = {
-                  plan_id: planId,
-                  subscription_id: session.subscription,
-                  stripe_customer_id: session.customer,
-                  status: session.status,
-                  current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
-                  current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
-                  cancel_at_period_end: (session as any).cancel_at_period_end || false,
-                  updated_at: new Date().toISOString()
-                };
-                
-                const { error: updateError } = await supabase
-                  .from('subscriptions')
-                  .update(subscriptionData)
-                  .eq('id', userCheck.id);
-                  
-                if (updateError) {
-                  console.error('❌ Falha ao atualizar assinatura do usuário:', updateError);
-                  throw new Error(`Falha ao atualizar: ${updateError.message}`);
-                }
-                
-                console.log('✅ Assinatura do usuário atualizada com sucesso!');
-                
-                return res.json({
-                  success: true,
-                  planId: planId,
-                  subscription: {
-                    id: subscriptionId,
-                    status: session.status,
-                    currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
-                  }
-                });
-              }
-              
-              // Se realmente não existe, cria nova entrada
-              console.log('🆕 Criando nova assinatura...');
-              
-              // Criar a assinatura manualmente
-              const subscriptionData = {
-                user_id: userId,
-                plan_id: planId,
-                subscription_id: session.subscription,
-                stripe_customer_id: session.customer,
-                status: session.status,
-                current_period_start: new Date((session as any).current_period_start * 1000).toISOString(),
-                current_period_end: new Date((session as any).current_period_end * 1000).toISOString(),
-                cancel_at_period_end: (session as any).cancel_at_period_end || false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-              
-              console.log('📝 Tentando inserir com os dados:', subscriptionData);
-              
-              // Inserir no banco
-              const { error: insertError } = await supabase
-                .from('subscriptions')
-                .insert(subscriptionData);
-              
-              if (insertError) {
-                console.error('❌ Falha ao criar assinatura manualmente:', insertError);
-                console.error('Detalhes do erro:', JSON.stringify(insertError, null, 2));
-          return res.json({ 
-            success: false, 
-                  error: `Falha ao sincronizar assinatura com o banco de dados. Detalhe: ${insertError.message}` 
-                });
-              }
-              
-              console.log('✅ Assinatura criada manualmente com sucesso!');
-              
-              // Retornar sucesso após criar manualmente
-              return res.json({
-                success: true,
-                planId: planId,
-                subscription: {
-                  id: subscriptionId,
-                  status: session.status,
-                  currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
-                }
-              });
-            } catch (fallbackError: any) {
-              console.error('❌ Erro na criação manual de assinatura:', fallbackError);
-              return res.json({ 
-                success: false, 
-                error: 'Assinatura válida no Stripe, mas não foi possível sincronizar com o banco de dados' 
-              });
-            }
+        const subscriptionData = {
+          user_id: session.metadata?.userId,
+          plan_id: session.metadata?.planId,
+          subscription_id: subscriptionId,
+          stripe_customer_id: session.customer as string,
+          status: stripeSubscription.status,
+          current_period_start: new Date((stripeSubscription as any).current_period_start * 1000).toISOString(),
+          current_period_end: new Date((stripeSubscription as any).current_period_end * 1000).toISOString(),
+          cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: insertError } = await supabase
+          .from('subscriptions')
+          .insert(subscriptionData);
+
+        if (insertError) {
+          throw new Error(`Erro ao inserir assinatura: ${insertError.message}`);
         }
+
+        console.log('✅ Assinatura criada manualmente com sucesso!');
         
-        // Se encontrou na segunda tentativa
-        if (retrySubscription) {
-          console.log('✅ Assinatura encontrada na segunda tentativa!');
-          return res.json({
-            success: true,
-            planId: session.metadata?.planId,
-            subscription: {
-              id: subscriptionId,
-              status: session.status,
-              currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
-            }
-          });
-        }
-        }
-        
-        return res.json({ 
-          success: false, 
-          error: 'Assinatura não encontrada no banco de dados. Webhook pode ainda não ter processado. Tente novamente em alguns instantes.' 
+        return res.json({
+          success: true,
+          planId: session.metadata?.planId,
+          subscription: {
+            id: subscriptionId,
+            status: stripeSubscription.status,
+            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000).toISOString()
+          }
+        });
+      } catch (error: any) {
+        console.error('❌ Erro ao criar assinatura manualmente:', error);
+        return res.json({
+          success: false,
+          error: 'Falha ao sincronizar assinatura com o banco de dados. Por favor, contate o suporte.'
         });
       }
     }
@@ -582,14 +441,17 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       subscriptionStatus: session.status
     });
 
+    // Buscar dados atualizados da assinatura no Stripe
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+
     // Retornar informações sobre a assinatura
     return res.json({
       success: true,
       planId: session.metadata?.planId,
       subscription: {
         id: subscriptionId,
-        status: session.status,
-        currentPeriodEnd: new Date((session as any).current_period_end * 1000).toISOString()
+        status: stripeSubscription.status,
+        currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000).toISOString()
       }
     });
   } catch (error: any) {
