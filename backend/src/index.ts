@@ -61,6 +61,10 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
         console.log(`❌ Assinatura cancelada, ID: ${event.data.object.id}`);
         await handleSubscriptionDeleted(event.data.object);
         break;
+      case 'invoice.paid':
+        console.log(`💰 Fatura paga, ID: ${event.data.object.id}`);
+        await handleInvoicePaid(event.data.object);
+        break;
       default:
         console.log(`⏩ Evento não processado: ${event.type}`);
     }
@@ -190,6 +194,65 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.log('Assinatura marcada como cancelada com sucesso:', subscription.id);
   } catch (error) {
     console.error('Erro ao processar exclusão de assinatura:', error);
+    throw error;
+  }
+}
+
+async function handleInvoicePaid(invoice: any) {
+  try {
+    console.log('💰 Processando fatura paga:', invoice.id);
+    
+    // Verificar se a fatura está relacionada a uma assinatura
+    if (!invoice.subscription) {
+      console.log('⚠️ Fatura não relacionada a uma assinatura, ignorando');
+      return;
+    }
+    
+    const subscriptionId = invoice.subscription as string;
+    
+    // Atualizar o status da assinatura para 'active' no banco de dados
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscriptionId);
+    
+    if (error) {
+      console.error('❌ Erro ao atualizar status da assinatura após pagamento:', error);
+      return;
+    }
+    
+    console.log('✅ Status da assinatura atualizado para ativo após pagamento:', subscriptionId);
+    
+    // Opcional: Registrar a fatura no banco de dados se necessário
+    const { error: invoiceError } = await supabase
+      .from('invoices')
+      .upsert({
+        subscription_id: subscriptionId,
+        stripe_invoice_id: invoice.id,
+        stripe_customer_id: invoice.customer as string,
+        amount: invoice.total / 100, // Convertendo de centavos para a moeda base
+        currency: invoice.currency,
+        status: invoice.status,
+        paid: invoice.paid,
+        paid_at: invoice.paid ? new Date().toISOString() : null,
+        billing_reason: invoice.billing_reason,
+        invoice_pdf: invoice.invoice_pdf,
+        hosted_invoice_url: invoice.hosted_invoice_url,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    
+    if (invoiceError) {
+      console.error('⚠️ Erro ao registrar fatura no banco de dados:', invoiceError);
+      // Não falhar o processo por causa do erro no registro da fatura
+    } else {
+      console.log('✅ Fatura registrada com sucesso:', invoice.id);
+    }
+  } catch (error) {
+    console.error('❌ Erro ao processar fatura paga:', error);
     throw error;
   }
 }
