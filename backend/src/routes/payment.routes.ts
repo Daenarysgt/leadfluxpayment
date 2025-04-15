@@ -510,20 +510,25 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         
         // Inserir no banco
         console.log('💾 PONTO 11: Tentando inserir no banco...');
-        const { error: insertError } = await supabase
+        
+        // Usar "upsert" em vez de insert simples para lidar com possíveis duplicações
+        const { error: upsertError } = await supabase
           .from('subscriptions')
-          .insert(subscriptionData);
-
-        if (insertError) {
-          console.error('❌ PONTO 12: Erro na inserção:', {
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details
+          .upsert(subscriptionData, { 
+            onConflict: 'subscription_id',  // Usar subscription_id como chave de conflito
+            ignoreDuplicates: false  // Atualizar o registro se já existir
           });
-          throw new Error(`Erro ao inserir assinatura: ${insertError.message}`);
+
+        if (upsertError) {
+          console.error('❌ PONTO 12: Erro no upsert:', {
+            code: upsertError.code,
+            message: upsertError.message,
+            details: upsertError.details
+          });
+          throw new Error(`Erro ao inserir/atualizar assinatura: ${upsertError.message}`);
         }
 
-        console.log('✅ PONTO 13: Inserção bem-sucedida!');
+        console.log('✅ PONTO 13: Upsert bem-sucedido!');
         
         return res.json({
           success: true,
@@ -647,18 +652,6 @@ async function handleCheckoutCompleted(session: any) {
   // Metadados da sessão que incluem userId e planId
   const { userId, planId } = session.metadata;
   
-  // Verificar se já existe uma assinatura para este usuário
-  const { data: existingSubscription, error: findError } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  
-  if (findError && findError.code !== 'PGRST116') {
-    console.error('❌ Erro ao verificar assinatura existente:', findError);
-    throw new Error('Erro ao verificar assinatura existente');
-  }
-
   // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
     if (timestamp === undefined || timestamp === null) {
@@ -713,38 +706,24 @@ async function handleCheckoutCompleted(session: any) {
     current_period_start: Number(current_period_start),
     current_period_end: Number(current_period_end),
     cancel_at_period_end: subscription.cancel_at_period_end || false,
+    created_at: Number(now),
     updated_at: Number(now)
   };
 
-  if (existingSubscription) {
-    // Atualizar assinatura existente
-    const { error: updateError } = await supabase
-      .from('subscriptions')
-      .update(subscriptionData)
-      .eq('id', existingSubscription.id);
-    
-    if (updateError) {
-      console.error('❌ Erro ao atualizar assinatura:', updateError);
-      throw new Error('Erro ao atualizar assinatura');
-    }
-    
-    console.log('✅ Assinatura atualizada com sucesso');
-  } else {
-    // Criar nova assinatura
-    const { error: insertError } = await supabase
-      .from('subscriptions')
-      .insert({
-        ...subscriptionData,
-        created_at: Number(now)
-      });
-    
-    if (insertError) {
-      console.error('❌ Erro ao criar assinatura:', insertError);
-      throw new Error('Erro ao criar assinatura');
-    }
-    
-    console.log('✅ Nova assinatura criada com sucesso');
+  // Usar upsert para evitar erro de duplicação
+  const { error: upsertError } = await supabase
+    .from('subscriptions')
+    .upsert(subscriptionData, {
+      onConflict: 'subscription_id',
+      ignoreDuplicates: false
+    });
+  
+  if (upsertError) {
+    console.error('❌ Erro no upsert da assinatura:', upsertError);
+    throw new Error(`Erro ao upsert assinatura: ${upsertError.message}`);
   }
+  
+  console.log('✅ Assinatura criada/atualizada com sucesso via upsert');
 }
 
 async function handleInvoicePaid(invoice: any) {
