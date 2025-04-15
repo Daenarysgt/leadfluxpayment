@@ -212,4 +212,83 @@ router.post('/create-customer-portal', async (req, res) => {
   }
 });
 
+// Rota para verificar o status de uma sessão de checkout
+router.get('/verify-session/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    console.log(`🔍 Verificando sessão de checkout: ${sessionId} para usuário: ${user.id}`);
+
+    // Buscar detalhes da sessão no Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // Verificar se a sessão existe e se está completa
+    if (!session || session.status !== 'complete') {
+      console.log(`⚠️ Sessão ${sessionId} não está completa. Status: ${session.status}`);
+      return res.json({ success: false });
+    }
+
+    // Verificar se a sessão pertence ao usuário atual
+    if (session.metadata?.userId !== user.id) {
+      console.error(`❌ Sessão ${sessionId} não pertence ao usuário ${user.id}`);
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Esta sessão de pagamento não pertence ao usuário atual' 
+      });
+    }
+
+    // Buscar assinatura associada à sessão
+    const subscriptionId = session.subscription as string;
+    
+    if (!subscriptionId) {
+      console.error('❌ Sessão não possui ID de assinatura');
+      return res.json({ success: false });
+    }
+
+    // Buscar detalhes da assinatura
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    // Buscar assinatura no banco de dados
+    const { data: dbSubscription, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('stripe_subscription_id', subscriptionId)
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao buscar assinatura no banco:', error);
+      // Não retornar erro para o cliente, apenas indicar que não foi bem-sucedido
+      return res.json({ success: false });
+    }
+
+    // Retornar informações sobre a assinatura
+    return res.json({
+      success: true,
+      planId: session.metadata?.planId,
+      subscription: {
+        id: subscriptionId,
+        status: subscription.status,
+        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Erro ao verificar sessão de checkout:', error.message);
+    
+    // Verificar se é um erro de "recurso não encontrado" do Stripe
+    if (error.code === 'resource_missing') {
+      return res.json({ success: false });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Erro ao verificar sessão de checkout' 
+    });
+  }
+});
+
 export default router; 
