@@ -52,10 +52,26 @@ export default function Pricing() {
           let backendId = 'basic'; // valor padrão
           const planName = plan.name.toLowerCase();
           
-          if (planName.includes('basic')) backendId = 'basic';
-          else if (planName.includes('pro')) backendId = 'pro';
-          else if (planName.includes('elite')) backendId = 'elite';
-          else if (planName.includes('scale')) backendId = 'scale';
+          // Log para depuração do problema de mapeamento
+          console.log('🔍 Analisando plano para mapeamento:', {
+            planId: plan.id,
+            planName: plan.name,
+            planNameLower: planName
+          });
+          
+          // Verificação mais rigorosa dos nomes dos planos
+          if (planName.includes('basic')) {
+            backendId = 'basic';
+          } 
+          else if (planName.includes('pro')) {
+            backendId = 'pro';
+          }
+          else if (planName.includes('elite')) {
+            backendId = 'elite';
+          }
+          else if (planName.includes('scale') || planName.includes('enterprise')) {
+            backendId = 'scale';
+          }
           
           console.log(`📋 Mapeando plano: ${plan.name} -> ID: ${backendId}`);
           
@@ -81,6 +97,15 @@ export default function Pricing() {
 
   const handleSelectPlan = (plan: Plan) => {
     console.log(`📋 Plano selecionado: ${plan.name} (${plan.id})`, plan);
+
+    // Log detalhado para diagnóstico
+    console.log('💡 Detalhes do plano selecionado:', {
+      id: plan.id,
+      backendId: plan.backendId,
+      name: plan.name,
+      nameLowercase: plan.name.toLowerCase(),
+      allProps: Object.keys(plan)
+    });
 
     // Validar o plano selecionado
     if (!plan || !plan.id) {
