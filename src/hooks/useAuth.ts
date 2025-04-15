@@ -79,14 +79,18 @@ export const useAuth = () => {
       
       if (error) throw error;
       
+      // Atualizar estado de usuário e sessão ANTES de retornar o resultado
       setUser(data.user);
       setSession(data.session);
       
+      // Aguardar um momento para garantir que o estado de autenticação seja propagado
+      // antes de permitir qualquer navegação
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Importante: Não fazemos o redirecionamento automático aqui
       // Deixamos o componente LoginPage fazer isso baseado nos parâmetros da URL
-      // Isso evita conflitos entre diferentes fluxos de redirecionamento
-
-      return { success: true };
+      
+      return { success: true, user: data.user, session: data.session };
     } catch (error) {
       setError(getErrorMessage(error));
       return { success: false, error: getErrorMessage(error) };

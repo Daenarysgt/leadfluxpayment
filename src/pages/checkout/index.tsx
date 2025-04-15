@@ -4,6 +4,7 @@ import { paymentService } from '../../services/paymentService';
 import { useAuth } from '../../hooks/useAuth';
 import { Spinner } from '../../components/Spinner';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '../../lib/supabase';
 
 interface LocationState {
   planId: string;
@@ -20,59 +21,84 @@ interface StoredPlanInfo {
 export const CheckoutPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkoutInitiated, setCheckoutInitiated] = useState(false);
+  const [authRetries, setAuthRetries] = useState(0);
   
-  // Obter parâmetros da URL
+  // Extrair parâmetros da URL
   const searchParams = new URLSearchParams(location.search);
-  const urlPlanId = searchParams.get('plan_id');
-  const urlInterval = searchParams.get('interval') as 'month' | 'year' | null;
-  const urlPlanName = searchParams.get('plan_name') ? decodeURIComponent(searchParams.get('plan_name') || '') : null;
-  const urlTimestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp') || '0', 10) : null;
+  const planId = searchParams.get('plan_id');
+  const interval = searchParams.get('interval') as 'month' | 'year';
+  const planName = searchParams.get('plan_name');
+  const timestamp = searchParams.get('timestamp');
+  const redirectCount = searchParams.get('redir_count') ? parseInt(searchParams.get('redir_count') || '0', 10) : 0;
+  const newRedirectCount = redirectCount + 1;
 
+  // Effect para verificar se o usuário está autenticado e fazer o redirecionamento caso não esteja
   useEffect(() => {
+    if (!user && !authLoading && authRetries < 3) {
+      console.log('👤 Usuário não autenticado, redirecionando para login...', { redirectCount, newRedirectCount });
+      
+      // Se já redirecionou muitas vezes, apresentar um erro
+      if (redirectCount >= 3) {
+        console.error('🔄 Ciclo de redirecionamento detectado no checkout!');
+        setError('Detectamos um problema de autenticação. Por favor, faça login manualmente e tente novamente.');
+        setLoading(false);
+        return;
+      }
+      
+      // Criar parâmetros para redirecionamento, preservando informações importantes
+      const params = new URLSearchParams();
+      params.set('redirect_after', 'checkout');
+      
+      // Usar os parâmetros de URL que foram extraídos no nível do componente
+      if (planId) {
+        params.set('plan_id', planId);
+      }
+      
+      if (interval) {
+        params.set('interval', interval);
+      }
+      
+      if (planName) {
+        params.set('plan_name', planName);
+      }
+      
+      // Adicionar parâmetros para diagnóstico
+      params.set('timestamp', timestamp || Date.now().toString());
+      params.set('redir_count', newRedirectCount.toString());
+      
+      // Redirecionar para página de login com os parâmetros
+      navigate(`/auth/login?${params.toString()}`, { replace: true });
+      return;
+    }
+
+    // Se estamos ainda carregando ou se já iniciamos o checkout, não fazer nada
+    if (authLoading) {
+      console.log('⏳ Aguardando carregamento de autenticação...');
+      return;
+    }
+    
     const initCheckout = async () => {
       // Se já iniciou o checkout, não faça novamente
       if (checkoutInitiated) return;
       
-      // Verifica autenticação
-      if (!user) {
-        console.log('❌ Usuário não autenticado, redirecionando para login');
-        
-        // Preservar parâmetros do plano ao redirecionar para login
-        if (urlPlanId && urlInterval) {
-          // Criar novos parâmetros limpos em vez de reutilizar a URL atual (que pode conter redirect_after duplicados)
-          const cleanParams = new URLSearchParams();
-          cleanParams.set('redirect_after', 'checkout');
-          cleanParams.set('plan_id', urlPlanId);
-          cleanParams.set('interval', urlInterval);
-          
-          if (urlPlanName) {
-            cleanParams.set('plan_name', urlPlanName);
-          }
-          
-          if (urlTimestamp) {
-            cleanParams.set('timestamp', urlTimestamp.toString());
-          }
-          
-          navigate(`/login?${cleanParams.toString()}`, { replace: true });
-        } else {
-          navigate('/login', { replace: true });
-        }
-        return;
-      }
+      // Verificar diretamente com o Supabase para ter certeza do estado de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
       
       // Log para depuração - Verificação completa do estado
       console.log('📌 Estado do componente de checkout:', {
-        user: user?.id,
+        user: user?.id || session?.user?.id,
+        authState: !!user,
+        sessionState: !!session,
         locationState: location.state,
         urlParams: {
-          planId: urlPlanId,
-          interval: urlInterval,
-          planName: urlPlanName,
-          timestamp: urlTimestamp
+          planId: planId,
+          interval: interval,
+          planName: planName,
+          timestamp: timestamp
         },
         hasLocalStorage: !!localStorage.getItem('selectedPlanInfo'),
         hasSessionStorage: !!sessionStorage.getItem('selectedPlanInfo_backup')
@@ -81,27 +107,27 @@ export const CheckoutPage: React.FC = () => {
       // Tenta obter o plano de todas as fontes possíveis
       const state = location.state as LocationState | null;
       
-      let planId: string | null = null;
-      let interval: 'month' | 'year' = 'month';
+      let selectedPlanId: string | null = null;
+      let selectedInterval: 'month' | 'year' = 'month';
       let planSource = '';
       
       // 1. Verificar parâmetros de URL (melhor confiabilidade)
-      if (urlPlanId && urlInterval) {
+      if (planId && interval) {
         console.log('✅ Plano obtido dos parâmetros da URL:', { 
-          planId: urlPlanId, 
-          interval: urlInterval,
-          planName: urlPlanName,
-          timestamp: urlTimestamp
+          planId: planId, 
+          interval: interval,
+          planName: planName,
+          timestamp: timestamp
         });
-        planId = urlPlanId;
-        interval = urlInterval;
+        selectedPlanId = planId;
+        selectedInterval = interval;
         planSource = 'url-params';
       }
       // 2. Verificar estado da navegação (location.state)
       else if (state?.planId && state?.interval) {
         console.log('✅ Plano obtido do estado da navegação:', state);
-        planId = state.planId;
-        interval = state.interval;
+        selectedPlanId = state.planId;
+        selectedInterval = state.interval;
         planSource = 'navigation-state';
       } 
       // 3. Verificar localStorage e sessionStorage como backup
@@ -138,8 +164,8 @@ export const CheckoutPage: React.FC = () => {
             }
             
             console.log(`✅ Plano obtido do ${storageSource}:`, storedPlanInfo);
-            planId = storedPlanInfo.planId;
-            interval = storedPlanInfo.interval || 'month';
+            selectedPlanId = storedPlanInfo.planId;
+            selectedInterval = storedPlanInfo.interval || 'month';
             planSource = storageSource;
           } catch (e) {
             console.error(`❌ Erro ao processar dados do plano no ${storageSource}:`, e);
@@ -152,7 +178,7 @@ export const CheckoutPage: React.FC = () => {
       }
       
       // Se não encontrou o plano, redirecionar para página de preços
-      if (!planId) {
+      if (!selectedPlanId) {
         console.error('❌ Nenhum plano encontrado para checkout');
         toast({
           title: "Erro no checkout",
@@ -170,13 +196,13 @@ export const CheckoutPage: React.FC = () => {
       try {
         setLoading(true);
         // Log para depuração
-        console.log('🔄 Criando sessão de checkout com:', { planId, interval, source: planSource });
+        console.log('🔄 Criando sessão de checkout com:', { planId: selectedPlanId, interval: selectedInterval, source: planSource });
         
         // Agora é seguro remover do localStorage e sessionStorage
         localStorage.removeItem('selectedPlanInfo');
         sessionStorage.removeItem('selectedPlanInfo_backup');
         
-        const { url } = await paymentService.createCheckoutSession(planId, interval);
+        const { url } = await paymentService.createCheckoutSession(selectedPlanId, selectedInterval);
         if (url) {
           console.log('✅ Sessão de checkout criada, redirecionando para:', url);
           window.location.href = url;
@@ -191,7 +217,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     initCheckout();
-  }, [user, location.state, navigate, checkoutInitiated, location.search, urlPlanId, urlInterval, urlPlanName, urlTimestamp]);
+  }, [user, location.state, navigate, checkoutInitiated, location.search, planId, interval, planName, timestamp, authLoading, authRetries]);
 
   if (loading) {
     return (

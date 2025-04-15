@@ -19,10 +19,18 @@ const LoginPage = () => {
   const redirectAfter = searchParams.get('redirect_after');
   const planId = searchParams.get('plan_id');
   const interval = searchParams.get('interval') as 'month' | 'year' | null;
+  const redirectCount = searchParams.get('redir_count') ? parseInt(searchParams.get('redir_count') || '0', 10) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Verificar se estamos em um ciclo de redirecionamento
+    if (redirectCount > 3) {
+      console.error('🔄 Ciclo de redirecionamento detectado no login!');
+      setError('Detectamos um problema com o fluxo de login. Por favor, tente novamente mais tarde ou contate o suporte.');
+      return;
+    }
     
     try {
       console.log('🔑 Tentando fazer login com email:', email);
@@ -33,7 +41,11 @@ const LoginPage = () => {
         return;
       }
       
-      console.log('✅ Login bem-sucedido');
+      console.log('✅ Login bem-sucedido', result);
+      
+      // Aguardar um momento para garantir que a autenticação foi registrada
+      // antes de redirecionar para a próxima página
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Verificar se temos parâmetros de redirecionamento na URL
       if (redirectAfter === 'checkout' && planId && interval) {
@@ -53,14 +65,37 @@ const LoginPage = () => {
           cleanParams.set('plan_name', planName);
         }
         
-        const timestamp = searchParams.get('timestamp');
-        if (timestamp) {
-          cleanParams.set('timestamp', timestamp);
+        const timestamp = searchParams.get('timestamp') || Date.now().toString();
+        cleanParams.set('timestamp', timestamp);
+        
+        // Para diagnóstico, marcar esse redirecionamento com informação sobre usuário
+        cleanParams.set('auth_user', result.user?.id || 'unknown');
+        
+        // Preservar o contador de redirecionamentos
+        if (redirectCount > 0) {
+          cleanParams.set('redir_count', redirectCount.toString());
         }
         
+        // Salvar também no localStorage como backup
+        const planData = {
+          planId: planId,
+          interval: interval,
+          timestamp: Number(timestamp),
+          planName: planName || undefined
+        };
+        localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+        sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+        
+        console.log('💾 Também salvando dados do plano no localStorage/sessionStorage antes de redirecionar');
+        
         // Redirecionar para checkout com replace:true para impedir loops de navegação
+        console.log('🚀 Executando redirecionamento final para checkout');
         navigate(`/checkout?${cleanParams.toString()}`, { 
-          replace: true 
+          replace: true,
+          state: {
+            planId: planId,
+            interval: interval
+          }
         });
         return;
       }
@@ -92,21 +127,27 @@ const LoginPage = () => {
               interval: planInfo.interval
             });
             
-            // Remover dos storages após usar
-            localStorage.removeItem('selectedPlanInfo');
-            sessionStorage.removeItem('selectedPlanInfo_backup');
+            // NÃO remover dos storages antes do redirecionamento para garantir que os dados persistam
             
             // Adicionar parâmetros na URL para maior confiabilidade
             const params = new URLSearchParams();
             params.set('plan_id', planInfo.planId);
             params.set('interval', planInfo.interval || 'month');
             params.set('timestamp', Date.now().toString());
+            params.set('auth_user', result.user?.id || 'unknown');
+            
             if (planInfo.planName) {
               params.set('plan_name', planInfo.planName);
             }
             
+            // Preservar o contador de redirecionamentos
+            if (redirectCount > 0) {
+              params.set('redir_count', redirectCount.toString());
+            }
+            
             // Redirecionar para o checkout com as informações do plano
             // usar replace: true para evitar problemas com histórico de navegação
+            console.log('🚀 Executando redirecionamento final para checkout (via localStorage)');
             navigate(`/checkout?${params.toString()}`, {
               state: {
                 planId: planInfo.planId,
