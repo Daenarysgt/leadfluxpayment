@@ -95,7 +95,8 @@ export const paymentService = {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.access_token) {
-        throw new Error('Usuário não autenticado');
+        console.log('Usuário não autenticado ao verificar assinatura');
+        return null;
       }
       
       // Obter informações da assinatura
@@ -108,9 +109,24 @@ export const paymentService = {
         }
       );
       
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao obter informações da assinatura:', error);
+      return response.data; // Pode ser null se não houver assinatura
+    } catch (error: any) {
+      // Registra o erro em detalhes
+      if (error.response) {
+        // O servidor respondeu com status fora do intervalo 2xx
+        console.error('Erro ao obter assinatura - resposta do servidor:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      } else if (error.request) {
+        // A requisição foi feita mas não houve resposta
+        console.error('Erro ao obter assinatura - sem resposta:', error.request);
+      } else {
+        // Erro durante a configuração da requisição
+        console.error('Erro ao configurar requisição de assinatura:', error.message);
+      }
+      
+      // Retorna null em caso de erro para não quebrar a interface
       return null;
     }
   },

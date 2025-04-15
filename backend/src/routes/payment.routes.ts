@@ -74,33 +74,65 @@ router.get('/subscription', async (req, res) => {
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
+    // Buscar assinatura do usuário
     const { data: subscription, error } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .single();
 
-    if (error) {
-      console.error('Erro ao buscar assinatura:', error);
-      return res.status(500).json({ error: 'Erro ao buscar assinatura' });
-    }
-
-    if (!subscription) {
+    // Se não encontrar assinatura devido a não ter resultados, retorne null (não é erro)
+    if (error && error.code === 'PGRST116') {
+      console.log(`Usuário ${user.id} não possui assinatura.`);
       return res.json(null);
     }
 
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
-    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+    // Se houver algum outro erro na consulta do Supabase
+    if (error) {
+      console.error('Erro ao buscar assinatura no Supabase:', error);
+      return res.status(500).json({ error: 'Erro ao buscar dados de assinatura' });
+    }
 
-    return res.json({
-      planId: subscription.plan_id,
-      status: stripeSubscription.status,
-      currentPeriodEnd,
-      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-    });
+    // Se não encontrou a assinatura
+    if (!subscription) {
+      console.log(`Usuário ${user.id} não possui assinatura (resultado vazio).`);
+      return res.json(null);
+    }
+
+    try {
+      // Tenta buscar assinatura no Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+
+      // Retorna os detalhes da assinatura
+      return res.json({
+        planId: subscription.plan_id,
+        status: stripeSubscription.status,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+      });
+    } catch (stripeError: any) {
+      // Se o Stripe não encontrar a assinatura ou outro erro do Stripe
+      console.error('Erro ao buscar assinatura no Stripe:', stripeError);
+      
+      // Se a assinatura não existe mais no Stripe, atualize o status no banco
+      if (stripeError.code === 'resource_missing') {
+        try {
+          await supabase
+            .from('subscriptions')
+            .update({ status: 'inactive' })
+            .eq('id', subscription.id);
+        } catch (updateError) {
+          console.error('Erro ao atualizar status da assinatura:', updateError);
+        }
+      }
+      
+      // Retorna null para o cliente (assinatura inválida)
+      return res.json(null);
+    }
   } catch (error) {
-    console.error('Erro ao verificar assinatura:', error);
-    res.status(500).json({ error: 'Erro ao verificar assinatura' });
+    console.error('Erro geral ao verificar assinatura:', error);
+    res.status(500).json({ error: 'Falha ao processar solicitação de assinatura' });
   }
 });
 
