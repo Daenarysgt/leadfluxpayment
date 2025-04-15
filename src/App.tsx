@@ -26,6 +26,7 @@ import LandingPage from '@/landing/LandingPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCanceled from '@/pages/payment/PaymentCanceled';
+import { CheckoutPage } from '@/pages/checkout';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -121,6 +122,7 @@ const App = () => {
                 {/* Rotas de Pagamento */}
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/canceled" element={<PaymentCanceled />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
                 
                 {/* Rotas Protegidas */}
                 <Route
