@@ -388,14 +388,16 @@ export const useAuth = () => {
               sessionStorage.removeItem('selectedPlanInfo_backup');
               
               // Adicionar parâmetros de URL para maior confiabilidade
-              const params = new URLSearchParams({
-                plan_id: planInfo.planId,
-                interval: planInfo.interval || 'month',
-                timestamp: Date.now().toString()
-              }).toString();
+              const params = new URLSearchParams();
+              params.set('plan_id', planInfo.planId);
+              params.set('interval', planInfo.interval || 'month');
+              params.set('timestamp', Date.now().toString());
+              if (planInfo.planName) {
+                params.set('plan_name', planInfo.planName);
+              }
               
               // Redirecionar para checkout
-              navigate(`/checkout?${params}`, {
+              navigate(`/checkout?${params.toString()}`, {
                 state: {
                   planId: planInfo.planId,
                   interval: planInfo.interval || 'month'
@@ -416,14 +418,16 @@ export const useAuth = () => {
           console.log('✅ Plano encontrado nos metadados do usuário após verificação OTP:', selectedPlan);
           
           // Adicionar parâmetros de URL para maior confiabilidade
-          const params = new URLSearchParams({
-            plan_id: selectedPlan.id,
-            interval: selectedPlan.interval || 'month',
-            timestamp: Date.now().toString()
-          }).toString();
+          const params = new URLSearchParams();
+          params.set('plan_id', selectedPlan.id);
+          params.set('interval', selectedPlan.interval || 'month');
+          params.set('timestamp', Date.now().toString());
+          if (selectedPlan.planName) {
+            params.set('plan_name', selectedPlan.planName);
+          }
           
           // Redirecionar para o checkout do Stripe com o plano selecionado
-          navigate(`/checkout?${params}`, { 
+          navigate(`/checkout?${params.toString()}`, { 
             state: { 
               planId: selectedPlan.id,
               interval: selectedPlan.interval

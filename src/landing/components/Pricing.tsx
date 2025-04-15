@@ -88,14 +88,13 @@ export default function Pricing() {
         
         // Se não estiver logado, redireciona para registro com parâmetros na URL
         // Codificar os dados do plano como parâmetros de URL para maior confiabilidade
-        const planParams = new URLSearchParams({
-          plan_id: plan.id,
-          interval: isAnnual ? 'year' : 'month',
-          plan_name: encodeURIComponent(plan.name),
-          timestamp: Date.now().toString()
-        }).toString();
+        const planParams = new URLSearchParams();
+        planParams.set('plan_id', plan.id);
+        planParams.set('interval', isAnnual ? 'year' : 'month');
+        planParams.set('plan_name', encodeURIComponent(plan.name));
+        planParams.set('timestamp', Date.now().toString());
         
-        navigate(`/register?${planParams}`, { 
+        navigate(`/register?${planParams.toString()}`, { 
           state: { 
             returnTo: '/checkout',
             selectedPlan: plan.id,
@@ -108,14 +107,13 @@ export default function Pricing() {
       console.log('👤 Usuário autenticado, redirecionando para checkout');
       
       // Se estiver logado, redirecionar para página de checkout com parâmetros na URL
-      const planParams = new URLSearchParams({
-        plan_id: plan.id,
-        interval: isAnnual ? 'year' : 'month',
-        plan_name: encodeURIComponent(plan.name),
-        timestamp: Date.now().toString()
-      }).toString();
+      const planParams = new URLSearchParams();
+      planParams.set('plan_id', plan.id);
+      planParams.set('interval', isAnnual ? 'year' : 'month');
+      planParams.set('plan_name', encodeURIComponent(plan.name));
+      planParams.set('timestamp', Date.now().toString());
       
-      navigate(`/checkout?${planParams}`, {
+      navigate(`/checkout?${planParams.toString()}`, {
         state: {
           planId: plan.id,
           interval: isAnnual ? 'year' : 'month'

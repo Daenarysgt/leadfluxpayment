@@ -36,8 +36,24 @@ const LoginPage = () => {
           interval
         });
         
+        // Criar parâmetros limpos para evitar redirecionamentos em loop
+        const cleanParams = new URLSearchParams();
+        cleanParams.set('plan_id', planId);
+        cleanParams.set('interval', interval);
+        
+        // Adicionar outros parâmetros se disponíveis
+        const planName = searchParams.get('plan_name');
+        if (planName) {
+          cleanParams.set('plan_name', planName);
+        }
+        
+        const timestamp = searchParams.get('timestamp');
+        if (timestamp) {
+          cleanParams.set('timestamp', timestamp);
+        }
+        
         // Preservar todos os parâmetros na URL
-        navigate(`/checkout${location.search}`);
+        navigate(`/checkout?${cleanParams.toString()}`);
         return;
       }
       
@@ -73,14 +89,16 @@ const LoginPage = () => {
             sessionStorage.removeItem('selectedPlanInfo_backup');
             
             // Adicionar parâmetros na URL para maior confiabilidade
-            const params = new URLSearchParams({
-              plan_id: planInfo.planId,
-              interval: planInfo.interval || 'month',
-              timestamp: Date.now().toString()
-            }).toString();
+            const params = new URLSearchParams();
+            params.set('plan_id', planInfo.planId);
+            params.set('interval', planInfo.interval || 'month');
+            params.set('timestamp', Date.now().toString());
+            if (planInfo.planName) {
+              params.set('plan_name', planInfo.planName);
+            }
             
             // Redirecionar para o checkout com as informações do plano
-            navigate(`/checkout?${params}`, {
+            navigate(`/checkout?${params.toString()}`, {
               state: {
                 planId: planInfo.planId,
                 interval: planInfo.interval || 'month'

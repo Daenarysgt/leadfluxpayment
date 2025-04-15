@@ -43,8 +43,21 @@ export const CheckoutPage: React.FC = () => {
         
         // Preservar parâmetros do plano ao redirecionar para login
         if (urlPlanId && urlInterval) {
-          const currentUrl = new URL(window.location.href);
-          navigate(`/login?redirect_after=checkout&${currentUrl.searchParams.toString()}`);
+          // Criar novos parâmetros limpos em vez de reutilizar a URL atual (que pode conter redirect_after duplicados)
+          const cleanParams = new URLSearchParams();
+          cleanParams.set('redirect_after', 'checkout');
+          cleanParams.set('plan_id', urlPlanId);
+          cleanParams.set('interval', urlInterval);
+          
+          if (urlPlanName) {
+            cleanParams.set('plan_name', urlPlanName);
+          }
+          
+          if (urlTimestamp) {
+            cleanParams.set('timestamp', urlTimestamp.toString());
+          }
+          
+          navigate(`/login?${cleanParams.toString()}`);
         } else {
           navigate('/login');
         }
