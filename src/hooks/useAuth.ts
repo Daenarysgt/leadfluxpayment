@@ -68,51 +68,111 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
       if (error) throw error;
-      if (data.user) {
-        setUser(data.user);
-        setSession(data.session);
-        navigate('/dashboard');
-      }
+      
+      setUser(data.user);
+      setSession(data.session);
+      
+      return { success: true };
     } catch (error) {
       setError(getErrorMessage(error));
+      return { success: false, error: getErrorMessage(error) };
     } finally {
       setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, selectedPlan?: SelectedPlan) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
+      const { data, error } = await supabase.auth.signUp({
+        email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/verify-otp`,
-          data: selectedPlan ? {
-            selectedPlan
-          } : undefined
-        } 
+          data: {
+            selectedPlan: selectedPlan ? {
+              id: selectedPlan.id,
+              interval: selectedPlan.interval
+            } : null
+          }
+        }
       });
       
       if (error) throw error;
       
-      console.log('Registro bem-sucedido:', data);
-      
-      if (data.user) {
-        setUser(data.user);
-        navigate('/verify-otp', { state: { email, selectedPlan } });
-      } else {
-        console.log('Usuário não foi criado corretamente');
+      // Para usuários que precisam confirmar email
+      if (data.user?.identities?.length === 0 || data.user?.email_confirmed_at === null) {
+        navigate('/verify-otp', { 
+          state: { 
+            email,
+            message: 'Um email de confirmação foi enviado para o seu endereço. Por favor, verifique.',
+            selectedPlan
+          }
+        });
+        return { success: true, requiresEmailConfirmation: true };
       }
+      
+      // Para usuários que não precisam confirmar email
+      setUser(data.user);
+      setSession(data.session);
+      
+      // Verificar se tem plano selecionado no localStorage primeiro
+      try {
+        const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+        if (storedPlanInfo) {
+          const planInfo = JSON.parse(storedPlanInfo);
+          // Verificar se é recente (menos de 24h)
+          const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
+          
+          if (isRecent && planInfo.planId) {
+            // Limpar do localStorage
+            localStorage.removeItem('selectedPlanInfo');
+            
+            // Redirecionar para checkout
+            navigate('/checkout', {
+              state: {
+                planId: planInfo.planId,
+                interval: planInfo.interval || 'month'
+              },
+              replace: true
+            });
+            return { success: true };
+          }
+        }
+      } catch (parseError) {
+        console.error('Erro ao processar informações do plano no localStorage:', parseError);
+        // Se houver erro, continuar com o fluxo normal
+      }
+      
+      // Se tiver plano selecionado nos parâmetros da função
+      if (selectedPlan) {
+        navigate('/checkout', { 
+          state: { 
+            planId: selectedPlan.id,
+            interval: selectedPlan.interval
+          },
+          replace: true
+        });
+        return { success: true };
+      }
+      
+      // Se não tiver plano, ir para dashboard
+      navigate('/dashboard', { replace: true });
+      return { success: true };
     } catch (error) {
-      console.error('Erro no registro:', error);
       setError(getErrorMessage(error));
+      return { success: false, error: getErrorMessage(error) };
     } finally {
       setLoading(false);
     }
@@ -178,10 +238,10 @@ export const useAuth = () => {
   };
 
   const verifyOtp = async (email: string, token: string, resend = false): Promise<VerifyOtpResponse> => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-      
       if (resend) {
         const { error } = await supabase.auth.resend({
           type: 'signup',
@@ -190,42 +250,69 @@ export const useAuth = () => {
         
         if (error) throw error;
         
-        return { success: true, message: 'Código reenviado com sucesso' };
-      } else {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email,
-          token,
-          type: 'signup'
-        });
+        return { success: true, message: 'Um novo email de verificação foi enviado.' };
+      }
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup'
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        setUser(data.user);
+        setSession(data.session);
         
-        if (error) throw error;
-        
-        if (data.user) {
-          setUser(data.user);
-          setSession(data.session);
-          
-          // Verificar se há um plano selecionado nos metadados do usuário
-          const selectedPlan = data.user.user_metadata?.selectedPlan;
-          
-          if (selectedPlan) {
-            // Redirecionar para o checkout do Stripe com o plano selecionado
-            navigate('/checkout', { 
-              state: { 
-                planId: selectedPlan.id,
-                interval: selectedPlan.interval
-              },
-              replace: true
-            });
-            return { success: true };
+        // Verificar se há um plano selecionado no localStorage
+        try {
+          const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+          if (storedPlanInfo) {
+            const planInfo = JSON.parse(storedPlanInfo);
+            // Verificar se é recente (menos de 24h)
+            const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
+            
+            if (isRecent && planInfo.planId) {
+              // Limpar do localStorage
+              localStorage.removeItem('selectedPlanInfo');
+              
+              // Redirecionar para checkout
+              navigate('/checkout', {
+                state: {
+                  planId: planInfo.planId,
+                  interval: planInfo.interval || 'month'
+                },
+                replace: true
+              });
+              return { success: true };
+            }
           }
-          
-          // Se não houver plano selecionado, redirecionar para pricing
-          navigate('/pricing', { replace: true });
+        } catch (parseError) {
+          console.error('Erro ao processar informações do plano no localStorage:', parseError);
+        }
+        
+        // Verificar se há um plano selecionado nos metadados do usuário
+        const selectedPlan = data.user.user_metadata?.selectedPlan;
+        
+        if (selectedPlan) {
+          // Redirecionar para o checkout do Stripe com o plano selecionado
+          navigate('/checkout', { 
+            state: { 
+              planId: selectedPlan.id,
+              interval: selectedPlan.interval
+            },
+            replace: true
+          });
           return { success: true };
         }
         
+        // Se não houver plano selecionado, redirecionar para dashboard
+        navigate('/dashboard', { replace: true });
         return { success: true };
       }
+      
+      return { success: true };
     } catch (error) {
       setError(getErrorMessage(error));
       return { success: false, error: getErrorMessage(error) };

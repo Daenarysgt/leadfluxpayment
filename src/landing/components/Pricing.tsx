@@ -70,10 +70,17 @@ export default function Pricing() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        // Salvar informações do plano selecionado no localStorage
+        localStorage.setItem('selectedPlanInfo', JSON.stringify({
+          planId: plan.id,
+          interval: isAnnual ? 'year' : 'month',
+          timestamp: Date.now() // Para verificar se a seleção não está muito antiga
+        }));
+        
         // Se não estiver logado, redireciona para registro
         navigate('/register', { 
           state: { 
-            returnTo: '/pricing',
+            returnTo: '/checkout',
             selectedPlan: plan.id,
             interval: isAnnual ? 'year' : 'month'
           } 

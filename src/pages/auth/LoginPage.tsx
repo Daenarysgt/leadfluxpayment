@@ -19,6 +19,38 @@ const LoginPage = () => {
     
     try {
       await signIn(email, password);
+      
+      // Verificar se há um plano selecionado armazenado no localStorage
+      const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+      
+      if (storedPlanInfo) {
+        try {
+          const planInfo = JSON.parse(storedPlanInfo);
+          
+          // Verificar se a seleção não está muito antiga (24 horas)
+          const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
+          
+          if (isRecent && planInfo.planId) {
+            // Remover do localStorage após usar
+            localStorage.removeItem('selectedPlanInfo');
+            
+            // Redirecionar para o checkout com as informações do plano
+            navigate('/checkout', {
+              state: {
+                planId: planInfo.planId,
+                interval: planInfo.interval || 'month'
+              }
+            });
+            return;
+          }
+        } catch (parseError) {
+          console.error('Erro ao processar informações do plano:', parseError);
+          // Se houver erro na leitura, apenas limpar
+          localStorage.removeItem('selectedPlanInfo');
+        }
+      }
+      
+      // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard
       navigate('/dashboard');
     } catch (err) {
       setError('Email ou senha inválidos');
