@@ -28,7 +28,8 @@ import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 import { CheckoutPage } from '@/pages/checkout';
 import Account from '@/pages/Account';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { checkoutStateService } from './services/checkoutStateService';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -88,6 +89,7 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     const checkDomain = async () => {
@@ -115,6 +117,31 @@ const App = () => {
 
     checkDomain();
   }, []);
+
+  // Efeito para capturar parâmetros de checkout na URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const checkoutData = params.get('checkout');
+    
+    if (checkoutData) {
+      try {
+        // Decodificar os dados do plano da URL
+        const planData = checkoutStateService.decodeDataFromUrl(checkoutData);
+        if (planData) {
+          console.log('📝 Dados do plano recuperados da URL:', planData);
+          
+          // Salvar os dados decodificados no serviço de checkout
+          checkoutStateService.savePlanSelection({
+            planId: planData.planId,
+            interval: planData.interval,
+            planName: planData.planName
+          });
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar dados de checkout da URL:', error);
+      }
+    }
+  }, [location.search]);
 
   if (isLoading) {
     return <div>Carregando...</div>;

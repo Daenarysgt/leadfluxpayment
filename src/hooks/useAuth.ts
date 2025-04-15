@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, getErrorMessage } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { checkoutStateService } from '../services/checkoutStateService';
 
 interface SelectedPlan {
   id: string;
@@ -82,36 +83,23 @@ export const useAuth = () => {
       setUser(data.user);
       setSession(data.session);
       
-      // Verificar se tem plano selecionado no localStorage após login bem-sucedido
-      try {
-        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
-        if (storedPlanInfoStr) {
-          const storedPlanInfo = JSON.parse(storedPlanInfoStr);
-          
-          // Verificar se é recente (menos de 24h)
-          if (Date.now() - storedPlanInfo.timestamp < 24 * 60 * 60 * 1000) {
-            console.log('🔄 Plano encontrado após login, redirecionando para checkout:', storedPlanInfo);
-            
-            // Não remover do localStorage ainda - deixar para a página de checkout fazer isso
-            // Isso garante que mesmo se o redirecionamento falhar, os dados não serão perdidos
-            
-            // Redirecionar para checkout
-            navigate('/checkout', {
-              state: {
-                planId: storedPlanInfo.planId,
-                interval: storedPlanInfo.interval || 'month'
-              },
-              replace: true
-            });
-            return { success: true, redirectedToCheckout: true };
-          } else {
-            // Se os dados forem muito antigos, remover
-            localStorage.removeItem('selectedPlanInfo');
-          }
-        }
-      } catch (parseError) {
-        console.error('Erro ao processar dados do plano no localStorage após login:', parseError);
-        // Continuar com o fluxo normal se houver erro
+      // Verificar se tem plano selecionado via serviço de checkout
+      const checkoutData = checkoutStateService.getPlanSelection();
+      
+      if (checkoutData) {
+        console.log('🔄 Plano encontrado após login, redirecionando para checkout:', checkoutData);
+        
+        // Redirecionar para checkout
+        navigate('/checkout', {
+          state: {
+            planId: checkoutData.planId,
+            interval: checkoutData.interval,
+            checkoutSessionId: checkoutData.checkoutSessionId
+          },
+          replace: true
+        });
+        
+        return { success: true, redirectedToCheckout: true };
       }
       
       return { success: true };
@@ -128,6 +116,14 @@ export const useAuth = () => {
     setError(null);
     
     try {
+      // Se temos selectedPlan nos parâmetros, salvar no serviço de checkout
+      if (selectedPlan) {
+        checkoutStateService.savePlanSelection({
+          planId: selectedPlan.id,
+          interval: selectedPlan.interval
+        });
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -163,9 +159,10 @@ export const useAuth = () => {
         state: { 
           email,
           message: 'Um email de confirmação foi enviado para o seu endereço. Por favor, verifique.',
-          selectedPlan
+          selectedPlan: selectedPlan || checkoutStateService.getPlanSelection()
         }
       });
+      
       return { success: true, requiresEmailConfirmation: true };
       
       /* Comentando o código antigo que permitia pular a verificação OTP
@@ -297,11 +294,11 @@ export const useAuth = () => {
   };
 
   const verifyOtp = async (email: string, token: string, resend = false): Promise<VerifyOtpResponse> => {
-    setLoading(true);
-    setError(null);
-    
     try {
+      setLoading(true);
+      
       if (resend) {
+        // Reenviar o email de verificação
         const { error } = await supabase.auth.resend({
           type: 'signup',
           email,
@@ -309,118 +306,51 @@ export const useAuth = () => {
         
         if (error) throw error;
         
-        return { success: true, message: 'Um novo email de verificação foi enviado.' };
+        return { 
+          success: true, 
+          message: 'Um novo código de verificação foi enviado para o seu email.'
+        };
       }
       
-      console.log('📝 Tentando verificar OTP para email:', email);
+      // Verificar o token OTP
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'signup'
+        type: 'email'
       });
       
-      if (error) {
-        // Se for um erro indicando que o email já foi confirmado
-        if (error.message?.includes('Email already confirmed')) {
-          console.log('✅ Email já confirmado, tentando login automático');
-          
-          // Tentar fazer login automático
-          try {
-            // Primeiro verificamos se o usuário já está logado
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            
-            if (currentUser) {
-              console.log('✅ Usuário já está logado:', currentUser.id);
-              setUser(currentUser);
-              
-              const { data: { session: currentSession } } = await supabase.auth.getSession();
-              if (currentSession) {
-                setSession(currentSession);
-              }
-            } else {
-              // Se não estiver logado, não podemos fazer nada aqui, 
-              // pois não temos a senha do usuário
-              console.log('⚠️ Usuário não está logado e o email já foi confirmado');
-              return { 
-                success: false, 
-                error: 'Seu email já foi confirmado. Por favor, faça login normalmente.' 
-              };
-            }
-          } catch (loginError) {
-            console.error('❌ Erro ao fazer login automático:', loginError);
-          }
-        } else {
-          // Se for qualquer outro erro, lançar exceção
-          console.error('❌ Erro ao verificar OTP:', error);
-          throw error;
-        }
+      if (error) throw error;
+      
+      setUser(data.user);
+      setSession(data.session);
+      
+      // Verificar se há um plano a seguir usando o serviço de checkout
+      const checkoutData = checkoutStateService.getPlanSelection();
+      
+      if (checkoutData) {
+        console.log('✅ Plano encontrado após verificação de email, redirecionando para checkout:', checkoutData);
+        
+        navigate('/checkout', { 
+          state: { 
+            planId: checkoutData.planId,
+            interval: checkoutData.interval,
+            checkoutSessionId: checkoutData.checkoutSessionId
+          },
+          replace: true
+        });
+        
+        return { success: true };
       }
       
-      // Se chegou aqui, ou o OTP foi verificado com sucesso, ou conseguimos fazer login
-      if (data?.user) {
-        console.log('✅ Usuário autenticado após verificação de OTP:', data.user.id);
-        setUser(data.user);
-        
-        if (data.session) {
-          setSession(data.session);
-        }
-        
-        // Verificar se há um plano selecionado no localStorage
-        try {
-          const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
-          if (storedPlanInfo) {
-            const planInfo = JSON.parse(storedPlanInfo);
-            // Verificar se é recente (menos de 24h)
-            const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
-            
-            if (isRecent && planInfo.planId) {
-              // Limpar do localStorage
-              localStorage.removeItem('selectedPlanInfo');
-              
-              // Redirecionar para checkout
-              navigate('/checkout', {
-                state: {
-                  planId: planInfo.planId,
-                  interval: planInfo.interval || 'month'
-                },
-                replace: true
-              });
-              return { success: true };
-            }
-          }
-        } catch (parseError) {
-          console.error('Erro ao processar informações do plano no localStorage:', parseError);
-        }
-        
-        // Verificar se há um plano selecionado nos metadados do usuário
-        const selectedPlan = data.user.user_metadata?.selectedPlan;
-        
-        if (selectedPlan) {
-          // Redirecionar para o checkout do Stripe com o plano selecionado
-          navigate('/checkout', { 
-            state: { 
-              planId: selectedPlan.id,
-              interval: selectedPlan.interval
-            },
-            replace: true
-          });
-          return { success: true };
-        }
-        
-        // Se não houver plano selecionado, redirecionar para dashboard
-        navigate('/dashboard', { replace: true });
-        return { success: true };
-      } else {
-        // Se chegou aqui mas não tem usuário nos dados retornados, 
-        // provavelmente o e-mail já foi confirmado
-        console.log('⚠️ Verificação concluída, mas não há usuário nos dados retornados');
-        // Tentar redirecionar para o dashboard
-        navigate('/dashboard', { replace: true });
-        return { success: true };
-      }
+      // Se não houver plano, ir para o dashboard
+      navigate('/dashboard', { replace: true });
+      return { success: true };
+      
     } catch (error) {
-      setError(getErrorMessage(error));
-      return { success: false, error: getErrorMessage(error) };
+      console.error('❌ Erro na verificação OTP:', error);
+      const errorMessage = getErrorMessage(error);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
