@@ -116,56 +116,98 @@ router.get('/subscription', async (req, res) => {
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
-    // Buscar assinatura do usuário
+    console.log(`🔍 Verificando assinatura do usuário ${user.id}...`);
+
+    // Buscar assinatura do usuário no banco de dados
     const { data: subscription, error } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
+      .eq('status', 'active')
       .single();
+
+    // Log detalhado da consulta
+    console.log('📝 Resultado da busca por assinatura:', {
+      encontrado: !!subscription,
+      erro: error ? `${error.code}: ${error.message}` : null,
+      dados: subscription
+    });
 
     // Se não encontrar assinatura devido a não ter resultados, retorne null (não é erro)
     if (error && error.code === 'PGRST116') {
-      console.log(`Usuário ${user.id} não possui assinatura.`);
+      console.log(`⚠️ Usuário ${user.id} não possui assinatura.`);
+      
+      // Verificar se há qualquer tipo de assinatura (mesmo não ativa)
+      const { data: anySubscription } = await supabase
+        .from('subscriptions')
+        .select('subscription_id, status')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (anySubscription) {
+        console.log(`ℹ️ Usuário tem assinatura no estado: ${anySubscription.status}`);
+      }
+      
       return res.json(null);
     }
 
     // Se houver algum outro erro na consulta do Supabase
     if (error) {
-      console.error('Erro ao buscar assinatura no Supabase:', error);
+      console.error('❌ Erro ao buscar assinatura no Supabase:', error);
       return res.status(500).json({ error: 'Erro ao buscar dados de assinatura' });
     }
 
     // Se não encontrou a assinatura
     if (!subscription) {
-      console.log(`Usuário ${user.id} não possui assinatura (resultado vazio).`);
+      console.log(`⚠️ Usuário ${user.id} não possui assinatura ativa (resultado vazio).`);
       return res.json(null);
     }
 
+    console.log('✅ Assinatura encontrada:', subscription);
+
     try {
       // Tenta buscar assinatura no Stripe
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
-    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+      
+      console.log('✅ Assinatura Stripe recuperada:', {
+        id: stripeSubscription.id,
+        status: stripeSubscription.status,
+        current_period_end: (stripeSubscription as any).current_period_end
+      });
+      
+      // Converte o timestamp Unix para uma data ISO para a resposta
+      // Apenas para exibição ao cliente - internamente continuamos armazenando como inteiro
+      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
 
       // Retorna os detalhes da assinatura
-    return res.json({
-      planId: subscription.plan_id,
-      status: stripeSubscription.status,
-      currentPeriodEnd,
-      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-    });
+      return res.json({
+        planId: subscription.plan_id,
+        status: stripeSubscription.status,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+      });
     } catch (stripeError: any) {
       // Se o Stripe não encontrar a assinatura ou outro erro do Stripe
-      console.error('Erro ao buscar assinatura no Stripe:', stripeError);
+      console.error('❌ Erro ao buscar assinatura no Stripe:', stripeError);
       
       // Se a assinatura não existe mais no Stripe, atualize o status no banco
       if (stripeError.code === 'resource_missing') {
         try {
+          const now = Math.floor(Date.now() / 1000);
           await supabase
             .from('subscriptions')
-            .update({ status: 'inactive' })
-            .eq('id', subscription.id);
+            .upsert({ 
+              subscription_id: subscription.subscription_id,
+              status: 'inactive',
+              updated_at: now
+            }, {
+              onConflict: 'subscription_id',
+              ignoreDuplicates: false
+            });
+            
+          console.log('⚠️ Assinatura marcada como inativa por não existir no Stripe');
         } catch (updateError) {
-          console.error('Erro ao atualizar status da assinatura:', updateError);
+          console.error('❌ Erro ao atualizar status da assinatura:', updateError);
         }
       }
       
@@ -173,7 +215,7 @@ router.get('/subscription', async (req, res) => {
       return res.json(null);
     }
   } catch (error) {
-    console.error('Erro geral ao verificar assinatura:', error);
+    console.error('❌ Erro geral ao verificar assinatura:', error);
     res.status(500).json({ error: 'Falha ao processar solicitação de assinatura' });
   }
 });
@@ -203,13 +245,27 @@ router.get('/subscription/diagnostic', async (req, res) => {
         exists: boolean;
         data: any | null; // Usando any para evitar problemas de tipagem com Supabase
         error: { code: string; message: string } | null;
+        timestampDetails?: {
+          current_period_start_type: string;
+          current_period_end_type: string;
+          current_period_start_value: any;
+          current_period_end_value: any;
+        };
       };
       stripeSubscription: {
         exists: boolean;
         data: any | null; // Usando any para tipagem mais flexível
         error: { code: string; message: string } | null;
+        timestampDetails?: {
+          current_period_start_type: string;
+          current_period_end_type: string;
+          current_period_start_value: number;
+          current_period_end_value: number;
+        };
       };
       conclusion: string;
+      timestampSync: boolean;
+      timestampIssues: string[];
     };
     
     // Preparar resposta
@@ -225,20 +281,66 @@ router.get('/subscription/diagnostic', async (req, res) => {
         data: null,
         error: null
       },
-      conclusion: ''
+      conclusion: '',
+      timestampSync: true,
+      timestampIssues: []
     };
+    
+    // Adicionar detalhes de timestamp do banco de dados
+    if (diagnostic.databaseSubscription.exists && dbSubscription) {
+      diagnostic.databaseSubscription.timestampDetails = {
+        current_period_start_type: typeof dbSubscription.current_period_start,
+        current_period_end_type: typeof dbSubscription.current_period_end,
+        current_period_start_value: dbSubscription.current_period_start,
+        current_period_end_value: dbSubscription.current_period_end
+      };
+    }
     
     // Se existir assinatura no banco, verificar no Stripe
     if (diagnostic.databaseSubscription.exists && dbSubscription) {
       try {
         const stripeSubscription = await stripe.subscriptions.retrieve(dbSubscription.subscription_id);
         
+        // Adicionar detalhes de timestamp do Stripe
+        const rawStart = (stripeSubscription as any).current_period_start;
+        const rawEnd = (stripeSubscription as any).current_period_end;
+        
+        diagnostic.stripeSubscription.timestampDetails = {
+          current_period_start_type: typeof rawStart,
+          current_period_end_type: typeof rawEnd,
+          current_period_start_value: rawStart,
+          current_period_end_value: rawEnd
+        };
+        
+        // Verificar sincronização de timestamps
+        if (typeof dbSubscription.current_period_start === 'number' && 
+            typeof dbSubscription.current_period_end === 'number') {
+          // Verificar se os timestamps são aproximadamente iguais (pode haver pequenas diferenças)
+          const startDiff = Math.abs(Number(dbSubscription.current_period_start) - Number(rawStart));
+          const endDiff = Math.abs(Number(dbSubscription.current_period_end) - Number(rawEnd));
+          
+          if (startDiff > 5) { // diferença de mais de 5 segundos
+            diagnostic.timestampSync = false;
+            diagnostic.timestampIssues.push(`Diferença no current_period_start: DB=${dbSubscription.current_period_start}, Stripe=${rawStart}`);
+          }
+          
+          if (endDiff > 5) { // diferença de mais de 5 segundos
+            diagnostic.timestampSync = false;
+            diagnostic.timestampIssues.push(`Diferença no current_period_end: DB=${dbSubscription.current_period_end}, Stripe=${rawEnd}`);
+          }
+        } else {
+          diagnostic.timestampSync = false;
+          diagnostic.timestampIssues.push('Os formatos de timestamp no banco de dados não são numéricos');
+        }
+        
         // Atualizar com dados do Stripe
         diagnostic.stripeSubscription.exists = true;
         diagnostic.stripeSubscription.data = {
           id: stripeSubscription.id,
           status: stripeSubscription.status,
-          currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000).toISOString(),
+          currentPeriodStart: rawStart,
+          currentPeriodEnd: rawEnd,
+          currentPeriodEnd_formatted: new Date(rawEnd * 1000).toISOString(),
           cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
           items: stripeSubscription.items.data
         };
@@ -246,6 +348,8 @@ router.get('/subscription/diagnostic', async (req, res) => {
         // Verificar sincronização
         if (diagnostic.stripeSubscription.data.status !== dbSubscription.status) {
           diagnostic.conclusion = 'Os status da assinatura estão diferentes entre o banco de dados e o Stripe. Uma sincronização é necessária.';
+        } else if (!diagnostic.timestampSync) {
+          diagnostic.conclusion = 'Os timestamps da assinatura estão diferentes entre o banco de dados e o Stripe. Uma sincronização é necessária.';
         } else {
           diagnostic.conclusion = 'A assinatura parece estar correta e sincronizada.';
         }
@@ -656,9 +760,21 @@ router.post('/webhook', async (req, res) => {
 // Funções auxiliares para lidar com eventos do webhook
 async function handleCheckoutCompleted(session: any) {
   console.log('🎉 Checkout completado, atualizando assinatura na base de dados...');
+  console.log('📝 Detalhes da sessão:', {
+    id: session.id,
+    subscription: session.subscription,
+    metadata: session.metadata,
+    customer: session.customer
+  });
   
   // Obter detalhes da assinatura criada
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
+  
+  console.log('📝 Detalhes da assinatura Stripe:', {
+    id: subscription.id,
+    status: subscription.status,
+    customer: subscription.customer
+  });
   
   // Metadados da sessão que incluem userId e planId
   const { userId, planId } = session.metadata;
@@ -717,12 +833,19 @@ async function handleCheckoutCompleted(session: any) {
     throw new Error('Timestamps inválidos recebidos do Stripe');
   }
   
+  // Garantir que o status seja 'active' se a assinatura estiver ativa no Stripe
+  // Observe que o Stripe pode retornar 'active', 'trialing', etc., mas queremos simplificar para nossa aplicação
+  let status = subscription.status;
+  if (status === 'active' || status === 'trialing') {
+    status = 'active'; // Uniformizar para nosso sistema
+  }
+  
   const subscriptionData = {
     user_id: userId,
     plan_id: planId,
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
-    status: subscription.status || 'incomplete',
+    status: status,
     current_period_start: Math.floor(current_period_start),
     current_period_end: Math.floor(current_period_end),
     cancel_at_period_end: subscription.cancel_at_period_end || false,
@@ -730,8 +853,10 @@ async function handleCheckoutCompleted(session: any) {
     updated_at: Math.floor(now)
   };
 
+  console.log('📝 Dados preparados para inserção/atualização:', subscriptionData);
+
   // Usar upsert para evitar erro de duplicação
-  const { error: upsertError } = await supabase
+  const { data, error: upsertError } = await supabase
     .from('subscriptions')
     .upsert(subscriptionData, {
       onConflict: 'subscription_id',
@@ -743,7 +868,7 @@ async function handleCheckoutCompleted(session: any) {
     throw new Error(`Erro ao upsert assinatura: ${upsertError.message}`);
   }
   
-  console.log('✅ Assinatura criada/atualizada com sucesso via upsert');
+  console.log('✅ Assinatura criada/atualizada com sucesso via upsert:', data);
 }
 
 async function handleInvoicePaid(invoice: any) {

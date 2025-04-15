@@ -16,6 +16,7 @@ export default function PaymentSuccess() {
   const [retryCount, setRetryCount] = useState(0);
   const [retryInProgress, setRetryInProgress] = useState(false);
   const sessionId = searchParams.get('session_id');
+  const [directSubscriptionCheck, setDirectSubscriptionCheck] = useState(false);
 
   // Função para verificar o pagamento com lógica de retry
   const verifyPayment = async (retry = false) => {
@@ -100,6 +101,42 @@ export default function PaymentSuccess() {
         setTimeout(() => {
           verifyPayment(true);
         }, 15000);
+      } else if (retryCount >= 3 && !directSubscriptionCheck) {
+        // Se ainda falhou após várias tentativas, tentar verificação direta da assinatura
+        console.log('🔄 Tentando verificação direta da assinatura após falhas na verificação via session...');
+        setDirectSubscriptionCheck(true);
+        
+        // Verificar diretamente usando o método getCurrentSubscription com retries
+        const subscription = await paymentService.getCurrentSubscription(5, 5000);
+        
+        if (subscription && subscription.status === 'active') {
+          console.log('✅ Verificação direta da assinatura bem-sucedida:', subscription);
+          setStatus('success');
+          
+          // Atualizar o cache local
+          localStorage.setItem('subscription_status', 'active');
+          localStorage.setItem('subscription_planId', subscription.planId || '');
+          sessionStorage.setItem('subscription_status_backup', 'active');
+          sessionStorage.setItem('subscription_planId_backup', subscription.planId || '');
+          
+          toast({
+            title: "Assinatura ativada com sucesso!",
+            description: "Bem-vindo ao LeadFlux. Sua assinatura foi verificada com sucesso.",
+          });
+        } else {
+          console.error('❌ Verificação direta da assinatura também falhou');
+          setStatus('error');
+          setErrorDetails(
+            'Não foi possível confirmar sua assinatura. O pagamento pode ter sido processado, ' +
+            'mas não conseguimos verificar o status atual. Por favor, contate o suporte.'
+          );
+          
+          toast({
+            title: "Erro na verificação",
+            description: "Não foi possível confirmar seu pagamento. Entre em contato com o suporte.",
+            variant: "destructive",
+          });
+        }
       } else {
         console.error('❌ Falha na verificação do pagamento:', result);
         setStatus('error');
@@ -132,6 +169,36 @@ export default function PaymentSuccess() {
       console.error('Detalhes do erro:', error.response?.data || error.message);
       setStatus('error');
       setErrorDetails(error.response?.data?.error || error.message);
+      
+      // Se for o último retry e ainda falhou, tentar verificação direta se ainda não foi feita
+      if (retryCount >= 3 && !directSubscriptionCheck) {
+        try {
+          console.log('🔄 Tentando verificação direta da assinatura após exceção...');
+          setDirectSubscriptionCheck(true);
+          
+          // Verificar diretamente usando o método getCurrentSubscription com retries
+          const subscription = await paymentService.getCurrentSubscription(5, 5000);
+          
+          if (subscription && subscription.status === 'active') {
+            console.log('✅ Verificação direta da assinatura bem-sucedida:', subscription);
+            setStatus('success');
+            
+            // Atualizar o cache local
+            localStorage.setItem('subscription_status', 'active');
+            localStorage.setItem('subscription_planId', subscription.planId || '');
+            sessionStorage.setItem('subscription_status_backup', 'active');
+            sessionStorage.setItem('subscription_planId_backup', subscription.planId || '');
+            
+            toast({
+              title: "Assinatura ativada com sucesso!",
+              description: "Bem-vindo ao LeadFlux. Sua assinatura foi verificada com sucesso.",
+            });
+            return;
+          }
+        } catch (subError) {
+          console.error('❌ Erro na verificação direta da assinatura:', subError);
+        }
+      }
     } finally {
       if (!retryInProgress || retryCount >= 3) {
         setVerifying(false);

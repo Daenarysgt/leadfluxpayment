@@ -151,52 +151,83 @@ export const paymentService = {
   
   /**
    * Obtém informações da assinatura atual do usuário
+   * Inclui mecanismo de retry para evitar race conditions com o webhook
    */
-  async getCurrentSubscription(): Promise<{
+  async getCurrentSubscription(maxRetries = 3, retryDelay = 2000): Promise<{
     planId: string;
     status: string;
     currentPeriodEnd: Date;
     cancelAtPeriodEnd: boolean;
   } | null> {
-    try {
-      // Obter token de autenticação
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session || !session.access_token) {
-        console.log('Usuário não autenticado ao verificar assinatura');
-        return null;
-      }
-      
-      // Obter informações da assinatura
-      const response = await axios.get(
-        `${API_URL}/payment/subscription`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
+    let attempts = 0;
+    
+    while (attempts < maxRetries) {
+      try {
+        // Obter token de autenticação
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session || !session.access_token) {
+          console.log('Usuário não autenticado ao verificar assinatura');
+          return null;
         }
-      );
-      
-      return response.data; // Pode ser null se não houver assinatura
-    } catch (error: any) {
-      // Registra o erro em detalhes
-      if (error.response) {
-        // O servidor respondeu com status fora do intervalo 2xx
-        console.error('Erro ao obter assinatura - resposta do servidor:', {
-          status: error.response.status,
-          data: error.response.data
-        });
-      } else if (error.request) {
-        // A requisição foi feita mas não houve resposta
-        console.error('Erro ao obter assinatura - sem resposta:', error.request);
-      } else {
-        // Erro durante a configuração da requisição
-        console.error('Erro ao configurar requisição de assinatura:', error.message);
+        
+        console.log(`📝 Verificando assinatura (tentativa ${attempts + 1}/${maxRetries})...`);
+        
+        // Obter informações da assinatura
+        const response = await axios.get(
+          `${API_URL}/payment/subscription`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          }
+        );
+        
+        // Se houver resposta com dados, retornar imediatamente
+        if (response.data) {
+          console.log('✅ Assinatura encontrada:', response.data);
+          return response.data;
+        }
+        
+        // Se não houver dados e ainda temos tentativas, esperar e tentar novamente
+        if (attempts < maxRetries - 1) {
+          console.log(`⏳ Assinatura não encontrada, tentando novamente em ${retryDelay/1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          attempts++;
+        } else {
+          console.log('⚠️ Assinatura não encontrada após todas as tentativas');
+          return null;
+        }
+      } catch (error: any) {
+        // Registra o erro em detalhes
+        if (error.response) {
+          // O servidor respondeu com status fora do intervalo 2xx
+          console.error('Erro ao obter assinatura - resposta do servidor:', {
+            status: error.response.status,
+            data: error.response.data
+          });
+        } else if (error.request) {
+          // A requisição foi feita mas não houve resposta
+          console.error('Erro ao obter assinatura - sem resposta:', error.request);
+        } else {
+          // Erro durante a configuração da requisição
+          console.error('Erro ao configurar requisição de assinatura:', error.message);
+        }
+        
+        // Se ainda temos tentativas, esperar e tentar novamente
+        if (attempts < maxRetries - 1) {
+          console.log(`⏳ Erro ao verificar assinatura, tentando novamente em ${retryDelay/1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          attempts++;
+        } else {
+          // Retorna null em caso de erro para não quebrar a interface
+          console.log('⚠️ Erro ao verificar assinatura após todas as tentativas');
+          return null;
+        }
       }
-      
-      // Retorna null em caso de erro para não quebrar a interface
-      return null;
     }
+    
+    return null;
   },
   
   /**
