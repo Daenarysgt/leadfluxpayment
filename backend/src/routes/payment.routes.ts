@@ -389,11 +389,34 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       console.log('⚠️ Assinatura não encontrada após tentativas, criando manualmente...');
       
       try {
+        // Validar dados necessários
+        if (!session.metadata?.userId || !session.metadata?.planId) {
+          throw new Error('Metadados incompletos na sessão. UserId ou PlanId ausente.');
+        }
+
+        if (!session.customer) {
+          throw new Error('ID do cliente Stripe ausente na sessão.');
+        }
+
+        // Buscar e validar a assinatura no Stripe
+        console.log('🔍 Buscando detalhes da assinatura no Stripe:', subscriptionId);
         const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
         
+        if (!stripeSubscription) {
+          throw new Error('Assinatura não encontrada no Stripe.');
+        }
+
+        console.log('📝 Dados para criar assinatura:', {
+          userId: session.metadata.userId,
+          planId: session.metadata.planId,
+          subscriptionId,
+          customerId: session.customer,
+          status: stripeSubscription.status
+        });
+
         const subscriptionData = {
-          user_id: session.metadata?.userId,
-          plan_id: session.metadata?.planId,
+          user_id: session.metadata.userId,
+          plan_id: session.metadata.planId,
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
           status: stripeSubscription.status,
@@ -404,11 +427,39 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           updated_at: new Date().toISOString()
         };
 
+        // Verificar novamente se a assinatura já não foi criada (race condition)
+        const { data: finalCheck } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('subscription_id', subscriptionId)
+          .single();
+
+        if (finalCheck) {
+          console.log('✅ Assinatura encontrada em verificação final, usando existente');
+          return res.json({
+            success: true,
+            planId: finalCheck.plan_id,
+            subscription: {
+              id: subscriptionId,
+              status: finalCheck.status,
+              currentPeriodEnd: finalCheck.current_period_end
+            }
+          });
+        }
+
+        // Se realmente não existe, criar
+        console.log('➡️ Inserindo nova assinatura no banco...');
         const { error: insertError } = await supabase
           .from('subscriptions')
           .insert(subscriptionData);
 
         if (insertError) {
+          console.error('❌ Erro detalhado ao inserir assinatura:', {
+            error: insertError,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint
+          });
           throw new Error(`Erro ao inserir assinatura: ${insertError.message}`);
         }
 
@@ -416,7 +467,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         
         return res.json({
           success: true,
-          planId: session.metadata?.planId,
+          planId: session.metadata.planId,
           subscription: {
             id: subscriptionId,
             status: stripeSubscription.status,
@@ -424,10 +475,14 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           }
         });
       } catch (error: any) {
-        console.error('❌ Erro ao criar assinatura manualmente:', error);
+        console.error('❌ Erro detalhado ao criar assinatura:', {
+          error: error.message,
+          stack: error.stack,
+          originalError: error
+        });
         return res.json({
           success: false,
-          error: 'Falha ao sincronizar assinatura com o banco de dados. Por favor, contate o suporte.'
+          error: `Falha ao sincronizar assinatura com o banco de dados: ${error.message}`
         });
       }
     }
