@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import VerifyOtpPage from '@/pages/auth/VerifyOtpPage';
 import Dashboard from '@/pages/Dashboard';
 import HomePage from '@/pages/HomePage';
 import Index from "./pages/Index";
@@ -108,6 +109,7 @@ const App = () => {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/verify-otp" element={<VerifyOtpPage />} />
                 
                 {/* Rota pública para acessar funis pelo slug */}
                 <Route path="/f/:slug" element={<PublicFunnel />} />

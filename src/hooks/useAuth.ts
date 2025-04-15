@@ -78,11 +78,18 @@ export const useAuth = () => {
     try {
       setError(null);
       setLoading(true);
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        } 
+      });
       if (error) throw error;
       if (data.user) {
         setUser(data.user);
-        navigate('/dashboard');
+        // Redirecionar para a página de verificação em vez do dashboard
+        navigate('/verify-otp', { state: { email } });
       }
     } catch (error) {
       setError(getErrorMessage(error));
@@ -150,6 +157,46 @@ export const useAuth = () => {
     }
   };
 
+  const verifyOtp = async (email: string, token: string, resend = false) => {
+    try {
+      setError(null);
+      setLoading(true);
+      
+      if (resend) {
+        // Reenviar o código OTP
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+        });
+        
+        if (error) throw error;
+        
+        return { success: true, message: 'Código reenviado com sucesso' };
+      } else {
+        // Verificar o código OTP
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'signup'
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          setUser(data.user);
+          setSession(data.session);
+        }
+        
+        return { success: true };
+      }
+    } catch (error) {
+      setError(getErrorMessage(error));
+      return { success: false, error: getErrorMessage(error) };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     session,
@@ -161,5 +208,6 @@ export const useAuth = () => {
     resetPassword,
     signInWithGoogle,
     signInWithGithub,
+    verifyOtp,
   };
 }; 
