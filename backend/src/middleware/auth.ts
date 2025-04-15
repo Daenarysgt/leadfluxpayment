@@ -21,9 +21,18 @@ export const auth = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+    
+    console.log('🔒 Auth middleware:', { 
+      hasAuthHeader: !!authHeader,
+      authHeaderFormat: authHeader?.substring(0, 10) + '...',
+      hasToken: !!token,
+      tokenFirstChars: token ? token.substring(0, 10) + '...' : 'none'
+    });
     
     if (!token) {
+      console.log('❌ Token não fornecido');
       res.status(401).json({ error: 'Token não fornecido' });
       return;
     }
@@ -31,10 +40,15 @@ export const auth = async (
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      console.error('Erro de autenticação:', error);
+      console.error('❌ Erro de autenticação:', error);
       res.status(401).json({ error: 'Token inválido' });
       return;
     }
+
+    console.log('✅ Usuário autenticado:', {
+      userId: user.id,
+      email: user.email
+    });
 
     // Adiciona o usuário ao objeto da requisição usando nossa interface
     const requestUser: RequestUser = {
