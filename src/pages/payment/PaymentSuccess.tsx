@@ -13,77 +13,104 @@ export default function PaymentSuccess() {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [diagnostic, setDiagnostic] = useState<any>(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [retryInProgress, setRetryInProgress] = useState(false);
   const sessionId = searchParams.get('session_id');
 
-  useEffect(() => {
-    const verifyPayment = async () => {
-      // Log para depuração - parâmetro da URL
-      console.log('📋 Parâmetros da URL:', Object.fromEntries(searchParams.entries()));
-      console.log('🔑 Session ID:', sessionId);
+  // Função para verificar o pagamento com lógica de retry
+  const verifyPayment = async (retry = false) => {
+    // Log para depuração - parâmetro da URL
+    console.log('📋 Parâmetros da URL:', Object.fromEntries(searchParams.entries()));
+    console.log('🔑 Session ID:', sessionId);
+    
+    if (!sessionId) {
+      console.error('❌ Erro: Nenhum session_id encontrado na URL');
+      setStatus('error');
+      setErrorDetails('Nenhum ID de sessão encontrado na URL');
+      setVerifying(false);
+      return;
+    }
+
+    try {
+      if (retry) {
+        setRetryInProgress(true);
+        console.log(`🔄 Tentativa #${retryCount + 1} de verificação do pagamento...`);
+      } else {
+        console.log('🔄 Iniciando verificação do pagamento com session_id:', sessionId);
+      }
       
-      if (!sessionId) {
-        console.error('❌ Erro: Nenhum session_id encontrado na URL');
+      // Verificar se o usuário está autenticado antes de prosseguir
+      const { data } = await paymentService.getUserSession();
+      if (!data.session) {
+        console.error('❌ Erro: Usuário não autenticado');
         setStatus('error');
-        setErrorDetails('Nenhum ID de sessão encontrado na URL');
+        setErrorDetails('Usuário não está autenticado');
         setVerifying(false);
+        setRetryInProgress(false);
         return;
       }
-
-      try {
-        console.log('🔄 Iniciando verificação do pagamento com session_id:', sessionId);
+      
+      console.log('👤 Usuário autenticado, prosseguindo com verificação...');
+      
+      // Verificar status do pagamento
+      const result = await paymentService.verifyPaymentStatus(sessionId);
+      console.log('✅ Resposta da verificação:', result);
+      
+      if (result.success) {
+        console.log('✅ Pagamento confirmado com sucesso!', result);
+        setStatus('success');
+        // Atualizar o cache local da assinatura com redundância
+        localStorage.setItem('subscription_status', 'active');
+        localStorage.setItem('subscription_planId', result.planId || '');
+        // Adicionar redundância no sessionStorage
+        sessionStorage.setItem('subscription_status_backup', 'active');
+        sessionStorage.setItem('subscription_planId_backup', result.planId || '');
+        console.log('💾 Status de assinatura salvo em múltiplos storages para segurança');
         
-        // Verificar se o usuário está autenticado antes de prosseguir
-        const { data } = await paymentService.getUserSession();
-        if (!data.session) {
-          console.error('❌ Erro: Usuário não autenticado');
-          setStatus('error');
-          setErrorDetails('Usuário não está autenticado');
-          setVerifying(false);
-          return;
-        }
+        toast({
+          title: "Assinatura ativada com sucesso!",
+          description: "Bem-vindo ao LeadFlux. Você já pode começar a usar todas as funcionalidades.",
+        });
+      } else if (result.error?.includes('Webhook pode ainda não ter processado') && retryCount < 3) {
+        // Se o erro indica que o webhook ainda não processou, e estamos dentro do limite de tentativas
+        console.log('⏳ Webhook ainda processando, aguardando...');
+        setRetryCount(prev => prev + 1);
         
-        console.log('👤 Usuário autenticado, prosseguindo com verificação...');
+        // Mostrar mensagem para o usuário
+        toast({
+          title: "Processando pagamento...",
+          description: `Aguarde enquanto finalizamos o processamento. Tentativa ${retryCount + 1}/4.`,
+        });
         
-        // Verificar status do pagamento
-        const result = await paymentService.verifyPaymentStatus(sessionId);
-        console.log('✅ Resposta da verificação:', result);
-        
-        if (result.success) {
-          console.log('✅ Pagamento confirmado com sucesso!', result);
-          setStatus('success');
-          // Atualizar o cache local da assinatura com redundância
-          localStorage.setItem('subscription_status', 'active');
-          localStorage.setItem('subscription_planId', result.planId || '');
-          // Adicionar redundância no sessionStorage
-          sessionStorage.setItem('subscription_status_backup', 'active');
-          sessionStorage.setItem('subscription_planId_backup', result.planId || '');
-          console.log('💾 Status de assinatura salvo em múltiplos storages para segurança');
-          
-          toast({
-            title: "Assinatura ativada com sucesso!",
-            description: "Bem-vindo ao LeadFlux. Você já pode começar a usar todas as funcionalidades.",
-          });
-        } else {
-          console.error('❌ Falha na verificação do pagamento:', result);
-          setStatus('error');
-          setErrorDetails(result.error || 'Não foi possível confirmar seu pagamento');
-          
-          toast({
-            title: "Erro na verificação",
-            description: "Não foi possível confirmar seu pagamento. Entre em contato com o suporte.",
-            variant: "destructive",
-          });
-        }
-      } catch (error: any) {
-        console.error('❌ Exceção ao verificar pagamento:', error);
-        console.error('Detalhes do erro:', error.response?.data || error.message);
+        // Esperar 5 segundos e tentar novamente
+        setTimeout(() => {
+          verifyPayment(true);
+        }, 5000);
+      } else {
+        console.error('❌ Falha na verificação do pagamento:', result);
         setStatus('error');
-        setErrorDetails(error.response?.data?.error || error.message);
-      } finally {
+        setErrorDetails(result.error || 'Não foi possível confirmar seu pagamento');
+        
+        toast({
+          title: "Erro na verificação",
+          description: "Não foi possível confirmar seu pagamento. Entre em contato com o suporte.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Exceção ao verificar pagamento:', error);
+      console.error('Detalhes do erro:', error.response?.data || error.message);
+      setStatus('error');
+      setErrorDetails(error.response?.data?.error || error.message);
+    } finally {
+      if (!retryInProgress || retryCount >= 3) {
         setVerifying(false);
       }
-    };
+      setRetryInProgress(false);
+    }
+  };
 
+  useEffect(() => {
     verifyPayment();
   }, [sessionId, searchParams]);
 
@@ -124,7 +151,9 @@ export default function PaymentSuccess() {
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Verificando pagamento</h2>
             <p className="text-muted-foreground">
-              Aguarde enquanto confirmamos seu pagamento...
+              {retryInProgress 
+                ? `Aguarde enquanto finalizamos o processamento (Tentativa ${retryCount}/3)...` 
+                : 'Aguarde enquanto confirmamos seu pagamento...'}
             </p>
             <p className="text-xs text-muted-foreground mt-4">
               Session ID: {sessionId || 'Não encontrado'}

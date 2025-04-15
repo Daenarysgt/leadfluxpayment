@@ -383,44 +383,102 @@ router.get('/verify-session/:sessionId', async (req, res) => {
 
     if (error) {
       console.error('❌ Erro ao buscar assinatura no banco:', error);
-      // Tentar criar a assinatura no banco se não existir
       if (error.code === 'PGRST116') { // Código para "not found"
         console.log('⚠️ Assinatura não encontrada no banco. Tentando sincronizar com webhook...');
-        // Aguardar alguns segundos para o webhook processar
-        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Tentar novamente
-        const { data: retrySubscription, error: retryError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('subscription_id', subscriptionId)
-          .single();
+        // Verificar se a assinatura existe no Stripe e está válida
+        if (subscription && (subscription.status === 'active' || subscription.status === 'trialing')) {
+          console.log('✅ Assinatura encontrada no Stripe, tentando criar no banco de dados...');
           
-        if (retryError) {
-          console.error('❌ Falha ao encontrar assinatura mesmo após espera:', retryError);
-          return res.json({ 
-            success: false, 
-            error: 'Assinatura não encontrada no banco de dados. Webhook pode ainda não ter processado.' 
-          });
+          // Aguardar mais tempo para o webhook processar (5 segundos)
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Tentar novamente
+          const { data: retrySubscription, error: retryError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('subscription_id', subscriptionId)
+            .single();
+            
+          if (retryError) {
+            console.log('⚠️ Assinatura ainda não encontrada após espera. Tentando uma última vez...');
+            
+            // Se ainda não foi criada, vamos criar manualmente como fallback
+            try {
+              // Obter metadados relevantes da sessão
+              const planId = session.metadata?.planId || 'basic';
+              const userId = session.metadata?.userId;
+              
+              if (!userId) {
+                throw new Error('ID do usuário não encontrado nos metadados da sessão');
+              }
+              
+              // Criar a assinatura manualmente
+              const subscriptionData = {
+                user_id: userId,
+                plan_id: planId,
+                subscription_id: subscription.id,
+                stripe_customer_id: subscription.customer,
+                status: subscription.status,
+                current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+                current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+                cancel_at_period_end: subscription.cancel_at_period_end,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+              
+              // Inserir no banco
+              const { error: insertError } = await supabase
+                .from('subscriptions')
+                .insert(subscriptionData);
+              
+              if (insertError) {
+                console.error('❌ Falha ao criar assinatura manualmente:', insertError);
+                return res.json({ 
+                  success: false, 
+                  error: 'Falha ao sincronizar assinatura com o banco de dados' 
+                });
+              }
+              
+              console.log('✅ Assinatura criada manualmente com sucesso!');
+              
+              // Retornar sucesso após criar manualmente
+              return res.json({
+                success: true,
+                planId: planId,
+                subscription: {
+                  id: subscriptionId,
+                  status: subscription.status,
+                  currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                }
+              });
+            } catch (fallbackError: any) {
+              console.error('❌ Erro na criação manual de assinatura:', fallbackError);
+              return res.json({ 
+                success: false, 
+                error: 'Assinatura válida no Stripe, mas não foi possível sincronizar com o banco de dados' 
+              });
+            }
+          }
+          
+          // Se encontrou na segunda tentativa
+          if (retrySubscription) {
+            console.log('✅ Assinatura encontrada na segunda tentativa!');
+            return res.json({
+              success: true,
+              planId: session.metadata?.planId,
+              subscription: {
+                id: subscriptionId,
+                status: subscription.status,
+                currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+              }
+            });
+          }
         }
         
-        // Se encontrou na segunda tentativa
-        if (retrySubscription) {
-          console.log('✅ Assinatura encontrada na segunda tentativa!');
-          return res.json({
-            success: true,
-            planId: session.metadata?.planId,
-            subscription: {
-              id: subscriptionId,
-              status: subscription.status,
-              currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
-            }
-          });
-        }
-      } else {
         return res.json({ 
           success: false, 
-          error: `Erro ao buscar assinatura: ${error.message}` 
+          error: 'Assinatura não encontrada no banco de dados. Webhook pode ainda não ter processado. Tente novamente em alguns instantes.' 
         });
       }
     }
