@@ -61,17 +61,8 @@ const VerifyOtpPage = () => {
     }
 
     try {
-      const result = await verifyOtp(email, otpString);
-      if (result.success) {
-        // Redireciona para a página de preços após verificação bem-sucedida
-        navigate('/pricing', {
-          state: {
-            message: 'Email verificado com sucesso! Escolha um plano para começar.'
-          }
-        });
-      } else {
-        setError('Código de verificação inválido. Por favor, tente novamente.');
-      }
+      // A função verifyOtp já faz o redirecionamento internamente
+      await verifyOtp(email, otpString);
     } catch (err) {
       setError('Ocorreu um erro ao verificar o código. Por favor, tente novamente.');
     } finally {
@@ -179,7 +170,17 @@ const VerifyOtpPage = () => {
               Não recebeu o código?{' '}
               <button 
                 type="button"
-                onClick={() => verifyOtp(email, '', true)}
+                onClick={async () => {
+                  try {
+                    const result = await verifyOtp(email, '', true);
+                    if (result?.message) {
+                      // TODO: Adicionar toast de sucesso
+                      console.log(result.message);
+                    }
+                  } catch (err) {
+                    setError('Erro ao reenviar o código');
+                  }
+                }}
                 className="text-blue-600 hover:text-purple-600 transition-colors font-medium"
               >
                 Reenviar código

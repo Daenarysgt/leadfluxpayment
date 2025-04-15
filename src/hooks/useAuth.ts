@@ -8,6 +8,12 @@ interface SelectedPlan {
   interval: 'month' | 'year';
 }
 
+interface VerifyOtpResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -171,7 +177,7 @@ export const useAuth = () => {
     }
   };
 
-  const verifyOtp = async (email: string, token: string, resend = false) => {
+  const verifyOtp = async (email: string, token: string, resend = false): Promise<VerifyOtpResponse> => {
     try {
       setError(null);
       setLoading(true);
@@ -207,12 +213,15 @@ export const useAuth = () => {
               state: { 
                 planId: selectedPlan.id,
                 interval: selectedPlan.interval
-              }
+              },
+              replace: true
             });
-          } else {
-            // Se não houver plano selecionado, redirecionar para pricing
-            navigate('/pricing');
+            return { success: true };
           }
+          
+          // Se não houver plano selecionado, redirecionar para pricing
+          navigate('/pricing', { replace: true });
+          return { success: true };
         }
         
         return { success: true };
