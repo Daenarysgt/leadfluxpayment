@@ -103,23 +103,36 @@ export const paymentService = {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // Obter token de autenticação
+        // Verificar se temos um usuário válido primeiro
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log(`❌ Tentativa ${attempt}/${maxRetries}: Usuário não encontrado`);
+          if (attempt === maxRetries) {
+            throw new Error('Usuário não encontrado após várias tentativas');
+          }
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        // Agora obter a sessão
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session || !session.access_token) {
           console.log(`❌ Tentativa ${attempt}/${maxRetries}: Token não disponível`);
           
           if (attempt === maxRetries) {
-            throw new Error('Usuário não autenticado após várias tentativas');
+            throw new Error('Token não disponível após várias tentativas');
           }
           
-          // Aguardar antes da próxima tentativa
           await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
         
         // Token disponível, fazer a requisição
         console.log('✅ Token obtido, fazendo requisição...');
+        console.log('🔑 User ID:', user.id);
+        console.log('🎫 Token disponível:', !!session.access_token);
+        
         const response = await axios.get(
           `${API_URL}/payment/subscription`,
           {
@@ -129,6 +142,12 @@ export const paymentService = {
           }
         );
         
+        if (!response.data) {
+          console.log('⚠️ Resposta vazia do servidor');
+          return null;
+        }
+        
+        console.log('✅ Resposta do servidor:', response.data);
         return response.data;
       } catch (error: any) {
         if (attempt === maxRetries) {

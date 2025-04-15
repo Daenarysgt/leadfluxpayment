@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Github, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { paymentService } from '@/services/paymentService';
+import { supabase } from '@/lib/supabase';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -22,6 +23,16 @@ const LoginPage = () => {
       console.log('🔑 Tentando fazer login com email:', email);
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
+      
+      // Verificar se o usuário está realmente autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ Login falhou: Usuário não encontrado após login');
+        setError('Erro ao completar login. Tente novamente.');
+        return;
+      }
+      
+      console.log('✅ Usuário autenticado:', user.id);
       
       // Aumentar o delay para garantir que o token esteja propagado
       console.log('⏳ Aguardando propagação do token...');
