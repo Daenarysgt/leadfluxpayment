@@ -313,6 +313,11 @@ router.get('/verify-session/:sessionId', async (req, res) => {
     const { sessionId } = req.params;
     const user = req.user;
 
+    console.log('🔍 DEBUG A: Iniciando verificação com dados:', {
+      sessionId,
+      userId: user?.id
+    });
+
     if (!user) {
       return res.status(401).json({ 
         success: false, 
@@ -320,10 +325,15 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       });
     }
 
-    console.log(`🔍 Verificando sessão de checkout: ${sessionId} para usuário: ${user.id}`);
-
+    console.log('🔍 DEBUG B: Buscando sessão no Stripe');
     // Buscar detalhes da sessão no Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log('📦 DEBUG C: Dados da sessão:', {
+      status: session.status,
+      metadata: session.metadata,
+      subscription: session.subscription,
+      customer: session.customer
+    });
 
     // Verificar se a sessão existe e se está completa
     if (!session) {
@@ -342,6 +352,19 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       });
     }
 
+    console.log('🔍 DEBUG D: Buscando assinatura no Stripe');
+    const subscriptionId = session.subscription as string;
+    const initialStripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    console.log('📦 DEBUG E: Dados da assinatura:', {
+      id: initialStripeSubscription.id,
+      status: initialStripeSubscription.status,
+      current_period_start: (initialStripeSubscription as any).current_period_start,
+      current_period_end: (initialStripeSubscription as any).current_period_end,
+      raw_start_type: typeof (initialStripeSubscription as any).current_period_start,
+      raw_end_type: typeof (initialStripeSubscription as any).current_period_end
+    });
+
     // Verificar se a sessão pertence ao usuário atual
     if (session.metadata?.userId !== user.id) {
       console.error(`❌ Sessão ${sessionId} não pertence ao usuário ${user.id}`);
@@ -352,8 +375,6 @@ router.get('/verify-session/:sessionId', async (req, res) => {
     }
 
     // Buscar assinatura associada à sessão
-    const subscriptionId = session.subscription as string;
-    
     if (!subscriptionId) {
       console.error('❌ Sessão não possui ID de assinatura');
       return res.json({ 
