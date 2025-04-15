@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import { PLANS } from '../config/plans';
+import { supabase } from '../config/supabase';
 
 interface RequestUser {
   id: string;
@@ -61,6 +62,45 @@ router.post('/create-checkout-session', async (req, res) => {
   } catch (error) {
     console.error('Erro ao criar sessão de checkout:', error);
     res.status(500).json({ error: 'Erro ao criar sessão de checkout' });
+  }
+});
+
+// Rota para verificar assinatura atual
+router.get('/subscription', async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Erro ao buscar assinatura:', error);
+      return res.status(500).json({ error: 'Erro ao buscar assinatura' });
+    }
+
+    if (!subscription) {
+      return res.json(null);
+    }
+
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+
+    return res.json({
+      planId: subscription.plan_id,
+      status: stripeSubscription.status,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+    });
+  } catch (error) {
+    console.error('Erro ao verificar assinatura:', error);
+    res.status(500).json({ error: 'Erro ao verificar assinatura' });
   }
 });
 
