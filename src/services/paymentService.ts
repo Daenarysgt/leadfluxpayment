@@ -98,79 +98,55 @@ export const paymentService = {
     currentPeriodEnd: Date;
     cancelAtPeriodEnd: boolean;
   } | null> {
-    const maxRetries = 3;
-    const retryDelay = 1000; // 1 segundo
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Verificar se temos um usuário válido primeiro
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log(`❌ Tentativa ${attempt}/${maxRetries}: Usuário não encontrado`);
-          if (attempt === maxRetries) {
-            throw new Error('Usuário não encontrado após várias tentativas');
-          }
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          continue;
-        }
-
-        // Agora obter a sessão
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session || !session.access_token) {
-          console.log(`❌ Tentativa ${attempt}/${maxRetries}: Token não disponível`);
-          
-          if (attempt === maxRetries) {
-            throw new Error('Token não disponível após várias tentativas');
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          continue;
-        }
-        
-        // Token disponível, fazer a requisição
-        console.log('✅ Token obtido, fazendo requisição...');
-        console.log('🔑 User ID:', user.id);
-        console.log('🎫 Token disponível:', !!session.access_token);
-        
-        const response = await axios.get(
-          `${API_URL}/payment/subscription`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`
-            }
-          }
-        );
-        
-        if (!response.data) {
-          console.log('⚠️ Resposta vazia do servidor');
-          return null;
-        }
-        
-        console.log('✅ Resposta do servidor:', response.data);
-        return response.data;
-      } catch (error: any) {
-        if (attempt === maxRetries) {
-          // Registra o erro em detalhes na última tentativa
-          if (error.response) {
-            console.error('Erro ao obter assinatura - resposta do servidor:', {
-              status: error.response.status,
-              data: error.response.data
-            });
-          } else if (error.request) {
-            console.error('Erro ao obter assinatura - sem resposta:', error.request);
-          } else {
-            console.error('Erro ao configurar requisição de assinatura:', error.message);
-          }
-          return null;
-        }
-        
-        // Se não for a última tentativa, aguardar e tentar novamente
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+    try {
+      // Obter usuário e sessão
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user || !sessionData.session?.access_token) {
+        console.log('❌ Erro ao obter sessão:', { 
+          user: !!user, 
+          token: !!sessionData.session?.access_token 
+        });
+        return null;
       }
+      
+      console.log('✅ Sessão obtida:', { 
+        userId: user.id,
+        hasToken: !!sessionData.session.access_token 
+      });
+      
+      // Token disponível, fazer a requisição
+      const response = await axios.get(
+        `${API_URL}/payment/subscription`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`
+          }
+        }
+      );
+      
+      if (!response.data) {
+        console.log('⚠️ Resposta vazia do servidor');
+        return null;
+      }
+      
+      console.log('✅ Resposta do servidor:', response.data);
+      return response.data;
+    } catch (error: any) {
+      // Registra o erro em detalhes
+      if (error.response) {
+        console.error('Erro ao obter assinatura - resposta do servidor:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      } else if (error.request) {
+        console.error('Erro ao obter assinatura - sem resposta:', error.request);
+      } else {
+        console.error('Erro ao configurar requisição de assinatura:', error.message);
+      }
+      return null;
     }
-    
-    return null;
   },
   
   /**

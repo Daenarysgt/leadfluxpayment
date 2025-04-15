@@ -26,13 +26,18 @@ const LoginPage = () => {
       
       // Verificar se o usuário está realmente autenticado
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ Login falhou: Usuário não encontrado após login');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!user || !sessionData.session?.access_token) {
+        console.error('❌ Login falhou: Usuário não encontrado ou token não disponível');
         setError('Erro ao completar login. Tente novamente.');
         return;
       }
       
-      console.log('✅ Usuário autenticado:', user.id);
+      console.log('✅ Usuário autenticado:', {
+        userId: user.id,
+        hasToken: !!sessionData.session.access_token
+      });
       
       // Aumentar o delay para garantir que o token esteja propagado
       console.log('⏳ Aguardando propagação do token...');
