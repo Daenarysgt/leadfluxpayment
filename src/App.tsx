@@ -23,6 +23,9 @@ import PublicFunnel from "./pages/public/PublicFunnel";
 import DomainFunnel from "@/pages/public/DomainFunnel";
 import { domainsService } from "@/services/domains";
 import LandingPage from '@/landing/LandingPage';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import PaymentSuccess from '@/pages/payment/PaymentSuccess';
+import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -114,52 +117,57 @@ const App = () => {
                 {/* Rota pública para acessar funis pelo slug */}
                 <Route path="/f/:slug" element={<PublicFunnel />} />
                 
+                {/* Rotas de Pagamento */}
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/canceled" element={<PaymentCanceled />} />
+                
+                {/* Rotas Protegidas */}
                 <Route
                   path="/dashboard"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Dashboard />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
                   path="/builder/:funnelId"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Builder />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
                   path="/design/:funnelId"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Design />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
                   path="/settings/:funnelId"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Settings />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
                   path="/leads/:funnelId"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Leads />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route
                   path="/preview/:funnelId"
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Preview />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   }
                 />
                 <Route path="*" element={<NotFound />} />
