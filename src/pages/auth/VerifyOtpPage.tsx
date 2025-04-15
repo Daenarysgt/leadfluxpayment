@@ -63,7 +63,12 @@ const VerifyOtpPage = () => {
     try {
       const result = await verifyOtp(email, otpString);
       if (result.success) {
-        navigate('/dashboard');
+        // Redireciona para a página de preços após verificação bem-sucedida
+        navigate('/pricing', {
+          state: {
+            message: 'Email verificado com sucesso! Escolha um plano para começar.'
+          }
+        });
       } else {
         setError('Código de verificação inválido. Por favor, tente novamente.');
       }
