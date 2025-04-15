@@ -5,8 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Github, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { paymentService } from '@/services/paymentService';
-import { supabase } from '@/lib/supabase';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -23,25 +21,6 @@ const LoginPage = () => {
       console.log('🔑 Tentando fazer login com email:', email);
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
-      
-      // Verificar se o usuário está realmente autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (!user || !sessionData.session?.access_token) {
-        console.error('❌ Login falhou: Usuário não encontrado ou token não disponível');
-        setError('Erro ao completar login. Tente novamente.');
-        return;
-      }
-      
-      console.log('✅ Usuário autenticado:', {
-        userId: user.id,
-        hasToken: !!sessionData.session.access_token
-      });
-      
-      // Aumentar o delay para garantir que o token esteja propagado
-      console.log('⏳ Aguardando propagação do token...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Verificar se há um plano selecionado armazenado no localStorage
       console.log('🔍 Verificando plano no localStorage...');
@@ -79,29 +58,16 @@ const LoginPage = () => {
           }
         } catch (parseError) {
           console.error('❌ Erro ao processar informações do plano:', parseError);
+          // Se houver erro na leitura, apenas limpar
           localStorage.removeItem('selectedPlanInfo');
         }
       } else {
         console.log('ℹ️ Nenhum plano encontrado no localStorage');
       }
       
-      // Se não tiver plano selecionado, verificar se tem assinatura ativa
-      try {
-        console.log('🔍 Verificando assinatura atual...');
-        const subscription = await paymentService.getCurrentSubscription();
-        
-        if (subscription && subscription.status === 'active') {
-          console.log('✅ Assinatura ativa encontrada, redirecionando para dashboard');
-          navigate('/dashboard');
-        } else {
-          console.log('⚠️ Nenhuma assinatura ativa, redirecionando para pricing');
-          navigate('/pricing');
-        }
-      } catch (error) {
-        console.error('❌ Erro ao verificar assinatura:', error);
-        // Em caso de erro, redirecionar para pricing por segurança
-        navigate('/pricing');
-      }
+      // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard
+      console.log('🏠 Redirecionando para dashboard');
+      navigate('/dashboard');
     } catch (err) {
       console.error('❌ Erro no login:', err);
       setError('Email ou senha inválidos');
