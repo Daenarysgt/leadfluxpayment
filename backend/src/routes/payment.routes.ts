@@ -21,6 +21,35 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil'
 });
 
+// Helper para converter timestamps de forma segura
+function safeTimestampToISOString(timestamp: any): string {
+  if (!timestamp) {
+    return new Date().toISOString(); // Fallback para data atual
+  }
+  
+  try {
+    // Verificar se o timestamp já é uma data ISO
+    if (typeof timestamp === 'string' && timestamp.includes('T')) {
+      return timestamp;
+    }
+    
+    // Verificar se é um número
+    const timestampNum = Number(timestamp);
+    if (isNaN(timestampNum)) {
+      console.warn('⚠️ Timestamp não é um número válido:', timestamp);
+      return new Date().toISOString();
+    }
+    
+    // Verificar se o timestamp está em segundos (Stripe) ou milissegundos (JS)
+    // O Stripe geralmente usa segundos desde Epoch
+    const multiplier = timestampNum > 9999999999 ? 1 : 1000;
+    return new Date(timestampNum * multiplier).toISOString();
+  } catch (error) {
+    console.error('❌ Erro ao converter timestamp:', error, timestamp);
+    return new Date().toISOString();
+  }
+}
+
 router.post('/create-checkout-session', async (req, res) => {
   try {
     const { planId, interval } = req.body;
@@ -407,7 +436,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         subscription: {
           id: subscriptionId,
           status: subscription.status,
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+          currentPeriodEnd: safeTimestampToISOString((subscription as any).current_period_end)
         }
       });
     }
@@ -454,9 +483,9 @@ router.get('/verify-session/:sessionId', async (req, res) => {
             subscription_id: subscriptionId,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
-            current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-            current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: safeTimestampToISOString((subscription as any).current_period_start),
+            current_period_end: safeTimestampToISOString((subscription as any).current_period_end),
+            cancel_at_period_end: !!(subscription as any).cancel_at_period_end,
             updated_at: new Date().toISOString()
           })
           .eq('id', userSubscription.id);
@@ -485,9 +514,9 @@ router.get('/verify-session/:sessionId', async (req, res) => {
             subscription_id: subscriptionId,
             stripe_customer_id: subscription.customer as string,
             status: subscription.status,
-            current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-            current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: safeTimestampToISOString((subscription as any).current_period_start),
+            current_period_end: safeTimestampToISOString((subscription as any).current_period_end),
+            cancel_at_period_end: !!(subscription as any).cancel_at_period_end,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -509,7 +538,7 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         subscription: {
           id: subscriptionId,
           status: subscription.status,
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+          currentPeriodEnd: safeTimestampToISOString((subscription as any).current_period_end)
         }
       });
     } catch (error: any) {
@@ -591,64 +620,80 @@ router.post('/webhook', async (req, res) => {
 async function handleCheckoutCompleted(session: any) {
   console.log('🎉 Checkout completado, atualizando assinatura na base de dados...');
   
-  // Obter detalhes da assinatura criada
-  const subscription = await stripe.subscriptions.retrieve(session.subscription);
-  
-  // Metadados da sessão que incluem userId e planId
-  const { userId, planId } = session.metadata;
-  
-  // Verificar se já existe uma assinatura para este usuário
-  const { data: existingSubscription, error: findError } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  
-  if (findError && findError.code !== 'PGRST116') {
-    console.error('❌ Erro ao verificar assinatura existente:', findError);
-    throw new Error('Erro ao verificar assinatura existente');
-  }
-  
-  const subscriptionData = {
-    user_id: userId,
-    plan_id: planId,
-    subscription_id: subscription.id,
-    stripe_customer_id: subscription.customer,
-    status: subscription.status,
-    current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    updated_at: new Date().toISOString()
-  };
+  try {
+    // Obter detalhes da assinatura criada
+    const subscription = await stripe.subscriptions.retrieve(session.subscription);
+    
+    // Metadados da sessão que incluem userId e planId
+    const { userId, planId } = session.metadata;
+    
+    if (!userId || !planId) {
+      console.error('❌ Metadados de sessão incompletos:', session.metadata);
+      throw new Error('Metadados de sessão incompletos');
+    }
+    
+    // Verificar se já existe uma assinatura para este usuário
+    const { data: existingSubscription, error: findError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (findError && findError.code !== 'PGRST116') {
+      console.error('❌ Erro ao verificar assinatura existente:', findError);
+      throw new Error('Erro ao verificar assinatura existente');
+    }
+    
+    // Log para debug
+    console.log('📅 Convertendo timestamps:', {
+      period_start: (subscription as any).current_period_start,
+      period_end: (subscription as any).current_period_end
+    });
+    
+    const subscriptionData = {
+      user_id: userId,
+      plan_id: planId,
+      subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer,
+      status: subscription.status,
+      current_period_start: safeTimestampToISOString((subscription as any).current_period_start),
+      current_period_end: safeTimestampToISOString((subscription as any).current_period_end),
+      cancel_at_period_end: !!(subscription as any).cancel_at_period_end,
+      updated_at: new Date().toISOString()
+    };
 
-  if (existingSubscription) {
-    // Atualizar assinatura existente
-    const { error: updateError } = await supabase
-      .from('subscriptions')
-      .update(subscriptionData)
-      .eq('id', existingSubscription.id);
-    
-    if (updateError) {
-      console.error('❌ Erro ao atualizar assinatura:', updateError);
-      throw new Error('Erro ao atualizar assinatura');
+    if (existingSubscription) {
+      // Atualizar assinatura existente
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update(subscriptionData)
+        .eq('id', existingSubscription.id);
+      
+      if (updateError) {
+        console.error('❌ Erro ao atualizar assinatura:', updateError);
+        throw new Error('Erro ao atualizar assinatura');
+      }
+      
+      console.log('✅ Assinatura atualizada com sucesso');
+    } else {
+      // Criar nova assinatura
+      const { error: insertError } = await supabase
+        .from('subscriptions')
+        .insert({
+          ...subscriptionData,
+          created_at: new Date().toISOString()
+        });
+      
+      if (insertError) {
+        console.error('❌ Erro ao criar assinatura:', insertError);
+        throw new Error('Erro ao criar assinatura');
+      }
+      
+      console.log('✅ Nova assinatura criada com sucesso');
     }
-    
-    console.log('✅ Assinatura atualizada com sucesso');
-  } else {
-    // Criar nova assinatura
-    const { error: insertError } = await supabase
-      .from('subscriptions')
-      .insert({
-        ...subscriptionData,
-        created_at: new Date().toISOString()
-      });
-    
-    if (insertError) {
-      console.error('❌ Erro ao criar assinatura:', insertError);
-      throw new Error('Erro ao criar assinatura');
-    }
-    
-    console.log('✅ Nova assinatura criada com sucesso');
+  } catch (error: any) {
+    console.error('❌ Erro no handleCheckoutCompleted:', error);
+    throw error;
   }
 }
 
@@ -668,9 +713,9 @@ async function handleInvoicePaid(invoice: any) {
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: safeTimestampToISOString((subscription as any).current_period_start),
+      current_period_end: safeTimestampToISOString((subscription as any).current_period_end),
+      cancel_at_period_end: !!(subscription as any).cancel_at_period_end,
       updated_at: new Date().toISOString()
     })
     .eq('subscription_id', subscription.id);
@@ -691,9 +736,9 @@ async function handleSubscriptionUpdated(subscription: any) {
     .from('subscriptions')
     .update({
       status: subscription.status,
-      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_start: safeTimestampToISOString((subscription as any).current_period_start),
+      current_period_end: safeTimestampToISOString((subscription as any).current_period_end),
+      cancel_at_period_end: !!(subscription as any).cancel_at_period_end,
       updated_at: new Date().toISOString()
     })
     .eq('subscription_id', subscription.id);
