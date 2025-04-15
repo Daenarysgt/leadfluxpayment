@@ -450,15 +450,26 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           rawStart,
           rawEnd,
           typeStart: typeof rawStart,
-          typeEnd: typeof rawEnd
+          typeEnd: typeof rawEnd,
+          asNumber: Number(rawStart),
+          asNumberEnd: Number(rawEnd)
         });
 
-        // Tentar converter as datas
-        console.log('🕒 PONTO 8: Tentando converter timestamps');
-        const startDate = new Date(rawStart * 1000);
-        const endDate = new Date(rawEnd * 1000);
+        // Garantir que os timestamps sejam números antes da conversão
+        const startTimestamp = typeof rawStart === 'number' ? rawStart : Number(rawStart);
+        const endTimestamp = typeof rawEnd === 'number' ? rawEnd : Number(rawEnd);
+
+        if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
+          throw new Error('Timestamps inválidos recebidos do Stripe');
+        }
+
+        // Converter para Date usando os timestamps validados
+        const startDate = new Date(startTimestamp * 1000);
+        const endDate = new Date(endTimestamp * 1000);
 
         console.log('✅ PONTO 9: Datas convertidas:', {
+          startTimestamp,
+          endTimestamp,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           isValidStart: !isNaN(startDate.getTime()),
