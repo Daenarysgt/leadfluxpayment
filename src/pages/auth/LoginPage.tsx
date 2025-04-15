@@ -23,8 +23,9 @@ const LoginPage = () => {
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
       
-      // Pequeno delay para garantir que o token esteja propagado
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Aumentar o delay para garantir que o token esteja propagado
+      console.log('⏳ Aguardando propagação do token...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Verificar se há um plano selecionado armazenado no localStorage
       console.log('🔍 Verificando plano no localStorage...');

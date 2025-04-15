@@ -98,45 +98,60 @@ export const paymentService = {
     currentPeriodEnd: Date;
     cancelAtPeriodEnd: boolean;
   } | null> {
-    try {
-      // Obter token de autenticação
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session || !session.access_token) {
-        console.log('❌ Token não disponível ao verificar assinatura');
-        throw new Error('Usuário não autenticado');
-      }
-      
-      // Obter informações da assinatura
-      const response = await axios.get(
-        `${API_URL}/payment/subscription`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 segundo
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Obter token de autenticação
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session || !session.access_token) {
+          console.log(`❌ Tentativa ${attempt}/${maxRetries}: Token não disponível`);
+          
+          if (attempt === maxRetries) {
+            throw new Error('Usuário não autenticado após várias tentativas');
           }
+          
+          // Aguardar antes da próxima tentativa
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
         }
-      );
-      
-      return response.data; // Pode ser null se não houver assinatura
-    } catch (error: any) {
-      // Registra o erro em detalhes
-      if (error.response) {
-        // O servidor respondeu com status fora do intervalo 2xx
-        console.error('Erro ao obter assinatura - resposta do servidor:', {
-          status: error.response.status,
-          data: error.response.data
-        });
-      } else if (error.request) {
-        // A requisição foi feita mas não houve resposta
-        console.error('Erro ao obter assinatura - sem resposta:', error.request);
-      } else {
-        // Erro durante a configuração da requisição
-        console.error('Erro ao configurar requisição de assinatura:', error.message);
+        
+        // Token disponível, fazer a requisição
+        console.log('✅ Token obtido, fazendo requisição...');
+        const response = await axios.get(
+          `${API_URL}/payment/subscription`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          }
+        );
+        
+        return response.data;
+      } catch (error: any) {
+        if (attempt === maxRetries) {
+          // Registra o erro em detalhes na última tentativa
+          if (error.response) {
+            console.error('Erro ao obter assinatura - resposta do servidor:', {
+              status: error.response.status,
+              data: error.response.data
+            });
+          } else if (error.request) {
+            console.error('Erro ao obter assinatura - sem resposta:', error.request);
+          } else {
+            console.error('Erro ao configurar requisição de assinatura:', error.message);
+          }
+          return null;
+        }
+        
+        // Se não for a última tentativa, aguardar e tentar novamente
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
-      
-      // Retorna null em caso de erro para não quebrar a interface
-      return null;
     }
+    
+    return null;
   },
   
   /**
