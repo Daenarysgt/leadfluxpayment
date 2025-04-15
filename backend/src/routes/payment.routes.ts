@@ -462,4 +462,234 @@ router.get('/verify-session/:sessionId', async (req, res) => {
   }
 });
 
+// Webhook do Stripe para processar eventos de pagamento
+router.post('/webhook', async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  
+  if (!sig) {
+    return res.status(400).json({ error: 'Assinatura do webhook ausente' });
+  }
+
+  let event;
+
+  try {
+    // Verificar a assinatura do webhook usando a chave secreta de webhook
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err: any) {
+    console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
+    return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
+  }
+
+  console.log(`✅ Webhook recebido: ${event.type}`);
+
+  // Processar eventos específicos
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object);
+        break;
+      case 'invoice.paid':
+        await handleInvoicePaid(event.data.object);
+        break;
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object);
+        break;
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object);
+        break;
+      default:
+        console.log(`⚠️ Evento não tratado: ${event.type}`);
+    }
+
+    res.json({ received: true });
+  } catch (error: any) {
+    console.error(`❌ Erro ao processar webhook: ${error.message}`);
+    res.status(500).json({ error: 'Erro ao processar webhook' });
+  }
+});
+
+// Funções auxiliares para lidar com eventos do webhook
+async function handleCheckoutCompleted(session: any) {
+  console.log('🎉 Checkout completado, atualizando assinatura na base de dados...');
+  
+  // Obter detalhes da assinatura criada
+  const subscription = await stripe.subscriptions.retrieve(session.subscription);
+  
+  // Metadados da sessão que incluem userId e planId
+  const { userId, planId } = session.metadata;
+  
+  // Verificar se já existe uma assinatura para este usuário
+  const { data: existingSubscription, error: findError } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  
+  if (findError && findError.code !== 'PGRST116') {
+    console.error('❌ Erro ao verificar assinatura existente:', findError);
+    throw new Error('Erro ao verificar assinatura existente');
+  }
+  
+  const subscriptionData = {
+    user_id: userId,
+    plan_id: planId,
+    stripe_subscription_id: subscription.id,
+    stripe_customer_id: subscription.customer,
+    status: subscription.status,
+    current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+    current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    updated_at: new Date().toISOString()
+  };
+
+  if (existingSubscription) {
+    // Atualizar assinatura existente
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update(subscriptionData)
+      .eq('id', existingSubscription.id);
+    
+    if (updateError) {
+      console.error('❌ Erro ao atualizar assinatura:', updateError);
+      throw new Error('Erro ao atualizar assinatura');
+    }
+    
+    console.log('✅ Assinatura atualizada com sucesso');
+  } else {
+    // Criar nova assinatura
+    const { error: insertError } = await supabase
+      .from('subscriptions')
+      .insert({
+        ...subscriptionData,
+        created_at: new Date().toISOString()
+      });
+    
+    if (insertError) {
+      console.error('❌ Erro ao criar assinatura:', insertError);
+      throw new Error('Erro ao criar assinatura');
+    }
+    
+    console.log('✅ Nova assinatura criada com sucesso');
+  }
+}
+
+async function handleInvoicePaid(invoice: any) {
+  console.log('💰 Fatura paga, atualizando período de assinatura...');
+  
+  if (!invoice.subscription) {
+    console.log('⚠️ Fatura sem assinatura associada, ignorando.');
+    return;
+  }
+  
+  // Obter detalhes da assinatura atualizada
+  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+  
+  // Atualizar a assinatura no banco de dados
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: subscription.status,
+      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      updated_at: new Date().toISOString()
+    })
+    .eq('stripe_subscription_id', subscription.id);
+  
+  if (error) {
+    console.error('❌ Erro ao atualizar período da assinatura:', error);
+    throw new Error('Erro ao atualizar período da assinatura');
+  }
+  
+  console.log('✅ Período da assinatura atualizado com sucesso');
+}
+
+async function handleSubscriptionUpdated(subscription: any) {
+  console.log('🔄 Assinatura atualizada, sincronizando mudanças...');
+  
+  // Atualizar a assinatura no banco de dados
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: subscription.status,
+      current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+      current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      updated_at: new Date().toISOString()
+    })
+    .eq('stripe_subscription_id', subscription.id);
+  
+  if (error) {
+    console.error('❌ Erro ao sincronizar atualização da assinatura:', error);
+    throw new Error('Erro ao sincronizar atualização da assinatura');
+  }
+  
+  console.log('✅ Assinatura sincronizada com sucesso');
+}
+
+async function handleSubscriptionDeleted(subscription: any) {
+  console.log('❌ Assinatura cancelada, atualizando status...');
+  
+  // Marcar a assinatura como cancelada/inativa no banco de dados
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: 'canceled',
+      updated_at: new Date().toISOString()
+    })
+    .eq('stripe_subscription_id', subscription.id);
+  
+  if (error) {
+    console.error('❌ Erro ao marcar assinatura como cancelada:', error);
+    throw new Error('Erro ao marcar assinatura como cancelada');
+  }
+  
+  console.log('✅ Assinatura marcada como cancelada com sucesso');
+}
+
+// Rota para criar sessão do portal do cliente Stripe
+router.post('/create-customer-portal-session', async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    console.log('📝 Criando sessão do portal do cliente para:', user.id);
+
+    // Buscar assinatura do usuário para obter o stripe_customer_id
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (error || !subscription?.stripe_customer_id) {
+      console.error('❌ Assinatura ou Customer ID não encontrado:', error);
+      return res.status(404).json({ error: 'Assinatura não encontrada para este usuário' });
+    }
+
+    // Criar a sessão do portal do cliente
+    const session = await stripe.billingPortal.sessions.create({
+      customer: subscription.stripe_customer_id,
+      return_url: `${process.env.FRONTEND_URL}/account`,
+    });
+
+    console.log('✅ Sessão do portal do cliente criada:', {
+      sessionId: session.id,
+      sessionUrl: session.url
+    });
+
+    res.json({ url: session.url });
+  } catch (error: any) {
+    console.error('❌ Erro ao criar sessão do portal do cliente:', error.message);
+    res.status(500).json({ error: 'Erro ao criar sessão do portal do cliente' });
+  }
+});
+
 export default router; 
