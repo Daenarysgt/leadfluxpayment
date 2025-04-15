@@ -413,6 +413,105 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                 throw new Error('ID do usuário não encontrado nos metadados da sessão');
               }
               
+              // Verificar se já não existe uma assinatura com este ID
+              const { data: existingCheck, error: checkError } = await supabase
+                .from('subscriptions')
+                .select('id')
+                .eq('subscription_id', subscription.id)
+                .maybeSingle();
+                
+              if (checkError) {
+                console.error('❌ Erro ao verificar existência de assinatura:', checkError);
+              }
+              
+              // Se já existe, tente atualizar em vez de inserir
+              if (existingCheck) {
+                console.log('ℹ️ Assinatura já existe com ID diferente, tentando atualizar...');
+                
+                const subscriptionData = {
+                  plan_id: planId,
+                  status: subscription.status,
+                  current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+                  current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  updated_at: new Date().toISOString()
+                };
+                
+                const { error: updateError } = await supabase
+                  .from('subscriptions')
+                  .update(subscriptionData)
+                  .eq('id', existingCheck.id);
+                  
+                if (updateError) {
+                  console.error('❌ Falha ao atualizar assinatura:', updateError);
+                  throw new Error(`Falha ao atualizar: ${updateError.message}`);
+                }
+                
+                console.log('✅ Assinatura atualizada manualmente com sucesso!');
+                
+                return res.json({
+                  success: true,
+                  planId: planId,
+                  subscription: {
+                    id: subscriptionId,
+                    status: subscription.status,
+                    currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                  }
+                });
+              }
+              
+              // Se ainda não existe, tenta também pelo user_id
+              const { data: userCheck, error: userCheckError } = await supabase
+                .from('subscriptions')
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle();
+                
+              if (userCheckError) {
+                console.error('❌ Erro ao verificar assinatura pelo user_id:', userCheckError);
+              }
+              
+              // Se existe pelo user_id, faz update
+              if (userCheck) {
+                console.log('ℹ️ Usuário já tem assinatura, atualizando...');
+                
+                const subscriptionData = {
+                  plan_id: planId,
+                  subscription_id: subscription.id,
+                  stripe_customer_id: subscription.customer,
+                  status: subscription.status,
+                  current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+                  current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  updated_at: new Date().toISOString()
+                };
+                
+                const { error: updateError } = await supabase
+                  .from('subscriptions')
+                  .update(subscriptionData)
+                  .eq('id', userCheck.id);
+                  
+                if (updateError) {
+                  console.error('❌ Falha ao atualizar assinatura do usuário:', updateError);
+                  throw new Error(`Falha ao atualizar: ${updateError.message}`);
+                }
+                
+                console.log('✅ Assinatura do usuário atualizada com sucesso!');
+                
+                return res.json({
+                  success: true,
+                  planId: planId,
+                  subscription: {
+                    id: subscriptionId,
+                    status: subscription.status,
+                    currentPeriodEnd: new Date((subscription as any).current_period_end * 1000).toISOString()
+                  }
+                });
+              }
+              
+              // Se realmente não existe, cria nova entrada
+              console.log('🆕 Criando nova assinatura...');
+              
               // Criar a assinatura manualmente
               const subscriptionData = {
                 user_id: userId,
@@ -427,6 +526,8 @@ router.get('/verify-session/:sessionId', async (req, res) => {
                 updated_at: new Date().toISOString()
               };
               
+              console.log('📝 Tentando inserir com os dados:', subscriptionData);
+              
               // Inserir no banco
               const { error: insertError } = await supabase
                 .from('subscriptions')
@@ -434,9 +535,10 @@ router.get('/verify-session/:sessionId', async (req, res) => {
               
               if (insertError) {
                 console.error('❌ Falha ao criar assinatura manualmente:', insertError);
+                console.error('Detalhes do erro:', JSON.stringify(insertError, null, 2));
                 return res.json({ 
                   success: false, 
-                  error: 'Falha ao sincronizar assinatura com o banco de dados' 
+                  error: `Falha ao sincronizar assinatura com o banco de dados. Detalhe: ${insertError.message}` 
                 });
               }
               

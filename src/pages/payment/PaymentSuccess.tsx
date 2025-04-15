@@ -86,16 +86,46 @@ export default function PaymentSuccess() {
         setTimeout(() => {
           verifyPayment(true);
         }, 5000);
+      } else if (result.error?.includes('válida no Stripe, mas não foi possível sincronizar') && retryCount < 5) {
+        // Problema de sincronização com o banco - tentar novamente com intervalo maior
+        console.log('⚠️ Assinatura válida no Stripe, mas problemas de sincronização. Tentando novamente...');
+        setRetryCount(prev => prev + 1);
+        
+        toast({
+          title: "Sincronizando pagamento...",
+          description: `Seu pagamento foi aprovado! Estamos sincronizando com nosso sistema. Tentativa ${retryCount + 1}/6.`,
+        });
+        
+        // Aumentar o intervalo para 7 segundos
+        setTimeout(() => {
+          verifyPayment(true);
+        }, 7000);
       } else {
         console.error('❌ Falha na verificação do pagamento:', result);
         setStatus('error');
         setErrorDetails(result.error || 'Não foi possível confirmar seu pagamento');
         
-        toast({
-          title: "Erro na verificação",
-          description: "Não foi possível confirmar seu pagamento. Entre em contato com o suporte.",
-          variant: "destructive",
-        });
+        // Se o erro menciona que a assinatura existe no Stripe, mas não no banco de dados,
+        // forneça uma mensagem mais útil para o usuário
+        if (result.error?.includes('válida no Stripe')) {
+          setErrorDetails(
+            'Assinatura válida no Stripe, mas não foi possível sincronizar com o banco de dados. ' +
+            'Seu pagamento foi processado, mas precisamos completar a configuração da sua conta. ' +
+            'Por favor, contate o suporte mencionando o Session ID.'
+          );
+          
+          toast({
+            title: "Pagamento processado!",
+            description: "O pagamento foi aprovado, mas precisamos finalizar a configuração da sua conta. Contate o suporte se necessário.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Erro na verificação",
+            description: "Não foi possível confirmar seu pagamento. Entre em contato com o suporte.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error: any) {
       console.error('❌ Exceção ao verificar pagamento:', error);
