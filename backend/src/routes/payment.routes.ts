@@ -389,36 +389,55 @@ router.get('/verify-session/:sessionId', async (req, res) => {
       console.log('⚠️ Assinatura não encontrada após tentativas, criando manualmente...');
       
       try {
+        console.log('🔍 PONTO 1: Iniciando verificação da sessão');
+        
         // Validar dados necessários
         if (!session.metadata?.userId || !session.metadata?.planId) {
+          console.log('❌ PONTO 2: Metadados incompletos:', {
+            userId: session.metadata?.userId,
+            planId: session.metadata?.planId
+          });
           throw new Error('Metadados incompletos na sessão. UserId ou PlanId ausente.');
         }
 
         if (!session.customer) {
+          console.log('❌ PONTO 3: Customer ID ausente');
           throw new Error('ID do cliente Stripe ausente na sessão.');
         }
 
-        // Buscar e validar a assinatura no Stripe
-        console.log('🔍 Buscando detalhes da assinatura no Stripe:', subscriptionId);
-        const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-        
-        if (!stripeSubscription) {
-          throw new Error('Assinatura não encontrada no Stripe.');
-        }
-
-        // DEBUG: Investigar valores temporais
-        console.log('🕒 Valores temporais brutos do Stripe:', {
-          current_period_start: (stripeSubscription as any).current_period_start,
-          current_period_end: (stripeSubscription as any).current_period_end,
-          type_start: typeof (stripeSubscription as any).current_period_start,
-          type_end: typeof (stripeSubscription as any).current_period_end
+        console.log('✅ PONTO 4: Validações básicas OK', {
+          sessionId,
+          userId: session.metadata.userId,
+          planId: session.metadata.planId,
+          customerId: session.customer
         });
 
-        // DEBUG: Verificar conversão de timestamp
-        const startDate = new Date((stripeSubscription as any).current_period_start * 1000);
-        const endDate = new Date((stripeSubscription as any).current_period_end * 1000);
+        // Buscar e validar a assinatura no Stripe
+        console.log('🔍 PONTO 5: Buscando assinatura no Stripe:', subscriptionId);
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+        
+        console.log('✅ PONTO 6: Assinatura encontrada no Stripe:', {
+          id: stripeSubscription.id,
+          status: stripeSubscription.status
+        });
 
-        console.log('🕒 Datas convertidas:', {
+        // DEBUG: Investigar valores temporais
+        const rawStart = (stripeSubscription as any).current_period_start;
+        const rawEnd = (stripeSubscription as any).current_period_end;
+        
+        console.log('🕒 PONTO 7: Valores temporais brutos:', {
+          rawStart,
+          rawEnd,
+          typeStart: typeof rawStart,
+          typeEnd: typeof rawEnd
+        });
+
+        // Tentar converter as datas
+        console.log('🕒 PONTO 8: Tentando converter timestamps');
+        const startDate = new Date(rawStart * 1000);
+        const endDate = new Date(rawEnd * 1000);
+
+        console.log('✅ PONTO 9: Datas convertidas:', {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           isValidStart: !isNaN(startDate.getTime()),
@@ -438,50 +457,24 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           updated_at: new Date().toISOString()
         };
 
-        // DEBUG: Verificar objeto final
-        console.log('📝 Dados finais para inserção:', {
-          ...subscriptionData,
-          current_period_start_valid: !isNaN(new Date(subscriptionData.current_period_start).getTime()),
-          current_period_end_valid: !isNaN(new Date(subscriptionData.current_period_end).getTime())
-        });
+        console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
 
-        // Verificar novamente se a assinatura já não foi criada (race condition)
-        const { data: finalCheck } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('subscription_id', subscriptionId)
-          .single();
-
-        if (finalCheck) {
-          console.log('✅ Assinatura encontrada em verificação final, usando existente');
-          return res.json({
-            success: true,
-            planId: finalCheck.plan_id,
-            subscription: {
-              id: subscriptionId,
-              status: finalCheck.status,
-              currentPeriodEnd: finalCheck.current_period_end
-            }
-          });
-        }
-
-        // Se realmente não existe, criar
-        console.log('➡️ Inserindo nova assinatura no banco...');
+        // Inserir no banco
+        console.log('💾 PONTO 11: Tentando inserir no banco...');
         const { error: insertError } = await supabase
           .from('subscriptions')
           .insert(subscriptionData);
 
         if (insertError) {
-          console.error('❌ Erro detalhado ao inserir assinatura:', {
-            error: insertError,
+          console.error('❌ PONTO 12: Erro na inserção:', {
             code: insertError.code,
-            details: insertError.details,
-            hint: insertError.hint
+            message: insertError.message,
+            details: insertError.details
           });
           throw new Error(`Erro ao inserir assinatura: ${insertError.message}`);
         }
 
-        console.log('✅ Assinatura criada manualmente com sucesso!');
+        console.log('✅ PONTO 13: Inserção bem-sucedida!');
         
         return res.json({
           success: true,
