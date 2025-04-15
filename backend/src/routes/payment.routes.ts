@@ -143,16 +143,16 @@ router.get('/subscription', async (req, res) => {
 
     try {
       // Tenta buscar assinatura no Stripe
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
-      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
 
       // Retorna os detalhes da assinatura
-      return res.json({
-        planId: subscription.plan_id,
-        status: stripeSubscription.status,
-        currentPeriodEnd,
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-      });
+    return res.json({
+      planId: subscription.plan_id,
+      status: stripeSubscription.status,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+    });
     } catch (stripeError: any) {
       // Se o Stripe não encontrar a assinatura ou outro erro do Stripe
       console.error('Erro ao buscar assinatura no Stripe:', stripeError);
