@@ -15,8 +15,8 @@ const CheckIcon = () => (
 interface Plan {
   id: string;
   name: string;
-  monthly_price: number;
-  annual_price: number;
+  price_monthly: number;
+  price_annual: number;
   description: string;
   features: string[];
   stripe_price_id_monthly: string;
@@ -39,13 +39,14 @@ export default function Pricing() {
         const { data, error } = await supabase
           .from('subscription_plans')
           .select('*')
-          .order('monthly_price');
+          .order('price_monthly');
 
         if (error) throw error;
         
         const plansWithPopular = data?.map(plan => ({
           ...plan,
-          is_popular: plan.name.toLowerCase().includes('pro')
+          is_popular: plan.name.toLowerCase().includes('pro'),
+          features: Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
         })) || [];
         
         setPlans(plansWithPopular);
@@ -211,13 +212,13 @@ export default function Pricing() {
                   
                   {isAnnual && (
                     <p className={`mt-4 text-sm line-through ${plan.is_popular ? 'text-gray-200' : 'text-gray-400'}`}>
-                      {`R$${(plan.annual_price * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                      {`R$${(plan.price_annual * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </p>
                   )}
                   
                   <p className={`mt-2 ${plan.is_popular ? 'text-white' : 'text-gray-900'}`}>
                     <span className="text-4xl font-bold">
-                      {`R$${(isAnnual ? plan.annual_price : plan.monthly_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                      {`R$${(isAnnual ? plan.price_annual : plan.price_monthly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </span>
                     <span className="text-base font-medium">/{isAnnual ? 'ano' : 'mês'}</span>
                   </p>
