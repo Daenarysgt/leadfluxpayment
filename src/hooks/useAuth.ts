@@ -365,20 +365,37 @@ export const useAuth = () => {
           setSession(data.session);
         }
         
-        // Verificar se há um plano selecionado no localStorage
+        // Verificar se há um plano selecionado no localStorage ou sessionStorage
         try {
-          const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+          // Tentar primeiro no localStorage
+          let storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+          
+          // Se não encontrou no localStorage, tentar no sessionStorage
+          if (!storedPlanInfo) {
+            storedPlanInfo = sessionStorage.getItem('selectedPlanInfo_backup');
+          }
+          
           if (storedPlanInfo) {
             const planInfo = JSON.parse(storedPlanInfo);
             // Verificar se é recente (menos de 24h)
             const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
             
             if (isRecent && planInfo.planId) {
-              // Limpar do localStorage
+              console.log('✅ Plano encontrado no armazenamento após verificação OTP:', planInfo);
+              
+              // Limpar dos storages após usar
               localStorage.removeItem('selectedPlanInfo');
+              sessionStorage.removeItem('selectedPlanInfo_backup');
+              
+              // Adicionar parâmetros de URL para maior confiabilidade
+              const params = new URLSearchParams({
+                plan_id: planInfo.planId,
+                interval: planInfo.interval || 'month',
+                timestamp: Date.now().toString()
+              }).toString();
               
               // Redirecionar para checkout
-              navigate('/checkout', {
+              navigate(`/checkout?${params}`, {
                 state: {
                   planId: planInfo.planId,
                   interval: planInfo.interval || 'month'
@@ -389,15 +406,24 @@ export const useAuth = () => {
             }
           }
         } catch (parseError) {
-          console.error('Erro ao processar informações do plano no localStorage:', parseError);
+          console.error('❌ Erro ao processar informações do plano no armazenamento:', parseError);
         }
         
         // Verificar se há um plano selecionado nos metadados do usuário
         const selectedPlan = data.user.user_metadata?.selectedPlan;
         
         if (selectedPlan) {
+          console.log('✅ Plano encontrado nos metadados do usuário após verificação OTP:', selectedPlan);
+          
+          // Adicionar parâmetros de URL para maior confiabilidade
+          const params = new URLSearchParams({
+            plan_id: selectedPlan.id,
+            interval: selectedPlan.interval || 'month',
+            timestamp: Date.now().toString()
+          }).toString();
+          
           // Redirecionar para o checkout do Stripe com o plano selecionado
-          navigate('/checkout', { 
+          navigate(`/checkout?${params}`, { 
             state: { 
               planId: selectedPlan.id,
               interval: selectedPlan.interval

@@ -13,13 +13,55 @@ const VerifyOtpPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
+  const selectedPlan = location.state?.selectedPlan;
+  
+  // Extrair parâmetros da URL que podem conter informações do plano
+  const searchParams = new URLSearchParams(location.search);
+  const urlPlanId = searchParams.get('plan_id');
+  const urlInterval = searchParams.get('interval') as 'month' | 'year' | null;
+  const urlPlanName = searchParams.get('plan_name') ? decodeURIComponent(searchParams.get('plan_name') || '') : null;
+  const urlTimestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp') || '0', 10) : null;
 
   useEffect(() => {
     if (!email) {
       // Se não houver email, redirecione para a página de registro
       navigate('/register');
+      return;
     }
-  }, [email, navigate]);
+    
+    // Armazenar informações do plano no localStorage e sessionStorage como backup
+    // Verificar primeiro se temos um plano nos parâmetros da URL
+    if (urlPlanId && urlInterval) {
+      console.log('💾 Salvando plano da URL no localStorage para preservar durante verificação:', {
+        planId: urlPlanId,
+        interval: urlInterval,
+        planName: urlPlanName
+      });
+      
+      const planData = {
+        planId: urlPlanId,
+        interval: urlInterval,
+        timestamp: urlTimestamp || Date.now(),
+        planName: urlPlanName
+      };
+      
+      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+      sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+    }
+    // Se não temos na URL, verificar se temos no state da navegação
+    else if (selectedPlan) {
+      console.log('💾 Salvando plano do state no localStorage para preservar durante verificação:', selectedPlan);
+      
+      const planData = {
+        planId: selectedPlan.id,
+        interval: selectedPlan.interval,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+      sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+    }
+  }, [email, navigate, selectedPlan, urlPlanId, urlInterval, urlPlanName, urlTimestamp]);
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,13 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const { signIn, signInWithGoogle, signInWithGithub } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Processar parâmetros da URL
+  const searchParams = new URLSearchParams(location.search);
+  const redirectAfter = searchParams.get('redirect_after');
+  const planId = searchParams.get('plan_id');
+  const interval = searchParams.get('interval') as 'month' | 'year' | null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +29,19 @@ const LoginPage = () => {
       await signIn(email, password);
       console.log('✅ Login bem-sucedido');
       
-      // Verificar se há um plano selecionado armazenado no localStorage ou sessionStorage
+      // Verificar se temos parâmetros de redirecionamento na URL
+      if (redirectAfter === 'checkout' && planId && interval) {
+        console.log('🔄 Redirecionando para checkout com parâmetros da URL:', {
+          planId,
+          interval
+        });
+        
+        // Preservar todos os parâmetros na URL
+        navigate(`/checkout${location.search}`);
+        return;
+      }
+      
+      // Se não tiver parâmetros na URL, verificar localStorage e sessionStorage
       console.log('🔍 Verificando plano no localStorage e sessionStorage...');
       let storedPlanInfo = localStorage.getItem('selectedPlanInfo');
       let storageSource = 'localStorage';
@@ -53,8 +72,15 @@ const LoginPage = () => {
             localStorage.removeItem('selectedPlanInfo');
             sessionStorage.removeItem('selectedPlanInfo_backup');
             
+            // Adicionar parâmetros na URL para maior confiabilidade
+            const params = new URLSearchParams({
+              plan_id: planInfo.planId,
+              interval: planInfo.interval || 'month',
+              timestamp: Date.now().toString()
+            }).toString();
+            
             // Redirecionar para o checkout com as informações do plano
-            navigate('/checkout', {
+            navigate(`/checkout?${params}`, {
               state: {
                 planId: planInfo.planId,
                 interval: planInfo.interval || 'month'

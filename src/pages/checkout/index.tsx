@@ -24,6 +24,13 @@ export const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkoutInitiated, setCheckoutInitiated] = useState(false);
+  
+  // Obter parâmetros da URL
+  const searchParams = new URLSearchParams(location.search);
+  const urlPlanId = searchParams.get('plan_id');
+  const urlInterval = searchParams.get('interval') as 'month' | 'year' | null;
+  const urlPlanName = searchParams.get('plan_name') ? decodeURIComponent(searchParams.get('plan_name') || '') : null;
+  const urlTimestamp = searchParams.get('timestamp') ? parseInt(searchParams.get('timestamp') || '0', 10) : null;
 
   useEffect(() => {
     const initCheckout = async () => {
@@ -33,7 +40,14 @@ export const CheckoutPage: React.FC = () => {
       // Verifica autenticação
       if (!user) {
         console.log('❌ Usuário não autenticado, redirecionando para login');
-        navigate('/login');
+        
+        // Preservar parâmetros do plano ao redirecionar para login
+        if (urlPlanId && urlInterval) {
+          const currentUrl = new URL(window.location.href);
+          navigate(`/login?redirect_after=checkout&${currentUrl.searchParams.toString()}`);
+        } else {
+          navigate('/login');
+        }
         return;
       }
       
@@ -41,24 +55,44 @@ export const CheckoutPage: React.FC = () => {
       console.log('📌 Estado do componente de checkout:', {
         user: user?.id,
         locationState: location.state,
+        urlParams: {
+          planId: urlPlanId,
+          interval: urlInterval,
+          planName: urlPlanName,
+          timestamp: urlTimestamp
+        },
         hasLocalStorage: !!localStorage.getItem('selectedPlanInfo'),
         hasSessionStorage: !!sessionStorage.getItem('selectedPlanInfo_backup')
       });
       
-      // Tenta obter o plano do estado de navegação
+      // Tenta obter o plano de todas as fontes possíveis
       const state = location.state as LocationState | null;
       
-      // Se não tiver no estado, tenta obter do localStorage ou sessionStorage
       let planId: string | null = null;
       let interval: 'month' | 'year' = 'month';
       let planSource = '';
       
-      if (state?.planId && state?.interval) {
+      // 1. Verificar parâmetros de URL (melhor confiabilidade)
+      if (urlPlanId && urlInterval) {
+        console.log('✅ Plano obtido dos parâmetros da URL:', { 
+          planId: urlPlanId, 
+          interval: urlInterval,
+          planName: urlPlanName,
+          timestamp: urlTimestamp
+        });
+        planId = urlPlanId;
+        interval = urlInterval;
+        planSource = 'url-params';
+      }
+      // 2. Verificar estado da navegação (location.state)
+      else if (state?.planId && state?.interval) {
         console.log('✅ Plano obtido do estado da navegação:', state);
         planId = state.planId;
         interval = state.interval;
         planSource = 'navigation-state';
-      } else {
+      } 
+      // 3. Verificar localStorage e sessionStorage como backup
+      else {
         // Primeiro tenta no localStorage
         let storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
         let storageSource = 'localStorage';
@@ -144,7 +178,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     initCheckout();
-  }, [user, location.state, navigate, checkoutInitiated]);
+  }, [user, location.state, navigate, checkoutInitiated, location.search, urlPlanId, urlInterval, urlPlanName, urlTimestamp]);
 
   if (loading) {
     return (

@@ -22,8 +22,33 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedPlan } = location.state as LocationState || {};
+  
+  // Processar parâmetros da URL para o plano
+  const searchParams = new URLSearchParams(location.search);
+  const urlPlanId = searchParams.get('plan_id');
+  const urlInterval = searchParams.get('interval') as 'month' | 'year' | null;
+  const urlPlanName = searchParams.get('plan_name') ? decodeURIComponent(searchParams.get('plan_name') || '') : null;
+  const urlTimestamp = searchParams.get('timestamp');
 
   useEffect(() => {
+    console.log('📋 Verificando fontes de dados do plano:');
+    
+    // 1. Verificar parâmetros de URL
+    if (urlPlanId && urlInterval) {
+      console.log('🔗 Plano encontrado na URL:', {
+        planId: urlPlanId,
+        interval: urlInterval,
+        planName: urlPlanName,
+        timestamp: urlTimestamp
+      });
+    }
+    
+    // 2. Verificar state da navegação
+    if (selectedPlan) {
+      console.log('🔄 Plano recebido via navegação (state):', selectedPlan);
+    }
+    
+    // 3. Verificar localStorage e sessionStorage
     try {
       const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
       let storageSource = 'localStorage';
@@ -42,19 +67,13 @@ const RegisterPage = () => {
         console.log('📋 Plano do localStorage disponível na página de registro:', storedPlanInfo);
       }
       
-      if (!storedPlanInfo) {
-        console.log('ℹ️ Nenhum plano encontrado no localStorage ou sessionStorage na página de registro');
+      if (!storedPlanInfo && !selectedPlan && !urlPlanId) {
+        console.log('ℹ️ Nenhum plano encontrado em nenhuma fonte (URL, state, localStorage, sessionStorage)');
       }
     } catch (e) {
       console.error('❌ Erro ao verificar storages na página de registro:', e);
     }
-    
-    if (selectedPlan) {
-      console.log('🔄 Plano recebido via navegação:', selectedPlan);
-    } else {
-      console.log('ℹ️ Nenhum plano recebido via navegação');
-    }
-  }, [selectedPlan]);
+  }, [selectedPlan, urlPlanId, urlInterval, urlPlanName, urlTimestamp]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,41 +87,77 @@ const RegisterPage = () => {
     try {
       console.log('👤 Tentando registrar usuário:', email);
       
-      let planFromStorage = null;
-      let storageSource = '';
+      // Determinar o plano a ser usado com prioridade clara
+      // 1. Primeiro tentar parâmetros da URL (mais confiável)
+      let finalPlan = undefined;
+      let planSource = '';
       
-      // Verificar primeiro no localStorage
-      try {
-        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
-        if (storedPlanInfoStr) {
-          planFromStorage = JSON.parse(storedPlanInfoStr);
-          storageSource = 'localStorage';
-          console.log('💾 Usando plano do localStorage para registro:', planFromStorage);
-        } else {
-          // Se não encontrou no localStorage, verificar no sessionStorage
-          const sessionStoredPlanInfoStr = sessionStorage.getItem('selectedPlanInfo_backup');
-          if (sessionStoredPlanInfoStr) {
-            planFromStorage = JSON.parse(sessionStoredPlanInfoStr);
-            storageSource = 'sessionStorage';
-            console.log('💾 Usando plano do sessionStorage para registro:', planFromStorage);
+      if (urlPlanId && urlInterval) {
+        finalPlan = {
+          id: urlPlanId,
+          interval: urlInterval
+        };
+        planSource = 'url-params';
+      } 
+      // 2. Depois verificar o state da navegação
+      else if (selectedPlan) {
+        finalPlan = selectedPlan;
+        planSource = 'navigation-state';
+      }
+      // 3. Por último, verificar localStorage/sessionStorage
+      else {
+        let planFromStorage = null;
+        
+        // Verificar primeiro no localStorage
+        try {
+          const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+          if (storedPlanInfoStr) {
+            planFromStorage = JSON.parse(storedPlanInfoStr);
+            planSource = 'localStorage';
+            console.log('💾 Usando plano do localStorage para registro:', planFromStorage);
+          } else {
+            // Se não encontrou no localStorage, verificar no sessionStorage
+            const sessionStoredPlanInfoStr = sessionStorage.getItem('selectedPlanInfo_backup');
+            if (sessionStoredPlanInfoStr) {
+              planFromStorage = JSON.parse(sessionStoredPlanInfoStr);
+              planSource = 'sessionStorage';
+              console.log('💾 Usando plano do sessionStorage para registro:', planFromStorage);
+            }
           }
+          
+          if (planFromStorage) {
+            finalPlan = {
+              id: planFromStorage.planId,
+              interval: planFromStorage.interval
+            };
+          }
+        } catch (e) {
+          console.error('❌ Erro ao ler os storages antes do registro:', e);
         }
-      } catch (e) {
-        console.error('❌ Erro ao ler os storages antes do registro:', e);
       }
       
-      const finalPlan = selectedPlan || (planFromStorage ? {
-        id: planFromStorage.planId,
-        interval: planFromStorage.interval
-      } : undefined);
-      
       if (finalPlan) {
-        console.log('✅ Registrando com plano:', finalPlan);
+        console.log(`✅ Registrando com plano (fonte: ${planSource}):`, finalPlan);
       } else {
         console.log('ℹ️ Registrando sem plano associado');
       }
       
-      await signUp(email, password, finalPlan);
+      // Após registro bem-sucedido, garantir que os dados do plano sejam passados ao redirecionar
+      const result = await signUp(email, password, finalPlan);
+      
+      // Se o registro foi bem-sucedido e temos um plano, garantir que ele seja
+      // passado para a próxima etapa (verificação de email ou redirecionamento)
+      if (result.success && finalPlan) {
+        // Salvar o plano no localStorage e sessionStorage para o caso de verificação de email
+        const planData = {
+          planId: finalPlan.id,
+          interval: finalPlan.interval,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('selectedPlanInfo', JSON.stringify(planData));
+        sessionStorage.setItem('selectedPlanInfo_backup', JSON.stringify(planData));
+      }
+      
       console.log('✅ Registro concluído com sucesso');
     } catch (err) {
       console.error('❌ Erro no registro:', err);
