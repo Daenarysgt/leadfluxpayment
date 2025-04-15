@@ -442,52 +442,72 @@ router.get('/verify-session/:sessionId', async (req, res) => {
           status: stripeSubscription.status
         });
 
-        // Função auxiliar para converter timestamp do Stripe para Unix timestamp
+        // Função auxiliar para garantir timestamp Unix válido
         function getUnixTimestamp(timestamp: number | undefined | null): number {
-          if (!timestamp) {
-            return Math.floor(Date.now() / 1000); // Valor default se não existir
+          if (timestamp === undefined || timestamp === null) {
+            console.log('⚠️ Timestamp indefinido ou nulo, usando tempo atual');
+            return Math.floor(Date.now() / 1000);
           }
-          return timestamp; // O Stripe já retorna em Unix timestamp
+          
+          // Garantir que é um número
+          const numericTimestamp = Number(timestamp);
+          
+          if (isNaN(numericTimestamp)) {
+            console.error('❌ Timestamp inválido (NaN):', timestamp);
+            // Usar tempo atual como fallback em caso de erro
+            return Math.floor(Date.now() / 1000);
+          }
+          
+          return numericTimestamp;
         }
 
-        // DEBUG: Investigar valores temporais
+        // Extrair e validar timestamps
         const rawStart = (stripeSubscription as any).current_period_start;
         const rawEnd = (stripeSubscription as any).current_period_end;
         
-        console.log('🕒 PONTO 7: Valores temporais brutos:', {
+        console.log('🕒 Valores temporais no webhook:', {
           rawStart,
           rawEnd,
           typeStart: typeof rawStart,
           typeEnd: typeof rawEnd
         });
-
-        // Usar os timestamps diretamente do Stripe (já são Unix timestamps)
-        const currentPeriodStart = getUnixTimestamp(rawStart);
-        const currentPeriodEnd = getUnixTimestamp(rawEnd);
+        
+        // Validar timestamps
+        const current_period_start = getUnixTimestamp(rawStart);
+        const current_period_end = getUnixTimestamp(rawEnd);
         const now = Math.floor(Date.now() / 1000);
-
-        console.log('🕒 PONTO 8: Timestamps como Unix:', {
-          currentPeriodStart,
-          currentPeriodEnd,
-          now
+        
+        console.log('🕒 Timestamps convertidos no webhook:', {
+          current_period_start,
+          current_period_end,
+          types: {
+            start: typeof current_period_start,
+            end: typeof current_period_end
+          }
         });
-
-        // Preparar dados para inserção garantindo valores válidos
+        
+        // Preparar dados com validação extra
         const subscriptionData = {
           user_id: session.metadata.userId,
           plan_id: session.metadata.planId,
           subscription_id: subscriptionId,
           stripe_customer_id: session.customer as string,
           status: stripeSubscription.status || 'incomplete',
-          current_period_start: currentPeriodStart,
-          current_period_end: currentPeriodEnd,
+          current_period_start: Number(current_period_start),
+          current_period_end: Number(current_period_end),
           cancel_at_period_end: stripeSubscription.cancel_at_period_end || false,
-          created_at: now,
-          updated_at: now
+          created_at: Number(now),
+          updated_at: Number(now)
         };
-              
-        console.log('📝 PONTO 10: Dados preparados para inserção:', subscriptionData);
-
+            
+        console.log('📝 PONTO 10: Dados preparados para inserção:', {
+          ...subscriptionData,
+          current_period_start_type: typeof subscriptionData.current_period_start,
+          current_period_end_type: typeof subscriptionData.current_period_end,
+          created_at_type: typeof subscriptionData.created_at,
+          updated_at_type: typeof subscriptionData.updated_at
+        });
+        
         // Inserir no banco
         console.log('💾 PONTO 11: Tentando inserir no banco...');
         const { error: insertError } = await supabase
@@ -641,13 +661,48 @@ async function handleCheckoutCompleted(session: any) {
 
   // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
-    if (!timestamp) {
+    if (timestamp === undefined || timestamp === null) {
+      console.log('⚠️ Timestamp indefinido ou nulo, usando tempo atual');
       return Math.floor(Date.now() / 1000);
     }
-    return timestamp;
+    
+    // Garantir que é um número
+    const numericTimestamp = Number(timestamp);
+    
+    if (isNaN(numericTimestamp)) {
+      console.error('❌ Timestamp inválido (NaN):', timestamp);
+      // Usar tempo atual como fallback em caso de erro
+      return Math.floor(Date.now() / 1000);
+    }
+    
+    return numericTimestamp;
   }
 
   const now = Math.floor(Date.now() / 1000);
+  
+  // Extrair e validar timestamps
+  const rawStart = (subscription as any).current_period_start;
+  const rawEnd = (subscription as any).current_period_end;
+  
+  console.log('🕒 Valores temporais no webhook:', {
+    rawStart,
+    rawEnd,
+    typeStart: typeof rawStart,
+    typeEnd: typeof rawEnd
+  });
+  
+  // Validar timestamps
+  const current_period_start = getUnixTimestamp(rawStart);
+  const current_period_end = getUnixTimestamp(rawEnd);
+  
+  console.log('🕒 Timestamps convertidos no webhook:', {
+    current_period_start,
+    current_period_end,
+    types: {
+      start: typeof current_period_start,
+      end: typeof current_period_end
+    }
+  });
   
   const subscriptionData = {
     user_id: userId,
@@ -655,10 +710,10 @@ async function handleCheckoutCompleted(session: any) {
     subscription_id: subscription.id,
     stripe_customer_id: subscription.customer,
     status: subscription.status || 'incomplete',
-    current_period_start: getUnixTimestamp((subscription as any).current_period_start),
-    current_period_end: getUnixTimestamp((subscription as any).current_period_end),
+    current_period_start: Number(current_period_start),
+    current_period_end: Number(current_period_end),
     cancel_at_period_end: subscription.cancel_at_period_end || false,
-    updated_at: now
+    updated_at: Number(now)
   };
 
   if (existingSubscription) {
@@ -680,7 +735,7 @@ async function handleCheckoutCompleted(session: any) {
       .from('subscriptions')
       .insert({
         ...subscriptionData,
-        created_at: now
+        created_at: Number(now)
       });
     
     if (insertError) {
@@ -703,22 +758,48 @@ async function handleInvoicePaid(invoice: any) {
   // Obter detalhes da assinatura atualizada
   const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
 
+  // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
-    if (!timestamp) {
+    if (timestamp === undefined || timestamp === null) {
+      console.log('⚠️ Timestamp indefinido ou nulo, usando tempo atual');
       return Math.floor(Date.now() / 1000);
     }
-    return timestamp;
+    
+    // Garantir que é um número
+    const numericTimestamp = Number(timestamp);
+    
+    if (isNaN(numericTimestamp)) {
+      console.error('❌ Timestamp inválido (NaN):', timestamp);
+      // Usar tempo atual como fallback em caso de erro
+      return Math.floor(Date.now() / 1000);
+    }
+    
+    return numericTimestamp;
   }
+  
+  // Extrair e validar timestamps
+  const rawStart = (subscription as any).current_period_start;
+  const rawEnd = (subscription as any).current_period_end;
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Validar timestamps
+  const current_period_start = getUnixTimestamp(rawStart);
+  const current_period_end = getUnixTimestamp(rawEnd);
+  
+  console.log('🕒 Timestamps validados em handleInvoicePaid:', {
+    current_period_start,
+    current_period_end
+  });
   
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status || 'incomplete',
-      current_period_start: getUnixTimestamp((subscription as any).current_period_start),
-      current_period_end: getUnixTimestamp((subscription as any).current_period_end),
+      current_period_start: Number(current_period_start),
+      current_period_end: Number(current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: Math.floor(Date.now() / 1000)
+      updated_at: Number(now)
     })
     .eq('subscription_id', subscription.id);
   
@@ -733,22 +814,48 @@ async function handleInvoicePaid(invoice: any) {
 async function handleSubscriptionUpdated(subscription: any) {
   console.log('🔄 Assinatura atualizada, sincronizando mudanças...');
   
+  // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
-    if (!timestamp) {
+    if (timestamp === undefined || timestamp === null) {
+      console.log('⚠️ Timestamp indefinido ou nulo, usando tempo atual');
       return Math.floor(Date.now() / 1000);
     }
-    return timestamp;
+    
+    // Garantir que é um número
+    const numericTimestamp = Number(timestamp);
+    
+    if (isNaN(numericTimestamp)) {
+      console.error('❌ Timestamp inválido (NaN):', timestamp);
+      // Usar tempo atual como fallback em caso de erro
+      return Math.floor(Date.now() / 1000);
+    }
+    
+    return numericTimestamp;
   }
+  
+  // Extrair e validar timestamps
+  const rawStart = (subscription as any).current_period_start;
+  const rawEnd = (subscription as any).current_period_end;
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Validar timestamps
+  const current_period_start = getUnixTimestamp(rawStart);
+  const current_period_end = getUnixTimestamp(rawEnd);
+  
+  console.log('🕒 Timestamps validados em handleSubscriptionUpdated:', {
+    current_period_start,
+    current_period_end
+  });
   
   // Atualizar a assinatura no banco de dados
   const { error } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status || 'incomplete',
-      current_period_start: getUnixTimestamp((subscription as any).current_period_start),
-      current_period_end: getUnixTimestamp((subscription as any).current_period_end),
+      current_period_start: Number(current_period_start),
+      current_period_end: Number(current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
-      updated_at: Math.floor(Date.now() / 1000)
+      updated_at: Number(now)
     })
     .eq('subscription_id', subscription.id);
   
