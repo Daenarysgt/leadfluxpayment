@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import funnelRoutes from './routes/funnel.routes';
 import paymentRoutes from './routes/payment.routes';
+import { auth } from './middleware/auth';
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/funnels', funnelRoutes);
-app.use('/api/payment', paymentRoutes);
+app.use('/api/payment', auth, paymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

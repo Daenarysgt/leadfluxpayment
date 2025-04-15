@@ -1,11 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
 import { auth } from '../middleware/auth';
-import { User } from '@supabase/supabase-js';
+
+// Interface para o usuário na requisição
+interface RequestUser {
+  id: string;
+  email: string;
+}
 
 declare module 'express-serve-static-core' {
   interface Request {
-    user?: User;
+    user?: RequestUser;
   }
 }
 

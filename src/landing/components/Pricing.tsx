@@ -81,28 +81,19 @@ export default function Pricing() {
         return;
       }
 
-      // Se estiver logado, criar sessão de checkout
-      const { url } = await paymentService.createCheckoutSession(
-        plan.id,
-        isAnnual ? 'year' : 'month'
-      );
-
-      // Feedback visual antes do redirecionamento
-      toast({
-        title: "Redirecionando para o checkout",
-        description: "Você será redirecionado para a página de pagamento em instantes...",
+      // Se estiver logado, redirecionar para página de checkout
+      navigate('/checkout', {
+        state: {
+          planId: plan.id,
+          interval: isAnnual ? 'year' : 'month'
+        }
       });
 
-      // Pequeno delay para mostrar o feedback
-      setTimeout(() => {
-        window.location.href = url;
-      }, 1000);
-
     } catch (err) {
-      console.error('Erro ao iniciar checkout:', err);
+      console.error('Erro ao processar plano:', err);
       toast({
         title: "Erro ao processar",
-        description: "Não foi possível iniciar o checkout. Tente novamente mais tarde.",
+        description: "Não foi possível processar sua seleção. Tente novamente mais tarde.",
         variant: "destructive",
       });
       setSelectedPlan(null);
