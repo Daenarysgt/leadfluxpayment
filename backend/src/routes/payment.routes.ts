@@ -104,4 +104,38 @@ router.get('/subscription', async (req, res) => {
   }
 });
 
+// Nova rota para Portal do Cliente
+router.post('/create-customer-portal', async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Buscar assinatura do usuário
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !subscription) {
+      console.error('Erro ao buscar assinatura:', error);
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    // Criar sessão de portal do cliente
+    const session = await stripe.billingPortal.sessions.create({
+      customer: subscription.stripe_customer_id,
+      return_url: `${process.env.FRONTEND_URL}/account`,
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Erro ao criar portal do cliente:', error);
+    res.status(500).json({ error: 'Erro ao criar portal do cliente' });
+  }
+});
+
 export default router; 

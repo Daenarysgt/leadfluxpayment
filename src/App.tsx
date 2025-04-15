@@ -27,6 +27,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 import { CheckoutPage } from '@/pages/checkout';
+import Account from '@/pages/Account';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -125,6 +126,14 @@ const App = () => {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 
                 {/* Rotas Protegidas */}
+                <Route
+                  path="/account"
+                  element={
+                    <ProtectedRoute>
+                      <Account />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/dashboard"
                   element={

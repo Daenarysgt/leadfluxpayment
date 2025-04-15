@@ -116,6 +116,36 @@ export const paymentService = {
   },
   
   /**
+   * Acessa o portal do cliente do Stripe para gerenciar assinatura
+   */
+  async createCustomerPortalSession(): Promise<{ url: string }> {
+    try {
+      // Obter token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
+      
+      // Criar sessão do portal do cliente
+      const response = await axios.post(
+        `${API_URL}/payment/create-customer-portal`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao acessar portal do cliente:', error);
+      throw error;
+    }
+  },
+  
+  /**
    * Cancela a assinatura atual do usuário
    */
   async cancelSubscription(): Promise<{ success: boolean }> {
