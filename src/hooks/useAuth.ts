@@ -3,6 +3,11 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase, getErrorMessage } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
+interface SelectedPlan {
+  id: string;
+  interval: 'month' | 'year';
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -74,7 +79,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, selectedPlan?: SelectedPlan) => {
     try {
       setError(null);
       setLoading(true);
@@ -82,7 +87,10 @@ export const useAuth = () => {
         email, 
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/verify-otp`,
+          data: selectedPlan ? {
+            selectedPlan
+          } : undefined
         } 
       });
       
@@ -92,9 +100,7 @@ export const useAuth = () => {
       
       if (data.user) {
         setUser(data.user);
-        // Redirecionar para a página de verificação em vez do dashboard
-        console.log('Redirecionando para página de verificação OTP');
-        navigate('/verify-otp', { state: { email } });
+        navigate('/verify-otp', { state: { email, selectedPlan } });
       } else {
         console.log('Usuário não foi criado corretamente');
       }
@@ -171,7 +177,6 @@ export const useAuth = () => {
       setLoading(true);
       
       if (resend) {
-        // Reenviar o código OTP
         const { error } = await supabase.auth.resend({
           type: 'signup',
           email,
@@ -181,7 +186,6 @@ export const useAuth = () => {
         
         return { success: true, message: 'Código reenviado com sucesso' };
       } else {
-        // Verificar o código OTP
         const { data, error } = await supabase.auth.verifyOtp({
           email,
           token,
@@ -193,6 +197,22 @@ export const useAuth = () => {
         if (data.user) {
           setUser(data.user);
           setSession(data.session);
+          
+          // Verificar se há um plano selecionado nos metadados do usuário
+          const selectedPlan = data.user.user_metadata?.selectedPlan;
+          
+          if (selectedPlan) {
+            // Redirecionar para o checkout do Stripe com o plano selecionado
+            navigate('/checkout', { 
+              state: { 
+                planId: selectedPlan.id,
+                interval: selectedPlan.interval
+              }
+            });
+          } else {
+            // Se não houver plano selecionado, redirecionar para pricing
+            navigate('/pricing');
+          }
         }
         
         return { success: true };

@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Github, Mail, Lock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+interface LocationState {
+  selectedPlan?: {
+    id: string;
+    interval: 'month' | 'year';
+  };
+}
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +20,8 @@ const RegisterPage = () => {
   const [passwordError, setPasswordError] = useState('');
   const { signUp, signInWithGoogle, signInWithGithub } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { selectedPlan } = location.state as LocationState || {};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +33,7 @@ const RegisterPage = () => {
     }
 
     try {
-      await signUp(email, password);
+      await signUp(email, password, selectedPlan);
     } catch (err) {
       setPasswordError('Erro ao criar conta. Tente novamente.');
     }
