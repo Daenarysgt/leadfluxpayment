@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Github, Mail, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { paymentService } from '@/services/paymentService';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -58,16 +59,29 @@ const LoginPage = () => {
           }
         } catch (parseError) {
           console.error('❌ Erro ao processar informações do plano:', parseError);
-          // Se houver erro na leitura, apenas limpar
           localStorage.removeItem('selectedPlanInfo');
         }
       } else {
         console.log('ℹ️ Nenhum plano encontrado no localStorage');
       }
       
-      // Se não tiver plano selecionado ou se houver algum problema, seguir para o dashboard
-      console.log('🏠 Redirecionando para dashboard');
-      navigate('/dashboard');
+      // Se não tiver plano selecionado, verificar se tem assinatura ativa
+      try {
+        console.log('🔍 Verificando assinatura atual...');
+        const subscription = await paymentService.getCurrentSubscription();
+        
+        if (subscription && subscription.status === 'active') {
+          console.log('✅ Assinatura ativa encontrada, redirecionando para dashboard');
+          navigate('/dashboard');
+        } else {
+          console.log('⚠️ Nenhuma assinatura ativa, redirecionando para pricing');
+          navigate('/pricing');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao verificar assinatura:', error);
+        // Em caso de erro, redirecionar para pricing por segurança
+        navigate('/pricing');
+      }
     } catch (err) {
       console.error('❌ Erro no login:', err);
       setError('Email ou senha inválidos');

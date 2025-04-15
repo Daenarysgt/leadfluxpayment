@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { paymentService } from '@/services/paymentService';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
@@ -12,11 +12,20 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
     const [error, setError] = useState<string | null>(null);
     const [noSubscription, setNoSubscription] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
       let isMounted = true;
       const checkSubscription = async () => {
         try {
+          // Se estiver na rota de checkout ou em rotas relacionadas a pagamento, não bloquear
+          if (location.pathname.startsWith('/checkout') || 
+              location.pathname.startsWith('/payment/')) {
+            setHasActiveSubscription(true);
+            setIsLoading(false);
+            return;
+          }
+
           console.log('🔍 Verificando assinatura do usuário...');
           const subscription = await paymentService.getCurrentSubscription();
           
@@ -67,7 +76,7 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
       return () => {
         isMounted = false;
       };
-    }, [navigate]);
+    }, [navigate, location.pathname]);
 
     if (isLoading) {
       return (
@@ -81,6 +90,28 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
     }
     
     if (noSubscription) {
+      // Verificar se há um plano selecionado no localStorage
+      const storedPlanInfo = localStorage.getItem('selectedPlanInfo');
+      if (storedPlanInfo) {
+        try {
+          const planInfo = JSON.parse(storedPlanInfo);
+          const isRecent = Date.now() - planInfo.timestamp < 24 * 60 * 60 * 1000;
+          
+          if (isRecent && planInfo.planId) {
+            // Se houver um plano selecionado, redirecionar para o checkout
+            navigate('/checkout', {
+              state: {
+                planId: planInfo.planId,
+                interval: planInfo.interval || 'month'
+              }
+            });
+            return null;
+          }
+        } catch (e) {
+          localStorage.removeItem('selectedPlanInfo');
+        }
+      }
+
       return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-lg">
