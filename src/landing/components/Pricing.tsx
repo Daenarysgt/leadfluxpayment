@@ -21,7 +21,7 @@ interface Plan {
   features: string[];
   stripe_price_id_monthly: string;
   stripe_price_id_annual: string;
-  is_popular: boolean;
+  is_popular?: boolean;
 }
 
 export default function Pricing() {
@@ -43,7 +43,12 @@ export default function Pricing() {
 
         if (error) throw error;
         
-        setPlans(data || []);
+        const plansWithPopular = data?.map(plan => ({
+          ...plan,
+          is_popular: plan.name.toLowerCase().includes('pro')
+        })) || [];
+        
+        setPlans(plansWithPopular);
       } catch (err) {
         console.error('Erro ao carregar planos:', err);
         setError('Não foi possível carregar os planos. Tente novamente mais tarde.');
@@ -228,7 +233,7 @@ export default function Pricing() {
                       }`}>
                         <CheckIcon />
                       </div>
-                      <p className={`text-base ${plan.is_popular ? 'text-white' : 'text-gray-700'}`}>
+                      <p className={`text-sm ${plan.is_popular ? 'text-gray-100' : 'text-gray-500'}`}>
                         {feature}
                       </p>
                     </li>
