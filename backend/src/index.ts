@@ -22,9 +22,11 @@ app.use(cors());
 // A rota /webhook/stripe precisa receber o corpo da requisição como raw
 // O Stripe usa esta configuração para verificar a assinatura
 app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  console.log('📩 Webhook do Stripe recebido');
   const sig = req.headers['stripe-signature'];
   
   if (!sig) {
+    console.error('❌ Webhook sem assinatura - recusado');
     return res.status(400).json({ error: 'Assinatura do webhook não fornecida' });
   }
 
@@ -37,31 +39,37 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
+    console.log(`✅ Webhook verificado com sucesso: ${event.type}`);
   } catch (err: any) {
-    console.error(`Erro na assinatura do webhook: ${err.message}`);
+    console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
     return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
   }
 
   // Processa o evento de acordo com o tipo
   try {
+    console.log(`🔄 Processando evento: ${event.type}`);
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log(`💳 Checkout completado, ID: ${event.data.object.id}`);
         await handleCheckoutCompleted(event.data.object);
         break;
       case 'customer.subscription.updated':
+        console.log(`📝 Assinatura atualizada, ID: ${event.data.object.id}`);
         await handleSubscriptionUpdated(event.data.object);
         break;
       case 'customer.subscription.deleted':
+        console.log(`❌ Assinatura cancelada, ID: ${event.data.object.id}`);
         await handleSubscriptionDeleted(event.data.object);
         break;
       default:
-        console.log(`Evento não processado: ${event.type}`);
+        console.log(`⏩ Evento não processado: ${event.type}`);
     }
 
     // Responde ao Stripe para confirmar o recebimento
+    console.log('✅ Evento processado com sucesso');
     return res.json({ received: true });
   } catch (error) {
-    console.error('Erro ao processar evento webhook:', error);
+    console.error('❌ Erro ao processar evento webhook:', error);
     return res.status(500).json({ error: 'Erro ao processar evento webhook' });
   }
 });
@@ -69,11 +77,12 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
 // Funções para processar os eventos
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
-    console.log('Processando checkout completado:', session.id);
+    console.log('🔄 Processando checkout completado:', session.id);
+    console.log('📋 Metadados da sessão:', session.metadata);
     
     // Verifica se o checkout é de uma assinatura
     if (session.mode !== 'subscription') {
-      console.log('Checkout não é de assinatura, ignorando');
+      console.log('⚠️ Checkout não é de assinatura, ignorando');
       return;
     }
 
@@ -82,15 +91,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const planId = session.metadata?.planId;
     
     if (!userId || !planId) {
-      console.error('Metadados incompletos na sessão:', session.id);
+      console.error('❌ Metadados incompletos na sessão:', {
+        sessionId: session.id,
+        metadata: session.metadata,
+        userId,
+        planId
+      });
       return;
     }
 
     // Obter detalhes da assinatura
     const subscriptionId = session.subscription as string;
+    console.log(`🔍 Buscando detalhes da assinatura: ${subscriptionId}`);
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    console.log(`📊 Status da assinatura: ${subscription.status}`);
 
     // Salvar ou atualizar a assinatura no banco de dados
+    console.log('💾 Salvando assinatura no banco de dados');
     const { data, error } = await supabase
       .from('subscriptions')
       .upsert({
@@ -109,13 +126,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       });
 
     if (error) {
-      console.error('Erro ao salvar assinatura:', error);
+      console.error('❌ Erro ao salvar assinatura no banco:', error);
       return;
     }
 
-    console.log('Assinatura salva com sucesso:', subscriptionId);
+    console.log('✅ Assinatura salva com sucesso:', {
+      userId,
+      planId,
+      subscriptionId
+    });
   } catch (error) {
-    console.error('Erro ao processar checkout completado:', error);
+    console.error('❌ Erro ao processar checkout completado:', error);
     throw error;
   }
 }

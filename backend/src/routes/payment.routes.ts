@@ -30,14 +30,48 @@ router.post('/create-checkout-session', async (req, res) => {
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
+    console.log('📝 Criando sessão de checkout para:', {
+      userId: user.id,
+      userEmail: user.email,
+      planId,
+      interval
+    });
+
     // Encontra o plano selecionado
     const plan = PLANS.find((p: { id: string }) => p.id === planId);
     if (!plan) {
+      console.error('❌ Plano não encontrado:', planId);
       return res.status(400).json({ error: 'Plano não encontrado' });
     }
+    
+    console.log('✅ Plano encontrado:', {
+      id: plan.id,
+      name: plan.name,
+      priceId: interval === 'month' ? plan.monthlyPriceId : plan.annualPriceId
+    });
 
     // Determina o priceId baseado no intervalo
     const priceId = interval === 'month' ? plan.monthlyPriceId : plan.annualPriceId;
+
+    // Verificar se o usuário já tem uma assinatura ativa
+    const { data: existingSubscription, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+      // Erro real (diferente de "não encontrado")
+      console.error('❌ Erro ao verificar assinatura existente:', subscriptionError);
+    }
+
+    if (existingSubscription && existingSubscription.status === 'active') {
+      console.log('⚠️ Usuário já possui assinatura ativa:', {
+        subscriptionId: existingSubscription.stripe_subscription_id,
+        planId: existingSubscription.plan_id
+      });
+      // Aqui poderia implementar um fluxo de upgrade/downgrade
+    }
 
     // Cria a sessão de checkout
     const session = await stripe.checkout.sessions.create({
@@ -53,14 +87,22 @@ router.post('/create-checkout-session', async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL}/pricing`,
       customer_email: user.email,
       metadata: {
+        userId: user.id,
         planId: plan.id,
-        userId: user.id
+        interval: interval,
+        planName: plan.name
       }
     });
 
+    console.log('✅ Sessão de checkout criada:', {
+      sessionId: session.id,
+      sessionUrl: session.url,
+      metadata: session.metadata
+    });
+
     res.json({ url: session.url });
-  } catch (error) {
-    console.error('Erro ao criar sessão de checkout:', error);
+  } catch (error: any) {
+    console.error('❌ Erro ao criar sessão de checkout:', error.message);
     res.status(500).json({ error: 'Erro ao criar sessão de checkout' });
   }
 });

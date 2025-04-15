@@ -3,10 +3,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { paymentService } from '../../services/paymentService';
 import { useAuth } from '../../hooks/useAuth';
 import { Spinner } from '../../components/Spinner';
+import { toast } from '@/components/ui/use-toast';
 
 interface LocationState {
   planId: string;
   interval: 'month' | 'year';
+}
+
+interface StoredPlanInfo {
+  planId: string;
+  interval: 'month' | 'year';
+  timestamp: number;
 }
 
 export const CheckoutPage: React.FC = () => {
@@ -17,9 +24,50 @@ export const CheckoutPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const state = location.state as LocationState;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     
-    if (!state?.planId || !state?.interval) {
+    // Tenta obter o plano do estado de navegação
+    const state = location.state as LocationState | null;
+    
+    // Se não tiver no estado, tenta obter do localStorage
+    let planId: string | null = null;
+    let interval: 'month' | 'year' = 'month';
+    
+    if (state?.planId && state?.interval) {
+      console.log('Plano obtido do estado da navegação:', state);
+      planId = state.planId;
+      interval = state.interval;
+    } else {
+      // Tenta obter do localStorage
+      try {
+        const storedPlanInfoStr = localStorage.getItem('selectedPlanInfo');
+        if (storedPlanInfoStr) {
+          const storedPlanInfo = JSON.parse(storedPlanInfoStr) as StoredPlanInfo;
+          // Verifica se é recente (menos de 24h)
+          if (Date.now() - storedPlanInfo.timestamp < 24 * 60 * 60 * 1000) {
+            console.log('Plano obtido do localStorage:', storedPlanInfo);
+            planId = storedPlanInfo.planId;
+            interval = storedPlanInfo.interval;
+            // Remove do localStorage para evitar uso futuro indevido
+            localStorage.removeItem('selectedPlanInfo');
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao processar dados do plano no localStorage:', e);
+        localStorage.removeItem('selectedPlanInfo');
+      }
+    }
+    
+    if (!planId) {
+      console.error('Nenhum plano encontrado para checkout');
+      toast({
+        title: "Erro no checkout",
+        description: "Não foi possível identificar o plano selecionado. Por favor, selecione novamente.",
+        variant: "destructive",
+      });
       navigate('/pricing');
       return;
     }
@@ -27,7 +75,10 @@ export const CheckoutPage: React.FC = () => {
     const createCheckoutSession = async () => {
       try {
         setLoading(true);
-        const { url } = await paymentService.createCheckoutSession(state.planId, state.interval);
+        // Log para depuração
+        console.log('Criando sessão de checkout com:', { planId, interval });
+        
+        const { url } = await paymentService.createCheckoutSession(planId, interval);
         if (url) {
           window.location.href = url;
         } else {
@@ -40,11 +91,7 @@ export const CheckoutPage: React.FC = () => {
       }
     };
 
-    if (user) {
-      createCheckoutSession();
-    } else {
-      navigate('/login');
-    }
+    createCheckoutSession();
   }, [user, location.state, navigate]);
 
   if (loading) {
