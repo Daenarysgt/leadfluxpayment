@@ -511,13 +511,16 @@ router.get('/verify-session/:sessionId', async (req, res) => {
         // Inserir no banco
         console.log('💾 PONTO 11: Tentando inserir no banco...');
         
-        // Usar "upsert" em vez de insert simples para lidar com possíveis duplicações
+        // Usar "upsert" com opções corretas
         const { error: upsertError } = await supabase
           .from('subscriptions')
-          .upsert(subscriptionData, { 
-            onConflict: 'subscription_id',  // Usar subscription_id como chave de conflito
-            ignoreDuplicates: false  // Atualizar o registro se já existir
-          });
+          .upsert(
+            subscriptionData,
+            { 
+              onConflict: 'subscription_id',
+              ignoreDuplicates: false
+            }
+          );
 
         if (upsertError) {
           console.error('❌ PONTO 12: Erro no upsert:', {
