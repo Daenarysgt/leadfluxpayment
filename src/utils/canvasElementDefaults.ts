@@ -1,4 +1,3 @@
-
 import { CanvasElement } from "@/types/canvasTypes";
 import { ComponentType } from "@/utils/types";
 
@@ -228,6 +227,18 @@ export const getDefaultContent = (componentType: string) => {
       };
     case ComponentType.Spacer:
       return { height: 50 };
+    case ComponentType.Video:
+      return { 
+        title: "Vídeo",
+        videoUrl: "",
+        videoType: "url", // url, iframe, js
+        aspectRatio: "16:9",
+        autoPlay: false,
+        muted: true,
+        controls: true,
+        loop: false,
+        alignment: "center"
+      };
     default:
       return {};
   }

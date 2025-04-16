@@ -1,4 +1,3 @@
-
 import { ComponentType } from "@/utils/types";
 import { CanvasElement } from "@/types/canvasTypes";
 import MultipleChoiceConfig from "./MultipleChoiceConfig";
@@ -18,6 +17,7 @@ import CaptureConfig from "./CaptureConfig";
 import LoadingConfig from "./LoadingConfig";
 import CartesianConfig from "./CartesianConfig";
 import RatingConfig from "./RatingConfig";
+import VideoConfig from "./VideoConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -130,64 +130,70 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     
     case ComponentType.Testimonials:
       return (
-        <TestimonialsConfig 
+        <TestimonialsConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
       
     case ComponentType.Level:
       return (
-        <LevelConfig 
+        <LevelConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
       
     case ComponentType.Capture:
       return (
-        <CaptureConfig 
+        <CaptureConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
       
     case ComponentType.Loading:
       return (
-        <LoadingConfig 
+        <LoadingConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
       
     case ComponentType.Cartesian:
       return (
-        <CartesianConfig 
+        <CartesianConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
       
     case ComponentType.Rating:
       return (
-        <RatingConfig 
+        <RatingConfig
           key={stableKey}
-          element={element} 
-          onUpdate={onUpdate} 
+          element={element}
+          onUpdate={onUpdate}
         />
       );
-    
-    default:
+      
+    case ComponentType.Video:
       return (
-        <div className="p-4 text-center text-muted-foreground">
-          <p>Configurações para este elemento serão implementadas em breve.</p>
-        </div>
+        <VideoConfig
+          key={stableKey}
+          element={element}
+          onUpdate={onUpdate}
+        />
       );
+      
+    default:
+      console.warn(`No config panel for element type: ${element.type}`);
+      return <div className="p-4">Configuração não disponível para este elemento.</div>;
   }
 };
 

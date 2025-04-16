@@ -24,7 +24,8 @@ import {
   Ruler,
   Weight,
   SlidersHorizontal,
-  Star
+  Star,
+  Video as VideoIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,7 @@ const ElementsSidebar = () => {
     { id: ComponentType.MultipleChoiceImage, name: "Múltipla Escolha com Imagem", icon: ImagePlus, color: "bg-purple-100 text-purple-600" },
     { id: ComponentType.Text, name: "Texto", icon: Type, color: "bg-gray-100 text-gray-600" },
     { id: ComponentType.Image, name: "Imagem", icon: ImageIcon, color: "bg-indigo-100 text-indigo-600" },
+    { id: ComponentType.Video, name: "Vídeo", icon: VideoIcon, color: "bg-red-100 text-red-600" },
     { id: ComponentType.Carousel, name: "Carrossel de Imagens", icon: Images, color: "bg-pink-100 text-pink-600" },
     { id: ComponentType.Button, name: "Botão", icon: ButtonIcon, color: "bg-green-100 text-green-600" },
     { id: ComponentType.Height, name: "Altura", icon: Ruler, color: "bg-amber-100 text-amber-600" },

@@ -1,25 +1,27 @@
-
 import { ComponentType } from "@/utils/types";
 import { ElementRendererProps } from "@/types/canvasTypes";
-import TextRenderer from "./TextRenderer";
-import MultipleChoiceRenderer from "./MultipleChoiceRenderer";
-import MultipleChoiceImageRenderer from "./MultipleChoiceImageRenderer";
-import ButtonRenderer from "./ButtonRenderer";
-import ImageRenderer from "./ImageRenderer";
-import CarouselRenderer from "./CarouselRenderer";
-import HeightRenderer from "./HeightRenderer";
-import WeightRenderer from "./WeightRenderer";
-import RatingRenderer from "./RatingRenderer";
-import SpacerRenderer from "./SpacerRenderer";
-import ComparisonRenderer from "./ComparisonRenderer";
-import ArgumentsRenderer from "./ArgumentsRenderer";
-import GraphicsRenderer from "./GraphicsRenderer";
-import TestimonialsRenderer from "./TestimonialsRenderer";
-import LevelRenderer from "./LevelRenderer";
-import CaptureRenderer from "./CaptureRenderer";
-import LoadingRenderer from "./LoadingRenderer";
-import CartesianRenderer from "./CartesianRenderer";
-import GenericElementRenderer from "./GenericElementRenderer";
+import {
+  TextRenderer,
+  MultipleChoiceRenderer,
+  MultipleChoiceImageRenderer,
+  ButtonRenderer,
+  ImageRenderer,
+  CarouselRenderer,
+  HeightRenderer,
+  WeightRenderer,
+  RatingRenderer,
+  SpacerRenderer,
+  ComparisonRenderer,
+  ArgumentsRenderer,
+  GraphicsRenderer,
+  TestimonialsRenderer,
+  LevelRenderer,
+  CaptureRenderer,
+  LoadingRenderer,
+  CartesianRenderer,
+  VideoRenderer,
+  GenericElementRenderer
+} from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
   const { element } = props;
@@ -82,6 +84,9 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Cartesian:
       return <CartesianRenderer {...props} />;
+      
+    case ComponentType.Video:
+      return <VideoRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

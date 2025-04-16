@@ -151,7 +151,8 @@ export enum ComponentType {
   Height = "height",
   Weight = "weight",
   Comparison = "comparison",
-  Rating = "rating"
+  Rating = "rating",
+  Video = "video"
 }
 
 export interface TabOption {

@@ -1,4 +1,3 @@
-
 import { ComponentType } from "@/utils/types";
 
 export function getElementTitle(type: string): string {
@@ -39,6 +38,8 @@ export function getElementTitle(type: string): string {
       return "Carregamento";
     case ComponentType.Cartesian:
       return "Cartesiano";
+    case ComponentType.Video:
+      return "Vídeo";
     default:
       return type;
   }
