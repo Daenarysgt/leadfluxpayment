@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFunnels } from '@/hooks/useFunnels';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   LayoutGrid, 
   Palette, 
@@ -19,14 +20,14 @@ import {
   Pencil,
   Check,
   X,
-  CheckCircle
+  CheckCircle,
+  InfoIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import { useStore } from '@/utils/store';
 import { 
   DropdownMenu,
@@ -86,6 +87,11 @@ const Dashboard = () => {
     loading: limitsLoading, 
     reload: reloadLimits 
   } = usePlanLimits();
+
+  // Estado para controle de diálogo de criação de novo funil
+  const [isNewFunnelDialogOpen, setIsNewFunnelDialogOpen] = useState<boolean>(false);
+  const [newFunnelNameInput, setNewFunnelNameInput] = useState<string>('');
+  const [isCreatingFunnel, setIsCreatingFunnel] = useState<boolean>(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -153,24 +159,35 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateFunnel = async () => {
+  const handleOpenNewFunnelDialog = () => {
+    if (!canCreateFunnel()) {
+      toast.error(`Você atingiu o limite de ${limits?.maxFunnels} funis do seu plano ${planId?.toUpperCase() || 'atual'}.`, {
+        description: "Faça upgrade para criar mais funis.",
+        action: {
+          label: "Ver Planos",
+          onClick: () => navigate('/pricing')
+        }
+      });
+      return;
+    }
+    
+    setNewFunnelNameInput('Novo Funil');
+    setIsNewFunnelDialogOpen(true);
+  };
+
+  const handleCreateFunnelWithName = async () => {
+    if (!newFunnelNameInput.trim()) {
+      toast.error('O nome do funil não pode estar vazio');
+      return;
+    }
+    
     try {
-      // Verificar se pode criar funnel baseado no limite do plano
-      if (!canCreateFunnel()) {
-        toast.error(`Você atingiu o limite de ${limits?.maxFunnels} funis do seu plano ${planId?.toUpperCase() || 'atual'}.`, {
-          description: "Faça upgrade para criar mais funis.",
-          action: {
-            label: "Ver Planos",
-            onClick: () => navigate('/pricing')
-          }
-        });
-        return;
-      }
-      
-      const newFunnel = await createFunnel('Novo Funil');
+      setIsCreatingFunnel(true);
+      const newFunnel = await createFunnel(newFunnelNameInput.trim());
       if (newFunnel?.id) {
         // Recarregar limites após criar funil
         reloadLimits();
+        setIsNewFunnelDialogOpen(false);
         navigate(`/builder/${newFunnel.id}`);
       }
     } catch (error: any) {
@@ -188,6 +205,8 @@ const Dashboard = () => {
       
       console.error('Erro ao criar funil:', error);
       toast.error('Erro ao criar funil');
+    } finally {
+      setIsCreatingFunnel(false);
     }
   };
   
@@ -413,7 +432,7 @@ const Dashboard = () => {
                   <Button
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 group-hover:border-blue-600 transition-colors bg-white/50"
-                    onClick={handleCreateFunnel}
+                    onClick={handleOpenNewFunnelDialog}
                     disabled={!canCreateFunnel()}
                   >
                     <Plus className="h-6 w-6 text-blue-600" />
@@ -464,7 +483,7 @@ const Dashboard = () => {
                   ) : funnels.length === 0 ? (
                     <div className="text-center text-muted-foreground py-4">
                       Nenhum funil criado ainda.
-                      <Button onClick={handleCreateFunnel} variant="link" className="ml-2">
+                      <Button onClick={handleOpenNewFunnelDialog} variant="link" className="ml-2">
                         Criar seu primeiro funil
                       </Button>
                     </div>
@@ -610,6 +629,45 @@ const Dashboard = () => {
               ) : (
                 "Sim, excluir funil"
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de novo funil */}
+      <AlertDialog open={isNewFunnelDialogOpen} onOpenChange={setIsNewFunnelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Criar novo funil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Digite um nome para seu novo funil. Este nome será usado para gerar o slug.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              value={newFunnelNameInput}
+              onChange={(e) => setNewFunnelNameInput(e.target.value)}
+              placeholder="Nome do funil"
+              className="mb-2"
+              autoFocus
+            />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <InfoIcon className="h-4 w-4" />
+              <span>O slug será gerado a partir deste nome (ex: novo-funil)</span>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCreatingFunnel}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCreateFunnelWithName}
+              disabled={isCreatingFunnel || !newFunnelNameInput.trim()}
+            >
+              {isCreatingFunnel ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Criando...</span>
+                </div>
+              ) : 'Criar Funil'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
