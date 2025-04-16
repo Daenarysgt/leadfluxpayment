@@ -36,22 +36,24 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
   const [aspectRatio, setAspectRatio] = useState(element.content?.aspectRatio || "16:9");
   const [alignment, setAlignment] = useState(element.content?.alignment || "center");
   const [autoPlay, setAutoPlay] = useState(element.content?.autoPlay || false);
-  const [muted, setMuted] = useState(element.content?.muted || true);
+  const [muted, setMuted] = useState(element.content?.muted ?? true);
   const [controls, setControls] = useState(element.content?.controls !== false);
   const [loop, setLoop] = useState(element.content?.loop || false);
 
+  // Monitorar mudanças na prop element.content e atualizar o estado local
   useEffect(() => {
-    // Update the local state when the element props change
-    setVideoUrl(element.content?.videoUrl || "");
-    setEmbedCode(element.content?.embedCode || "");
-    setTitle(element.content?.title || "");
-    setAspectRatio(element.content?.aspectRatio || "16:9");
-    setAlignment(element.content?.alignment || "center");
-    setAutoPlay(element.content?.autoPlay || false);
-    setMuted(element.content?.muted || true);
-    setControls(element.content?.controls !== false);
-    setLoop(element.content?.loop || false);
-    setActiveTab(element.content?.videoType || "url");
+    if (element.content) {
+      setVideoUrl(element.content.videoUrl || "");
+      setEmbedCode(element.content.embedCode || "");
+      setTitle(element.content.title || "");
+      setAspectRatio(element.content.aspectRatio || "16:9");
+      setAlignment(element.content.alignment || "center");
+      setAutoPlay(element.content.autoPlay || false);
+      setMuted(element.content.muted ?? true);
+      setControls(element.content.controls !== false);
+      setLoop(element.content.loop || false);
+      setActiveTab(element.content.videoType || "url");
+    }
   }, [element.content]);
 
   // Update the element content when the form changes
@@ -129,9 +131,11 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
     updateContent({ autoPlay: checked });
   };
 
-  // Handle muted toggle
+  // Handle muted toggle - corrigido para garantir que o estado visual seja atualizado
   const handleMutedChange = (checked: boolean) => {
+    // Atualize o estado local para refletir a mudança visual
     setMuted(checked);
+    // Depois atualize o conteúdo do elemento
     updateContent({ muted: checked });
   };
 
@@ -151,6 +155,11 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
   const isYoutubeUrl = (url: string) => {
     return url && (url.includes('youtube.com') || url.includes('youtu.be'));
   };
+
+  // Debug: monitorar mudanças de estado
+  useEffect(() => {
+    console.log("Estado atual - muted:", muted);
+  }, [muted]);
 
   return (
     <div className="p-4 space-y-6">
@@ -333,6 +342,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               id="autoplay"
               checked={autoPlay}
               onCheckedChange={handleAutoPlayChange}
+              key={`autoplay-${autoPlay}`}
             />
           </div>
           
@@ -347,6 +357,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               id="muted"
               checked={muted}
               onCheckedChange={handleMutedChange}
+              key={`muted-${muted}`}
             />
           </div>
           
@@ -361,6 +372,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               id="controls"
               checked={controls}
               onCheckedChange={handleControlsChange}
+              key={`controls-${controls}`}
             />
           </div>
           
@@ -375,6 +387,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               id="loop"
               checked={loop}
               onCheckedChange={handleLoopChange}
+              key={`loop-${loop}`}
             />
           </div>
         </div>
