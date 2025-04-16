@@ -17,7 +17,7 @@ export default function PaymentSuccess() {
   const [retryInProgress, setRetryInProgress] = useState(false);
   const sessionId = searchParams.get('session_id');
   const [directSubscriptionCheck, setDirectSubscriptionCheck] = useState(false);
-  
+
   // Função para garantir armazenamento consistente do status da assinatura
   const saveSubscriptionStatus = (planId: string) => {
     try {
@@ -326,8 +326,8 @@ export default function PaymentSuccess() {
                   onClick={handleRunDiagnostic}
                   className="w-full text-gray-600"
                 >
-                  Executar Diagnóstico
-                </Button>
+                Executar Diagnóstico
+              </Button>
               )}
             </div>
           </div>
@@ -341,7 +341,7 @@ export default function PaymentSuccess() {
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-500 mr-2" />
                 <span className="text-sm text-gray-600">Executando diagnóstico...</span>
-              </div>
+                </div>
             ) : (
               <div className="text-xs bg-gray-100 p-3 rounded-md overflow-x-auto max-h-64 overflow-y-auto">
                 <pre>{JSON.stringify(diagnostic, null, 2)}</pre>

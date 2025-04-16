@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { accessService } from '@/services/accessService';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -74,6 +75,17 @@ const Dashboard = () => {
     interactionRate: 0
   });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  // Adicionar o hook de limites de plano
+  const { 
+    planId, 
+    limits, 
+    usage, 
+    remaining, 
+    canCreateFunnel, 
+    loading: limitsLoading, 
+    reload: reloadLimits 
+  } = usePlanLimits();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -143,11 +155,37 @@ const Dashboard = () => {
 
   const handleCreateFunnel = async () => {
     try {
+      // Verificar se pode criar funnel baseado no limite do plano
+      if (!canCreateFunnel()) {
+        toast.error(`Você atingiu o limite de ${limits?.maxFunnels} funis do seu plano ${planId?.toUpperCase() || 'atual'}.`, {
+          description: "Faça upgrade para criar mais funis.",
+          action: {
+            label: "Ver Planos",
+            onClick: () => navigate('/pricing')
+          }
+        });
+        return;
+      }
+      
       const newFunnel = await createFunnel('Novo Funil');
       if (newFunnel?.id) {
+        // Recarregar limites após criar funil
+        reloadLimits();
         navigate(`/builder/${newFunnel.id}`);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Verificar se é erro de limite (403)
+      if (error.response?.status === 403) {
+        toast.error(`Limite de funis atingido: ${error.response.data.current}/${error.response.data.limit}`, {
+          description: "Faça upgrade para criar mais funis.",
+          action: {
+            label: "Ver Planos",
+            onClick: () => navigate('/pricing')
+          }
+        });
+        return;
+      }
+      
       console.error('Erro ao criar funil:', error);
       toast.error('Erro ao criar funil');
     }
@@ -199,6 +237,9 @@ const Dashboard = () => {
       await deleteFunnel(funnelToDelete);
       toast.success('Funil excluído com sucesso!');
       setFunnelToDelete(null);
+      
+      // Recarregar limites após excluir funil
+      reloadLimits();
     } catch (error) {
       console.error('Erro ao excluir funil:', error);
       toast.error('Erro ao excluir funil');
@@ -373,9 +414,19 @@ const Dashboard = () => {
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 group-hover:border-blue-600 transition-colors bg-white/50"
                     onClick={handleCreateFunnel}
+                    disabled={!canCreateFunnel()}
                   >
                     <Plus className="h-6 w-6 text-blue-600" />
                     <span>Novo Funil</span>
+                    {!limitsLoading && (
+                      <div className="text-xs text-muted-foreground">
+                        {remaining && remaining.funnels > 0 ? (
+                          <span>{usage?.funnels || 0}/{limits?.maxFunnels || 0} funis</span>
+                        ) : (
+                          <span className="text-red-500">Limite atingido</span>
+                        )}
+                      </div>
+                    )}
                   </Button>
 
                   <Button

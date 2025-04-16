@@ -86,4 +86,34 @@ export const PLANS: Plan[] = [
     annualPriceId: 'price_1R9TypDhXX7mjDi1Mylgmedw',
     popular: false
   }
-]; 
+];
+
+// Interface para definir os limites de cada plano
+export interface PlanLimits {
+  maxFunnels: number;
+  maxLeads: number;
+}
+
+// Definição dos limites para cada plano
+export const PLAN_LIMITS: Record<string, PlanLimits> = {
+  free: {
+    maxFunnels: 1,
+    maxLeads: 1000
+  },
+  basic: {
+    maxFunnels: 3,
+    maxLeads: 5000
+  },
+  pro: {
+    maxFunnels: 6,
+    maxLeads: 10000
+  },
+  elite: {
+    maxFunnels: 12,
+    maxLeads: 25000
+  },
+  scale: {
+    maxFunnels: 30,
+    maxLeads: 100000
+  }
+}; 

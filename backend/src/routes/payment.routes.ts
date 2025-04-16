@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import { PLANS } from '../config/plans';
 import { supabase } from '../config/supabase';
+import { PLAN_LIMITS } from '../config/plans';
 
 interface RequestUser {
   id: string;
@@ -1092,6 +1093,72 @@ router.post('/create-customer-portal-session', async (req, res) => {
   } catch (error: any) {
     console.error('❌ Erro ao criar sessão do portal do cliente:', error.message);
     res.status(500).json({ error: 'Erro ao criar sessão do portal do cliente' });
+  }
+});
+
+// Rota para obter limites do plano atual e uso
+router.get('/plan-limits', async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+    
+    // Buscar assinatura ativa do usuário
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('plan_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single();
+    
+    // Se houve erro (diferente de não encontrado), reportar
+    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+      console.error('Erro ao verificar assinatura:', subscriptionError);
+      return res.status(500).json({ error: 'Erro ao verificar assinatura' });
+    }
+    
+    // Definir plano padrão se não tiver assinatura ativa
+    const planId = subscription?.plan_id || 'free';
+    
+    // Obter limites para o plano
+    const limits = PLAN_LIMITS[planId] || PLAN_LIMITS.free;
+    
+    // Contar funis existentes
+    const { count: funnelCount, error: funnelError } = await supabase
+      .from('funnels')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    
+    if (funnelError) {
+      console.error('Erro ao contar funis:', funnelError);
+      return res.status(500).json({ error: 'Erro ao contar funis' });
+    }
+
+    // Opcional: Contar leads também (se quiser implementar limitação de leads)
+    // const { count: leadCount, error: leadError } = await supabase...
+    
+    return res.json({ 
+      planId, 
+      limits,
+      usage: {
+        funnels: funnelCount || 0,
+        // leads: leadCount || 0
+      },
+      remaining: {
+        funnels: Math.max(0, limits.maxFunnels - (funnelCount || 0)),
+        // leads: Math.max(0, limits.maxLeads - (leadCount || 0))
+      },
+      allPlans: PLANS.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        limits: PLAN_LIMITS[plan.id]
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao obter limites do plano:', error);
+    return res.status(500).json({ error: 'Erro ao obter limites do plano' });
   }
 });
 
