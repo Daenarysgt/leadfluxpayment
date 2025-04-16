@@ -223,7 +223,9 @@ const Settings = () => {
                     value={currentFunnel.name} 
                     onChange={(e) => handleFunnelNameChange(e.target.value)}
                     className="mt-1.5"
+                    disabled
                   />
+                  <p className="text-xs text-gray-500 mt-1.5">O nome do funil só pode ser editado durante a criação</p>
                 </div>
                 
                 <div>
@@ -260,9 +262,10 @@ const Settings = () => {
                         updateFunnel(updatedFunnel);
                       }}
                       className="rounded-l-none"
+                      disabled
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">Esta URL será usada para acessar seu funil publicamente</p>
+                  <p className="text-xs text-gray-500 mt-1.5">O slug do funil é gerado automaticamente a partir do nome</p>
                 </div>
 
                 <div className="pt-4">
