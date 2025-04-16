@@ -556,50 +556,6 @@ const Settings = () => {
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Globe className="h-5 w-5 text-blue-500" />
-                  Domínio Personalizado
-                </CardTitle>
-                <CardDescription>
-                  Configure um domínio personalizado para seu funil
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div>
-                  <Label htmlFor="custom-domain" className="text-sm font-medium">Domínio Personalizado</Label>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <Input 
-                      id="custom-domain" 
-                      placeholder="seufunil.com.br" 
-                      value={currentFunnel.settings.customDomain || ""} 
-                      onChange={(e) => handleSettingChange('customDomain', e.target.value)}
-                    />
-                    <Button variant="outline" className="gap-1.5">
-                      <CheckCircle className="h-4 w-4" />
-                      Verificar
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Adicione os registros DNS necessários no seu provedor de domínio
-                  </p>
-                </div>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-2">
-                  <div className="flex gap-2">
-                    <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-medium text-amber-800">Configuração DNS</h4>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Adicione um registro CNAME para o domínio apontando para <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded">leadflux-domains.com</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
                   <LinkIcon className="h-5 w-5 text-green-500" />
                   SEO & Metadados
                 </CardTitle>
