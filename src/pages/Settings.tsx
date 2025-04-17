@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { accessService } from "@/services/accessService";
 import { DomainManager } from "@/components/domains/DomainManager";
+import FacebookPixelConfig from "@/components/pixel/FacebookPixelConfig";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -546,6 +547,13 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Facebook Pixel Config */}
+            <FacebookPixelConfig
+              facebookPixelId={currentFunnel.settings.facebookPixelId}
+              pixelTracking={currentFunnel.settings.pixelTracking}
+              onUpdate={handleSettingChange}
+            />
           </TabsContent>
           
           <TabsContent value="domínio" className="space-y-4">

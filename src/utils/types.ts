@@ -75,6 +75,13 @@ export interface FunnelSettings {
   // Integration settings
   webhookUrl?: string;
   
+  // Facebook Pixel settings
+  facebookPixelId?: string;
+  pixelTracking?: {
+    pageView?: boolean;
+    completeRegistration?: boolean;
+  };
+  
   // Added missing properties with proper types
   accentColor?: string;
   textBold?: boolean; // Changed from string to boolean

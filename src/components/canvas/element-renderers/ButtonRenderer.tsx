@@ -6,6 +6,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useStore } from "@/utils/store";
 import { ArrowRight } from "lucide-react";
 import { accessService } from "@/services/accessService";
+import { safelyTrackEvent } from "@/utils/pixelUtils";
 
 const ButtonRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -27,6 +28,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const delayEnabled = content.delayEnabled || false;
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
+  const facebookEvent = content.facebookEvent || ""; // Evento do Facebook Pixel
   
   // Effect to handle the appearance delay
   useEffect(() => {
@@ -79,6 +81,11 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     console.log("Navigation config:", navigation);
     
     if (!navigation) return;
+    
+    // Rastrear evento do Facebook Pixel se configurado
+    if (previewMode && facebookEvent) {
+      safelyTrackEvent(facebookEvent);
+    }
     
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {

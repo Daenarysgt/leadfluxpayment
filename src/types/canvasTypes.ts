@@ -1,4 +1,3 @@
-
 import { ComponentType } from "@/utils/types";
 
 export interface CanvasElement {
@@ -76,4 +75,23 @@ export interface ComparisonContent {
   rightCostMax?: string;
   showDetailedComparison?: boolean;
   comparisonMetrics?: ComparisonMetric[];
+}
+
+export interface ButtonContent {
+  buttonText?: string;
+  alignment?: 'left' | 'center' | 'right';
+  size?: 'default' | 'sm' | 'lg';
+  variant?: 'default' | 'outline' | 'ghost' | 'link';
+  buttonColor?: string;
+  animationEnabled?: boolean;
+  delayEnabled?: boolean;
+  delayTime?: number;
+  navigation?: {
+    type: 'next' | 'step' | 'url';
+    stepId?: string;
+    url?: string;
+    openInNewTab?: boolean;
+  };
+  // Facebook Pixel event para rastreamento
+  facebookEvent?: string;
 }

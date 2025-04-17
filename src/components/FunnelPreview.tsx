@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
+import FacebookPixel from '@/components/pixel/FacebookPixel';
 
 interface FunnelPreviewProps {
   isMobile?: boolean;
@@ -44,6 +45,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   }
   
   const { primaryColor, backgroundColor } = activeFunnel.settings;
+  
+  // Check if this is the last step of the funnel
+  const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
 
   // Custom styles based on funnel settings
   const customStyles = {
@@ -69,6 +73,16 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
   return (
     <div className="w-full min-h-screen" style={customStyles}>
+      {/* Facebook Pixel integration */}
+      {activeFunnel.settings.facebookPixelId && (
+        <FacebookPixel 
+          pixelId={activeFunnel.settings.facebookPixelId}
+          isLastPage={isLastStep}
+          trackPageView={activeFunnel.settings.pixelTracking?.pageView !== false}
+          trackCompleteRegistration={activeFunnel.settings.pixelTracking?.completeRegistration !== false}
+        />
+      )}
+      
       <div className="flex flex-col items-center w-full max-w-xl mx-auto py-8">
         {activeFunnel.settings.showProgressBar && (
           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6">

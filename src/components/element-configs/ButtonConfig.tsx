@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -253,6 +252,43 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 <SelectItem value="url">Abrir URL</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Facebook Pixel Event */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="facebook-event">Evento do Facebook Pixel</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este evento será enviado para o Facebook Ads quando o botão for clicado</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Select 
+              value={content.facebookEvent || ""} 
+              onValueChange={(value) => handleStyleUpdate({ facebookEvent: value })}
+            >
+              <SelectTrigger id="facebook-event">
+                <SelectValue placeholder="Selecione um evento (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="InitiateCheckout">InitiateCheckout</SelectItem>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Contact">Contact</SelectItem>
+                <SelectItem value="AddToCart">AddToCart</SelectItem>
+                <SelectItem value="Purchase">Purchase</SelectItem>
+                <SelectItem value="Subscribe">Subscribe</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Este evento será enviado para o Facebook Ads quando o usuário clicar neste botão
+            </p>
           </div>
 
           {navigation.type === "step" && steps.length > 0 && (

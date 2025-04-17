@@ -4,6 +4,7 @@ import { Funnel } from "@/utils/types";
 import ProgressBar from './ProgressBar';
 import CanvasPreview from './CanvasPreview';
 import TraditionalPreview from './TraditionalPreview';
+import FacebookPixel from '@/components/pixel/FacebookPixel';
 
 interface FunnelPreviewProps {
   isMobile?: boolean;
@@ -39,6 +40,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   }
   
   const { primaryColor, backgroundColor } = activeFunnel.settings;
+  // Use backgroundColor from settings or fallback to white
+  const funnelBgColor = backgroundColor || '#ffffff';
+  
+  // Check if this is the last step of the funnel
+  const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
 
   // Custom styles based on funnel settings
   const customStyles = {
@@ -58,35 +64,50 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-xl mx-auto" style={customStyles}>
-      {activeFunnel.settings.showProgressBar && (
-        <ProgressBar 
-          currentStep={safeCurrentStep} 
-          totalSteps={activeFunnel.steps.length} 
-          primaryColor={primaryColor}
+    <div
+      className="flex flex-col w-full min-h-screen transition-all duration-500"
+      style={{ backgroundColor: funnelBgColor }}
+    >
+      {/* Facebook Pixel integration with proper parameters */}
+      {activeFunnel.settings.facebookPixelId && (
+        <FacebookPixel 
+          pixelId={activeFunnel.settings.facebookPixelId}
+          isLastPage={isLastStep}
+          trackPageView={activeFunnel.settings.pixelTracking?.pageView !== false}
+          trackCompleteRegistration={activeFunnel.settings.pixelTracking?.completeRegistration !== false}
         />
       )}
 
-      <div className="w-full">
-        {canvasElements && canvasElements.length > 0 ? (
-          // If we have canvas elements, render them
-          <CanvasPreview 
-            canvasElements={canvasElements} 
-            activeStep={safeCurrentStep}
-            onStepChange={handleStepChange}
-            funnel={activeFunnel}
-          />
-        ) : (
-          // Otherwise, fall back to the traditional question rendering
-          <TraditionalPreview 
-            stepData={stepData}
+      <div className="flex flex-col items-center w-full max-w-xl mx-auto" style={customStyles}>
+        {activeFunnel.settings.showProgressBar && (
+          <ProgressBar 
+            currentStep={safeCurrentStep} 
+            totalSteps={activeFunnel.steps.length} 
             primaryColor={primaryColor}
-            activeStep={safeCurrentStep}
-            totalSteps={activeFunnel.steps.length}
-            onStepChange={handleStepChange}
-            funnel={activeFunnel}
           />
         )}
+
+        <div className="w-full">
+          {canvasElements && canvasElements.length > 0 ? (
+            // If we have canvas elements, render them
+            <CanvasPreview 
+              canvasElements={canvasElements} 
+              activeStep={safeCurrentStep}
+              onStepChange={handleStepChange}
+              funnel={activeFunnel}
+            />
+          ) : (
+            // Otherwise, fall back to the traditional question rendering
+            <TraditionalPreview 
+              stepData={stepData}
+              primaryColor={primaryColor}
+              activeStep={safeCurrentStep}
+              totalSteps={activeFunnel.steps.length}
+              onStepChange={handleStepChange}
+              funnel={activeFunnel}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
