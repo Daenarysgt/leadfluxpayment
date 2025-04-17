@@ -148,6 +148,37 @@ const BuilderCanvas = ({
     setDropTargetId(null);
   }, [dropTargetId, elements, reorderElements, toast]);
   
+  // Escutar o evento personalizado elementDropped
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    const handleElementDropped = (e: CustomEvent) => {
+      const { sourceId, targetId } = e.detail;
+      console.log(`BuilderCanvas - Custom drop event: ${sourceId} onto ${targetId}`);
+      
+      if (sourceId && targetId && sourceId !== targetId) {
+        const sourceIndex = elements.findIndex(el => el.id === sourceId);
+        const targetIndex = elements.findIndex(el => el.id === targetId);
+        
+        if (sourceIndex !== -1 && targetIndex !== -1) {
+          console.log(`BuilderCanvas - Reordering from index ${sourceIndex} to ${targetIndex}`);
+          reorderElements(sourceIndex, targetIndex);
+          
+          toast({
+            title: "Elemento reordenado",
+            description: "O elemento foi movido para a nova posição."
+          });
+        }
+      }
+    };
+    
+    canvasRef.current.addEventListener('elementDropped', handleElementDropped as EventListener);
+    
+    return () => {
+      canvasRef.current?.removeEventListener('elementDropped', handleElementDropped as EventListener);
+    };
+  }, [elements, reorderElements, toast]);
+  
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     

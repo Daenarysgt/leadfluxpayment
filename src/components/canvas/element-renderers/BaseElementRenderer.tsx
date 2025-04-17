@@ -64,7 +64,7 @@ const BaseElementRenderer = ({
     }
   }, [isSelected]);
 
-  // Resetar o estado de dropTarget quando o elemento arrastado muda ou termina o arrasto
+  // Resetar o estado de dropTarget quando o isDragging muda
   useEffect(() => {
     if (!isDragging) {
       setDropTarget(false);
@@ -106,7 +106,6 @@ const BaseElementRenderer = ({
     // Set the drag data
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("elementId", element.id);
-    e.dataTransfer.setData("elementIndex", String(index));
     e.dataTransfer.setData("text/plain", element.id);
     
     // Create custom drag preview - um indicador mais compacto
@@ -157,77 +156,63 @@ const BaseElementRenderer = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    // Não permitir soltar sobre o elemento sendo arrastado
-    if (isDragging) {
-      return;
-    }
+    // Não permitir soltar sobre si mesmo ou se este elemento estiver sendo arrastado
+    if (isDragging) return;
     
     e.preventDefault();
-    e.stopPropagation();
     
-    // Verificar se temos um elemento sendo arrastado
-    if (e.dataTransfer.types.includes('elementId') && 
-        e.dataTransfer.types.includes('elementIndex')) {
+    // Verificar se estamos arrastando um elemento
+    const isElementDrag = e.dataTransfer.types.includes('elementId');
+    
+    if (isElementDrag) {
+      const draggedId = e.dataTransfer.getData('elementId');
       
-      setDropTarget(true);
-      e.dataTransfer.dropEffect = "move";
-      
-      // Dispatchar o evento para o componente pai
-      if (elementRef.current) {
-        const dragEnterEvent = new CustomEvent('elementDragEnter', {
-          bubbles: true,
-          detail: { targetId: element.id }
-        });
-        elementRef.current.dispatchEvent(dragEnterEvent);
+      // Não aceitar soltar sobre si mesmo
+      if (draggedId !== element.id) {
+        setDropTarget(true);
+        e.dataTransfer.dropEffect = "move";
       }
     }
   };
   
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     
-    // Só limpar se o elemento que estamos deixando é o atual (e não um filho)
+    // Verificar se realmente saímos deste elemento e não entramos em um filho dele
     if (!elementRef.current?.contains(e.relatedTarget as Node)) {
       setDropTarget(false);
     }
   };
-  
+
+  // Esta é a função crítica que vai lidar com o drop
   const handleDrop = (e: React.DragEvent) => {
-    // Não permitir soltar sobre o elemento sendo arrastado
-    if (isDragging) {
-      return;
-    }
-    
     e.preventDefault();
     e.stopPropagation();
     
-    // Reset the drop target styling
+    // Limpar o estado visual
     setDropTarget(false);
     
-    // Verificar se temos um elemento sendo arrastado
-    if (e.dataTransfer.types.includes('elementId')) {
-      const draggedId = e.dataTransfer.getData('elementId');
-      const draggedIndex = parseInt(e.dataTransfer.getData('elementIndex'), 10);
+    // Se o elemento que estamos arrastando é este, não faça nada
+    if (isDragging) return;
+    
+    // Verificar se temos um element ID nos dados de transferência
+    const draggedElementId = e.dataTransfer.getData('elementId');
+    
+    if (draggedElementId && draggedElementId !== element.id) {
+      console.log(`Element dropped: ${draggedElementId} on ${element.id}`);
       
-      // Não permitir soltar sobre si mesmo
-      if (draggedId && draggedId !== element.id) {
-        console.log(`Dropping element ${draggedId} (index ${draggedIndex}) over ${element.id} (index ${index})`);
+      // BuilderCanvas vai lidar com a reordenação real através do setDropTargetId
+      // Devemos apenas acionar um evento que ele possa capturar
+      if (elementRef.current) {
+        const dropEvent = new CustomEvent('elementDropped', {
+          bubbles: true,
+          detail: {
+            sourceId: draggedElementId,
+            targetId: element.id
+          }
+        });
         
-        // Se o índice do elemento arrastado é maior (está abaixo), 
-        // mova-o para antes deste elemento (mova para cima)
-        if (draggedIndex > index) {
-          for (let i = 0; i < (draggedIndex - index); i++) {
-            onMoveUp && onMoveUp(draggedId);
-          }
-        } 
-        // Se o índice do elemento arrastado é menor (está acima), 
-        // mova-o para depois deste elemento (mova para baixo)
-        else if (draggedIndex < index) {
-          for (let i = 0; i < (index - draggedIndex); i++) {
-            onMoveDown && onMoveDown(draggedId);
-          }
-        }
+        elementRef.current.dispatchEvent(dropEvent);
       }
     }
   };
@@ -247,6 +232,8 @@ const BaseElementRenderer = ({
           onDragOver={!isPreviewMode && !isDragging ? handleDragOver : undefined}
           onDragLeave={!isPreviewMode && !isDragging ? handleDragLeave : undefined}
           onDrop={!isPreviewMode && !isDragging ? handleDrop : undefined}
+          data-element-id={element.id}
+          data-element-index={index}
         >
           {/* Conteúdo real do elemento */}
           <div className={cn(
