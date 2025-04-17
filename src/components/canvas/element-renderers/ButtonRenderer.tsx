@@ -28,7 +28,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const delayEnabled = content.delayEnabled || false;
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
-  const facebookEvent = content.facebookEvent || ""; // Evento do Facebook Pixel
+  const facebookEvent = content.facebookEvent || "none"; // Evento do Facebook Pixel
   
   // Effect to handle the appearance delay
   useEffect(() => {
@@ -83,7 +83,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     if (!navigation) return;
     
     // Rastrear evento do Facebook Pixel se configurado
-    if (previewMode && facebookEvent) {
+    if (previewMode && facebookEvent && facebookEvent !== "none") {
       safelyTrackEvent(facebookEvent);
     }
     

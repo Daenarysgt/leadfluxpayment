@@ -270,14 +270,18 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
               </TooltipProvider>
             </div>
             <Select 
-              value={content.facebookEvent || ""} 
-              onValueChange={(value) => handleStyleUpdate({ facebookEvent: value })}
+              value={content.facebookEvent || "none"} 
+              onValueChange={(value) => {
+                // Se o valor for "none", salve como null ou vazio na configuração
+                const eventValue = value === "none" ? "" : value;
+                handleStyleUpdate({ facebookEvent: eventValue });
+              }}
             >
               <SelectTrigger id="facebook-event">
                 <SelectValue placeholder="Selecione um evento (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 <SelectItem value="InitiateCheckout">InitiateCheckout</SelectItem>
                 <SelectItem value="Lead">Lead</SelectItem>
                 <SelectItem value="Contact">Contact</SelectItem>
