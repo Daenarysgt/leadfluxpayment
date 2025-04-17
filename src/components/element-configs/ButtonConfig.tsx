@@ -26,6 +26,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const variant = content.variant || "default";
   const buttonColor = content.buttonColor || "#7c3aed"; // Default violet-600
   const animationEnabled = Boolean(content.animationEnabled);
+  const animationType = content.animationType || "none"; // Novo campo para tipo de animação
   const delayEnabled = Boolean(content.delayEnabled);
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
@@ -69,7 +70,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 pb-32">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="style">Estilo</TabsTrigger>
@@ -154,8 +155,31 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 <SelectItem value="secondary">Secundário</SelectItem>
                 <SelectItem value="ghost">Fantasma</SelectItem>
                 <SelectItem value="link">Link</SelectItem>
+                <SelectItem value="gradient">Gradiente</SelectItem>
+                <SelectItem value="3d">Efeito 3D</SelectItem>
+                <SelectItem value="neon">Neon</SelectItem>
+                <SelectItem value="rounded">Arredondado</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Preview do estilo selecionado */}
+            <div className="mt-2 p-4 bg-gray-50 rounded-md flex justify-center">
+              <Button 
+                variant={variant as any} 
+                size={size === "full" ? "default" : size as any}
+                className={`${variant === "gradient" ? "bg-gradient-to-r from-purple-500 to-blue-500" : ""} 
+                           ${variant === "3d" ? "shadow-lg transform active:translate-y-1" : ""}
+                           ${variant === "neon" ? "shadow-[0_0_10px_rgba(124,58,237,0.7)]" : ""}
+                           ${variant === "rounded" ? "rounded-full" : ""}`}
+                style={{ 
+                  backgroundColor: variant === "default" ? buttonColor : undefined,
+                  borderColor: variant === "outline" ? buttonColor : undefined,
+                  color: variant === "outline" || variant === "ghost" ? buttonColor : undefined
+                }}
+              >
+                {buttonText || "Continuar"}
+              </Button>
+            </div>
           </div>
 
           {/* Color Picker */}
@@ -177,17 +201,56 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
             </div>
           </div>
 
-          {/* Animation */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="animation-toggle">Animação Suave</Label>
-              <p className="text-sm text-muted-foreground">Adiciona uma transição suave ao botão</p>
-            </div>
-            <Switch
-              id="animation-toggle"
-              checked={animationEnabled}
-              onCheckedChange={(checked) => handleStyleUpdate({ animationEnabled: checked })}
-            />
+          {/* Animation Type */}
+          <div className="space-y-2">
+            <Label htmlFor="animation-type">Tipo de Animação</Label>
+            <Select 
+              value={animationType} 
+              onValueChange={(value) => handleStyleUpdate({ 
+                animationType: value,
+                animationEnabled: value !== "none"
+              })}
+            >
+              <SelectTrigger id="animation-type">
+                <SelectValue placeholder="Selecione o tipo de animação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem Animação</SelectItem>
+                <SelectItem value="pulse">Pulsar</SelectItem>
+                <SelectItem value="bounce">Quicar</SelectItem>
+                <SelectItem value="shake">Tremer</SelectItem>
+                <SelectItem value="glow">Brilhar</SelectItem>
+                <SelectItem value="scale">Escalar</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Preview da animação selecionada */}
+            {animationType !== "none" && (
+              <div className="mt-2 p-4 bg-gray-50 rounded-md flex justify-center">
+                <Button 
+                  variant={variant as any}
+                  size={size === "full" ? "default" : size as any}
+                  className={`
+                    ${animationType === "pulse" ? "animate-pulse" : ""}
+                    ${animationType === "bounce" ? "animate-bounce" : ""}
+                    ${animationType === "shake" ? "animate-[wiggle_1s_ease-in-out_infinite]" : ""}
+                    ${animationType === "glow" ? "animate-[glow_1.5s_ease-in-out_infinite]" : ""}
+                    ${animationType === "scale" ? "animate-[scale_1.5s_ease-in-out_infinite]" : ""}
+                    ${variant === "gradient" ? "bg-gradient-to-r from-purple-500 to-blue-500" : ""} 
+                    ${variant === "3d" ? "shadow-lg transform active:translate-y-1" : ""}
+                    ${variant === "neon" ? "shadow-[0_0_10px_rgba(124,58,237,0.7)]" : ""}
+                    ${variant === "rounded" ? "rounded-full" : ""}
+                  `}
+                  style={{ 
+                    backgroundColor: variant === "default" ? buttonColor : undefined,
+                    borderColor: variant === "outline" ? buttonColor : undefined,
+                    color: variant === "outline" || variant === "ghost" ? buttonColor : undefined
+                  }}
+                >
+                  {buttonText || "Continuar"}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Delay */}

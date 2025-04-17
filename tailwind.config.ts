@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -121,6 +120,18 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
         },
+        "wiggle": {
+          "0%, 100%": { transform: "rotate(-3deg)" },
+          "50%": { transform: "rotate(3deg)" },
+        },
+        "glow": {
+          "0%, 100%": { boxShadow: "0 0 5px rgba(124, 58, 237, 0.5)" },
+          "50%": { boxShadow: "0 0 20px rgba(124, 58, 237, 0.8)" },
+        },
+        "scale": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -133,6 +144,9 @@ export default {
         "scale-out": "scale-out 0.3s ease-out",
         "float": "float 6s ease-in-out infinite",
         "pulse-soft": "pulse-soft 3s ease-in-out infinite",
+        "wiggle": "wiggle 1s ease-in-out infinite",
+        "glow": "glow 1.5s ease-in-out infinite",
+        "scale": "scale 1.5s ease-in-out infinite",
       },
       boxShadow: {
         'subtle': '0 4px 12px rgba(0, 0, 0, 0.05)',

@@ -8,6 +8,25 @@ import { ArrowRight } from "lucide-react";
 import { accessService } from "@/services/accessService";
 import { safelyTrackEvent } from "@/utils/pixelUtils";
 
+// Função para ajustar uma cor hex, tornando-a mais clara ou escura
+const adjustColor = (color: string, amount: number): string => {
+  // Remover o # se presente
+  color = color.replace('#', '');
+  
+  // Converter para números
+  let r = parseInt(color.substring(0, 2), 16);
+  let g = parseInt(color.substring(2, 4), 16);
+  let b = parseInt(color.substring(4, 6), 16);
+  
+  // Ajustar os valores (positivo = mais claro, negativo = mais escuro)
+  r = Math.min(255, Math.max(0, r + amount));
+  g = Math.min(255, Math.max(0, g + amount));
+  b = Math.min(255, Math.max(0, b + amount));
+  
+  // Converter de volta para hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 const ButtonRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content = {}, previewMode, previewProps } = element;
@@ -25,6 +44,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const variant = content.variant || "default";
   const buttonColor = content.buttonColor || "#7c3aed"; // Default violet-600
   const animationEnabled = content.animationEnabled || false;
+  const animationType = content.animationType || "none"; // Novo campo para tipo de animação
   const delayEnabled = content.delayEnabled || false;
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
@@ -62,22 +82,41 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     const sizeClasses = {
       sm: "h-8 text-sm",
       default: "h-10",
-      lg: "h-12 text-lg"
+      lg: "h-12 text-lg",
+      full: "h-12 w-full"
     };
+    
+    // Define classes para os diferentes estilos de botão
     const variantClasses = {
       default: "bg-violet-600 hover:bg-violet-700 text-white",
       outline: "border-2 border-violet-600 text-violet-600 hover:bg-violet-50",
-      ghost: "hover:bg-violet-50 text-violet-600"
+      ghost: "hover:bg-violet-50 text-violet-600",
+      secondary: "bg-gray-200 hover:bg-gray-300 text-gray-800",
+      link: "underline text-violet-600 hover:text-violet-800",
+      gradient: "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white",
+      "3d": "bg-violet-600 border-b-4 border-violet-800 hover:bg-violet-700 active:border-b-0 active:mb-[4px] text-white",
+      neon: "bg-violet-600 hover:bg-violet-700 text-white shadow-[0_0_10px_rgba(124,58,237,0.7)]",
+      rounded: "bg-violet-600 hover:bg-violet-700 text-white rounded-full"
+    };
+    
+    // Animações
+    const animationClasses = {
+      none: "",
+      pulse: "animate-pulse",
+      bounce: "animate-bounce",
+      shake: "animate-[wiggle_1s_ease-in-out_infinite]",
+      glow: "animate-[glow_1.5s_ease-in-out_infinite]",
+      scale: "animate-[scale_1.5s_ease-in-out_infinite]"
     };
     
     return cn(
       baseClasses,
       sizeClasses[size as keyof typeof sizeClasses] || sizeClasses.default,
       variantClasses[variant as keyof typeof variantClasses] || variantClasses.default,
-      animationEnabled && "hover:scale-105",
+      animationEnabled && animationType !== "none" && animationClasses[animationType as keyof typeof animationClasses],
       "flex items-center justify-center gap-2"
     );
-  }, [size, variant, animationEnabled]);
+  }, [size, variant, animationEnabled, animationType]);
 
   const performNavigation = async () => {
     console.log("ButtonRenderer - performNavigation called");
@@ -228,7 +267,18 @@ const ButtonRenderer = (props: ElementRendererProps) => {
       <div className={cn("w-full flex", alignmentClass)}>
         <Button
           className={buttonClass}
-          style={{ backgroundColor: buttonColor }}
+          style={{ 
+            backgroundColor: variant === "default" ? buttonColor : undefined,
+            borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
+            color: variant === "outline" || variant === "ghost" || variant === "link" ? buttonColor : undefined,
+            // Para variantes específicas, aplicar estilos específicos
+            ...(variant === "gradient" ? { 
+              background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
+            } : {}),
+            ...(variant === "neon" ? { 
+              boxShadow: `0 0 10px ${buttonColor}7A` 
+            } : {})
+          }}
           onClick={performNavigation}
         >
           {buttonText}
