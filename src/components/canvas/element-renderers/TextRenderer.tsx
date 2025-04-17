@@ -8,17 +8,13 @@ const TextRenderer = (props: ElementRendererProps) => {
   const renderFormattedText = () => {
     // Se existir texto formatado em HTML, renderizamos ele diretamente
     if (element.content?.formattedText) {
-      // Estilo personalizado para preservar os destaques coloridos
+      // Estilo personalizado para preservar cores e formatações
       const customStyles = `
-        /* Garantir que todos os spans mantenham suas cores de fundo */
-        span[style*="background-color"] {
-          background-color: inherit !important;
-          display: inline !important;
+        .text-content * { 
+          background-color: initial !important;
         }
-        
-        /* Manter fundo transparente nos outros elementos */
-        div, p, h1, h2, h3, h4, h5, h6 {
-          background-color: transparent !important;
+        .text-content span[style*="background-color"] { 
+          background-color: inherit !important; 
         }
       `;
       
@@ -26,13 +22,11 @@ const TextRenderer = (props: ElementRendererProps) => {
         <>
           <style>{customStyles}</style>
           <div 
-            className="prose max-w-none bg-transparent"
+            className="prose max-w-none text-content"
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-              color: element.content?.fontColor,
-              backgroundColor: 'transparent', // Forçando fundo transparente
+              color: element.content?.fontColor
             }}
-            data-transparent-text="true"
             dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
           />
         </>
@@ -43,22 +37,20 @@ const TextRenderer = (props: ElementRendererProps) => {
     return (
       <>
         <h2 
-          className="text-xl font-semibold text-center bg-transparent"
+          className="text-xl font-semibold text-center"
           style={{
             fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-            color: element.content?.fontColor,
-            backgroundColor: 'transparent' // Forçando fundo transparente
+            color: element.content?.fontColor
           }}
         >
           {element.content?.title || "Título aqui"}
         </h2>
         {element.content?.description && (
           <p 
-            className="text-gray-600 text-center mt-2 bg-transparent"
+            className="text-gray-600 text-center mt-2"
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize - 4}px` : undefined,
-              color: element.content?.fontColor,
-              backgroundColor: 'transparent' // Forçando fundo transparente
+              color: element.content?.fontColor
             }}
           >
             {element.content.description}
@@ -70,13 +62,12 @@ const TextRenderer = (props: ElementRendererProps) => {
   
   // Calcular o estilo para margem superior
   const containerStyle = {
-    marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : undefined,
-    backgroundColor: 'transparent' // Forçando fundo transparente no container
+    marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : undefined
   };
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4 bg-transparent" style={containerStyle}>
+      <div className="p-4" style={containerStyle}>
         {renderFormattedText()}
       </div>
     </BaseElementRenderer>

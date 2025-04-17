@@ -248,72 +248,25 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   
   // Função para aplicar destaque (highlight) ao texto
   const applyHighlight = (color: string) => {
-    // Verificar se há seleção de texto
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      toast({
-        title: "Selecione um texto",
-        description: "Você precisa selecionar um texto antes de aplicar um destaque.",
-        variant: "destructive",
-      });
-      return;
+    // Capturar o conteúdo atual antes de aplicar destaque
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
     }
-
-    const range = selection.getRangeAt(0);
-    if (range.toString().trim() === '') {
-      toast({
-        title: "Selecione um texto",
-        description: "A seleção está vazia.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    
     // Atualizar a cor de destaque no estado
     setHighlightColor(color);
     
-    try {
-      // MÉTODO DIRETO: criar um span com estilo e substituir a seleção
-      const selectedContent = range.extractContents();
-      const highlightSpan = document.createElement('span');
-      highlightSpan.style.backgroundColor = color;
-      highlightSpan.appendChild(selectedContent);
-      range.insertNode(highlightSpan);
-      
-      // Limpar a seleção
-      selection.removeAllRanges();
-      
-      // Capturar o novo conteúdo e atualizar imediatamente
-      if (editorRef.current) {
-        const newContent = editorRef.current.innerHTML;
-        contentBufferRef.current = newContent;
-        setCurrentContent(newContent);
-        
-        // Enviar atualização imediata
-        onUpdate({
-          content: {
-            ...element.content,
-            formattedText: newContent,
-            fontSize,
-            fontColor,
-            marginTop
-          }
-        });
-        
-        toast({
-          title: "Destaque aplicado",
-          description: "O destaque foi aplicado com sucesso!",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao aplicar destaque:", error);
-      toast({
-        title: "Erro ao aplicar destaque",
-        description: "Ocorreu um erro ao tentar destacar o texto.",
-        variant: "destructive",
-      });
-    }
+    // Aplicar cor de fundo
+    document.execCommand('backColor', false, color);
+    
+    // Focar o editor novamente
+    editorRef.current?.focus();
+    
+    // Enviar atualização após um breve atraso
+    setTimeout(() => {
+      handleEditorInput();
+    }, 50);
   };
 
   // Manipulador para mudanças no tamanho da fonte
