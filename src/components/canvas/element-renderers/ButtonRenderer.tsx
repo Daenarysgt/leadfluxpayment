@@ -88,15 +88,15 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     
     // Define classes para os diferentes estilos de botão
     const variantClasses = {
-      default: "bg-violet-600 hover:bg-violet-700 text-white",
-      outline: "border-2 border-violet-600 text-violet-600 hover:bg-violet-50",
-      ghost: "hover:bg-violet-50 text-violet-600",
+      default: "text-white hover:opacity-90",
+      outline: "border-2 bg-transparent hover:bg-opacity-10",
+      ghost: "bg-transparent hover:bg-opacity-10",
       secondary: "bg-gray-200 hover:bg-gray-300 text-gray-800",
-      link: "underline text-violet-600 hover:text-violet-800",
-      gradient: "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white",
-      "3d": "bg-violet-600 border-b-4 border-violet-800 hover:bg-violet-700 active:border-b-0 active:mb-[4px] text-white",
-      neon: "bg-violet-600 hover:bg-violet-700 text-white shadow-[0_0_10px_rgba(124,58,237,0.7)]",
-      rounded: "bg-violet-600 hover:bg-violet-700 text-white rounded-full"
+      link: "bg-transparent underline hover:opacity-80",
+      gradient: "text-white hover:opacity-90",
+      "3d": "border-b-4 active:border-b-0 active:mb-[4px] text-white hover:opacity-90",
+      neon: "text-white hover:opacity-90",
+      rounded: "text-white rounded-full hover:opacity-90"
     };
     
     // Animações
@@ -267,8 +267,12 @@ const ButtonRenderer = (props: ElementRendererProps) => {
       <div className={cn("w-full flex", alignmentClass)}>
         <Button
           className={buttonClass}
-          style={{ 
-            backgroundColor: variant === "default" ? buttonColor : undefined,
+          style={{
+            backgroundColor: 
+              variant === "default" || variant === "secondary" ? buttonColor : 
+              variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
+              variant === "rounded" ? buttonColor :
+              undefined,
             borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
             color: variant === "outline" || variant === "ghost" || variant === "link" ? buttonColor : undefined,
             // Para variantes específicas, aplicar estilos específicos
@@ -276,9 +280,11 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
             } : {}),
             ...(variant === "neon" ? { 
+              backgroundColor: buttonColor,
               boxShadow: `0 0 10px ${buttonColor}7A` 
-            } : {})
-          }}
+            } : {}),
+            "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
+          } as React.CSSProperties}
           onClick={performNavigation}
         >
           {buttonText}
