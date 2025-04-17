@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -366,12 +365,11 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
                     
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                       onClick={() => handleDeleteTestimonial(activeTestimonialObj.id)}
-                      disabled={testimonials.length <= 1}
-                      className="h-8 w-8 ml-2"
+                      className="p-0 h-8 w-8"
                     >
-                      <Trash2 className="h-4 w-4 text-gray-500" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

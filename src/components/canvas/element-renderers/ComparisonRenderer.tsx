@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
@@ -15,6 +14,13 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
   const [title, setTitle] = useState(content?.title || "Comparação de opções");
   const [leftTitle, setLeftTitle] = useState(content?.leftTitle || "VSL / Typebot / LP");
   const [rightTitle, setRightTitle] = useState(content?.rightTitle || "Plataforma Inlead");
+  
+  // Cores do texto
+  const style = content?.style || {};
+  const titleColor = style?.titleColor || "#000000";
+  const columnTitleColor = style?.columnTitleColor || "#000000";
+  const itemNameColor = style?.itemNameColor || "#000000";
+  const itemValueColor = style?.itemValueColor || "#6b7280";
   
   // Update local state when content changes
   useEffect(() => {
@@ -41,17 +47,17 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
       <div className="p-4 w-full">
         {title && (
           <div className="flex flex-col items-center mb-6">
-            <h2 className="text-xl font-semibold text-center">{title}</h2>
+            <h2 className="text-xl font-semibold text-center" style={{ color: titleColor }}>{title}</h2>
           </div>
         )}
         
         {/* Comparison headers */}
         <div className="grid grid-cols-2 gap-6 mb-4">
           <div className="text-center">
-            <h3 className="text-lg font-semibold">{leftTitle}</h3>
+            <h3 className="text-lg font-semibold" style={{ color: columnTitleColor }}>{leftTitle}</h3>
           </div>
           <div className="text-center">
-            <h3 className="text-lg font-semibold">{rightTitle}</h3>
+            <h3 className="text-lg font-semibold" style={{ color: columnTitleColor }}>{rightTitle}</h3>
           </div>
         </div>
 
@@ -68,8 +74,8 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
                 {/* Left column item */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{leftItem.name}</span>
-                    <span className="text-sm">{leftItem.label || `${leftItem.value}%`}</span>
+                    <span className="font-medium" style={{ color: itemNameColor }}>{leftItem.name}</span>
+                    <span className="text-sm" style={{ color: itemValueColor }}>{leftItem.label || `${leftItem.value}%`}</span>
                   </div>
                   <div className="bg-gray-100 rounded-full overflow-hidden">
                     <div 
@@ -86,8 +92,8 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
                 {rightItem && (
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">{rightItem.name}</span>
-                      <span className="text-sm">{rightItem.label || `${rightItem.value}%`}</span>
+                      <span className="font-medium" style={{ color: itemNameColor }}>{rightItem.name}</span>
+                      <span className="text-sm" style={{ color: itemValueColor }}>{rightItem.label || `${rightItem.value}%`}</span>
                     </div>
                     <div className="bg-gray-100 rounded-full overflow-hidden">
                       <div 
@@ -109,7 +115,7 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
             <div className="grid grid-cols-2 gap-6 mt-6 pt-4 border-t">
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Custo</span>
+                  <span className="font-medium" style={{ color: itemNameColor }}>Custo</span>
                 </div>
                 <div className="relative pt-4">
                   <div className="bg-gray-100 rounded-full overflow-hidden">
@@ -122,15 +128,15 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
                     />
                   </div>
                   <div className="flex justify-between text-sm mt-1">
-                    <span>R${content.leftCostMin || "100"}</span>
-                    <span>R${content.leftCostMax || "5.000"}</span>
+                    <span style={{ color: itemValueColor }}>R${content.leftCostMin || "100"}</span>
+                    <span style={{ color: itemValueColor }}>R${content.leftCostMax || "5.000"}</span>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Custo</span>
+                  <span className="font-medium" style={{ color: itemNameColor }}>Custo</span>
                 </div>
                 <div className="relative pt-4">
                   <div className="bg-gray-100 rounded-full overflow-hidden">
@@ -143,8 +149,8 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
                     />
                   </div>
                   <div className="flex justify-between text-sm mt-1">
-                    <span>R${content.rightCostMin || "100"}</span>
-                    <span>R${content.rightCostMax || "5.000"}</span>
+                    <span style={{ color: itemValueColor }}>R${content.rightCostMin || "100"}</span>
+                    <span style={{ color: itemValueColor }}>R${content.rightCostMax || "5.000"}</span>
                   </div>
                 </div>
               </div>

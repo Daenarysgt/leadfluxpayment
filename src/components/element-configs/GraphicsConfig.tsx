@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -311,15 +310,17 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                           <div className="flex justify-end gap-2">
                             <Button 
                               variant="ghost" 
-                              size="icon" 
+                              size="sm"
                               onClick={() => handleEditItem(index)}
+                              className="p-0 h-8 w-8"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
-                              size="icon" 
+                              size="sm"
                               onClick={() => handleRemoveItem(index)}
+                              className="p-0 h-8 w-8"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

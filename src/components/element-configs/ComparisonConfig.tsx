@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Input } from "@/components/ui/input";
@@ -30,6 +29,13 @@ const ComparisonConfig = ({ element, onUpdate }: ComparisonConfigProps) => {
     "#6b7280", // gray
     "#fbbf24"  // yellow
   ];
+  
+  // Configurações para cores de texto
+  const style = content.style || {};
+  const titleColor = style.titleColor || "#000000";
+  const columnTitleColor = style.columnTitleColor || "#000000";
+  const itemNameColor = style.itemNameColor || "#000000";
+  const itemValueColor = style.itemValueColor || "#6b7280";
 
   const handleTitleChange = (value: string) => {
     onUpdate({
@@ -202,6 +208,158 @@ const ComparisonConfig = ({ element, onUpdate }: ComparisonConfigProps) => {
               />
             </div>
           </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Cor do Título Principal</Label>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                  style={{ backgroundColor: titleColor }}
+                  onClick={() => {
+                    const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", titleColor);
+                    if (newColor) {
+                      onUpdate({
+                        content: {
+                          ...content,
+                          style: {
+                            ...(content.style || {}),
+                            titleColor: newColor
+                          }
+                        }
+                      });
+                    }
+                  }}
+                />
+                <Input 
+                  value={titleColor} 
+                  onChange={(e) => onUpdate({
+                    content: {
+                      ...content,
+                      style: {
+                        ...(content.style || {}),
+                        titleColor: e.target.value
+                      }
+                    }
+                  })}
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Cor dos Títulos de Coluna</Label>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                  style={{ backgroundColor: columnTitleColor }}
+                  onClick={() => {
+                    const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", columnTitleColor);
+                    if (newColor) {
+                      onUpdate({
+                        content: {
+                          ...content,
+                          style: {
+                            ...(content.style || {}),
+                            columnTitleColor: newColor
+                          }
+                        }
+                      });
+                    }
+                  }}
+                />
+                <Input 
+                  value={columnTitleColor} 
+                  onChange={(e) => onUpdate({
+                    content: {
+                      ...content,
+                      style: {
+                        ...(content.style || {}),
+                        columnTitleColor: e.target.value
+                      }
+                    }
+                  })}
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Cor dos Nomes dos Itens</Label>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                  style={{ backgroundColor: itemNameColor }}
+                  onClick={() => {
+                    const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", itemNameColor);
+                    if (newColor) {
+                      onUpdate({
+                        content: {
+                          ...content,
+                          style: {
+                            ...(content.style || {}),
+                            itemNameColor: newColor
+                          }
+                        }
+                      });
+                    }
+                  }}
+                />
+                <Input 
+                  value={itemNameColor} 
+                  onChange={(e) => onUpdate({
+                    content: {
+                      ...content,
+                      style: {
+                        ...(content.style || {}),
+                        itemNameColor: e.target.value
+                      }
+                    }
+                  })}
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Cor dos Valores dos Itens</Label>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                  style={{ backgroundColor: itemValueColor }}
+                  onClick={() => {
+                    const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", itemValueColor);
+                    if (newColor) {
+                      onUpdate({
+                        content: {
+                          ...content,
+                          style: {
+                            ...(content.style || {}),
+                            itemValueColor: newColor
+                          }
+                        }
+                      });
+                    }
+                  }}
+                />
+                <Input 
+                  value={itemValueColor} 
+                  onChange={(e) => onUpdate({
+                    content: {
+                      ...content,
+                      style: {
+                        ...(content.style || {}),
+                        itemValueColor: e.target.value
+                      }
+                    }
+                  })}
+                  placeholder="#6b7280"
+                />
+              </div>
+            </div>
+          </div>
         </TabsContent>
         
         <TabsContent value="items" className="space-y-6">
@@ -224,9 +382,9 @@ const ComparisonConfig = ({ element, onUpdate }: ComparisonConfigProps) => {
                 <span className="font-medium text-sm">Item {index + 1}</span>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
+                  size="sm" 
                   onClick={() => removeItem(item.id)}
-                  className="h-7 w-7"
+                  className="h-7 w-7 p-0"
                   disabled={items.length <= 2}
                 >
                   <Trash2 className="h-4 w-4 text-gray-500" />
@@ -295,9 +453,9 @@ const ComparisonConfig = ({ element, onUpdate }: ComparisonConfigProps) => {
                 <span className="font-medium text-sm">Item {index + 1}</span>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
+                  size="sm" 
                   onClick={() => removeItem(item.id)}
-                  className="h-7 w-7"
+                  className="h-7 w-7 p-0"
                   disabled={items.length <= 2}
                 >
                   <Trash2 className="h-4 w-4 text-gray-500" />

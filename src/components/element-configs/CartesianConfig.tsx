@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CanvasElement } from "@/types/canvasTypes";
@@ -330,7 +329,7 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
                       <div className="absolute right-2 top-2">
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="sm"
                           onClick={() => removeChartPoint(index)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -386,9 +385,10 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
                     <div className="absolute right-2 top-2">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => removeComparisonItem(index)}
                         disabled={comparisonData.length <= 1}
+                        className="p-0 h-8 w-8"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

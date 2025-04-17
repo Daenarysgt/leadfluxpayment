@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Button } from "@/components/ui/button";
@@ -52,6 +51,11 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
   const descriptionAlign = style.descriptionAlign || "center";
   const argumentsAlign = style.argumentsAlign || "left";
   const markerIcon = style.markerIcon || "check-circle";
+  
+  // Cores do texto
+  const titleColor = style.titleColor || "#000000";
+  const descriptionColor = style.descriptionColor || "#6b7280";
+  const argumentsColor = style.argumentsColor || "#374151";
   
   const [newArgument, setNewArgument] = useState("");
   
@@ -169,10 +173,10 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
                   />
                   <Button
                     type="button"
-                    size="icon"
+                    size="sm"
                     variant="ghost"
                     onClick={() => removeArgument(arg.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -195,9 +199,10 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
               />
               <Button
                 type="button"
-                size="icon"
+                size="sm"
                 onClick={addArgument}
                 disabled={!newArgument.trim()}
+                className="h-8 w-8 p-0"
               >
                 <PlusCircle className="h-4 w-4" />
               </Button>
@@ -376,38 +381,89 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
               
               <div className="space-y-2">
                 <Label>Cor dos marcadores</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      <div 
-                        className="w-4 h-4 rounded mr-2"
-                        style={{ backgroundColor: checkmarkColor }} 
-                      />
-                      {checkmarkColor}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <div className="grid grid-cols-5 gap-1 p-2">
-                      {['#22c55e', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', 
-                        '#ec4899', '#14b8a6', '#f43f5e', '#64748b', '#0f172a'].map(color => (
-                        <div
-                          key={color}
-                          className="w-8 h-8 rounded cursor-pointer border hover:scale-110 transition-transform"
-                          style={{ backgroundColor: color }}
-                          onClick={() => handleStyleUpdate({ checkmarkColor: color })}
-                        />
-                      ))}
-                    </div>
-                    <div className="p-2 border-t">
-                      <Input 
-                        type="text"
-                        value={checkmarkColor}
-                        onChange={(e) => handleStyleUpdate({ checkmarkColor: e.target.value })}
-                        placeholder="#RRGGBB"
-                      />
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                    style={{ backgroundColor: checkmarkColor }}
+                    onClick={() => {
+                      // Lógica para seletor de cor, isso poderia ser substituído por um seletor de cor adequado
+                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", checkmarkColor);
+                      if (newColor) {
+                        handleStyleUpdate({ checkmarkColor: newColor });
+                      }
+                    }}
+                  />
+                  <Input 
+                    value={checkmarkColor} 
+                    onChange={(e) => handleStyleUpdate({ checkmarkColor: e.target.value })}
+                    placeholder="#22c55e"
+                  />
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div className="space-y-2">
+                <Label>Cor do título</Label>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                    style={{ backgroundColor: titleColor }}
+                    onClick={() => {
+                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", titleColor);
+                      if (newColor) {
+                        handleStyleUpdate({ titleColor: newColor });
+                      }
+                    }}
+                  />
+                  <Input 
+                    value={titleColor} 
+                    onChange={(e) => handleStyleUpdate({ titleColor: e.target.value })}
+                    placeholder="#000000"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Cor da descrição</Label>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                    style={{ backgroundColor: descriptionColor }}
+                    onClick={() => {
+                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", descriptionColor);
+                      if (newColor) {
+                        handleStyleUpdate({ descriptionColor: newColor });
+                      }
+                    }}
+                  />
+                  <Input 
+                    value={descriptionColor} 
+                    onChange={(e) => handleStyleUpdate({ descriptionColor: e.target.value })}
+                    placeholder="#6b7280"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Cor do texto dos argumentos</Label>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
+                    style={{ backgroundColor: argumentsColor }}
+                    onClick={() => {
+                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", argumentsColor);
+                      if (newColor) {
+                        handleStyleUpdate({ argumentsColor: newColor });
+                      }
+                    }}
+                  />
+                  <Input 
+                    value={argumentsColor} 
+                    onChange={(e) => handleStyleUpdate({ argumentsColor: e.target.value })}
+                    placeholder="#374151"
+                  />
+                </div>
               </div>
             </>
           )}

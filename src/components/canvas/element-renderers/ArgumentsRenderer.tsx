@@ -1,4 +1,3 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
@@ -21,6 +20,10 @@ const ArgumentsRenderer = (props: ElementRendererProps) => {
   const checkmarkColor = style?.checkmarkColor || "#22c55e";
   const argumentsAlign = style?.argumentsAlign || "left";
   const markerIcon = style?.markerIcon || "check-circle";
+  
+  const titleColor = style?.titleColor || "#000000";
+  const descriptionColor = style?.descriptionColor || "#6b7280";
+  const argumentsColor = style?.argumentsColor || "#374151";
   
   const renderIcon = () => {
     const iconProps = {
@@ -54,17 +57,21 @@ const ArgumentsRenderer = (props: ElementRendererProps) => {
             "text-xl font-medium mb-2 text-center",
             style?.titleAlign === "left" && "text-left",
             style?.titleAlign === "right" && "text-right"
-          )}>
+          )}
+            style={{ color: titleColor }}
+          >
             {title}
           </h2>
         )}
         
         {description && (
           <p className={cn(
-            "text-gray-600 mb-4 text-center",
+            "mb-4 text-center",
             style?.descriptionAlign === "left" && "text-left",
             style?.descriptionAlign === "right" && "text-right"
-          )}>
+          )}
+            style={{ color: descriptionColor }}
+          >
             {description}
           </p>
         )}
@@ -80,7 +87,7 @@ const ArgumentsRenderer = (props: ElementRendererProps) => {
               )}
             >
               {showCheckmarks && renderIcon()}
-              <p className="text-gray-800">{arg.text}</p>
+              <p style={{ color: argumentsColor }}>{arg.text}</p>
             </div>
           ))}
           
