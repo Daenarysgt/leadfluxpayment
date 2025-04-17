@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,8 @@ import {
   Strikethrough,
   Paintbrush,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Highlighter
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -38,6 +38,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
   const [isContentRestored, setIsContentRestored] = useState(false);
+  const [highlightColor, setHighlightColor] = useState("#ffff00"); // Cor padrão do destaque (amarelo)
   
   // Referências para o editor e timers
   const editorRef = useRef<HTMLDivElement>(null);
@@ -248,6 +249,29 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
       handleEditorInput();
     }, 50);
   };
+  
+  // Função para aplicar destaque (highlight) ao texto
+  const applyHighlight = (color: string) => {
+    // Capturar o conteúdo atual antes de aplicar destaque
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Atualizar a cor de destaque no estado
+    setHighlightColor(color);
+    
+    // Aplicar cor de fundo ao texto selecionado
+    document.execCommand('backColor', false, color);
+    
+    // Focar o editor novamente
+    editorRef.current?.focus();
+    
+    // Enviar atualização após um breve atraso
+    setTimeout(() => {
+      handleEditorInput();
+    }, 50);
+  };
 
   // Manipulador para mudanças no tamanho da fonte
   const handleFontSizeChange = (value: number[]) => {
@@ -311,6 +335,11 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     "#000000", "#434343", "#666666", "#999999", "#b7b7b7", "#cccccc", "#d9d9d9", "#efefef", "#f3f3f3", "#ffffff",
     "#980000", "#ff0000", "#ff9900", "#ffff00", "#00ff00", "#00ffff", "#4a86e8", "#0000ff", "#9900ff", "#ff00ff",
     "#e6b8af", "#f4cccc", "#fce5cd", "#fff2cc", "#d9ead3", "#d0e0e3", "#c9daf8", "#cfe2f3", "#d9d2e9", "#ead1dc"
+  ];
+  
+  const highlightOptions = [
+    "#ffff00", "#00ffff", "#ff9900", "#ff00ff", "#FF5A5A", "#7DF9FF", "#FDFD96", "#CCCCFF", "#FFD1DC", "#CDB5CD",
+    "#C9A9A6", "#B0E0E6", "#D3FFCE", "#DCDCDC", "#FFF8DC", "#E0FFFF", "#FEDFC9", "#E8D0A9", "#FDE1DF", "#FFB6C1"
   ];
 
   return (
@@ -378,6 +407,33 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               </PopoverContent>
             </Popover>
             
+            {/* Novo botão de destaque (highlight) */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1 px-2">
+                  <Highlighter className="h-4 w-4" />
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: highlightColor }}></span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2">
+                <div className="pb-2">
+                  <Label className="text-xs font-medium">Cor de destaque</Label>
+                </div>
+                <div className="grid grid-cols-10 gap-1">
+                  {highlightOptions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => applyHighlight(color)}
+                      className="w-5 h-5 rounded hover:ring-2 hover:ring-offset-1"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             <ToggleGroup type="single" defaultValue="left" size="sm">
               <ToggleGroupItem value="left" onClick={() => formatText('justifyLeft')}>
                 <AlignLeft className="h-4 w-4" />
@@ -432,7 +488,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
                 <div className="flex flex-col">
                   <Button 
                     variant="ghost" 
-                    size="icon" 
+                    size="sm" 
                     className="h-5 w-5"
                     onClick={() => handleMarginTopChange([marginTop - 5])}
                   >
@@ -440,7 +496,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    size="icon" 
+                    size="sm" 
                     className="h-5 w-5"
                     onClick={() => handleMarginTopChange([marginTop + 5])}
                   >
