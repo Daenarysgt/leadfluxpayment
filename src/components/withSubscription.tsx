@@ -138,8 +138,8 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
                 
                 setHasActiveSubscription(true);
                 setNoSubscription(false);
-                setIsLoading(false);
-                return;
+            setIsLoading(false);
+            return;
               } else {
                 console.log(`⚠️ Assinatura encontrada via API, mas status não é ativo: ${subscription.status}`);
               }
