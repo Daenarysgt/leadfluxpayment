@@ -69,22 +69,50 @@ const ElementsSidebar = () => {
     comp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleDragStart = (e: React.DragEvent, componentType: string) => {
+  const handleDragStart = (e: React.DragEvent, componentType: string, componentName: string) => {
+    // Define o dado chave-valor essencial para a operação de arrastar e soltar
     e.dataTransfer.setData("componentType", componentType);
+    e.dataTransfer.effectAllowed = "copy";
     
-    // Cria um elemento fantasma personalizado para arrastar
+    // Cria um elemento fantasma personalizado mais bonito para arrastar
     const ghostElement = document.createElement('div');
-    ghostElement.classList.add('rounded', 'p-2', 'bg-white', 'shadow-lg', 'text-sm', 'flex', 'items-center');
-    ghostElement.innerHTML = `<span>Arrastando: ${componentType}</span>`;
+    ghostElement.classList.add(
+      'rounded-md', 'p-3', 'bg-white', 'shadow-lg', 'text-sm', 
+      'flex', 'items-center', 'gap-2', 'border', 'border-violet-200'
+    );
+    
+    // Adiciona um ícone ao elemento fantasma
+    const iconClass = componentType.toLowerCase();
+    ghostElement.innerHTML = `
+      <div class="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+          class="text-violet-600">
+          <path d="M12 5v14M5 12h14"></path>
+        </svg>
+      </div>
+      <span class="font-medium text-gray-700">Adicionar: ${componentName}</span>
+    `;
+    
     document.body.appendChild(ghostElement);
     ghostElement.style.position = 'absolute';
     ghostElement.style.top = '-1000px';
-    e.dataTransfer.setDragImage(ghostElement, 0, 0);
+    ghostElement.style.left = '-1000px';
+    ghostElement.style.zIndex = '9999';
+    
+    // Define a imagem de arrastar personalizada
+    try {
+      e.dataTransfer.setDragImage(ghostElement, 20, 20);
+    } catch (err) {
+      console.error('Erro ao definir imagem de arrastar:', err);
+    }
     
     // Limpa o elemento fantasma após o uso
     setTimeout(() => {
-      document.body.removeChild(ghostElement);
-    }, 0);
+      if (document.body.contains(ghostElement)) {
+        document.body.removeChild(ghostElement);
+      }
+    }, 100);
   };
   
   const renderComponentItem = (component: { id: string; name: string; icon: any; color: string }) => {
@@ -92,14 +120,13 @@ const ElementsSidebar = () => {
     return (
       <div
         key={component.id}
-        className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-grab active:cursor-grabbing border-b group relative transition-all"
+        className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-grab active:cursor-grabbing border-b group relative transition-all hover:bg-violet-50"
         draggable
-        onDragStart={(e) => handleDragStart(e, component.id)}
+        onDragStart={(e) => handleDragStart(e, component.id, component.name)}
         onDragEnd={() => {
-          toast({
-            title: "Componente arrastado",
-            description: `Elemento "${component.name}" adicionado com sucesso.`,
-          });
+          // Notificar somente se o drop foi concluído com sucesso
+          // Reduzido para evitar notificações excessivas
+          console.log(`Elemento "${component.name}" arrastado`);
         }}
       >
         <div className={cn("h-8 w-8 rounded-md flex items-center justify-center mr-3", component.color)}>

@@ -22,6 +22,7 @@ const BuilderCanvas = ({
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
+  const [isExternalDragOver, setIsExternalDragOver] = useState(false);
   
   const { 
     elements, 
@@ -39,6 +40,9 @@ const BuilderCanvas = ({
     if (newElement && onElementSelect) {
       onElementSelect(newElement);
     }
+    
+    // Reset drag state
+    setIsExternalDragOver(false);
   }, [addElement, onElementSelect]);
   
   const handleElementSelect = useCallback((id: string) => {
@@ -144,6 +148,56 @@ const BuilderCanvas = ({
     setDropTargetId(null);
   }, [dropTargetId, elements, reorderElements, toast]);
   
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    // Only show the drop indicator for new components, not for reordering
+    if (e.dataTransfer.types.includes("componentType") && 
+        !e.dataTransfer.types.includes("elementId") && 
+        !e.dataTransfer.types.includes("text/plain")) {
+      setIsExternalDragOver(true);
+    }
+  }, []);
+  
+  const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
+    // Only set to false if we're leaving the canvas, not entering a child element
+    if (canvasRef.current && !canvasRef.current.contains(e.relatedTarget as Node)) {
+      setIsExternalDragOver(false);
+    }
+  }, []);
+  
+  // Add a specific drop handler for new components directly on the canvas
+  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Reset drag state
+    setIsExternalDragOver(false);
+    
+    // Get component type from the drop data
+    const componentType = e.dataTransfer.getData("componentType");
+    
+    // If it's for element reordering, don't handle it here
+    if (e.dataTransfer.types.includes("elementId") || 
+        e.dataTransfer.types.includes("text/plain")) {
+      return;
+    }
+    
+    // Only add new component if we have a component type
+    if (componentType) {
+      console.log("BuilderCanvas - Handling direct drop for new component:", componentType);
+      const newElement = addElement(componentType);
+      if (newElement && onElementSelect) {
+        onElementSelect(newElement);
+        
+        toast({
+          title: "Elemento adicionado",
+          description: `Novo elemento ${componentType} adicionado com sucesso.`
+        });
+      }
+    }
+  }, [addElement, onElementSelect, toast]);
+  
   // Force re-render when element updates are received - place all effects after all callbacks
   useEffect(() => {
     if (elementUpdates) {
@@ -162,16 +216,26 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto pb-20 rounded-lg", 
-          isMobile ? "max-w-[375px]" : "max-w-[600px]"
+          "w-full mx-auto pb-20 rounded-lg relative", 
+          isMobile ? "max-w-[375px]" : "max-w-[600px]",
+          isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}
         style={{
           backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
-          transition: 'background-color 0.3s ease'
+          transition: 'all 0.3s ease'
         }}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleElementDrop}
+        onDragOver={handleCanvasDragOver}
+        onDragLeave={handleCanvasDragLeave}
+        onDrop={handleCanvasDrop}
       >
+        {isExternalDragOver && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+            <div className="bg-white/80 rounded-lg shadow-sm px-4 py-2 text-center">
+              <p className="text-violet-600 font-medium">Solte para adicionar aqui</p>
+            </div>
+          </div>
+        )}
+        
         {currentFunnel?.settings.showProgressBar && (
           <div className="mb-6">
             <ProgressBar 

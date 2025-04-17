@@ -1,4 +1,3 @@
-
 import React, { memo, useEffect, useRef } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import ElementFactory from "./element-renderers/ElementFactory";
@@ -62,10 +61,41 @@ const CanvasElementRenderer = (props: ElementRendererProps) => {
     prevElement.current = {...element};
   }, [element]);
   
+  // Handler para permitir a propagação de eventos de drag over
+  const handleDragOver = (e: React.DragEvent) => {
+    // Previne o comportamento padrão para permitir soltar
+    e.preventDefault();
+    
+    // Permite que o evento se propague para os elementos pais
+    // para que a funcionalidade de CanvasDropZone funcione corretamente
+    if (e.dataTransfer.types.includes("componentType")) {
+      e.stopPropagation();
+      
+      // Encontrar o elemento pai mais próximo com a classe do CanvasDropZone
+      let parent = e.currentTarget.parentElement;
+      while (parent) {
+        if (parent.classList.contains("canvas-drop-zone")) {
+          // Simular um evento de dragover no elemento pai
+          const newEvent = new DragEvent('dragover', {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: e.dataTransfer
+          });
+          parent.dispatchEvent(newEvent);
+          break;
+        }
+        parent = parent.parentElement;
+      }
+    }
+  };
+  
   console.log(`CanvasElementRenderer - Rendering element: ${element.id}, type: ${element.type}`);
   
   return (
-    <div className="w-full">
+    <div 
+      className="w-full"
+      onDragOver={handleDragOver}
+    >
       <ElementFactory 
         key={stableKey} 
         {...props}
