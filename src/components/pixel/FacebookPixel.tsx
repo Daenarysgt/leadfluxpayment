@@ -1,107 +1,80 @@
-import { useEffect, useRef } from 'react';
 import { isValidPixelId, getFacebookPixelInitScript, safelyTrackEvent } from '@/utils/pixelUtils';
+import { useEffect, useRef } from 'react';
+
+// Variável global para controlar se o pixel já foi inicializado
+declare global {
+  interface Window {
+    fbq: any;
+    _fbPixelInitialized?: { [key: string]: boolean };
+  }
+}
 
 interface FacebookPixelProps {
-  pixelId: string;
-  isLastPage?: boolean;
+  pixelId?: string;
   trackPageView?: boolean;
-  trackCompleteRegistration?: boolean;
+  trackRegistrationComplete?: boolean;
 }
 
 /**
- * Componente para injeção e gerenciamento do Facebook Pixel
+ * Componente para integração do Facebook Pixel
  * 
- * Este componente:
- * 1. Valida o ID do pixel
- * 2. Injeta o script do Facebook Pixel na página
- * 3. Rastreia eventos conforme configuração (PageView, CompleteRegistration)
- * 
- * @example
+ * Exemplo de uso:
  * <FacebookPixel 
- *   pixelId="123456789012345"
- *   isLastPage={isLastStep}
+ *   pixelId="123456789012345" 
  *   trackPageView={true}
- *   trackCompleteRegistration={true} 
+ *   trackRegistrationComplete={false}
  * />
  */
 const FacebookPixel = ({ 
   pixelId, 
-  isLastPage = false, 
-  trackPageView = true, 
-  trackCompleteRegistration = true 
+  trackPageView = false,
+  trackRegistrationComplete = false
 }: FacebookPixelProps) => {
-  const initialized = useRef(false);
+  const pixelInitialized = useRef(false);
 
-  // Não renderizar nada se o ID for inválido
-  if (!isValidPixelId(pixelId)) return null;
-
-  // Injetar o script do Facebook Pixel
   useEffect(() => {
-    // Evitar inicialização duplicada
-    if (initialized.current) return;
-    
-    // Verificar se já existe script do Facebook Pixel na página
-    if (document.getElementById('facebook-pixel-script')) {
-      initialized.current = true;
+    // Se não houver um ID de pixel válido, não faça nada
+    if (!pixelId || !isValidPixelId(pixelId)) {
       return;
     }
 
-    try {
-      // Criar elemento de script
+    // Inicialize o objeto de controle se ainda não existir
+    if (!window._fbPixelInitialized) {
+      window._fbPixelInitialized = {};
+    }
+
+    // Verifica se este pixel específico já foi inicializado e se não foi injetado o script
+    const isFirstInitialization = !window._fbPixelInitialized[pixelId] && !pixelInitialized.current;
+    
+    if (isFirstInitialization) {
+      // Marca este pixel como inicializado globalmente e também no componente
+      window._fbPixelInitialized[pixelId] = true;
+      pixelInitialized.current = true;
+
+      // Injetar o script no DOM para o Facebook Pixel
       const script = document.createElement('script');
-      script.id = 'facebook-pixel-script';
+      script.id = `facebook-pixel-${pixelId}`;
       script.innerHTML = getFacebookPixelInitScript(pixelId);
-      
-      // Adicionar o script ao head
       document.head.appendChild(script);
-
-      // Criar o noscript fallback
-      const noscript = document.createElement('noscript');
-      const img = document.createElement('img');
-      img.height = 1;
-      img.width = 1;
-      img.style.display = 'none';
-      img.src = `https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`;
-      noscript.appendChild(img);
       
-      // Adicionar o noscript ao head
-      document.head.appendChild(noscript);
-      
-      initialized.current = true;
-      
-      // Limpar na desmontagem
-      return () => {
-        try {
-          if (script.parentNode) {
-            script.parentNode.removeChild(script);
-          }
-          if (noscript.parentNode) {
-            noscript.parentNode.removeChild(noscript);
-          }
-        } catch (error) {
-          console.error('Erro ao remover scripts do Facebook Pixel:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Erro ao inicializar Facebook Pixel:', error);
+      // Rastreia visualização de página se solicitado
+      if (trackPageView) {
+        safelyTrackEvent('PageView');
+      }
     }
-  }, [pixelId]);
 
-  // Rastrear PageView quando o componente montar
-  useEffect(() => {
-    if (trackPageView) {
-      safelyTrackEvent('PageView');
-    }
-  }, [trackPageView]);
-
-  // Rastrear CompleteRegistration quando for a última página
-  useEffect(() => {
-    if (isLastPage && trackCompleteRegistration) {
+    // Rastreia conclusão de registro se solicitado
+    if (trackRegistrationComplete) {
       safelyTrackEvent('CompleteRegistration');
     }
-  }, [isLastPage, trackCompleteRegistration]);
 
-  // Este componente não renderiza nada visível
+    return () => {
+      // Não desativa o pixel quando o componente é desmontado
+      // para evitar problemas quando o componente é remontado
+    };
+  }, [pixelId, trackPageView, trackRegistrationComplete]);
+
+  // Componente não renderiza nada visível
   return null;
 };
 

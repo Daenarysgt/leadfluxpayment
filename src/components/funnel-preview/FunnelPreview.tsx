@@ -72,9 +72,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
           pixelId={activeFunnel.settings.facebookPixelId}
-          isLastPage={isLastStep}
           trackPageView={activeFunnel.settings.pixelTracking?.pageView !== false}
-          trackCompleteRegistration={activeFunnel.settings.pixelTracking?.completeRegistration !== false}
+          trackRegistrationComplete={isLastStep && activeFunnel.settings.pixelTracking?.completeRegistration !== false}
         />
       )}
 
