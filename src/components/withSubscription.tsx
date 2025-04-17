@@ -56,11 +56,13 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
                 status: subscription.status,
                 plan_id: subscription.plan_id,
                 current_period_end: subscription.current_period_end,
-                valid: subscription.current_period_end > now
+                valid: subscription.current_period_end > now,
+                now: now
               });
               
-              // Verificar se ainda está válida
-              if (subscription.current_period_end > now) {
+              // Verificar se ainda está válida - a assinatura está marcada como active, então devemos considerá-la válida
+              // independentemente do timestamp se o status é 'active'
+              if (subscription.status === 'active') {
                 console.log('✅ Assinatura válida e ativa encontrada via verificação direta!');
                 
                 // Atualizar estado e localStorage

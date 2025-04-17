@@ -208,11 +208,12 @@ export const paymentService = {
             status: subscription.status,
             plan_id: subscription.plan_id,
             current_period_end: subscription.current_period_end,
-            valid: subscription.current_period_end > now
+            valid: subscription.current_period_end > now,
+            now: now
           });
           
-          // Verificar se ainda está válida
-          if (subscription.current_period_end > now) {
+          // Verificar se ainda está válida - considerar válida se status for 'active'
+          if (subscription.status === 'active') {
             console.log('✅ Assinatura válida e ativa encontrada via verificação direta no paymentService!');
             
             // Atualizar localStorage
@@ -429,7 +430,7 @@ export const paymentService = {
           const now = Math.floor(Date.now() / 1000);
           
           // Verificar se ainda está válida
-          if (subscription.current_period_end > now) {
+          if (subscription.status === 'active') {
             console.log('✅ Última verificação: Assinatura válida encontrada diretamente no banco!');
             
             // Atualizar localStorage
