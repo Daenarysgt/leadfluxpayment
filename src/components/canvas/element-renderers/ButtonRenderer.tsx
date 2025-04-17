@@ -43,6 +43,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const size = content.size || "default";
   const variant = content.variant || "default";
   const buttonColor = content.buttonColor || "#7c3aed"; // Default violet-600
+  const textColor = content.textColor || "#ffffff"; // Default white for text
   const animationEnabled = content.animationEnabled || false;
   const animationType = content.animationType || "none"; // Novo campo para tipo de animação
   const delayEnabled = content.delayEnabled || false;
@@ -88,15 +89,15 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     
     // Define classes para os diferentes estilos de botão
     const variantClasses = {
-      default: "text-white hover:opacity-90",
+      default: "hover:opacity-90",
       outline: "border-2 bg-transparent hover:bg-opacity-10",
       ghost: "bg-transparent hover:bg-opacity-10",
-      secondary: "bg-gray-200 hover:bg-gray-300 text-gray-800",
+      secondary: "bg-gray-200 hover:bg-gray-300",
       link: "bg-transparent underline hover:opacity-80",
-      gradient: "text-white hover:opacity-90",
-      "3d": "border-b-4 active:border-b-0 active:mb-[4px] text-white hover:opacity-90",
-      neon: "text-white hover:opacity-90",
-      rounded: "text-white rounded-full hover:opacity-90"
+      gradient: "hover:opacity-90",
+      "3d": "border-b-4 active:border-b-0 active:mb-[4px] hover:opacity-90",
+      neon: "hover:opacity-90",
+      rounded: "rounded-full hover:opacity-90"
     };
     
     // Animações
@@ -269,12 +270,13 @@ const ButtonRenderer = (props: ElementRendererProps) => {
           className={buttonClass}
           style={{
             backgroundColor: 
-              variant === "default" || variant === "secondary" ? buttonColor : 
+              variant === "default" || variant === "secondary" || variant === "rounded" || variant === "3d" ? buttonColor : 
               variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
-              variant === "rounded" ? buttonColor :
               undefined,
             borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
-            color: variant === "outline" || variant === "ghost" || variant === "link" ? buttonColor : undefined,
+            color: variant === "outline" || variant === "ghost" || variant === "link" ? 
+                  buttonColor : 
+                  textColor, // Use textColor for variants that don't have specific color logic
             // Para variantes específicas, aplicar estilos específicos
             ...(variant === "gradient" ? { 
               background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
@@ -282,6 +284,10 @@ const ButtonRenderer = (props: ElementRendererProps) => {
             ...(variant === "neon" ? { 
               backgroundColor: buttonColor,
               boxShadow: `0 0 10px ${buttonColor}7A` 
+            } : {}),
+            ...(variant === "3d" ? {
+              borderBottomColor: adjustColor(buttonColor, -30),
+              backgroundColor: buttonColor
             } : {}),
             "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
           } as React.CSSProperties}

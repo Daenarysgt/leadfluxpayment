@@ -25,6 +25,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const size = content.size || "default";
   const variant = content.variant || "default";
   const buttonColor = content.buttonColor || "#7c3aed"; // Default violet-600
+  const textColor = content.textColor || "#ffffff"; // Default text color
   const animationEnabled = Boolean(content.animationEnabled);
   const animationType = content.animationType || "none"; // Novo campo para tipo de animação
   const delayEnabled = Boolean(content.delayEnabled);
@@ -174,7 +175,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 style={{ 
                   backgroundColor: variant === "default" ? buttonColor : undefined,
                   borderColor: variant === "outline" ? buttonColor : undefined,
-                  color: variant === "outline" || variant === "ghost" ? buttonColor : undefined
+                  color: variant === "outline" || variant === "ghost" ? buttonColor : textColor
                 }}
               >
                 {buttonText || "Continuar"}
@@ -184,7 +185,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
 
           {/* Color Picker */}
           <div className="space-y-2">
-            <Label htmlFor="button-color">Cor</Label>
+            <Label htmlFor="button-color">Cor do Botão</Label>
             <div className="flex items-center gap-3">
               <input 
                 type="color" 
@@ -196,6 +197,25 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
               <Input 
                 value={buttonColor}
                 onChange={(e) => handleStyleUpdate({ buttonColor: e.target.value })}
+                className="w-32 uppercase"
+              />
+            </div>
+          </div>
+
+          {/* Text Color Picker */}
+          <div className="space-y-2">
+            <Label htmlFor="text-color">Cor do Texto</Label>
+            <div className="flex items-center gap-3">
+              <input 
+                type="color" 
+                id="text-color" 
+                value={textColor}
+                onChange={(e) => handleStyleUpdate({ textColor: e.target.value })}
+                className="w-10 h-10 rounded-md overflow-hidden cursor-pointer"
+              />
+              <Input 
+                value={textColor}
+                onChange={(e) => handleStyleUpdate({ textColor: e.target.value })}
                 className="w-32 uppercase"
               />
             </div>
@@ -244,7 +264,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                   style={{ 
                     backgroundColor: variant === "default" ? buttonColor : undefined,
                     borderColor: variant === "outline" ? buttonColor : undefined,
-                    color: variant === "outline" || variant === "ghost" ? buttonColor : undefined
+                    color: variant === "outline" || variant === "ghost" ? buttonColor : textColor
                   }}
                 >
                   {buttonText || "Continuar"}
