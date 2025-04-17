@@ -30,8 +30,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   }, [element.id]);
   
   // Função para executar a navegação com base na opção selecionada
-  const executeNavigation = useCallback(async (optionId: string) => {
-    const option = content.options.find((opt: any) => opt.id === optionId);
+  const executeNavigation = useCallback(async (optionId: string, customOption?: any) => {
+    // Se um objeto de opção customizado foi fornecido, use-o
+    const option = customOption || content.options.find((opt: any) => opt.id === optionId);
     if (!option || !option.navigation) return;
     
     const navigationType = option.navigation.type;
@@ -153,6 +154,46 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Exit if no options selected
     if (selectedOptions.length === 0) return;
     
+    // Se houver uma configuração específica de navegação para o botão continuar, usar ela
+    if (content.continueButtonNavigation && content.continueButtonNavigation.type !== "none") {
+      console.log("Usando navegação configurada para o botão continuar:", content.continueButtonNavigation);
+      
+      // Registrar todas as opções selecionadas
+      const selectedOptionsData = content.options.filter((opt: any) => 
+        selectedOptions.includes(opt.id)
+      );
+      const selections = selectedOptionsData.map((opt: any) => opt.text || opt.value).join(", ");
+      
+      if (previewMode && previewProps) {
+        const { activeStep, funnel } = previewProps;
+        
+        if (funnel) {
+          try {
+            await accessService.registerStepInteraction(
+              funnel.id,
+              activeStep + 1,
+              null, // usar sessionId atual
+              'choice',
+              selections
+            );
+          } catch (error) {
+            console.error("Error registering step interaction:", error);
+          }
+        }
+      }
+      
+      // Criar um objeto de navegação baseado no continueButtonNavigation
+      const navOption = {
+        id: "continue-button",
+        navigation: content.continueButtonNavigation
+      };
+      
+      // Executar a navegação usando o objeto criado
+      executeNavigation("continue-button", navOption);
+      return;
+    }
+    
+    // Comportamento anterior - usar a navegação da primeira opção selecionada
     const selectedOptionsData = content.options.filter((opt: any) => 
       selectedOptions.includes(opt.id)
     );
@@ -163,8 +204,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     if (!navigationOption) return;
     
     // Executar a navegação padrão para múltipla seleção (botão continuar)
-    executeNavigation(navigationOption.id);
-  }, [selectedOptions, content?.options, executeNavigation]);
+    executeNavigation(navigationOption.id, navigationOption);
+  }, [selectedOptions, content?.options, executeNavigation, content?.continueButtonNavigation, previewMode, previewProps]);
 
   return (
     <BaseElementRenderer {...props}>

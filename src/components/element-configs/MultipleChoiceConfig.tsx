@@ -26,6 +26,11 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
+  
+  // Estado para navegação do botão continuar
+  const [continueButtonNavigationType, setContinueButtonNavigationType] = useState<"next" | "step" | "url" | "none">("next");
+  const [continueButtonStepId, setContinueButtonStepId] = useState<string>("");
+  const [continueButtonUrl, setContinueButtonUrl] = useState<string>("");
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -69,6 +74,11 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get show helper text setting
     setShowHelperText(element.content?.showHelperText === true);
+    
+    // Set continue button navigation settings
+    setContinueButtonNavigationType(element.content?.continueButtonNavigation?.type || "next");
+    setContinueButtonStepId(element.content?.continueButtonNavigation?.stepId || "");
+    setContinueButtonUrl(element.content?.continueButtonNavigation?.url || "");
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -461,6 +471,51 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  // Adicionar handlers para navegação do botão continuar
+  const handleContinueButtonNavigationTypeChange = (type: "next" | "step" | "url" | "none") => {
+    setContinueButtonNavigationType(type);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        continueButtonNavigation: {
+          ...(element.content.continueButtonNavigation || {}),
+          type
+        }
+      }
+    });
+  };
+  
+  const handleContinueButtonStepIdChange = (stepId: string) => {
+    setContinueButtonStepId(stepId);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        continueButtonNavigation: {
+          ...(element.content.continueButtonNavigation || {}),
+          type: "step",
+          stepId
+        }
+      }
+    });
+  };
+  
+  const handleContinueButtonUrlChange = (url: string) => {
+    setContinueButtonUrl(url);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        continueButtonNavigation: {
+          ...(element.content.continueButtonNavigation || {}),
+          type: "url",
+          url
+        }
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -503,6 +558,10 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         continueButtonText={continueButtonText}
         helperText={helperText}
         showHelperText={showHelperText}
+        continueButtonNavigationType={continueButtonNavigationType}
+        continueButtonStepId={continueButtonStepId}
+        continueButtonUrl={continueButtonUrl}
+        steps={steps}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
@@ -514,6 +573,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onContinueButtonTextChange={handleContinueButtonTextChange}
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}
+        onContinueButtonNavigationTypeChange={handleContinueButtonNavigationTypeChange}
+        onContinueButtonStepIdChange={handleContinueButtonStepIdChange}
+        onContinueButtonUrlChange={handleContinueButtonUrlChange}
       />
     </div>
   );
