@@ -760,25 +760,33 @@ router.post('/webhook', async (req, res) => {
 
 // Funções auxiliares para lidar com eventos do webhook
 async function handleCheckoutCompleted(session: any) {
-  console.log('🎉 Checkout completado, atualizando assinatura na base de dados...');
-  console.log('📝 Detalhes da sessão:', {
-    id: session.id,
-    subscription: session.subscription,
-    metadata: session.metadata,
-    customer: session.customer
-  });
+  console.log('✅ Sessão de checkout concluída, processando assinatura...');
+  
+  if (!session.subscription || !session.customer) {
+    console.log('⚠️ Sessão sem assinatura ou cliente associado, ignorando.');
+    return;
+  }
+
+  // Extrair assinatura e plano da sessão
+  const subscriptionId = session.subscription;
+  const userId = session.metadata?.userId;
+  const planId = session.metadata?.planId;
+  
+  if (!userId || !planId) {
+    console.log('⚠️ Metadados incompletos na sessão, impossível associar usuário/plano.');
+    return;
+  }
   
   // Obter detalhes da assinatura criada
-  const subscription = await stripe.subscriptions.retrieve(session.subscription);
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   
   console.log('📝 Detalhes da assinatura Stripe:', {
     id: subscription.id,
     status: subscription.status,
     customer: subscription.customer
   });
-  
-  // Metadados da sessão que incluem userId e planId
-  const { userId, planId } = session.metadata;
+
+  const now = Math.floor(Date.now() / 1000);
   
   // Função auxiliar para garantir timestamp Unix válido
   function getUnixTimestamp(timestamp: number | undefined | null): number {
@@ -798,8 +806,6 @@ async function handleCheckoutCompleted(session: any) {
     
     return Math.floor(numericTimestamp);
   }
-
-  const now = Math.floor(Date.now() / 1000);
   
   // Extrair e validar timestamps
   const rawStart = (subscription as any).current_period_start;
@@ -813,8 +819,27 @@ async function handleCheckoutCompleted(session: any) {
   });
   
   // Validar timestamps
-  const current_period_start = getUnixTimestamp(rawStart);
-  const current_period_end = getUnixTimestamp(rawEnd);
+  let current_period_start = getUnixTimestamp(rawStart);
+  let current_period_end = getUnixTimestamp(rawEnd);
+  
+  // CORREÇÃO: Verificar se os timestamps fazem sentido e corrigi-los se necessário
+  if (current_period_start === current_period_end || current_period_end <= current_period_start) {
+    console.log('⚠️ Timestamps inválidos detectados. Corrigindo...');
+    // Garantir que o período final seja 30 dias após o início para assinaturas mensais
+    // ou 365 dias para assinaturas anuais
+    const isAnnual = subscription.items?.data?.some((item: any) => 
+      item.price?.recurring?.interval === 'year'
+    );
+    
+    const periodDuration = isAnnual ? 365 * 24 * 60 * 60 : 30 * 24 * 60 * 60;
+    current_period_end = current_period_start + periodDuration;
+    
+    console.log('🕒 Timestamps corrigidos:', {
+      current_period_start,
+      current_period_end,
+      período: isAnnual ? 'anual' : 'mensal'
+    });
+  }
   
   console.log('🕒 Timestamps convertidos no webhook:', {
     current_period_start,
@@ -990,8 +1015,26 @@ async function handleSubscriptionUpdated(subscription: any) {
   });
   
   // Validar timestamps
-  const current_period_start = getUnixTimestamp(rawStart);
-  const current_period_end = getUnixTimestamp(rawEnd);
+  let current_period_start = getUnixTimestamp(rawStart);
+  let current_period_end = getUnixTimestamp(rawEnd);
+  
+  // CORREÇÃO: Verificar se os timestamps fazem sentido e corrigi-los se necessário
+  if (current_period_start === current_period_end || current_period_end <= current_period_start) {
+    console.log('⚠️ Timestamps inválidos detectados na atualização. Corrigindo...');
+    // Determinar o tipo de assinatura (mensal/anual)
+    const isAnnual = subscription.items?.data?.some((item: any) => 
+      item.price?.recurring?.interval === 'year'
+    );
+    
+    const periodDuration = isAnnual ? 365 * 24 * 60 * 60 : 30 * 24 * 60 * 60;
+    current_period_end = current_period_start + periodDuration;
+    
+    console.log('🕒 Timestamps corrigidos na atualização:', {
+      current_period_start,
+      current_period_end,
+      período: isAnnual ? 'anual' : 'mensal'
+    });
+  }
   
   console.log('🕒 Timestamps validados em handleSubscriptionUpdated:', {
     current_period_start,

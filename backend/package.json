@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "fix-subscriptions": "ts-node src/scripts/fix-subscriptions.ts"
   },
   "keywords": [],
   "author": "",
