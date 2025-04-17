@@ -354,7 +354,7 @@ const BaseElementRenderer = ({
           
           {/* Only show up/down buttons when NOT in preview mode */}
           {!isPreviewMode && (
-            <div className="absolute -left-10 top-0 h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            <div className="absolute -left-20 top-0 h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30">
               {showMoveUp && (
                 <button 
                   className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center mb-1 hover:bg-gray-100"
