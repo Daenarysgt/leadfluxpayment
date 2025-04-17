@@ -4,7 +4,7 @@ import { useStore } from "@/utils/store";
 import TitleInput from "./multiple-choice/TitleInput";
 import OptionsList from "./multiple-choice/OptionsList";
 import StyleSettings from "./multiple-choice/StyleSettings";
-import { EMOJI_OPTIONS, DEFAULT_BORDER_RADIUS, DEFAULT_HOVER_COLOR } from "./multiple-choice/constants";
+import { EMOJI_OPTIONS, DEFAULT_BORDER_RADIUS } from "./multiple-choice/constants";
 
 interface MultipleChoiceConfigProps {
   element: any;
@@ -18,11 +18,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [showEmojis, setShowEmojis] = useState(false);
   const [showImages, setShowImages] = useState(false);
   const [borderRadius, setBorderRadius] = useState(DEFAULT_BORDER_RADIUS);
-  const [hoverColor, setHoverColor] = useState(DEFAULT_HOVER_COLOR);
   const [allowMultipleSelection, setAllowMultipleSelection] = useState(false);
   const [indicatorType, setIndicatorType] = useState<'circle' | 'square'>('circle');
   const [indicatorAlign, setIndicatorAlign] = useState<'left' | 'right'>('left');
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
+  const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
+  const [showHelperText, setShowHelperText] = useState(false);
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -43,9 +44,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     // Get current border radius or default
     setBorderRadius(element.content?.style?.borderRadius || DEFAULT_BORDER_RADIUS);
     
-    // Get current hover color or default
-    setHoverColor(element.content?.style?.hoverColor || DEFAULT_HOVER_COLOR);
-    
     // Get multiple selection setting
     setAllowMultipleSelection(element.content?.allowMultipleSelection || false);
     
@@ -57,6 +55,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get continue button text
     setContinueButtonText(element.content?.continueButtonText || "Continuar");
+    
+    // Get helper text
+    setHelperText(element.content?.helperText || "Selecione uma ou mais opções para avançar");
+    
+    // Get show helper text setting
+    setShowHelperText(element.content?.showHelperText === true);
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -161,28 +165,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
-  const handleOptionHoverTextColorChange = (optionId: string, hoverTextColor: string) => {
-    const updatedOptions = element.content.options.map((option: any) => {
-      if (option.id === optionId) {
-        return { 
-          ...option, 
-          style: { 
-            ...(option.style || {}), 
-            hoverTextColor 
-          } 
-        };
-      }
-      return option;
-    });
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        options: updatedOptions
-      }
-    });
-  };
-
   const handleOptionNavigationTypeChange = (optionId: string, type: "next" | "step" | "url") => {
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
@@ -260,8 +242,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       style: {
         backgroundColor: "",
         borderColor: "",
-        textColor: "",
-        hoverTextColor: ""
+        textColor: ""
       },
       navigation: {
         type: "next"
@@ -360,21 +341,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
-  const handleHoverColorChange = (color: string) => {
-    setHoverColor(color);
-    
-    // Atualiza o estilo global do elemento
-    onUpdate({
-      content: {
-        ...element.content,
-        style: {
-          ...(element.content.style || {}),
-          hoverColor: color
-        }
-      }
-    });
-  };
-
   const toggleMultipleSelection = () => {
     const newAllowMultipleSelection = !allowMultipleSelection;
     setAllowMultipleSelection(newAllowMultipleSelection);
@@ -416,6 +382,29 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       content: {
         ...element.content,
         continueButtonText: text
+      }
+    });
+  };
+  
+  const handleHelperTextChange = (text: string) => {
+    setHelperText(text);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        helperText: text
+      }
+    });
+  };
+  
+  const toggleHelperText = () => {
+    const newShowHelperText = !showHelperText;
+    setShowHelperText(newShowHelperText);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        showHelperText: newShowHelperText
       }
     });
   };
@@ -462,7 +451,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onOptionBackgroundColorChange={handleOptionBackgroundColorChange}
         onOptionBorderColorChange={handleOptionBorderColorChange}
         onOptionTextColorChange={handleOptionTextColorChange}
-        onOptionHoverTextColorChange={handleOptionHoverTextColorChange}
         onOptionNavigationTypeChange={handleOptionNavigationTypeChange}
         onOptionStepIdChange={handleOptionStepIdChange}
         onOptionUrlChange={handleOptionUrlChange}
@@ -477,19 +465,21 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         showEmojis={showEmojis}
         showImages={showImages}
         borderRadius={borderRadius}
-        hoverColor={hoverColor}
         allowMultipleSelection={allowMultipleSelection}
         indicatorType={indicatorType}
         indicatorAlign={indicatorAlign}
         continueButtonText={continueButtonText}
+        helperText={helperText}
+        showHelperText={showHelperText}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
-        onHoverColorChange={handleHoverColorChange}
         onToggleMultipleSelection={toggleMultipleSelection}
         onIndicatorTypeChange={handleIndicatorTypeChange}
         onIndicatorAlignChange={handleIndicatorAlignChange}
         onContinueButtonTextChange={handleContinueButtonTextChange}
+        onHelperTextChange={handleHelperTextChange}
+        onToggleHelperText={toggleHelperText}
       />
     </div>
   );

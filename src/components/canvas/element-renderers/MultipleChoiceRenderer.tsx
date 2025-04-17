@@ -17,7 +17,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     allowMultipleSelection = false,
     indicatorType = "circle", // circle or square
     indicatorAlign = "left", // left or right
-    continueButtonText = "Continuar"
+    continueButtonText = "Continuar",
+    helperText = "Selecione uma ou mais opções para avançar",
+    showHelperText = true
   } = content || {};
   
   // Reset selected options when element changes
@@ -132,10 +134,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           <p className="text-sm text-muted-foreground">{content.description}</p>
         )}
         
-        {/* Texto auxiliar para seleção múltipla */}
-        {allowMultipleSelection && (
+        {/* Texto auxiliar para seleção múltipla (apenas se showHelperText for true) */}
+        {allowMultipleSelection && showHelperText && helperText && (
           <p className="text-sm text-muted-foreground">
-            Selecione uma ou mais opções para avançar
+            {helperText}
           </p>
         )}
         
@@ -145,7 +147,6 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const optionStyle = option.style || {};
             const isSelected = selectedOptions.includes(option.id);
             const borderRadius = content.style?.borderRadius || 8; // Default border radius
-            const hoverColor = content.style?.hoverColor || "#f3f4f6"; // Default hover color
             
             // Inline styles for the option
             const styleObject = {
@@ -155,22 +156,6 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               borderRadius: `${borderRadius}px`,
               transition: "all 0.2s ease",
             };
-            
-            // Create CSS class name for hover effect
-            const hoverClass = `hover-option-${option.id}`;
-            
-            // Add a style tag for this specific option's hover effect if not already added
-            if (!document.getElementById(hoverClass) && typeof document !== 'undefined') {
-              const style = document.createElement('style');
-              style.id = hoverClass;
-              style.innerHTML = `
-                .${hoverClass}:hover {
-                  background-color: ${!isSelected ? (hoverColor || "#f3f4f6") : ""} !important;
-                  color: ${optionStyle.hoverTextColor || ""} !important;
-                }
-              `;
-              document.head.appendChild(style);
-            }
             
             // Prepare the indicator element (circle or square)
             const renderIndicator = () => {
@@ -209,21 +194,16 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 key={option.id}
                 className={cn(
                   "p-4 border cursor-pointer transition-all duration-200",
-                  isSelected && "border-violet-500",
-                  hoverClass
+                  isSelected && "border-violet-500"
                 )}
                 style={styleObject}
                 onClick={() => handleOptionClick(option)}
               >
-                <div className={cn(
-                  "flex items-center gap-3",
-                  indicatorAlign === "right" && "flex-row-reverse"
-                )}>
-                  {renderIndicator()}
-                  <div className={cn(
-                    "flex-1 flex items-center",
-                    indicatorAlign === "right" && "justify-end"
-                  )}>
+                <div className="flex items-center gap-3">
+                  {/* Posicionamento condicional do indicador */}
+                  {indicatorAlign === "left" && renderIndicator()}
+                  
+                  <div className="flex-1 flex items-center">
                     {option.emoji && (
                       <span className="mr-2 text-xl">{option.emoji}</span>
                     )}
@@ -236,17 +216,26 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Indicador à direita quando configurado */}
+                  {indicatorAlign === "right" && renderIndicator()}
                 </div>
               </div>
             );
           })}
         </div>
         
-        {/* Botão de continuar para seleção múltipla */}
-        {allowMultipleSelection && selectedOptions.length > 0 && (
+        {/* Botão de continuar para seleção múltipla - sempre exibido quando múltipla seleção estiver ativada */}
+        {allowMultipleSelection && (
           <button 
-            className="w-full mt-4 bg-violet-600 hover:bg-violet-700 text-white py-3 px-4 rounded-lg font-medium"
+            className={cn(
+              "w-full mt-4 bg-violet-600 text-white py-3 px-4 rounded-lg font-medium transition-all",
+              selectedOptions.length > 0 
+                ? "hover:bg-violet-700 cursor-pointer opacity-100" 
+                : "opacity-50 cursor-not-allowed"
+            )}
             onClick={handleContinue}
+            disabled={selectedOptions.length === 0}
           >
             {continueButtonText}
           </button>

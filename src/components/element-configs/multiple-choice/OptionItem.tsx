@@ -15,7 +15,6 @@ interface OptionItemProps {
       backgroundColor?: string;
       borderColor?: string;
       textColor?: string;
-      hoverTextColor?: string;
       selectedBackgroundColor?: string;
       selectedBorderColor?: string;
       selectedTextColor?: string;
@@ -35,7 +34,6 @@ interface OptionItemProps {
   onBackgroundColorChange: (id: string, color: string) => void;
   onBorderColorChange: (id: string, color: string) => void;
   onTextColorChange: (id: string, color: string) => void;
-  onHoverTextColorChange: (id: string, color: string) => void;
   onSelectedBackgroundColorChange?: (id: string, color: string) => void;
   onSelectedBorderColorChange?: (id: string, color: string) => void;
   onSelectedTextColorChange?: (id: string, color: string) => void;
@@ -44,6 +42,7 @@ interface OptionItemProps {
   onUrlChange: (id: string, url: string) => void;
   onDelete: (id: string) => void;
   canDelete: boolean;
+  onOptionSelectedStyleChange?: (optionId: string, property: string, value: string) => void;
 }
 
 const OptionItem = ({
@@ -57,7 +56,6 @@ const OptionItem = ({
   onBackgroundColorChange,
   onBorderColorChange,
   onTextColorChange,
-  onHoverTextColorChange,
   onSelectedBackgroundColorChange,
   onSelectedBorderColorChange,
   onSelectedTextColorChange,
@@ -162,24 +160,6 @@ const OptionItem = ({
               type="text"
               value={option.style?.textColor || ''}
               onChange={(e) => onTextColorChange(option.id, e.target.value)}
-              placeholder="#000000"
-              className="h-6 text-xs"
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <Label htmlFor={`hover-text-color-${option.id}`} className="text-xs">Cor do texto (hover)</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.hoverTextColor || '#000000' }}
-            />
-            <Input
-              id={`hover-text-color-${option.id}`}
-              type="text"
-              value={option.style?.hoverTextColor || ''}
-              onChange={(e) => onHoverTextColorChange(option.id, e.target.value)}
               placeholder="#000000"
               className="h-6 text-xs"
             />

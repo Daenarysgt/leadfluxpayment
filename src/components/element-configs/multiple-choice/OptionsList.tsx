@@ -12,7 +12,6 @@ interface OptionsListProps {
       backgroundColor?: string;
       borderColor?: string;
       textColor?: string;
-      hoverTextColor?: string;
       selectedBackgroundColor?: string;
       selectedBorderColor?: string;
       selectedTextColor?: string;
@@ -32,7 +31,6 @@ interface OptionsListProps {
   onOptionBackgroundColorChange: (optionId: string, color: string) => void;
   onOptionBorderColorChange: (optionId: string, color: string) => void;
   onOptionTextColorChange: (optionId: string, color: string) => void;
-  onOptionHoverTextColorChange: (optionId: string, color: string) => void;
   onOptionSelectedBackgroundColorChange?: (optionId: string, color: string) => void;
   onOptionSelectedBorderColorChange?: (optionId: string, color: string) => void;
   onOptionSelectedTextColorChange?: (optionId: string, color: string) => void;
@@ -55,7 +53,6 @@ const OptionsList = ({
   onOptionBackgroundColorChange,
   onOptionBorderColorChange,
   onOptionTextColorChange,
-  onOptionHoverTextColorChange,
   onOptionSelectedBackgroundColorChange,
   onOptionSelectedBorderColorChange,
   onOptionSelectedTextColorChange,
@@ -108,7 +105,6 @@ const OptionsList = ({
             onBackgroundColorChange={onOptionBackgroundColorChange}
             onBorderColorChange={onOptionBorderColorChange}
             onTextColorChange={onOptionTextColorChange}
-            onHoverTextColorChange={onOptionHoverTextColorChange}
             onSelectedBackgroundColorChange={handleSelectedBackgroundColorChange}
             onSelectedBorderColorChange={handleSelectedBorderColorChange}
             onSelectedTextColorChange={handleSelectedTextColorChange}
