@@ -112,6 +112,14 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
       videoUrl,
       videoType: 'iframe'
     });
+
+    // Mostrar confirmação quando o código é atualizado
+    if (code.trim()) {
+      toast({
+        title: "Código atualizado",
+        description: "O código iframe foi aplicado ao vídeo",
+      });
+    }
   };
 
   // Handle JS embed code input
@@ -121,6 +129,14 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
       embedCode: code,
       videoType: 'js'
     });
+
+    // Mostrar confirmação quando o código é atualizado
+    if (code.trim()) {
+      toast({
+        title: "Código atualizado",
+        description: "O código JavaScript foi aplicado ao vídeo",
+      });
+    }
   };
 
   // Handle tab change
@@ -310,11 +326,21 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               placeholder='<iframe src="https://www.youtube.com/embed/..." frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
               value={embedCode}
               onChange={(e) => handleEmbedCodeChange(e.target.value)}
-              className="min-h-[120px] font-mono text-sm"
+              className="min-h-[150px] font-mono text-xs"
               style={{ lineHeight: 1.5 }}
             />
             <p className="text-xs text-muted-foreground mt-1">
               Cole o código de incorporação do vídeo.
+            </p>
+          </div>
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800 flex items-start gap-2">
+              <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>
+                Após colar o código, clique em qualquer lugar fora da área de texto para aplicar as mudanças.
+              </span>
             </p>
           </div>
         </TabsContent>
@@ -329,7 +355,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               placeholder="<script>...</script>"
               value={embedCode}
               onChange={(e) => handleJsCodeChange(e.target.value)}
-              className="min-h-[150px] font-mono text-sm"
+              className="min-h-[200px] font-mono text-xs"
               style={{ lineHeight: 1.5 }}
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -341,7 +367,11 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>O código JavaScript será exibido apenas na visualização final do funil, não durante a edição.</span>
+              <span>
+                O código JavaScript será exibido apenas na visualização final do funil, não durante a edição.
+                <br />
+                Após colar o código, clique em qualquer lugar fora da área de texto para aplicar as mudanças.
+              </span>
             </p>
           </div>
         </TabsContent>

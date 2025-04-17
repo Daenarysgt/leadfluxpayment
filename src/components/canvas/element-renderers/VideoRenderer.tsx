@@ -3,7 +3,7 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { Play, Video as VideoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 // Componente de renderização de vídeo: suporta YouTube, URLs de vídeo direto, iframes e JavaScript embeds
 
@@ -12,6 +12,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
   const { content = {} } = element;
   const [isHovering, setIsHovering] = useState(false);
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
+  const jsContainerRef = useRef<HTMLDivElement>(null);
   
   // Verificar se estamos no modo preview (visualização pública)
   const isPreviewMode = !!element.previewMode;
@@ -36,6 +37,45 @@ const VideoRenderer = (props: ElementRendererProps) => {
       document.removeEventListener('dragend', handleDragEnd);
     };
   }, [isPreviewMode]);
+  
+  // Hook para processar scripts JavaScript
+  useEffect(() => {
+    if (content.videoType === 'js' && content.embedCode && isPreviewMode) {
+      if (!jsContainerRef.current) return;
+      
+      // Limpar conteúdo anterior
+      jsContainerRef.current.innerHTML = '';
+      
+      // Criar um div para o conteúdo JavaScript
+      const container = document.createElement('div');
+      container.innerHTML = content.embedCode;
+      
+      // Processar scripts
+      const scripts = container.querySelectorAll('script');
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        
+        // Copiar todos os atributos do script original
+        Array.from(oldScript.attributes).forEach(attr => {
+          newScript.setAttribute(attr.name, attr.value);
+        });
+        
+        // Copiar o conteúdo interno do script
+        newScript.innerHTML = oldScript.innerHTML;
+        
+        // Substituir o script antigo pelo novo
+        if (oldScript.parentNode) {
+          jsContainerRef.current?.appendChild(newScript);
+        }
+      });
+      
+      // Adicionar o HTML restante
+      const htmlContent = container.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
+      const div = document.createElement('div');
+      div.innerHTML = htmlContent;
+      jsContainerRef.current?.appendChild(div);
+    }
+  }, [content.videoType, content.embedCode, isPreviewMode]);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -137,7 +177,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
   const renderPreviewVideo = () => {
     const { videoUrl, videoType, embedCode } = content;
 
-    if (!videoUrl) {
+    if (!videoUrl && !embedCode) {
       return (
         <div className="h-40 w-full flex flex-col items-center justify-center bg-gray-100 rounded-md">
           <VideoIcon className="h-12 w-12 text-gray-400 mb-2" />
@@ -181,14 +221,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
     
     // Para embeds iframe
     if (videoType === 'iframe') {
+      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
+      
       return (
         <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
-          <iframe 
-            src={videoUrl}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          <div 
+            className="w-full h-full"
+            dangerouslySetInnerHTML={{ __html: iframeContent }}
+          />
         </div>
       );
     }
@@ -197,9 +237,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
     if (videoType === 'js' && embedCode) {
       return (
         <div 
+          ref={jsContainerRef}
           className="w-full h-full overflow-hidden"
-          style={videoContainerStyle}
-          dangerouslySetInnerHTML={{ __html: embedCode }}
+          style={{
+            ...videoContainerStyle,
+            minHeight: '300px',
+            display: 'block',
+            position: 'relative'
+          }}
         />
       );
     }
@@ -214,10 +259,10 @@ const VideoRenderer = (props: ElementRendererProps) => {
 
   // Função para renderizar o vídeo no modo de edição (com bloqueios)
   const renderEditorVideo = () => {
-    const { videoUrl, videoType } = content;
+    const { videoUrl, videoType, embedCode } = content;
     const shouldBlockInteraction = isDragging || isDraggingGlobal || isHovering;
 
-    if (!videoUrl) {
+    if (!videoUrl && !embedCode) {
       return (
         <div className="h-40 w-full flex flex-col items-center justify-center bg-gray-100 rounded-md">
           <VideoIcon className="h-12 w-12 text-gray-400 mb-2" />
@@ -289,20 +334,17 @@ const VideoRenderer = (props: ElementRendererProps) => {
     
     // Para embeds iframe
     if (videoType === 'iframe') {
+      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
+      
       return (
         <div className="relative w-full h-full overflow-hidden" style={videoContainerStyle}>
-          <div className={cn(
-            "w-full h-full",
-            shouldBlockInteraction && "pointer-events-none"
-          )}>
-            <iframe 
-              src={videoUrl}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
-            ></iframe>
-          </div>
+          <div 
+            className={cn(
+              "w-full h-full",
+              shouldBlockInteraction && "pointer-events-none"
+            )}
+            dangerouslySetInnerHTML={{ __html: iframeContent }}
+          />
           
           {/* Overlay para bloquear eventos de mouse durante drag & hover */}
           <div 
@@ -320,7 +362,10 @@ const VideoRenderer = (props: ElementRendererProps) => {
       return (
         <div 
           className="h-full w-full flex flex-col items-center justify-center bg-gray-100"
-          style={videoContainerStyle}
+          style={{
+            ...videoContainerStyle,
+            minHeight: '300px'
+          }}
         >
           <Play className="h-12 w-12 text-gray-600 mb-2" />
           <p className="text-sm font-medium">Embed de vídeo com JavaScript</p>
