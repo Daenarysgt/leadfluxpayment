@@ -4,6 +4,7 @@ import { paymentService } from '@/services/paymentService';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 export const withSubscription = (WrappedComponent: React.ComponentType) => {
   return (props: any) => {
@@ -21,120 +22,197 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
         try {
           console.log('🔍 Verificando assinatura do usuário...');
           
-          // Iniciar a verificação via API imediatamente
-          const apiCheckPromise = paymentService.getCurrentSubscription();
+          // NOVO: Verificação direta no banco de dados via Supabase
+          try {
+            console.log('🔍 Tentando verificação direta no banco...');
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+              console.log('❌ Usuário não autenticado');
+              throw new Error('Usuário não autenticado');
+            }
+            
+            console.log('✅ Usuário autenticado:', user.id);
+            
+            // Verificar assinatura diretamente via RPC do Supabase
+            const { data: subscriptions, error: subError } = await supabase
+              .from('subscriptions')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('status', 'active');
+            
+            if (subError) {
+              console.error('❌ Erro ao verificar assinatura via Supabase:', subError);
+              throw subError;
+            }
+            
+            // Se encontrou uma assinatura ativa
+            if (subscriptions && subscriptions.length > 0) {
+              const subscription = subscriptions[0];
+              const now = Math.floor(Date.now() / 1000);
+              
+              console.log('📊 Assinatura encontrada diretamente:', {
+                id: subscription.id,
+                status: subscription.status,
+                plan_id: subscription.plan_id,
+                current_period_end: subscription.current_period_end,
+                valid: subscription.current_period_end > now
+              });
+              
+              // Verificar se ainda está válida
+              if (subscription.current_period_end > now) {
+                console.log('✅ Assinatura válida e ativa encontrada via verificação direta!');
+                
+                // Atualizar estado e localStorage
+                setHasActiveSubscription(true);
+                setNoSubscription(false);
+                setIsLoading(false);
+                
+                localStorage.setItem('subscription_status', 'active');
+                localStorage.setItem('subscription_planId', subscription.plan_id);
+                localStorage.setItem('subscription_activated_at', Date.now().toString());
+                sessionStorage.setItem('subscription_status_backup', 'active');
+                sessionStorage.setItem('subscription_planId_backup', subscription.plan_id);
+                
+                // Retornar antecipadamente, não precisa verificar a API
+                return;
+              } else {
+                console.log('⚠️ Assinatura encontrada, mas período expirado. Continuando verificação...');
+              }
+            } else {
+              console.log('ℹ️ Nenhuma assinatura ativa encontrada via verificação direta');
+            }
+          } catch (directCheckError) {
+            console.error('❌ Erro na verificação direta:', directCheckError);
+            // Continuar com a verificação via API normal
+          }
+          
+          // Iniciar a verificação via API padrão
+          const apiCheckPromise = paymentService.getCurrentSubscription(3, 3000);
           
           // Verificar dados locais para uma resposta rápida enquanto a API é consultada
           const localStatus = localStorage.getItem('subscription_status');
           const localPlanId = localStorage.getItem('subscription_planId');
           const sessionStatus = sessionStorage.getItem('subscription_status_backup');
+          const localTimestamp = localStorage.getItem('subscription_activated_at');
           
           console.log('📊 Status local da assinatura:', { 
             localStorage: localStatus, 
             planId: localPlanId,
-            sessionStorage: sessionStatus 
+            sessionStorage: sessionStatus,
+            timestamp: localTimestamp,
+            isRecent: localTimestamp ? 
+              (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000) : false
           });
           
-          // Mostrar indicador de carregamento por pelo menos 500ms para evitar flash de conteúdo
-          const minLoadingTime = new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Se temos status local ativo, podemos mostrar conteúdo mais rápido
-          // mas ainda aguardamos a verificação da API em segundo plano
-          if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
-            console.log('✅ Dados locais indicam assinatura ativa, pré-aprovando acesso');
+          // Se temos dados locais recentes, confiar neles temporariamente
+          const isRecentLocal = localTimestamp && 
+            (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+            
+          if ((localStatus === 'active' || sessionStatus === 'active') && 
+              localPlanId && isRecentLocal) {
+            console.log('✅ Dados locais RECENTES indicam assinatura ativa, pré-aprovando acesso');
             if (isMounted) {
               setHasActiveSubscription(true);
               setIsLoading(false);
             }
           }
           
-          // Aguardar a conclusão da verificação da API
-          const [subscription] = await Promise.all([apiCheckPromise, minLoadingTime]);
-          apiCheckCompleted = true;
-          
-          // Verifica se o componente ainda está montado antes de atualizar o estado
-          if (!isMounted) return;
-          
-          // Verifica se tem assinatura ativa
-          if (!subscription) {
-            console.log('⚠️ Usuário sem assinatura ativa segundo a API');
+          // Aguardar a verificação da API
+          try {
+            const subscription = await apiCheckPromise;
+            apiCheckCompleted = true;
             
-            // Se não tem na API mas tem dados locais recentes (menos de 1 dia)
-            // ainda podemos manter o acesso temporariamente
-            const localTimestamp = localStorage.getItem('subscription_activated_at');
-            const isRecent = localTimestamp && 
-              (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+            if (!isMounted) return;
+            
+            if (subscription) {
+              console.log('✅ Assinatura encontrada via API:', subscription);
               
-            if ((localStatus === 'active' || sessionStatus === 'active') && 
-                localPlanId && isRecent) {
-              console.log('⚠️ Mantendo acesso com base nos dados locais RECENTES de assinatura');
-              return;
+              if (subscription.status === 'active') {
+                // Atualizar storage local
+                localStorage.setItem('subscription_status', 'active');
+                localStorage.setItem('subscription_planId', subscription.planId);
+                localStorage.setItem('subscription_activated_at', Date.now().toString());
+                sessionStorage.setItem('subscription_status_backup', 'active');
+                sessionStorage.setItem('subscription_planId_backup', subscription.planId);
+                
+                setHasActiveSubscription(true);
+                setNoSubscription(false);
+                setIsLoading(false);
+                return;
+              } else {
+                console.log(`⚠️ Assinatura encontrada via API, mas status não é ativo: ${subscription.status}`);
+              }
+            } else {
+              console.log('⚠️ API não retornou assinatura válida');
+              
+              // Se temos dados locais recentes e API não encontrou nada, manter o acesso
+              if ((localStatus === 'active' || sessionStatus === 'active') && 
+                  localPlanId && isRecentLocal) {
+                console.log('⚠️ Mantendo acesso com base nos dados locais RECENTES, apesar de falha na API');
+                return;
+              }
             }
             
-            setNoSubscription(true);
-            setHasActiveSubscription(false);
-            setIsLoading(false);
-            
-            // Limpar dados locais desatualizados
-            localStorage.removeItem('subscription_status');
-            localStorage.removeItem('subscription_planId');
-            sessionStorage.removeItem('subscription_status_backup');
-            sessionStorage.removeItem('subscription_planId_backup');
-            
-            return;
-          }
-          
-          // Verifica se o status da assinatura é ativo
-          if (subscription.status !== 'active') {
-            console.log(`⚠️ Assinatura encontrada, mas status não é ativo: ${subscription.status}`);
-            setNoSubscription(true);
-            setHasActiveSubscription(false);
-            setIsLoading(false);
-            return;
-          }
-          
-          // Assinatura ativa encontrada - atualizar dados locais
-          console.log('✅ Assinatura ativa encontrada via API:', subscription);
-          
-          // Atualizar armazenamento local com dados confirmados pela API
-          localStorage.setItem('subscription_status', 'active');
-          localStorage.setItem('subscription_planId', subscription.planId);
-          localStorage.setItem('subscription_activated_at', Date.now().toString());
-          sessionStorage.setItem('subscription_status_backup', 'active');
-          sessionStorage.setItem('subscription_planId_backup', subscription.planId);
-          
-          setHasActiveSubscription(true);
-          setNoSubscription(false);
-          setIsLoading(false);
-        } catch (error) {
-          if (!isMounted) return;
-          
-          console.error('❌ Erro ao verificar assinatura:', error);
-          
-          // Se ainda não confirmamos com a API, podemos usar dados locais como fallback
-          if (!apiCheckCompleted) {
-            const localStatus = localStorage.getItem('subscription_status');
-            const localPlanId = localStorage.getItem('subscription_planId');
-            const sessionStatus = sessionStorage.getItem('subscription_status_backup');
-            const localTimestamp = localStorage.getItem('subscription_activated_at');
-            
-            // Verificar se os dados locais são recentes (menos de 1 dia)
-            const isRecent = localTimestamp && 
-              (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
-              
-            if ((localStatus === 'active' || sessionStatus === 'active') && 
-                localPlanId && isRecent) {
-              console.log('⚠️ Erro ao verificar com API, usando dados locais RECENTES como fallback');
-              setHasActiveSubscription(true);
-              setNoSubscription(false);
+            // Se chegamos aqui, não temos assinatura confirmada pela API nem dados locais válidos
+            if (!hasActiveSubscription) {
+              setNoSubscription(true);
+              setHasActiveSubscription(false);
               setIsLoading(false);
+              
+              // Limpar dados locais se não são válidos
+              if (!isRecentLocal) {
+                localStorage.removeItem('subscription_status');
+                localStorage.removeItem('subscription_planId');
+                sessionStorage.removeItem('subscription_status_backup');
+                sessionStorage.removeItem('subscription_planId_backup');
+              }
+            }
+          } catch (apiError) {
+            console.error('❌ Erro ao verificar assinatura via API:', apiError);
+            
+            // Se API falhar mas temos dados locais recentes, manter o acesso
+            if ((localStatus === 'active' || sessionStatus === 'active') && 
+                localPlanId && isRecentLocal) {
+              console.log('⚠️ Mantendo acesso com dados locais devido a erro na API');
               return;
             }
+            
+            // Se não temos dados locais válidos, mostrar erro
+            if (!hasActiveSubscription) {
+              setError('Não foi possível verificar sua assinatura. Por favor, tente novamente.');
+              setIsLoading(false);
+              
+              toast({
+                variant: 'destructive',
+                title: 'Erro ao verificar assinatura',
+                description: 'Houve um problema ao verificar sua assinatura. Tente novamente.'
+              });
+            }
+          }
+        } catch (error: any) {
+          if (!isMounted) return;
+          
+          console.error('❌ Erro geral na verificação de assinatura:', error);
+          
+          // Última chance: se temos dados locais recentes, manter acesso
+          const localStatus = localStorage.getItem('subscription_status');
+          const localPlanId = localStorage.getItem('subscription_planId');
+          const localTimestamp = localStorage.getItem('subscription_activated_at');
+          const isRecentLocal = localTimestamp && 
+            (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+            
+          if ((localStatus === 'active') && localPlanId && isRecentLocal) {
+            console.log('⚠️ Erro geral, mas mantendo acesso com dados locais RECENTES');
+            setHasActiveSubscription(true);
+            setNoSubscription(false);
+            setIsLoading(false);
+            return;
           }
           
-          setError('Não foi possível verificar sua assinatura. Por favor, tente novamente.');
+          setError('Ocorreu um erro ao verificar sua assinatura. Por favor, tente novamente.');
+          setIsLoading(false);
           
-          // Mostrar toast de erro
           toast({
             variant: 'destructive',
             title: 'Erro ao verificar assinatura',
