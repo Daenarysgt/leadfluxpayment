@@ -260,11 +260,6 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Atualizar a cor de destaque no estado
     setHighlightColor(color);
     
-    // Definir a variável CSS personalizada
-    if (editorRef.current) {
-      editorRef.current.style.setProperty('--highlight-color', color);
-    }
-    
     // Aplicar cor de fundo
     document.execCommand('backColor', false, color);
     

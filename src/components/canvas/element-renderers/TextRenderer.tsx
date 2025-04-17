@@ -14,7 +14,7 @@ const TextRenderer = (props: ElementRendererProps) => {
           background-color: transparent !important;
         }
         .text-content span[style*="background-color"] { 
-          background-color: var(--highlight-color) !important; 
+          background-color: inherit !important; 
         }
       `;
       
