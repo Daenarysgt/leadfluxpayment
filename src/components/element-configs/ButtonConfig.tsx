@@ -288,11 +288,115 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 <SelectItem value="AddToCart">AddToCart</SelectItem>
                 <SelectItem value="Purchase">Purchase</SelectItem>
                 <SelectItem value="Subscribe">Subscribe</SelectItem>
+                <SelectItem value="custom">Evento Personalizado</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
               Este evento será enviado para o Facebook Ads quando o usuário clicar neste botão
             </p>
+            
+            {/* Input para evento personalizado */}
+            {content.facebookEvent === "custom" && (
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="custom-event">Nome do evento personalizado</Label>
+                <Input 
+                  id="custom-event"
+                  placeholder="Ex: MeuEventoPersonalizado"
+                  value={content.facebookCustomEventName || ""}
+                  onChange={(e) => handleStyleUpdate({ facebookCustomEventName: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use apenas letras, números e sublinhados. Não use espaços.
+                </p>
+              </div>
+            )}
+            
+            {/* Parâmetros avançados para eventos específicos do Facebook Pixel */}
+            {content.facebookEvent && content.facebookEvent !== "none" && content.facebookEvent !== "" && (
+              <div className="mt-4 space-y-4 rounded-md border p-4 bg-gray-50">
+                <h4 className="text-sm font-medium">Parâmetros avançados do evento</h4>
+                
+                {(content.facebookEvent === "Purchase" || content.facebookEvent === "InitiateCheckout") && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="event-value">Valor monetário</Label>
+                      <Input 
+                        id="event-value"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={content.facebookEventParams?.value || ""}
+                        onChange={(e) => handleStyleUpdate({ 
+                          facebookEventParams: {
+                            ...content.facebookEventParams,
+                            value: e.target.value
+                          }
+                        })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Valor associado à transação (ex: 29.90)
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="event-currency">Moeda</Label>
+                      <Select
+                        value={content.facebookEventParams?.currency || "BRL"}
+                        onValueChange={(value) => handleStyleUpdate({ 
+                          facebookEventParams: {
+                            ...content.facebookEventParams,
+                            currency: value
+                          }
+                        })}
+                      >
+                        <SelectTrigger id="event-currency">
+                          <SelectValue placeholder="Selecione a moeda" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BRL">Real (BRL)</SelectItem>
+                          <SelectItem value="USD">Dólar (USD)</SelectItem>
+                          <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+                
+                {content.facebookEvent === "Lead" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="lead-type">Tipo de lead</Label>
+                    <Input 
+                      id="lead-type"
+                      placeholder="Ex: quente, frio, newsletter"
+                      value={content.facebookEventParams?.lead_type || ""}
+                      onChange={(e) => handleStyleUpdate({ 
+                        facebookEventParams: {
+                          ...content.facebookEventParams,
+                          lead_type: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-violet-700"
+                    onClick={() => handleStyleUpdate({ 
+                      facebookEventDebugMode: !content.facebookEventDebugMode 
+                    })}
+                  >
+                    {content.facebookEventDebugMode ? "Desativar" : "Ativar"} modo de teste
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O modo de teste mostra no console os eventos enviados
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {navigation.type === "step" && steps.length > 0 && (

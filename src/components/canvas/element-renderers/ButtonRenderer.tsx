@@ -29,6 +29,9 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
   const facebookEvent = content.facebookEvent || "none"; // Evento do Facebook Pixel
+  const facebookCustomEventName = content.facebookCustomEventName || ""; // Nome do evento personalizado
+  const facebookEventParams = content.facebookEventParams || {}; // Parâmetros do evento
+  const facebookEventDebugMode = content.facebookEventDebugMode || false; // Modo de debug
   
   // Effect to handle the appearance delay
   useEffect(() => {
@@ -84,7 +87,30 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     
     // Rastrear evento do Facebook Pixel se configurado
     if (previewMode && facebookEvent && facebookEvent !== "none") {
-      safelyTrackEvent(facebookEvent);
+      // Determinar qual nome de evento usar
+      const eventName = facebookEvent === "custom" 
+        ? facebookCustomEventName 
+        : facebookEvent;
+      
+      // Não enviar evento personalizado se o nome estiver vazio
+      if (facebookEvent === "custom" && !facebookCustomEventName) {
+        if (facebookEventDebugMode) {
+          console.warn("Facebook Pixel: Nome de evento personalizado não definido");
+        }
+        return;
+      }
+      
+      // Adicionar feedback visual/log quando estiver em modo de debug
+      if (facebookEventDebugMode) {
+        console.group("🔍 Facebook Pixel - Evento Disparado");
+        console.log("Evento:", eventName);
+        console.log("Parâmetros:", facebookEventParams);
+        console.groupEnd();
+
+        // Mostrar um toast ou feedback visual aqui se necessário
+      }
+
+      safelyTrackEvent(eventName, facebookEventParams);
     }
     
     // Handle navigation differently based on preview mode
@@ -207,6 +233,16 @@ const ButtonRenderer = (props: ElementRendererProps) => {
         >
           {buttonText}
           {navigation.type === "next" && <ArrowRight className="h-4 w-4" />}
+          
+          {/* Indicador de Facebook Pixel (apenas visível quando for o modo editor) */}
+          {!previewMode && facebookEvent && facebookEvent !== "none" && (
+            <span className="ml-1.5 text-xs bg-blue-500 text-white px-1 py-0.5 rounded-sm flex items-center">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 mr-0.5">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="currentColor" />
+              </svg>
+              {facebookEvent === "custom" ? facebookCustomEventName || "Custom" : facebookEvent}
+            </span>
+          )}
         </Button>
       </div>
     </BaseElementRenderer>
