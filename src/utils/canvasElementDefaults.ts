@@ -21,7 +21,10 @@ export const getDefaultContent = (componentType: string) => {
               backgroundColor: "#ffffff",
               borderColor: "#e5e7eb",
               textColor: "#000000",
-              hoverTextColor: "#4B5563"
+              hoverTextColor: "#4B5563",
+              selectedBackgroundColor: "#f5f3ff",
+              selectedBorderColor: "#8b5cf6",
+              selectedTextColor: "#4c1d95"
             },
             navigation: { type: "next" }
           },
@@ -33,7 +36,10 @@ export const getDefaultContent = (componentType: string) => {
               backgroundColor: "#ffffff",
               borderColor: "#e5e7eb",
               textColor: "#000000",
-              hoverTextColor: "#4B5563"
+              hoverTextColor: "#4B5563",
+              selectedBackgroundColor: "#f5f3ff",
+              selectedBorderColor: "#8b5cf6",
+              selectedTextColor: "#4c1d95"
             },
             navigation: { type: "next" }
           },
@@ -45,7 +51,10 @@ export const getDefaultContent = (componentType: string) => {
               backgroundColor: "#ffffff",
               borderColor: "#e5e7eb",
               textColor: "#000000",
-              hoverTextColor: "#4B5563"
+              hoverTextColor: "#4B5563",
+              selectedBackgroundColor: "#f5f3ff",
+              selectedBorderColor: "#8b5cf6",
+              selectedTextColor: "#4c1d95"
             },
             navigation: { type: "next" }
           },
@@ -57,7 +66,10 @@ export const getDefaultContent = (componentType: string) => {
               backgroundColor: "#ffffff",
               borderColor: "#e5e7eb",
               textColor: "#000000",
-              hoverTextColor: "#4B5563"
+              hoverTextColor: "#4B5563",
+              selectedBackgroundColor: "#f5f3ff",
+              selectedBorderColor: "#8b5cf6",
+              selectedTextColor: "#4c1d95"
             },
             navigation: { type: "next" }
           },
@@ -67,7 +79,11 @@ export const getDefaultContent = (componentType: string) => {
           hoverColor: "#f3f4f6"
         },
         showEmojis: true,
-        showImages: false
+        showImages: false,
+        allowMultipleSelection: false,
+        indicatorType: "circle",
+        indicatorAlign: "left",
+        continueButtonText: "Continuar"
       };
     case ComponentType.MultipleChoiceImage:
       return {

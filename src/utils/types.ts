@@ -166,3 +166,40 @@ export interface TabOption {
   id: string;
   label: string;
 }
+
+export interface MultipleChoiceOption {
+  id: string;
+  text: string;
+  image?: string;
+  emoji?: string;
+  style: {
+    backgroundColor: string;
+    borderColor: string;
+    textColor: string;
+    hoverTextColor: string;
+    selectedBackgroundColor?: string;
+    selectedBorderColor?: string;
+    selectedTextColor?: string;
+  };
+  navigation: {
+    type: "next" | "step" | "url";
+    stepId?: string;
+    url?: string;
+    openInNewTab?: boolean;
+  };
+}
+
+export interface MultipleChoiceContent {
+  title: string;
+  options: MultipleChoiceOption[];
+  style?: {
+    borderRadius?: number;
+    hoverColor?: string;
+  };
+  showEmojis?: boolean;
+  showImages?: boolean;
+  allowMultipleSelection?: boolean;
+  indicatorType?: 'circle' | 'square';
+  indicatorAlign?: 'left' | 'right';
+  continueButtonText?: string;
+}

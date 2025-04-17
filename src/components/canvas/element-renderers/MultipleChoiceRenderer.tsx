@@ -2,22 +2,60 @@ import { cn } from "@/lib/utils";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { useStore } from "@/utils/store";
 import BaseElementRenderer from "./BaseElementRenderer";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
+import { Check } from "lucide-react";
 
 const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content, previewMode, previewProps } = element;
   const { setCurrentStep, currentFunnel, currentStep } = useStore();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   
-  const handleOptionClick = useCallback(async (option: any) => {
+  // Destructure configuration options with defaults
+  const {
+    allowMultipleSelection = false,
+    indicatorType = "circle", // circle or square
+    indicatorAlign = "left", // left or right
+    continueButtonText = "Continuar"
+  } = content || {};
+  
+  // Reset selected options when element changes
+  useEffect(() => {
+    setSelectedOptions([]);
+  }, [element.id]);
+  
+  const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option);
-    setSelectedOption(option.id);
-
-    if (!option.navigation) return;
     
-    const navigationType = option.navigation.type;
+    // Handle multiple selection
+    setSelectedOptions(prev => {
+      if (allowMultipleSelection) {
+        // Toggle selection
+        return prev.includes(option.id) 
+          ? prev.filter(id => id !== option.id) 
+          : [...prev, option.id];
+      } else {
+        // Single selection
+        return [option.id];
+      }
+    });
+  }, [allowMultipleSelection]);
+  
+  const handleContinue = useCallback(async () => {
+    // Exit if no options selected
+    if (selectedOptions.length === 0) return;
+    
+    const selectedOptionsData = content.options.filter((opt: any) => 
+      selectedOptions.includes(opt.id)
+    );
+    
+    // Find the first selected option with navigation
+    const navigationOption = selectedOptionsData.find((opt: any) => opt.navigation);
+    
+    if (!navigationOption) return;
+    
+    const navigationType = navigationOption.navigation.type;
     
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {
@@ -25,13 +63,14 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       console.log("Preview mode - Current step:", activeStep);
       
       if (funnel) {
-        // Registrar a escolha do usuário
+        // Register all selected choices
+        const selections = selectedOptionsData.map((opt: any) => opt.text || opt.value).join(", ");
         await accessService.registerStepInteraction(
           funnel.id,
           activeStep + 1,
           null, // usar sessionId atual
           'choice',
-          option.text || option.value
+          selections
         );
         
         if (navigationType === "next") {
@@ -43,9 +82,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
           }
         }
-        else if (navigationType === "step" && option.navigation.stepId) {
-          console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
-          const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+        else if (navigationType === "step" && navigationOption.navigation.stepId) {
+          console.log("Preview mode: Navigate to specific step:", navigationOption.navigation.stepId);
+          const stepIndex = funnel.steps.findIndex(step => step.id === navigationOption.navigation.stepId);
           if (stepIndex !== -1) {
             if (stepIndex === funnel.steps.length - 1) {
               // Se for o último step, marcar como conversão
@@ -55,11 +94,11 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             }
           }
         }
-        else if (navigationType === "url" && option.navigation.url) {
-          console.log("Preview mode: Open external URL:", option.navigation.url);
+        else if (navigationType === "url" && navigationOption.navigation.url) {
+          console.log("Preview mode: Open external URL:", navigationOption.navigation.url);
           // Marcar como conversão antes de redirecionar
           await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-          window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+          window.open(navigationOption.navigation.url, navigationOption.navigation.openInNewTab ? "_blank" : "_self");
         }
       }
     } else {
@@ -69,19 +108,19 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           setCurrentStep(currentStep + 1);
         }
       }
-      else if (navigationType === "step" && option.navigation.stepId) {
+      else if (navigationType === "step" && navigationOption.navigation.stepId) {
         if (currentFunnel) {
-          const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
+          const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigationOption.navigation.stepId);
           if (stepIndex !== -1) {
             setCurrentStep(stepIndex);
           }
         }
       }
-      else if (navigationType === "url" && option.navigation.url) {
-        window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+      else if (navigationType === "url" && navigationOption.navigation.url) {
+        window.open(navigationOption.navigation.url, navigationOption.navigation.openInNewTab ? "_blank" : "_self");
       }
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep]);
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, selectedOptions, content.options]);
 
   return (
     <BaseElementRenderer {...props}>
@@ -92,19 +131,27 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         {content.description && (
           <p className="text-sm text-muted-foreground">{content.description}</p>
         )}
+        
+        {/* Texto auxiliar para seleção múltipla */}
+        {allowMultipleSelection && (
+          <p className="text-sm text-muted-foreground">
+            Selecione uma ou mais opções para avançar
+          </p>
+        )}
+        
         <div className="space-y-2">
           {content.options?.map((option: any) => {
             // Prepare styles based on option configurations
             const optionStyle = option.style || {};
-            const isSelected = selectedOption === option.id;
+            const isSelected = selectedOptions.includes(option.id);
             const borderRadius = content.style?.borderRadius || 8; // Default border radius
             const hoverColor = content.style?.hoverColor || "#f3f4f6"; // Default hover color
             
             // Inline styles for the option
             const styleObject = {
-              backgroundColor: isSelected ? "#f5f3ff" : optionStyle.backgroundColor || "",
-              borderColor: isSelected ? "#8b5cf6" : optionStyle.borderColor || "",
-              color: optionStyle.textColor || "",
+              backgroundColor: isSelected ? (optionStyle.selectedBackgroundColor || "#f5f3ff") : (optionStyle.backgroundColor || ""),
+              borderColor: isSelected ? (optionStyle.selectedBorderColor || "#8b5cf6") : (optionStyle.borderColor || ""),
+              color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
               borderRadius: `${borderRadius}px`,
               transition: "all 0.2s ease",
             };
@@ -125,6 +172,38 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               document.head.appendChild(style);
             }
             
+            // Prepare the indicator element (circle or square)
+            const renderIndicator = () => {
+              if (indicatorType === "square") {
+                return (
+                  <div className={cn(
+                    "w-5 h-5 flex items-center justify-center border-2",
+                    isSelected 
+                      ? "border-violet-500 bg-violet-500" 
+                      : "border-gray-300 bg-white"
+                  )}
+                  style={{ borderRadius: "4px" }}>
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-white" />
+                    )}
+                  </div>
+                );
+              } else {
+                return (
+                  <div className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                    isSelected 
+                      ? "border-violet-500 bg-violet-500" 
+                      : "border-gray-300 bg-white"
+                  )}>
+                    {isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    )}
+                  </div>
+                );
+              }
+            };
+            
             return (
               <div
                 key={option.id}
@@ -136,16 +215,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 style={styleObject}
                 onClick={() => handleOptionClick(option)}
               >
-                <div className="flex items-center gap-3">
+                <div className={cn(
+                  "flex items-center gap-3",
+                  indicatorAlign === "right" && "flex-row-reverse"
+                )}>
+                  {renderIndicator()}
                   <div className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    isSelected ? "border-violet-500 bg-violet-500" : "border-gray-300"
+                    "flex-1 flex items-center",
+                    indicatorAlign === "right" && "justify-end"
                   )}>
-                    {isSelected && (
-                      <div className="w-2 h-2 rounded-full bg-white" />
-                    )}
-                  </div>
-                  <div className="flex-1 flex items-center">
                     {option.emoji && (
                       <span className="mr-2 text-xl">{option.emoji}</span>
                     )}
@@ -163,6 +241,16 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             );
           })}
         </div>
+        
+        {/* Botão de continuar para seleção múltipla */}
+        {allowMultipleSelection && selectedOptions.length > 0 && (
+          <button 
+            className="w-full mt-4 bg-violet-600 hover:bg-violet-700 text-white py-3 px-4 rounded-lg font-medium"
+            onClick={handleContinue}
+          >
+            {continueButtonText}
+          </button>
+        )}
       </div>
     </BaseElementRenderer>
   );

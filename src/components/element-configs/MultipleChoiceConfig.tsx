@@ -19,6 +19,10 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [showImages, setShowImages] = useState(false);
   const [borderRadius, setBorderRadius] = useState(DEFAULT_BORDER_RADIUS);
   const [hoverColor, setHoverColor] = useState(DEFAULT_HOVER_COLOR);
+  const [allowMultipleSelection, setAllowMultipleSelection] = useState(false);
+  const [indicatorType, setIndicatorType] = useState<'circle' | 'square'>('circle');
+  const [indicatorAlign, setIndicatorAlign] = useState<'left' | 'right'>('left');
+  const [continueButtonText, setContinueButtonText] = useState("Continuar");
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -41,6 +45,18 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get current hover color or default
     setHoverColor(element.content?.style?.hoverColor || DEFAULT_HOVER_COLOR);
+    
+    // Get multiple selection setting
+    setAllowMultipleSelection(element.content?.allowMultipleSelection || false);
+    
+    // Get indicator type
+    setIndicatorType(element.content?.indicatorType || 'circle');
+    
+    // Get indicator alignment
+    setIndicatorAlign(element.content?.indicatorAlign || 'left');
+    
+    // Get continue button text
+    setContinueButtonText(element.content?.continueButtonText || "Continuar");
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -359,6 +375,73 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  const toggleMultipleSelection = () => {
+    const newAllowMultipleSelection = !allowMultipleSelection;
+    setAllowMultipleSelection(newAllowMultipleSelection);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        allowMultipleSelection: newAllowMultipleSelection
+      }
+    });
+  };
+  
+  const handleIndicatorTypeChange = (type: 'circle' | 'square') => {
+    setIndicatorType(type);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        indicatorType: type
+      }
+    });
+  };
+  
+  const handleIndicatorAlignChange = (align: 'left' | 'right') => {
+    setIndicatorAlign(align);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        indicatorAlign: align
+      }
+    });
+  };
+  
+  const handleContinueButtonTextChange = (text: string) => {
+    setContinueButtonText(text);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        continueButtonText: text
+      }
+    });
+  };
+  
+  const handleOptionSelectedStyleChange = (optionId: string, property: string, value: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            [property]: value 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
   return (
     <div className="p-4 space-y-6">
       <TitleInput 
@@ -385,6 +468,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onOptionUrlChange={handleOptionUrlChange}
         onDeleteOption={handleDeleteOption}
         onAddOption={handleAddOption}
+        onOptionSelectedStyleChange={handleOptionSelectedStyleChange}
       />
 
       <Separator />
@@ -394,10 +478,18 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         showImages={showImages}
         borderRadius={borderRadius}
         hoverColor={hoverColor}
+        allowMultipleSelection={allowMultipleSelection}
+        indicatorType={indicatorType}
+        indicatorAlign={indicatorAlign}
+        continueButtonText={continueButtonText}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
         onHoverColorChange={handleHoverColorChange}
+        onToggleMultipleSelection={toggleMultipleSelection}
+        onIndicatorTypeChange={handleIndicatorTypeChange}
+        onIndicatorAlignChange={handleIndicatorAlignChange}
+        onContinueButtonTextChange={handleContinueButtonTextChange}
       />
     </div>
   );

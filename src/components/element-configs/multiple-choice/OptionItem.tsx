@@ -1,4 +1,3 @@
-
 import { Trash2, GripVertical, Image as ImageIcon, ExternalLink, ChevronRight, CornerUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +16,9 @@ interface OptionItemProps {
       borderColor?: string;
       textColor?: string;
       hoverTextColor?: string;
+      selectedBackgroundColor?: string;
+      selectedBorderColor?: string;
+      selectedTextColor?: string;
     };
     navigation?: {
       type: "next" | "step" | "url";
@@ -34,6 +36,9 @@ interface OptionItemProps {
   onBorderColorChange: (id: string, color: string) => void;
   onTextColorChange: (id: string, color: string) => void;
   onHoverTextColorChange: (id: string, color: string) => void;
+  onSelectedBackgroundColorChange?: (id: string, color: string) => void;
+  onSelectedBorderColorChange?: (id: string, color: string) => void;
+  onSelectedTextColorChange?: (id: string, color: string) => void;
   onNavigationTypeChange: (id: string, type: "next" | "step" | "url") => void;
   onStepIdChange: (id: string, stepId: string) => void;
   onUrlChange: (id: string, url: string) => void;
@@ -53,6 +58,9 @@ const OptionItem = ({
   onBorderColorChange,
   onTextColorChange,
   onHoverTextColorChange,
+  onSelectedBackgroundColorChange,
+  onSelectedBorderColorChange,
+  onSelectedTextColorChange,
   onNavigationTypeChange,
   onStepIdChange,
   onUrlChange,
@@ -94,7 +102,7 @@ const OptionItem = ({
         
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => onDelete(option.id)}
           disabled={!canDelete}
           className="h-8 w-8"
@@ -176,6 +184,66 @@ const OptionItem = ({
               className="h-6 text-xs"
             />
           </div>
+        </div>
+      </div>
+      
+      <Separator className="my-2" />
+      
+      <Label className="text-xs font-medium">Estilo quando selecionado</Label>
+      
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <div className="space-y-1">
+          <Label htmlFor={`selected-bg-color-${option.id}`} className="text-xs">Cor de fundo</Label>
+          <div className="flex space-x-2">
+            <div 
+              className="h-6 w-6 rounded border"
+              style={{ backgroundColor: option.style?.selectedBackgroundColor || '#f5f3ff' }}
+            />
+            <Input
+              id={`selected-bg-color-${option.id}`}
+              type="text"
+              value={option.style?.selectedBackgroundColor || '#f5f3ff'}
+              onChange={(e) => onSelectedBackgroundColorChange && onSelectedBackgroundColorChange(option.id, e.target.value)}
+              placeholder="#f5f3ff"
+              className="h-6 text-xs"
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor={`selected-border-color-${option.id}`} className="text-xs">Cor da borda</Label>
+          <div className="flex space-x-2">
+            <div 
+              className="h-6 w-6 rounded border"
+              style={{ backgroundColor: option.style?.selectedBorderColor || '#8b5cf6' }}
+            />
+            <Input
+              id={`selected-border-color-${option.id}`}
+              type="text"
+              value={option.style?.selectedBorderColor || '#8b5cf6'}
+              onChange={(e) => onSelectedBorderColorChange && onSelectedBorderColorChange(option.id, e.target.value)}
+              placeholder="#8b5cf6"
+              className="h-6 text-xs"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="space-y-1 mt-2">
+        <Label htmlFor={`selected-text-color-${option.id}`} className="text-xs">Cor do texto</Label>
+        <div className="flex space-x-2">
+          <div 
+            className="h-6 w-6 rounded border"
+            style={{ backgroundColor: option.style?.selectedTextColor || '#4c1d95' }}
+          />
+          <Input
+            id={`selected-text-color-${option.id}`}
+            type="text"
+            value={option.style?.selectedTextColor || '#4c1d95'}
+            onChange={(e) => onSelectedTextColorChange && onSelectedTextColorChange(option.id, e.target.value)}
+            placeholder="#4c1d95"
+            className="h-6 text-xs w-full"
+          />
         </div>
       </div>
       
