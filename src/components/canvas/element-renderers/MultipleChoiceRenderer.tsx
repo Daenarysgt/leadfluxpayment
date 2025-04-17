@@ -31,6 +31,11 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   
   // Função para executar a navegação com base na opção selecionada
   const executeNavigation = useCallback(async (optionId: string, customOption?: any) => {
+    // Se o modo de múltipla seleção estiver ativo, não executar navegação individual
+    if (allowMultipleSelection) {
+      return;
+    }
+    
     // Se um objeto de opção customizado foi fornecido, use-o
     const option = customOption || content.options.find((opt: any) => opt.id === optionId);
     if (!option || !option.navigation) return;
@@ -127,7 +132,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
       }
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options]);
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, allowMultipleSelection]);
   
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option);
@@ -135,13 +140,12 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Handle multiple selection
     setSelectedOptions(prev => {
       if (allowMultipleSelection) {
-        // Toggle selection - SEM QUALQUER NAVEGAÇÃO QUANDO multipla seleção estiver ativa
-        // Simplesmente alternar o estado de seleção e retornar
+        // Toggle selection - apenas alterna seleção sem navegação no modo múltipla seleção
         return prev.includes(option.id) 
           ? prev.filter(id => id !== option.id) 
           : [...prev, option.id];
       } else {
-        // Single selection - navegar imediatamente apenas se não estiver no modo de múltipla seleção
+        // Single selection - navegação imediata apenas em modo de seleção única
         if (option.navigation) {
           // Executar navegação imediatamente apenas para single selection
           setTimeout(() => executeNavigation(option.id, option), 100);

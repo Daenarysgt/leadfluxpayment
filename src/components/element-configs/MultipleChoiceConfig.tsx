@@ -81,6 +81,41 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     setContinueButtonUrl(element.content?.continueButtonNavigation?.url || "");
   }, [element]);
 
+  // Função para sincronizar a navegação de todas as opções com a navegação do botão Continuar
+  const syncOptionsNavigationWithContinueButton = () => {
+    if (!element.content?.options) return;
+    
+    // Obtém a navegação atual do botão Continuar
+    const continueNavType = element.content?.continueButtonNavigation?.type || "next";
+    const continueStepId = element.content?.continueButtonNavigation?.stepId || "";
+    const continueUrl = element.content?.continueButtonNavigation?.url || "";
+    
+    // Prepara a navegação que será aplicada a todas as opções
+    const newNavigation = {
+      type: continueNavType
+    };
+    
+    // Adiciona stepId ou url se necessário
+    if (continueNavType === "step" && continueStepId) {
+      Object.assign(newNavigation, { stepId: continueStepId });
+    } else if (continueNavType === "url" && continueUrl) {
+      Object.assign(newNavigation, { url: continueUrl });
+    }
+    
+    // Atualiza todas as opções com a mesma navegação do botão Continuar
+    const updatedOptions = element.content.options.map((option: any) => ({
+      ...option,
+      navigation: newNavigation
+    }));
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
   // These ensure our handlers apply the changes immediately
   const handleTitleChange = (title: string) => {
     onUpdate({
@@ -363,12 +398,19 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     const newAllowMultipleSelection = !allowMultipleSelection;
     setAllowMultipleSelection(newAllowMultipleSelection);
     
+    // Atualiza o estado de allowMultipleSelection
     onUpdate({
       content: {
         ...element.content,
         allowMultipleSelection: newAllowMultipleSelection
       }
     });
+    
+    // Se estiver ativando múltipla seleção, sincroniza a navegação de todas as opções
+    // com a navegação do botão Continuar
+    if (newAllowMultipleSelection) {
+      syncOptionsNavigationWithContinueButton();
+    }
   };
   
   const handleIndicatorTypeChange = (type: 'circle' | 'square') => {
@@ -484,6 +526,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         }
       }
     });
+    
+    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
+    if (allowMultipleSelection) {
+      // Precisamos fazer isso após a atualização do estado, então usamos um setTimeout
+      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
+    }
   };
   
   const handleContinueButtonStepIdChange = (stepId: string) => {
@@ -499,6 +547,11 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         }
       }
     });
+    
+    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
+    if (allowMultipleSelection) {
+      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
+    }
   };
   
   const handleContinueButtonUrlChange = (url: string) => {
@@ -514,6 +567,11 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         }
       }
     });
+    
+    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
+    if (allowMultipleSelection) {
+      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
+    }
   };
 
   return (
