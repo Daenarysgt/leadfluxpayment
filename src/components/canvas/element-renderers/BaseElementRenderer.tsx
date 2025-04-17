@@ -1,4 +1,3 @@
-
 import { ReactNode, useState } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { cn } from "@/lib/utils";
@@ -14,7 +13,8 @@ import {
   ChevronDown,
   Copy,
   Trash,
-  GripVertical
+  GripVertical,
+  Edit
 } from "lucide-react";
 
 interface BaseElementRendererProps extends ElementRendererProps {
@@ -36,10 +36,15 @@ const BaseElementRenderer = ({
   totalElements,
   children
 }: BaseElementRendererProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+  // Verificar se estamos em modo de preview - sem funcionalidade de drag
+  const isPreviewMode = !onDragStart || element.previewMode;
+
   const baseElementClasses = cn(
     "w-full rounded-md mb-4 border-2 relative group",
     isSelected ? "border-violet-500" : "border-transparent",
-    isDragging && "opacity-50 border-dashed border-violet-400"
+    isDragging && "opacity-50 border-dashed border-violet-400",
+    !isPreviewMode && "transition-all duration-200" // Apenas aplicar transição no modo construtor
   );
 
   const handleMoveUp = (e: React.MouseEvent) => {
@@ -88,9 +93,6 @@ const BaseElementRenderer = ({
 
   const showMoveUp = index > 0;
   const showMoveDown = index < totalElements - 1;
-  
-  // Check if we're in preview mode (no drag functionality)
-  const isPreviewMode = !onDragStart;
 
   return (
     <ContextMenu>
@@ -98,11 +100,46 @@ const BaseElementRenderer = ({
         <div 
           className={baseElementClasses}
           onClick={() => onSelect(element.id)}
+          onMouseEnter={() => !isPreviewMode && setIsHovering(true)}
+          onMouseLeave={() => !isPreviewMode && setIsHovering(false)}
         >
-          {children}
+          {/* Conteúdo real do elemento */}
+          <div className={cn(
+            "relative",
+            // Adicionar padding no modo construtor para garantir área clicável mínima
+            !isPreviewMode && "p-2 min-h-[60px]"
+          )}>
+            {children}
+          </div>
+
+          {/* Camada interativa para facilitar a seleção - só aparece no modo construtor */}
+          {!isPreviewMode && (
+            <div 
+              className={cn(
+                "absolute inset-0 cursor-pointer z-10 transition-all duration-150",
+                isSelected 
+                  ? "bg-violet-500/10 border-2 border-violet-500" 
+                  : isHovering 
+                    ? "bg-violet-500/5 border-2 border-dashed border-violet-400/60" 
+                    : "bg-transparent border-2 border-transparent"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(element.id);
+              }}
+            >
+              {/* Indicador de elemento editável */}
+              {!isSelected && isHovering && (
+                <div className="absolute top-2 right-2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+                  <Edit className="h-3 w-3" />
+                  <span>Editar</span>
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Only show drag handle when the element is selected */}
-          {isSelected && onDragStart && (
+          {isSelected && onDragStart && !isPreviewMode && (
             <div className="absolute left-0 top-0 bottom-0 flex items-center">
               <div 
                 className="w-8 h-8 bg-violet-100 flex items-center justify-center cursor-grab active:cursor-grabbing rounded-br transition-opacity"
@@ -140,57 +177,66 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {isSelected && (
-            <div className="absolute -right-2 -top-2 flex space-x-1">
+          {/* Right-side element actions */}
+          {isSelected && !isPreviewMode && (
+            <div className="absolute right-2 top-2 flex items-center gap-1 bg-white/80 rounded-md p-1 shadow-sm">
+              {onDuplicate && (
+                <button
+                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100"
+                  onClick={handleDuplicate}
+                  title="Duplicar elemento"
+                >
+                  <Copy className="h-3.5 w-3.5 text-gray-600" />
+                </button>
+              )}
               <button
-                className="w-6 h-6 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100"
-                onClick={handleDuplicate}
-                title="Duplicar"
-              >
-                <Copy className="h-3 w-3 text-gray-600" />
-              </button>
-              <button
-                className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600"
+                className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-100"
                 onClick={handleRemove}
-                title="Remover"
+                title="Remover elemento"
               >
-                <Trash className="h-3 w-3" />
+                <Trash className="h-3.5 w-3.5 text-red-500" />
               </button>
             </div>
           )}
         </div>
       </ContextMenuTrigger>
       
-      <ContextMenuContent className="w-56">
-        <ContextMenuItem onClick={() => onSelect(element.id)}>
-          Selecionar
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        {showMoveUp && !isPreviewMode && (
-          <ContextMenuItem onClick={() => onMoveUp && onMoveUp(element.id)}>
-            <ChevronUp className="mr-2 h-4 w-4" />
-            Mover para cima
+      {!isPreviewMode && (
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onSelect(element.id)}>
+            Editar elemento
           </ContextMenuItem>
-        )}
-        {showMoveDown && !isPreviewMode && (
-          <ContextMenuItem onClick={() => onMoveDown && onMoveDown(element.id)}>
-            <ChevronDown className="mr-2 h-4 w-4" />
-            Mover para baixo
+          
+          {onDuplicate && (
+            <ContextMenuItem onClick={() => onDuplicate(element.id)}>
+              Duplicar elemento
+            </ContextMenuItem>
+          )}
+          
+          <ContextMenuSeparator />
+          
+          {showMoveUp && (
+            <ContextMenuItem onClick={() => onMoveUp && onMoveUp(element.id)}>
+              Mover para cima
+            </ContextMenuItem>
+          )}
+          
+          {showMoveDown && (
+            <ContextMenuItem onClick={() => onMoveDown && onMoveDown(element.id)}>
+              Mover para baixo
+            </ContextMenuItem>
+          )}
+          
+          <ContextMenuSeparator />
+          
+          <ContextMenuItem 
+            onClick={() => onRemove(element.id)}
+            className="text-red-600"
+          >
+            Remover elemento
           </ContextMenuItem>
-        )}
-        <ContextMenuItem onClick={() => onDuplicate && onDuplicate(element.id)}>
-          <Copy className="mr-2 h-4 w-4" />
-          Duplicar
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem 
-          onClick={() => onRemove(element.id)}
-          className="text-red-600 focus:text-red-50 focus:bg-red-600"
-        >
-          <Trash className="mr-2 h-4 w-4" />
-          Remover
-        </ContextMenuItem>
-      </ContextMenuContent>
+        </ContextMenuContent>
+      )}
     </ContextMenu>
   );
 };
