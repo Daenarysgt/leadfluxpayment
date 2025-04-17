@@ -354,26 +354,23 @@ const BaseElementRenderer = ({
           
           {/* Only show up/down buttons when NOT in preview mode */}
           {!isPreviewMode && (
-            <div className={cn(
-              "absolute -left-20 top-0 h-full flex flex-col items-center justify-center transition-opacity z-30",
-              isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            )}>
+            <div className="absolute -left-24 top-1/2 transform -translate-y-1/2 flex flex-col items-center justify-center opacity-100 z-50 bg-white p-1 rounded-lg shadow-md">
               {showMoveUp && (
                 <button 
-                  className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center mb-1 hover:bg-gray-100"
+                  className="w-8 h-8 bg-violet-100 rounded-full shadow flex items-center justify-center mb-1 hover:bg-violet-200"
                   onClick={handleMoveUp}
                   title="Mover para cima"
                 >
-                  <ChevronUp className="h-5 w-5 text-gray-600" />
+                  <ChevronUp className="h-5 w-5 text-violet-600" />
                 </button>
               )}
               {showMoveDown && (
                 <button 
-                  className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center hover:bg-gray-100"
+                  className="w-8 h-8 bg-violet-100 rounded-full shadow flex items-center justify-center hover:bg-violet-200"
                   onClick={handleMoveDown}
                   title="Mover para baixo"
                 >
-                  <ChevronDown className="h-5 w-5 text-gray-600" />
+                  <ChevronDown className="h-5 w-5 text-violet-600" />
                 </button>
               )}
             </div>
