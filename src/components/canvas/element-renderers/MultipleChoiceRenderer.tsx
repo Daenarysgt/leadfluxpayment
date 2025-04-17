@@ -135,14 +135,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Handle multiple selection
     setSelectedOptions(prev => {
       if (allowMultipleSelection) {
-        // Toggle selection (sem navegação imediata quando múltipla seleção estiver ativada)
+        // Toggle selection - SEM QUALQUER NAVEGAÇÃO QUANDO multipla seleção estiver ativa
+        // Simplesmente alternar o estado de seleção e retornar
         return prev.includes(option.id) 
           ? prev.filter(id => id !== option.id) 
           : [...prev, option.id];
       } else {
-        // Single selection - e navegação imediata se a opção tiver configuração de navegação
+        // Single selection - navegar imediatamente apenas se não estiver no modo de múltipla seleção
         if (option.navigation) {
-          // Executar navegação imediatamente para single selection
+          // Executar navegação imediatamente apenas para single selection
           setTimeout(() => executeNavigation(option.id, option), 100);
         }
         return [option.id];
