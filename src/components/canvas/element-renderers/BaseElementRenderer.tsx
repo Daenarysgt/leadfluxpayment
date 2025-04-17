@@ -367,7 +367,7 @@ const BaseElementRenderer = ({
             <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-lg p-1 shadow-lg z-[999] border border-violet-200">
               {showMoveUp && (
                 <button 
-                  className="w-6 h-6 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 rounded-full flex items-center justify-center text-white"
+                  className="w-6 h-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveUp}
                   style={{
                     position: 'relative',
@@ -379,7 +379,7 @@ const BaseElementRenderer = ({
               )}
               {showMoveDown && (
                 <button 
-                  className="w-6 h-6 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 rounded-full flex items-center justify-center text-white"
+                  className="w-6 h-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveDown}
                   style={{
                     position: 'relative',
