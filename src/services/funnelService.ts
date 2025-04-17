@@ -56,6 +56,25 @@ const generateSlug = async (name: string, existingId?: string): Promise<string> 
   }
 };
 
+/**
+ * Converte um nome em slug para verificação
+ * Sem consultar o banco de dados
+ */
+const nameToSlug = (name: string): string => {
+  let slug = name.toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remover caracteres especiais
+    .replace(/\s+/g, '-')     // Substituir espaços por hífens
+    .replace(/-+/g, '-');     // Evitar hífens duplicados
+  
+  // Se o slug for vazio, usar o padrão
+  if (!slug) {
+    slug = 'funil';
+  }
+  
+  return slug;
+};
+
 export const funnelService = {
   // Buscar todos os funis do usuário com verificação robusta de autenticação
   async getFunnels() {
@@ -681,6 +700,60 @@ export const funnelService = {
     } catch (error) {
       console.error('Erro ao verificar schema:', error);
       return false;
+    }
+  },
+
+  // Verificar se um slug está disponível globalmente (todos os usuários)
+  async checkSlugAvailability(name: string): Promise<{
+    available: boolean;
+    slug: string;
+    suggestedSlug?: string;
+  }> {
+    try {
+      const slug = nameToSlug(name);
+      
+      if (!slug) {
+        return { available: false, slug: 'funil' };
+      }
+      
+      // Verificar no banco de dados
+      const { data: existingFunnels } = await supabase
+        .from('funnels')
+        .select('id, slug')
+        .eq('slug', slug);
+      
+      // Se não houver colisão, o slug está disponível
+      if (!existingFunnels || existingFunnels.length === 0) {
+        return { available: true, slug };
+      }
+      
+      // Se houver colisão, sugerir um slug alternativo
+      let counter = 1;
+      let suggestedSlug = `${slug}-${counter}`;
+      
+      // Verificar sugestões até encontrar uma disponível
+      while (counter <= 5) { // Limitar a 5 tentativas para esta verificação rápida
+        const { data: existingWithSuffix } = await supabase
+          .from('funnels')
+          .select('id')
+          .eq('slug', suggestedSlug);
+        
+        if (!existingWithSuffix || existingWithSuffix.length === 0) {
+          break;
+        }
+        
+        counter++;
+        suggestedSlug = `${slug}-${counter}`;
+      }
+      
+      return {
+        available: false,
+        slug,
+        suggestedSlug
+      };
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade de slug:', error);
+      return { available: false, slug: nameToSlug(name) };
     }
   }
 }; 

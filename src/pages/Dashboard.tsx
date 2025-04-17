@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFunnels } from '@/hooks/useFunnels';
@@ -20,8 +20,12 @@ import {
   Pencil,
   Check,
   X,
-  CheckCircle,
-  InfoIcon
+  CheckCircleIcon,
+  InfoIcon,
+  PlusIcon,
+  XCircleIcon,
+  AlertCircleIcon,
+  LoaderIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -49,6 +53,7 @@ import {
 import { toast } from "sonner";
 import { accessService } from '@/services/accessService';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { funnelService } from '@/services/funnelService';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -92,6 +97,18 @@ const Dashboard = () => {
   const [isNewFunnelDialogOpen, setIsNewFunnelDialogOpen] = useState<boolean>(false);
   const [newFunnelNameInput, setNewFunnelNameInput] = useState<string>('');
   const [isCreatingFunnel, setIsCreatingFunnel] = useState<boolean>(false);
+  
+  // Novo estado para verificação de disponibilidade de slug
+  const [slugCheck, setSlugCheck] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    slug: string;
+    suggestedSlug?: string;
+  }>({
+    checking: false,
+    available: null,
+    slug: ''
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -173,11 +190,73 @@ const Dashboard = () => {
     
     setNewFunnelNameInput('Novo Funil');
     setIsNewFunnelDialogOpen(true);
+    
+    // Verificar a disponibilidade inicial do slug
+    checkSlugAvailability('Novo Funil');
   };
+
+  // Função para verificar disponibilidade de slug
+  const checkSlugAvailability = useCallback(
+    async (name: string) => {
+      if (!name.trim()) {
+        setSlugCheck({
+          checking: false,
+          available: null,
+          slug: ''
+        });
+        return;
+      }
+      
+      try {
+        setSlugCheck(prev => ({ ...prev, checking: true }));
+        
+        // Delay para evitar muitas requisições enquanto digita
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const result = await funnelService.checkSlugAvailability(name);
+        
+        setSlugCheck({
+          checking: false,
+          available: result.available,
+          slug: result.slug,
+          suggestedSlug: result.suggestedSlug
+        });
+      } catch (error) {
+        console.error('Erro ao verificar slug:', error);
+        setSlugCheck({
+          checking: false,
+          available: null,
+          slug: name.toLowerCase().replace(/\s+/g, '-')
+        });
+      }
+    },
+    []
+  );
+  
+  // Efeito para verificar slug ao digitar
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (isNewFunnelDialogOpen) {
+        checkSlugAvailability(newFunnelNameInput);
+      }
+    }, 300);
+    
+    return () => clearTimeout(delayDebounceFn);
+  }, [newFunnelNameInput, isNewFunnelDialogOpen, checkSlugAvailability]);
 
   const handleCreateFunnelWithName = async () => {
     if (!newFunnelNameInput.trim()) {
       toast.error('O nome do funil não pode estar vazio');
+      return;
+    }
+    
+    // Verificar se o slug está disponível
+    if (slugCheck.available === false) {
+      toast.error('Este nome de funil já está em uso', {
+        description: slugCheck.suggestedSlug 
+          ? `Sugestão: use "${slugCheck.suggestedSlug}" como alternativa.`
+          : 'Por favor, escolha um nome diferente para o seu funil.'
+      });
       return;
     }
     
@@ -375,7 +454,7 @@ const Dashboard = () => {
           <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+              <CheckCircleIcon className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
             </CardHeader>
             <CardContent>
               {loadingMetrics ? (
@@ -644,23 +723,51 @@ const Dashboard = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Input
-              value={newFunnelNameInput}
-              onChange={(e) => setNewFunnelNameInput(e.target.value)}
-              placeholder="Nome do funil"
-              className="mb-2"
-              autoFocus
-            />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="relative">
+              <Input
+                value={newFunnelNameInput}
+                onChange={(e) => setNewFunnelNameInput(e.target.value)}
+                placeholder="Nome do funil"
+                className="mb-2 pr-10"
+                autoFocus
+              />
+              <div className="absolute right-3 top-2">
+                {slugCheck.checking ? (
+                  <LoaderIcon className="h-5 w-5 text-muted-foreground animate-spin" />
+                ) : slugCheck.available === true ? (
+                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                ) : slugCheck.available === false ? (
+                  <XCircleIcon className="h-5 w-5 text-red-500" />
+                ) : (
+                  <AlertCircleIcon className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
               <InfoIcon className="h-4 w-4" />
-              <span>O slug será gerado a partir deste nome (ex: novo-funil)</span>
+              <div>
+                {slugCheck.checking ? (
+                  <span>Verificando disponibilidade do slug...</span>
+                ) : slugCheck.available === true ? (
+                  <span>O slug <code className="bg-muted px-1 rounded">{slugCheck.slug}</code> está disponível</span>
+                ) : slugCheck.available === false ? (
+                  <span>
+                    O slug <code className="bg-muted px-1 rounded">{slugCheck.slug}</code> já está em uso.
+                    {slugCheck.suggestedSlug && (
+                      <> Sugestão: <code className="bg-muted px-1 rounded">{slugCheck.suggestedSlug}</code></>
+                    )}
+                  </span>
+                ) : (
+                  <span>O slug será gerado a partir deste nome (ex: novo-funil)</span>
+                )}
+              </div>
             </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCreatingFunnel}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCreateFunnelWithName}
-              disabled={isCreatingFunnel || !newFunnelNameInput.trim()}
+              disabled={isCreatingFunnel || !newFunnelNameInput.trim() || slugCheck.available === false || slugCheck.checking}
             >
               {isCreatingFunnel ? (
                 <div className="flex items-center gap-2">
