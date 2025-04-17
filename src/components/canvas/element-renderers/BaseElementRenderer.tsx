@@ -364,29 +364,29 @@ const BaseElementRenderer = ({
           
           {/* Botões de navegação fixados no lado */}
           {!isPreviewMode && (isSelected || isHovering) && (
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white rounded-lg p-2 shadow-lg z-[999] border border-violet-200">
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-white rounded-lg p-1.5 shadow-lg z-[999] border border-violet-200">
               {showMoveUp && (
                 <button 
-                  className="w-10 h-10 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
+                  className="w-7 h-7 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveUp}
                   style={{
                     position: 'relative',
                     zIndex: 9999
                   }}
                 >
-                  <ChevronUp className="h-6 w-6" />
+                  <ChevronUp className="h-4 w-4" />
                 </button>
               )}
               {showMoveDown && (
                 <button 
-                  className="w-10 h-10 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
+                  className="w-7 h-7 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveDown}
                   style={{
                     position: 'relative',
                     zIndex: 9999
                   }}
                 >
-                  <ChevronDown className="h-6 w-6" />
+                  <ChevronDown className="h-4 w-4" />
                 </button>
               )}
             </div>
