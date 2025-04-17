@@ -3,13 +3,14 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { Play, Video as VideoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 // Componente de renderização de vídeo: suporta YouTube, URLs de vídeo direto, iframes e JavaScript embeds
 
 const VideoRenderer = (props: ElementRendererProps) => {
-  const { element } = props;
+  const { element, isDragging } = props;
   const { content = {} } = element;
+  const [isHovering, setIsHovering] = useState(false);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -91,38 +92,68 @@ const VideoRenderer = (props: ElementRendererProps) => {
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
         return (
-          <iframe 
-            src={embedUrl}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          <div className="relative w-full h-full">
+            <iframe 
+              src={embedUrl}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+            
+            {/* Overlay para bloquear eventos de mouse durante drag & hover */}
+            <div 
+              className={cn(
+                "absolute inset-0 transition-opacity duration-200",
+                (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+              )}
+            />
+          </div>
         );
       }
 
       // Regular video file URL
       return (
-        <video 
-          src={videoUrl}
-          className="w-full h-full"
-          controls={content.controls !== false}
-          autoPlay={content.autoPlay || false}
-          muted={content.muted || false}
-          loop={content.loop || false}
-          playsInline
-        />
+        <div className="relative w-full h-full">
+          <video 
+            src={videoUrl}
+            className="w-full h-full"
+            controls={content.controls !== false}
+            autoPlay={content.autoPlay || false}
+            muted={content.muted || false}
+            loop={content.loop || false}
+            playsInline
+          />
+          
+          {/* Overlay para bloquear eventos de mouse durante drag & hover */}
+          <div 
+            className={cn(
+              "absolute inset-0 transition-opacity duration-200",
+              (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+            )}
+          />
+        </div>
       );
     }
     
     // For iframe embeds
     if (videoType === 'iframe') {
       return (
-        <iframe 
-          src={videoUrl}
-          className="w-full h-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
+        <div className="relative w-full h-full">
+          <iframe 
+            src={videoUrl}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+          
+          {/* Overlay para bloquear eventos de mouse durante drag & hover */}
+          <div 
+            className={cn(
+              "absolute inset-0 transition-opacity duration-200",
+              (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+            )}
+          />
+        </div>
       );
     }
     
@@ -147,18 +178,28 @@ const VideoRenderer = (props: ElementRendererProps) => {
   
   return (
     <BaseElementRenderer {...props}>
-      <div className={cn("relative w-full flex items-center", alignmentClass)}>
-        {aspectRatio ? (
-          <div className="w-full max-w-full">
-            <AspectRatio ratio={aspectRatio}>
+      <div 
+        className={cn("relative w-full flex items-center", alignmentClass)}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        <div className={cn(
+          "w-full", 
+          "pointer-events-auto",
+          isDragging && "pointer-events-none" // Desabilitar interação com o vídeo durante drag
+        )}>
+          {aspectRatio ? (
+            <div className="w-full max-w-full">
+              <AspectRatio ratio={aspectRatio}>
+                {renderVideo()}
+              </AspectRatio>
+            </div>
+          ) : (
+            <div className="w-full">
               {renderVideo()}
-            </AspectRatio>
-          </div>
-        ) : (
-          <div className="w-full">
-            {renderVideo()}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
       {content.title && <p className="text-center mt-2 text-sm">{content.title}</p>}
     </BaseElementRenderer>
