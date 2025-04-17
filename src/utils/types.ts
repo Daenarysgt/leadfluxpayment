@@ -167,39 +167,46 @@ export interface TabOption {
   label: string;
 }
 
+export interface Navigation {
+  type: 'next' | 'step' | 'url';
+  stepId?: string;
+  url?: string;
+  openInNewTab?: boolean;
+}
+
 export interface MultipleChoiceOption {
   id: string;
   text: string;
   image?: string;
   emoji?: string;
-  style: {
-    backgroundColor: string;
-    borderColor: string;
-    textColor: string;
-    hoverTextColor: string;
+  description?: string;
+  style?: {
+    backgroundColor?: string;
     selectedBackgroundColor?: string;
+    borderColor?: string;
     selectedBorderColor?: string;
+    textColor?: string;
     selectedTextColor?: string;
   };
-  navigation: {
-    type: "next" | "step" | "url";
-    stepId?: string;
-    url?: string;
-    openInNewTab?: boolean;
-  };
+  navigation?: Navigation;
 }
 
 export interface MultipleChoiceContent {
-  title: string;
+  title?: string;
+  description?: string;
   options: MultipleChoiceOption[];
   style?: {
     borderRadius?: number;
-    hoverColor?: string;
+    backgroundColor?: string;
   };
   showEmojis?: boolean;
   showImages?: boolean;
   allowMultipleSelection?: boolean;
   indicatorType?: 'circle' | 'square';
   indicatorAlign?: 'left' | 'right';
+  indicatorColor?: string;
+  indicatorIconColor?: string;
   continueButtonText?: string;
+  helperText?: string;
+  showHelperText?: boolean;
 }
