@@ -168,7 +168,7 @@ router.get('/subscription', async (req, res) => {
 
     try {
       // Tenta buscar assinatura no Stripe
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
       
       console.log('✅ Assinatura Stripe recuperada:', {
         id: stripeSubscription.id,
@@ -177,42 +177,42 @@ router.get('/subscription', async (req, res) => {
       });
       
       // Converte o timestamp Unix para uma data ISO para a resposta
-      // Apenas para exibição ao cliente - internamente continuamos armazenando como inteiro
-    const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
 
       // Retorna os detalhes da assinatura
-    return res.json({
-      planId: subscription.plan_id,
-      status: stripeSubscription.status,
-      currentPeriodEnd,
-      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-    });
+      return res.json({
+        planId: subscription.plan_id,
+        status: stripeSubscription.status,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+      });
     } catch (stripeError: any) {
-      // Se o Stripe não encontrar a assinatura ou outro erro do Stripe
-      console.error('❌ Erro ao buscar assinatura no Stripe:', stripeError);
+      // MODIFICAÇÃO: Se o Stripe não encontrar a assinatura, confie nos dados do banco
+      console.warn('⚠️ Erro ao buscar assinatura no Stripe, mas assinatura existe no banco:', stripeError.message);
       
-      // Se a assinatura não existe mais no Stripe, atualize o status no banco
-      if (stripeError.code === 'resource_missing') {
-        try {
-          const now = Math.floor(Date.now() / 1000);
-          await supabase
-            .from('subscriptions')
-            .upsert({ 
-              subscription_id: subscription.subscription_id,
-              status: 'inactive',
-              updated_at: now
-            }, {
-              onConflict: 'subscription_id',
-              ignoreDuplicates: false
-            });
-            
-          console.log('⚠️ Assinatura marcada como inativa por não existir no Stripe');
-        } catch (updateError) {
-          console.error('❌ Erro ao atualizar status da assinatura:', updateError);
-        }
+      // Usar dados do banco de dados local em vez de depender do Stripe
+      // Isso garante que o usuário não perca acesso mesmo se houver problemas de conectividade com o Stripe
+      
+      // Se o status no banco é 'active', confiamos nele
+      if (subscription.status === 'active') {
+        console.log('✅ Usando dados do banco local para a assinatura');
+        
+        // Converte o timestamp Unix para uma data ISO
+        const currentPeriodEnd = subscription.current_period_end 
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Fallback: hoje + 30 dias
+        
+        // Retorna os detalhes da assinatura baseados no banco local
+        return res.json({
+          planId: subscription.plan_id,
+          status: 'active', // Confia no status do banco
+          currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end || false
+        });
       }
       
-      // Retorna null para o cliente (assinatura inválida)
+      // Se chegarmos aqui, a assinatura existe mas não está ativa no banco
+      console.log('⚠️ Assinatura existe no banco mas não está ativa');
       return res.json(null);
     }
   } catch (error) {
