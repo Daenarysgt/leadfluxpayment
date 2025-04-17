@@ -174,11 +174,14 @@ export const paymentService = {
     const localStatus = localStorage.getItem('subscription_status');
     const localPlanId = localStorage.getItem('subscription_planId');
     const sessionStatus = sessionStorage.getItem('subscription_status_backup');
+    const localTimestamp = localStorage.getItem('subscription_activated_at');
     
     console.log('📊 Verificando status local da assinatura:', { 
       localStorage: localStatus, 
       planId: localPlanId,
-      sessionStorage: sessionStatus 
+      sessionStorage: sessionStatus,
+      timestamp: localTimestamp,
+      isRecent: localTimestamp ? (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000) : false
     });
     
     while (attempts < maxRetries) {
@@ -187,7 +190,7 @@ export const paymentService = {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session || !session.access_token) {
-          console.log('Usuário não autenticado ao verificar assinatura');
+          console.log('⚠️ Usuário não autenticado ao verificar assinatura');
           
           // Se não está autenticado mas temos dados locais de assinatura ativa, use como fallback
           if (localStatus === 'active' && localPlanId) {
@@ -204,42 +207,77 @@ export const paymentService = {
         }
         
         console.log(`📝 Verificando assinatura (tentativa ${attempts + 1}/${maxRetries})...`);
+        console.log(`🔑 Token de acesso: ${session.access_token.substring(0, 10)}...`);
         
-        // Obter informações da assinatura
-        const response = await axios.get(
-          `${API_URL}/payment/subscription`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`
+        // Tentar obter informações da assinatura com timeout para evitar esperas longas
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
+        
+        try {
+          // Obter informações da assinatura
+          const response = await axios.get(
+            `${API_URL}/payment/subscription`,
+            {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`
+              },
+              signal: controller.signal
             }
-          }
-        );
-        
-        // Se houver resposta com dados, atualizar storage local e retornar
-        if (response.data) {
-          console.log('✅ Assinatura encontrada via API:', response.data);
+          );
           
-          // Atualizar storage local se for uma assinatura ativa
-          if (response.data.status === 'active') {
-            localStorage.setItem('subscription_status', 'active');
-            localStorage.setItem('subscription_planId', response.data.planId);
-            sessionStorage.setItem('subscription_status_backup', 'active');
-            sessionStorage.setItem('subscription_planId_backup', response.data.planId);
-            console.log('💾 Status de assinatura atualizado no storage local');
-          }
+          clearTimeout(timeoutId);
           
-          return response.data;
+          // Log adicional para diagnóstico
+          console.log('🔍 Resposta completa da API:', {
+            status: response.status,
+            data: response.data
+          });
+          
+          // Se houver resposta com dados, atualizar storage local e retornar
+          if (response.data) {
+            console.log('✅ Assinatura encontrada via API:', response.data);
+            
+            // Atualizar storage local se for uma assinatura ativa
+            if (response.data.status === 'active') {
+              localStorage.setItem('subscription_status', 'active');
+              localStorage.setItem('subscription_planId', response.data.planId);
+              localStorage.setItem('subscription_activated_at', Date.now().toString());
+              sessionStorage.setItem('subscription_status_backup', 'active');
+              sessionStorage.setItem('subscription_planId_backup', response.data.planId);
+              console.log('💾 Status de assinatura atualizado no storage local');
+            }
+            
+            return response.data;
+          } else {
+            console.log('⚠️ API retornou resposta vazia');
+          }
+        } catch (requestError: any) {
+          clearTimeout(timeoutId);
+          
+          if (requestError.name === 'AbortError' || requestError.code === 'ECONNABORTED') {
+            console.warn('⚠️ Timeout ao buscar assinatura');
+          } else {
+            console.error('❌ Erro na requisição:', requestError.message || requestError);
+          }
         }
         
         // Se não houver resposta da API, mas temos dados locais de assinatura ativa, use como fallback
         if (attempts === maxRetries - 1 && (localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
-          console.log('⚠️ API não retornou assinatura, usando dados locais como fallback');
-          return {
-            planId: localPlanId,
-            status: 'active',
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
-            cancelAtPeriodEnd: false
-          };
+          // Verificar se os dados locais são recentes
+          const isRecent = localTimestamp && 
+            (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+            
+          if (isRecent) {
+            console.log('⚠️ API não retornou assinatura, usando dados locais recentes como fallback');
+            return {
+              planId: localPlanId,
+              status: 'active',
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+              cancelAtPeriodEnd: false
+            };
+          } else {
+            console.log('⚠️ Dados locais existem mas não são recentes (>24h)');
+          }
         }
         
         // Se não houver dados e ainda temos tentativas, esperar e tentar novamente
@@ -275,13 +313,21 @@ export const paymentService = {
         } else {
           // Se é a última tentativa e temos dados locais, usar como fallback
           if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
-            console.log('⚠️ Erro na API, usando dados locais de assinatura como fallback');
-            return {
-              planId: localPlanId,
-              status: 'active',
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
-              cancelAtPeriodEnd: false
-            };
+            // Verificar se os dados locais são recentes
+            const isRecent = localTimestamp && 
+              (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+              
+            if (isRecent) {
+              console.log('⚠️ Erro na API, usando dados locais RECENTES como fallback');
+              return {
+                planId: localPlanId,
+                status: 'active',
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+                cancelAtPeriodEnd: false
+              };
+            } else {
+              console.log('⚠️ Dados locais existem mas não são recentes (>24h)');
+            }
           }
           
           // Retorna null em caso de erro para não quebrar a interface
@@ -293,13 +339,19 @@ export const paymentService = {
     
     // Se chegamos aqui sem retornar, verificar dados locais uma última vez
     if ((localStatus === 'active' || sessionStatus === 'active') && localPlanId) {
-      console.log('⚠️ Após todas as tentativas, usando dados locais de assinatura como último recurso');
-      return {
-        planId: localPlanId,
-        status: 'active',
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
-        cancelAtPeriodEnd: false
-      };
+      // Verificar se os dados locais são recentes
+      const isRecent = localTimestamp && 
+        (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000);
+        
+      if (isRecent) {
+        console.log('⚠️ Após todas as tentativas, usando dados locais RECENTES como último recurso');
+        return {
+          planId: localPlanId,
+          status: 'active',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 dias como fallback
+          cancelAtPeriodEnd: false
+        };
+      }
     }
     
     return null;
