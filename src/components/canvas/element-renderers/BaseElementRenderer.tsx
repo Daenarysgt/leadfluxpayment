@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useRef, useEffect } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +14,8 @@ import {
   Copy,
   Trash,
   GripVertical,
-  Edit
+  Edit,
+  Move
 } from "lucide-react";
 
 interface BaseElementRendererProps extends ElementRendererProps {
@@ -37,8 +38,29 @@ const BaseElementRenderer = ({
   children
 }: BaseElementRendererProps) => {
   const [isHovering, setIsHovering] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const elementRef = useRef<HTMLDivElement>(null);
+  
   // Verificar se estamos em modo de preview - sem funcionalidade de drag
   const isPreviewMode = !onDragStart || element.previewMode;
+
+  // Efeito para garantir que o elemento seja visível quando selecionado
+  // (scroll para o elemento se necessário)
+  useEffect(() => {
+    if (isSelected && elementRef.current) {
+      const rect = elementRef.current.getBoundingClientRect();
+      const isVisible = (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+      
+      if (!isVisible) {
+        elementRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [isSelected]);
 
   const baseElementClasses = cn(
     "w-full rounded-md mb-4 border-2 relative group",
@@ -69,26 +91,57 @@ const BaseElementRenderer = ({
 
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation();
+    setDragActive(true);
     
     // Set the drag data
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("elementId", element.id);
     e.dataTransfer.setData("text/plain", element.id);
     
-    // Create custom drag preview
+    // Create custom drag preview - um indicador mais compacto
     const dragPreview = document.createElement("div");
-    dragPreview.classList.add("bg-white", "p-3", "border", "shadow-md", "rounded", "text-sm");
-    dragPreview.textContent = `Movendo: ${element.content?.title || element.type}`;
+    dragPreview.classList.add(
+      "bg-violet-600", 
+      "text-white",
+      "p-2", 
+      "rounded-md", 
+      "shadow-lg", 
+      "flex", 
+      "items-center", 
+      "gap-2",
+      "text-sm",
+      "font-medium",
+      "select-none"
+    );
+    
+    // Ícone + texto para o drag preview
+    const iconSpan = document.createElement("span");
+    iconSpan.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>`;
+    
+    const textSpan = document.createElement("span");
+    textSpan.textContent = element.content?.title || element.type;
+    
+    dragPreview.appendChild(iconSpan);
+    dragPreview.appendChild(textSpan);
+    
+    // Adicionamos o elemento ao DOM para usar como preview
     document.body.appendChild(dragPreview);
     
+    // Definimos a imagem de drag personalizada
     e.dataTransfer.setDragImage(dragPreview, 20, 20);
     
-    // Clean up after dragimage is captured
+    // Limpamos após capturar a imagem
     setTimeout(() => {
       document.body.removeChild(dragPreview);
     }, 0);
     
     if (onDragStart) onDragStart(element.id);
+  };
+  
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.stopPropagation();
+    setDragActive(false);
+    if (onDragEnd) onDragEnd();
   };
 
   const showMoveUp = index > 0;
@@ -98,6 +151,7 @@ const BaseElementRenderer = ({
     <ContextMenu>
       <ContextMenuTrigger>
         <div 
+          ref={elementRef}
           className={baseElementClasses}
           onClick={() => onSelect(element.id)}
           onMouseEnter={() => !isPreviewMode && setIsHovering(true)}
@@ -138,17 +192,38 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Only show drag handle when the element is selected */}
+          {/* Handle de arrastar - agora como área flotante discreta */}
           {isSelected && onDragStart && !isPreviewMode && (
             <div className="absolute left-0 top-0 bottom-0 flex items-center z-20">
               <div 
-                className="w-8 h-8 bg-violet-100 flex items-center justify-center cursor-grab active:cursor-grabbing rounded-br transition-opacity"
+                className={cn(
+                  "w-8 h-8 bg-violet-100 flex items-center justify-center rounded-br transition-all shadow-sm",
+                  dragActive ? "bg-violet-200 cursor-grabbing" : "cursor-grab",
+                )}
                 draggable={true}
                 onDragStart={handleDragStart}
-                onDragEnd={onDragEnd}
-                title="Arrastar para reordenar"
+                onDragEnd={handleDragEnd}
+                title="Arraste para reordenar"
               >
                 <GripVertical className="h-4 w-4 text-violet-500" />
+              </div>
+            </div>
+          )}
+          
+          {/* Adicionar botão de arrasto centralizado para maior facilidade */}
+          {isSelected && onDragStart && !isPreviewMode && (
+            <div className="absolute right-1/2 translate-x-1/2 -bottom-2 z-30">
+              <div 
+                className={cn(
+                  "w-10 h-5 bg-violet-100 rounded-b-md flex items-center justify-center shadow-sm hover:bg-violet-200",
+                  dragActive ? "bg-violet-200 cursor-grabbing" : "cursor-grab"
+                )}
+                draggable={true}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                title="Arraste para reordenar"
+              >
+                <Move className="h-3 w-3 text-violet-500" />
               </div>
             </div>
           )}
