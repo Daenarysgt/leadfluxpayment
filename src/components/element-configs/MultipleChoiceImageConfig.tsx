@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/utils/store";
 import TitleInput from "./multiple-choice/TitleInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Upload, Link } from "lucide-react";
+import { Plus, Trash2, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -103,7 +103,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
-  const handleOptionNavigationTypeChange = (optionId: string, type: "next" | "step" | "url") => {
+  const handleOptionNavigationTypeChange = (optionId: string, type: "next" | "step" | "url" | "none") => {
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
         return { 
@@ -366,12 +366,18 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                 <Label>Navegação</Label>
                 <Select 
                   defaultValue={option.navigation?.type || "next"}
-                  onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as "next" | "step" | "url")}
+                  onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a ação" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">
+                      <div className="flex items-center">
+                        <X className="h-4 w-4 mr-2" />
+                        <span>Nenhum</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="next">Ir para próxima etapa</SelectItem>
                     <SelectItem value="step">Ir para etapa específica</SelectItem>
                     <SelectItem value="url">Abrir URL externa</SelectItem>

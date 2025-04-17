@@ -173,7 +173,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
-  const handleOptionNavigationTypeChange = (optionId: string, type: "next" | "step" | "url") => {
+  const handleOptionNavigationTypeChange = (optionId: string, type: "next" | "step" | "url" | "none") => {
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
         return { 

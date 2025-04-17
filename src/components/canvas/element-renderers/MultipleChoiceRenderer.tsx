@@ -36,6 +36,12 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     
     const navigationType = option.navigation.type;
     
+    // Se o tipo de navegação for "none", não faz nada
+    if (navigationType === "none") {
+      console.log("Navegação do tipo 'none' - nenhuma ação será executada");
+      return;
+    }
+    
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {
       const { activeStep, onStepChange, funnel } = previewProps;

@@ -1,4 +1,4 @@
-import { Trash2, GripVertical, Image as ImageIcon, ExternalLink, ChevronRight, CornerUpRight } from "lucide-react";
+import { Trash2, GripVertical, Image as ImageIcon, ExternalLink, ChevronRight, CornerUpRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ interface OptionItemProps {
       selectedTextColor?: string;
     };
     navigation?: {
-      type: "next" | "step" | "url";
+      type: "next" | "step" | "url" | "none";
       stepId?: string;
       url?: string;
     };
@@ -37,7 +37,7 @@ interface OptionItemProps {
   onSelectedBackgroundColorChange?: (id: string, color: string) => void;
   onSelectedBorderColorChange?: (id: string, color: string) => void;
   onSelectedTextColorChange?: (id: string, color: string) => void;
-  onNavigationTypeChange: (id: string, type: "next" | "step" | "url") => void;
+  onNavigationTypeChange: (id: string, type: "next" | "step" | "url" | "none") => void;
   onStepIdChange: (id: string, stepId: string) => void;
   onUrlChange: (id: string, url: string) => void;
   onDelete: (id: string) => void;
@@ -233,12 +233,18 @@ const OptionItem = ({
         <Label className="text-xs">Navegação</Label>
         <Select 
           defaultValue={navigationType}
-          onValueChange={(value) => onNavigationTypeChange(option.id, value as "next" | "step" | "url")}
+          onValueChange={(value) => onNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
         >
           <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Selecione a ação" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="none" className="text-xs">
+              <div className="flex items-center">
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                <span>Nenhum</span>
+              </div>
+            </SelectItem>
             <SelectItem value="next" className="text-xs">
               <div className="flex items-center">
                 <ChevronRight className="h-3.5 w-3.5 mr-1.5" />

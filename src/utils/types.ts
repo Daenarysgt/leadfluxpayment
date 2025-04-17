@@ -168,7 +168,7 @@ export interface TabOption {
 }
 
 export interface Navigation {
-  type: 'next' | 'step' | 'url';
+  type: "next" | "step" | "url" | "none";
   stepId?: string;
   url?: string;
   openInNewTab?: boolean;
