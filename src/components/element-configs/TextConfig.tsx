@@ -72,10 +72,13 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         setIsContentRestored(true);
       }
       
+      // Inicializar a variável CSS com a cor de destaque atual
+      editorRef.current.style.setProperty('--highlight-color', highlightColor);
+      
       // Garantir que todos os elementos no editor tenham fundo transparente
       forceTransparentBackground();
     }
-  }, [element.id, isInitialized]);
+  }, [element.id, isInitialized, highlightColor]);
 
   // Sincronizar o contentBufferRef com qualquer mudança nos dados do elemento
   useEffect(() => {
@@ -256,6 +259,11 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     
     // Atualizar a cor de destaque no estado
     setHighlightColor(color);
+    
+    // Definir a variável CSS personalizada
+    if (editorRef.current) {
+      editorRef.current.style.setProperty('--highlight-color', color);
+    }
     
     // Aplicar cor de fundo
     document.execCommand('backColor', false, color);
