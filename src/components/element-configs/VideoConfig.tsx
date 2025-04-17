@@ -14,13 +14,17 @@ import {
   AlignRight, 
   Volume2,
   VolumeX,
-  RefreshCw
+  RefreshCw,
+  Square,
+  CircleIcon
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface VideoConfigProps {
   element: any;
@@ -39,6 +43,16 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
   const [muted, setMuted] = useState(element.content?.muted ?? true);
   const [controls, setControls] = useState(element.content?.controls !== false);
   const [loop, setLoop] = useState(element.content?.loop || false);
+  
+  // Novas propriedades
+  const [borderRadius, setBorderRadius] = useState(element.content?.borderRadius || 0);
+  const [borderWidth, setBorderWidth] = useState(element.content?.borderWidth || 0);
+  const [borderColor, setBorderColor] = useState(element.content?.borderColor || "#000000");
+  const [shadowEnabled, setShadowEnabled] = useState(element.content?.shadowEnabled || false);
+  const [shadowColor, setShadowColor] = useState(element.content?.shadowColor || "rgba(0, 0, 0, 0.3)");
+  const [shadowBlur, setShadowBlur] = useState(element.content?.shadowBlur || 10);
+  const [shadowOffsetX, setShadowOffsetX] = useState(element.content?.shadowOffsetX || 0);
+  const [shadowOffsetY, setShadowOffsetY] = useState(element.content?.shadowOffsetY || 5);
 
   // Monitorar mudanças na prop element.content e atualizar o estado local
   useEffect(() => {
@@ -53,6 +67,16 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
       setControls(element.content.controls !== false);
       setLoop(element.content.loop || false);
       setActiveTab(element.content.videoType || "url");
+      
+      // Carregar novas propriedades
+      setBorderRadius(element.content.borderRadius || 0);
+      setBorderWidth(element.content.borderWidth || 0);
+      setBorderColor(element.content.borderColor || "#000000");
+      setShadowEnabled(element.content.shadowEnabled || false);
+      setShadowColor(element.content.shadowColor || "rgba(0, 0, 0, 0.3)");
+      setShadowBlur(element.content.shadowBlur || 10);
+      setShadowOffsetX(element.content.shadowOffsetX || 0);
+      setShadowOffsetY(element.content.shadowOffsetY || 5);
     }
   }, [element.content]);
 
@@ -151,18 +175,59 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
     updateContent({ loop: checked });
   };
 
+  // Handlers para as novas propriedades
+  const handleBorderRadiusChange = (value: number[]) => {
+    const radius = value[0];
+    setBorderRadius(radius);
+    updateContent({ borderRadius: radius });
+  };
+
+  const handleBorderWidthChange = (value: number[]) => {
+    const width = value[0];
+    setBorderWidth(width);
+    updateContent({ borderWidth: width });
+  };
+
+  const handleBorderColorChange = (color: string) => {
+    setBorderColor(color);
+    updateContent({ borderColor: color });
+  };
+
+  const handleShadowEnabledChange = (checked: boolean) => {
+    setShadowEnabled(checked);
+    updateContent({ shadowEnabled: checked });
+  };
+
+  const handleShadowColorChange = (color: string) => {
+    setShadowColor(color);
+    updateContent({ shadowColor: color });
+  };
+
+  const handleShadowBlurChange = (value: number[]) => {
+    const blur = value[0];
+    setShadowBlur(blur);
+    updateContent({ shadowBlur: blur });
+  };
+
+  const handleShadowOffsetXChange = (value: number[]) => {
+    const offset = value[0];
+    setShadowOffsetX(offset);
+    updateContent({ shadowOffsetX: offset });
+  };
+
+  const handleShadowOffsetYChange = (value: number[]) => {
+    const offset = value[0];
+    setShadowOffsetY(offset);
+    updateContent({ shadowOffsetY: offset });
+  };
+
   // Check if URL is a YouTube video
   const isYoutubeUrl = (url: string) => {
     return url && (url.includes('youtube.com') || url.includes('youtu.be'));
   };
 
-  // Debug: monitorar mudanças de estado
-  useEffect(() => {
-    console.log("Estado atual - muted:", muted);
-  }, [muted]);
-
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 pb-32">
       <div>
         <h3 className="text-lg font-medium">Configurar Vídeo</h3>
         <p className="text-sm text-muted-foreground">
@@ -246,6 +311,7 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               value={embedCode}
               onChange={(e) => handleEmbedCodeChange(e.target.value)}
               className="min-h-[120px] font-mono text-sm"
+              style={{ lineHeight: 1.5 }}
             />
             <p className="text-xs text-muted-foreground mt-1">
               Cole o código de incorporação do vídeo.
@@ -263,7 +329,8 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               placeholder="<script>...</script>"
               value={embedCode}
               onChange={(e) => handleJsCodeChange(e.target.value)}
-              className="min-h-[120px] font-mono text-sm"
+              className="min-h-[150px] font-mono text-sm"
+              style={{ lineHeight: 1.5 }}
             />
             <p className="text-xs text-muted-foreground mt-1">
               Cole o código JavaScript do player de vídeo.
@@ -324,6 +391,166 @@ const VideoConfig = ({ element, onUpdate }: VideoConfigProps) => {
               <SelectItem value="original">Original</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        
+        <Separator />
+        
+        {/* Novas opções de estilo */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium">Estilo do vídeo</h3>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="border-radius">Arredondamento das bordas</Label>
+                <span className="text-xs text-muted-foreground">{borderRadius}px</span>
+              </div>
+              <Slider
+                id="border-radius"
+                min={0}
+                max={30}
+                step={1}
+                value={[borderRadius]}
+                onValueChange={handleBorderRadiusChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="border-width">Largura da borda</Label>
+                <span className="text-xs text-muted-foreground">{borderWidth}px</span>
+              </div>
+              <Slider
+                id="border-width"
+                min={0}
+                max={10}
+                step={1}
+                value={[borderWidth]}
+                onValueChange={handleBorderWidthChange}
+              />
+            </div>
+            
+            {borderWidth > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="border-color">Cor da borda</Label>
+                <div className="flex gap-2">
+                  <div 
+                    className="h-9 w-9 rounded border flex items-center justify-center cursor-pointer"
+                    style={{ backgroundColor: borderColor }}
+                    onClick={() => document.getElementById('border-color')?.click()}
+                  >
+                    <CircleIcon className="h-5 w-5 text-white drop-shadow-sm" />
+                  </div>
+                  <Input
+                    id="border-color"
+                    type="color"
+                    value={borderColor}
+                    onChange={(e) => handleBorderColorChange(e.target.value)}
+                    className="sr-only"
+                  />
+                  <Input
+                    type="text"
+                    value={borderColor}
+                    onChange={(e) => handleBorderColorChange(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-between pt-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="shadow-enabled" className="text-sm">Sombra</Label>
+              <p className="text-xs text-muted-foreground">
+                Adicionar sombra ao vídeo
+              </p>
+            </div>
+            <Switch
+              id="shadow-enabled"
+              checked={shadowEnabled}
+              onCheckedChange={handleShadowEnabledChange}
+            />
+          </div>
+          
+          {shadowEnabled && (
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="shadow-color">Cor da sombra</Label>
+                <div className="flex gap-2">
+                  <div 
+                    className="h-9 w-9 rounded border flex items-center justify-center cursor-pointer"
+                    style={{ backgroundColor: shadowColor }}
+                    onClick={() => document.getElementById('shadow-color')?.click()}
+                  >
+                    <CircleIcon className="h-5 w-5 text-white drop-shadow-sm" />
+                  </div>
+                  <Input
+                    id="shadow-color"
+                    type="color"
+                    value={shadowColor.startsWith('rgba') ? '#000000' : shadowColor}
+                    onChange={(e) => handleShadowColorChange(e.target.value)}
+                    className="sr-only"
+                  />
+                  <Input
+                    type="text"
+                    value={shadowColor}
+                    onChange={(e) => handleShadowColorChange(e.target.value)}
+                    className="flex-1"
+                    placeholder="rgba(0, 0, 0, 0.3)"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Utilize cores em formato HEX (#000000) ou RGBA (rgba(0, 0, 0, 0.3))
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="shadow-blur">Desfoque</Label>
+                  <span className="text-xs text-muted-foreground">{shadowBlur}px</span>
+                </div>
+                <Slider
+                  id="shadow-blur"
+                  min={0}
+                  max={30}
+                  step={1}
+                  value={[shadowBlur]}
+                  onValueChange={handleShadowBlurChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="shadow-offset-x">Deslocamento horizontal</Label>
+                  <span className="text-xs text-muted-foreground">{shadowOffsetX}px</span>
+                </div>
+                <Slider
+                  id="shadow-offset-x"
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={[shadowOffsetX]}
+                  onValueChange={handleShadowOffsetXChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="shadow-offset-y">Deslocamento vertical</Label>
+                  <span className="text-xs text-muted-foreground">{shadowOffsetY}px</span>
+                </div>
+                <Slider
+                  id="shadow-offset-y"
+                  min={-20}
+                  max={20}
+                  step={1}
+                  value={[shadowOffsetY]}
+                  onValueChange={handleShadowOffsetYChange}
+                />
+              </div>
+            </div>
+          )}
         </div>
         
         <Separator />

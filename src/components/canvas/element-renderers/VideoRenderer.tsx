@@ -61,6 +61,41 @@ const VideoRenderer = (props: ElementRendererProps) => {
     return getAspectRatioValue(content?.aspectRatio);
   }, [content?.aspectRatio]);
 
+  // Get style properties for border and shadow
+  const videoContainerStyle = useMemo(() => {
+    const style: React.CSSProperties = {};
+    
+    // Apply border styles
+    if (content.borderWidth > 0) {
+      style.borderWidth = `${content.borderWidth}px`;
+      style.borderStyle = 'solid';
+      style.borderColor = content.borderColor || '#000000';
+      style.borderRadius = `${content.borderRadius || 0}px`;
+    } else if (content.borderRadius > 0) {
+      style.borderRadius = `${content.borderRadius}px`;
+    }
+    
+    // Apply shadow
+    if (content.shadowEnabled) {
+      const offsetX = content.shadowOffsetX || 0;
+      const offsetY = content.shadowOffsetY || 5;
+      const blur = content.shadowBlur || 10;
+      const color = content.shadowColor || 'rgba(0, 0, 0, 0.3)';
+      style.boxShadow = `${offsetX}px ${offsetY}px ${blur}px ${color}`;
+    }
+    
+    return style;
+  }, [
+    content.borderWidth,
+    content.borderColor,
+    content.borderRadius,
+    content.shadowEnabled,
+    content.shadowOffsetX,
+    content.shadowOffsetY,
+    content.shadowBlur,
+    content.shadowColor
+  ]);
+
   // Detect YouTube URL
   const isYouTubeUrl = (url: string): boolean => {
     return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)/.test(url);
@@ -117,7 +152,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
         return (
-          <div className="w-full h-full">
+          <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
             <iframe 
               src={embedUrl}
               className="w-full h-full border-0"
@@ -130,7 +165,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
 
       // URLs de vídeo regulares
       return (
-        <div className="w-full h-full">
+        <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
           <video 
             src={videoUrl}
             className="w-full h-full"
@@ -147,7 +182,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
     // Para embeds iframe
     if (videoType === 'iframe') {
       return (
-        <div className="w-full h-full">
+        <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
           <iframe 
             src={videoUrl}
             className="w-full h-full border-0"
@@ -162,7 +197,8 @@ const VideoRenderer = (props: ElementRendererProps) => {
     if (videoType === 'js' && embedCode) {
       return (
         <div 
-          className="w-full h-full"
+          className="w-full h-full overflow-hidden"
+          style={videoContainerStyle}
           dangerouslySetInnerHTML={{ __html: embedCode }}
         />
       );
@@ -196,7 +232,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
         return (
-          <div className="relative w-full h-full overflow-hidden">
+          <div className="relative w-full h-full overflow-hidden" style={videoContainerStyle}>
             <div className={cn(
               "w-full h-full",
               shouldBlockInteraction && "pointer-events-none"
@@ -223,7 +259,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
 
       // URLs de vídeo regulares
       return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-full overflow-hidden" style={videoContainerStyle}>
           <div className={cn(
             "w-full h-full",
             shouldBlockInteraction && "pointer-events-none"
@@ -254,7 +290,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
     // Para embeds iframe
     if (videoType === 'iframe') {
       return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-full overflow-hidden" style={videoContainerStyle}>
           <div className={cn(
             "w-full h-full",
             shouldBlockInteraction && "pointer-events-none"
@@ -282,7 +318,10 @@ const VideoRenderer = (props: ElementRendererProps) => {
     // Para embeds JavaScript (apenas um placeholder no editor)
     if (videoType === 'js') {
       return (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100">
+        <div 
+          className="h-full w-full flex flex-col items-center justify-center bg-gray-100"
+          style={videoContainerStyle}
+        >
           <Play className="h-12 w-12 text-gray-600 mb-2" />
           <p className="text-sm font-medium">Embed de vídeo com JavaScript</p>
           <p className="text-xs text-gray-500 mt-1">Será carregado na visualização final</p>
