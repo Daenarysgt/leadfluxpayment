@@ -123,11 +123,27 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
             
             <Label htmlFor="allowMultipleSelection" className="text-xs flex items-center justify-between">
               Permitir múltipla seleção
-              <Switch
-                id="allowMultipleSelection"
-                checked={allowMultipleSelection}
-                onCheckedChange={onToggleMultipleSelection}
-              />
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="allowMultipleSelection"
+                  checked={allowMultipleSelection}
+                  onCheckedChange={(checked) => {
+                    console.log("Switch toggled directly to:", checked);
+                    onToggleMultipleSelection();
+                  }}
+                />
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log("Button clicked to toggle", !allowMultipleSelection);
+                    onToggleMultipleSelection();
+                  }}
+                  className="text-xs text-blue-500 hover:text-blue-700"
+                >
+                  {allowMultipleSelection ? "Desativar" : "Ativar"}
+                </button>
+              </div>
             </Label>
             
             {allowMultipleSelection && (

@@ -52,7 +52,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     setBorderRadius(element.content?.style?.borderRadius || DEFAULT_BORDER_RADIUS);
     
     // Get multiple selection setting
-    setAllowMultipleSelection(element.content?.allowMultipleSelection || false);
+    const multipleSelection = !!element.content?.allowMultipleSelection;
+    console.log("Setting initial allowMultipleSelection state:", multipleSelection, "from element:", element.content?.allowMultipleSelection);
+    setAllowMultipleSelection(multipleSelection);
     
     // Get indicator type
     setIndicatorType(element.content?.indicatorType || 'circle');
@@ -396,6 +398,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
 
   const toggleMultipleSelection = () => {
     const newAllowMultipleSelection = !allowMultipleSelection;
+    console.log("Toggling multiple selection from", allowMultipleSelection, "to", newAllowMultipleSelection);
     setAllowMultipleSelection(newAllowMultipleSelection);
     
     // Atualiza o estado de allowMultipleSelection
@@ -409,6 +412,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     // Se estiver ativando múltipla seleção, sincroniza a navegação de todas as opções
     // com a navegação do botão Continuar
     if (newAllowMultipleSelection) {
+      console.log("Synchronizing options navigation with continue button");
       syncOptionsNavigationWithContinueButton();
     }
   };
