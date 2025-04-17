@@ -42,6 +42,7 @@ const BaseElementRenderer = ({
   const [dragActive, setDragActive] = useState(false);
   const [dropTarget, setDropTarget] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
+  const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   
   // Verificar se estamos em modo de preview - sem funcionalidade de drag
   const isPreviewMode = !onDragStart || element.previewMode;
@@ -263,8 +264,17 @@ const BaseElementRenderer = ({
           ref={elementRef}
           className={baseElementClasses}
           onClick={() => onSelect(element.id)}
-          onMouseEnter={() => !isPreviewMode && setIsHovering(true)}
-          onMouseLeave={() => !isPreviewMode && setIsHovering(false)}
+          onMouseEnter={() => {
+            if (!isPreviewMode) {
+              setIsHovering(true);
+              setShowFloatingButtons(true);
+            }
+          }}
+          onMouseLeave={() => {
+            if (!isPreviewMode) {
+              setIsHovering(false);
+            }
+          }}
           onDragOver={!isPreviewMode && !isDragging ? handleDragOver : undefined}
           onDragLeave={!isPreviewMode && !isDragging ? handleDragLeave : undefined}
           onDrop={!isPreviewMode && !isDragging ? handleDrop : undefined}
@@ -352,25 +362,31 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Only show up/down buttons when NOT in preview mode */}
-          {!isPreviewMode && (
-            <div className="absolute -left-24 top-1/2 transform -translate-y-1/2 flex flex-col items-center justify-center opacity-100 z-50 bg-white p-1 rounded-lg shadow-md">
+          {/* Botões de navegação fixados no lado */}
+          {!isPreviewMode && (isSelected || isHovering) && (
+            <div className="absolute -left-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white rounded-lg p-2 shadow-lg z-[999] border border-violet-200">
               {showMoveUp && (
                 <button 
-                  className="w-8 h-8 bg-violet-100 rounded-full shadow flex items-center justify-center mb-1 hover:bg-violet-200"
+                  className="w-10 h-10 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveUp}
-                  title="Mover para cima"
+                  style={{
+                    position: 'relative',
+                    zIndex: 9999
+                  }}
                 >
-                  <ChevronUp className="h-5 w-5 text-violet-600" />
+                  <ChevronUp className="h-6 w-6" />
                 </button>
               )}
               {showMoveDown && (
                 <button 
-                  className="w-8 h-8 bg-violet-100 rounded-full shadow flex items-center justify-center hover:bg-violet-200"
+                  className="w-10 h-10 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveDown}
-                  title="Mover para baixo"
+                  style={{
+                    position: 'relative',
+                    zIndex: 9999
+                  }}
                 >
-                  <ChevronDown className="h-5 w-5 text-violet-600" />
+                  <ChevronDown className="h-6 w-6" />
                 </button>
               )}
             </div>
