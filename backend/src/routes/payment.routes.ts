@@ -131,7 +131,13 @@ router.get('/subscription', async (req, res) => {
     console.log('📝 Resultado da busca por assinatura:', {
       encontrado: !!subscription,
       erro: error ? `${error.code}: ${error.message}` : null,
-      dados: subscription
+      dados: subscription ? {
+        id: subscription.id,
+        status: subscription.status,
+        user_id: subscription.user_id,
+        subscription_id: subscription.subscription_id,
+        plan_id: subscription.plan_id
+      } : null
     });
 
     // Se não encontrar assinatura devido a não ter resultados, retorne null (não é erro)
@@ -164,55 +170,112 @@ router.get('/subscription', async (req, res) => {
       return res.json(null);
     }
 
-    console.log('✅ Assinatura encontrada:', subscription);
+    console.log('✅ Assinatura encontrada no banco de dados:', {
+      id: subscription.id,
+      status: subscription.status,
+      plan_id: subscription.plan_id
+    });
 
-    try {
-      // Tenta buscar assinatura no Stripe
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
-      
-      console.log('✅ Assinatura Stripe recuperada:', {
-        id: stripeSubscription.id,
-        status: stripeSubscription.status,
-        current_period_end: (stripeSubscription as any).current_period_end
-      });
-      
-      // Converte o timestamp Unix para uma data ISO para a resposta
-      const currentPeriodEnd = new Date((stripeSubscription as any).current_period_end * 1000).toISOString();
+    // Verificar se os timestamps da assinatura são válidos
+    const now = Math.floor(Date.now() / 1000);
+    const isPeriodValid = subscription.current_period_end > now;
+    
+    console.log('🕒 Verificação de período:', {
+      agora: now,
+      fim_periodo: subscription.current_period_end,
+      valido: isPeriodValid
+    });
+    
+    // IMPORTANTE: A assinatura no banco de dados é nossa fonte primária de verdade
+    // Se o status for 'active' e o período ainda é válido, consideramos válida
+    // independentemente do Stripe
+    if (subscription.status === 'active' && isPeriodValid) {
+      try {
+        // Tenta buscar assinatura no Stripe apenas para confirmar
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+        
+        console.log('✅ Assinatura Stripe recuperada:', {
+          id: stripeSubscription.id,
+          status: stripeSubscription.status,
+          current_period_end: (stripeSubscription as any).current_period_end
+        });
+        
+        // Converte o timestamp Unix para uma data ISO para a resposta
+        const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
 
-      // Retorna os detalhes da assinatura
-      return res.json({
-        planId: subscription.plan_id,
-        status: stripeSubscription.status,
-        currentPeriodEnd,
-        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
-      });
-    } catch (stripeError: any) {
-      // MODIFICAÇÃO: Se o Stripe não encontrar a assinatura, confie nos dados do banco
-      console.warn('⚠️ Erro ao buscar assinatura no Stripe, mas assinatura existe no banco:', stripeError.message);
-      
-      // Usar dados do banco de dados local em vez de depender do Stripe
-      // Isso garante que o usuário não perca acesso mesmo se houver problemas de conectividade com o Stripe
-      
-      // Se o status no banco é 'active', confiamos nele
-      if (subscription.status === 'active') {
-        console.log('✅ Usando dados do banco local para a assinatura');
+        // Retorna os detalhes da assinatura
+        return res.json({
+          planId: subscription.plan_id,
+          status: subscription.status,
+          currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end || false
+        });
+      } catch (stripeError: any) {
+        // Se o Stripe não encontrar a assinatura, ainda CONFIAMOS nos dados do banco
+        console.warn('⚠️ Erro ao buscar assinatura no Stripe, mas confiando nos dados do banco:', stripeError.message);
+        
+        // ⚠️ Aqui está a mudança principal: em vez de marcar a assinatura como inativa,
+        // confiamos nos dados do banco de dados se forem válidos
         
         // Converte o timestamp Unix para uma data ISO
-        const currentPeriodEnd = subscription.current_period_end 
-          ? new Date(subscription.current_period_end * 1000).toISOString()
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Fallback: hoje + 30 dias
+        const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
         
         // Retorna os detalhes da assinatura baseados no banco local
         return res.json({
           planId: subscription.plan_id,
-          status: 'active', // Confia no status do banco
+          status: 'active',  // Confiamos no status do banco
           currentPeriodEnd,
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false
         });
       }
+    } else if (subscription.status === 'active' && !isPeriodValid) {
+      // A assinatura está marcada como ativa, mas o período expirou
+      console.log('⚠️ Assinatura marcada como ativa, mas o período expirou. Verificando no Stripe...');
       
-      // Se chegarmos aqui, a assinatura existe mas não está ativa no banco
-      console.log('⚠️ Assinatura existe no banco mas não está ativa');
+      try {
+        // Verificar no Stripe se a assinatura foi renovada
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+        
+        if (stripeSubscription.status === 'active') {
+          // Se o Stripe diz que está ativa, atualizamos nosso banco com os novos timestamps
+          const stripeEnd = (stripeSubscription as any).current_period_end;
+          const stripeStart = (stripeSubscription as any).current_period_start;
+          
+          console.log('✅ Assinatura renovada no Stripe. Atualizando banco de dados:', {
+            inicio: stripeStart,
+            fim: stripeEnd
+          });
+          
+          // Atualizar no banco
+          await supabase
+            .from('subscriptions')
+            .update({
+              current_period_start: stripeStart,
+              current_period_end: stripeEnd,
+              updated_at: now
+            })
+            .eq('id', subscription.id);
+          
+          // Converte o timestamp para ISO para a resposta
+          const currentPeriodEnd = new Date(stripeEnd * 1000).toISOString();
+          
+          return res.json({
+            planId: subscription.plan_id,
+            status: 'active',
+            currentPeriodEnd,
+            cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+          });
+        } else {
+          console.log('⚠️ Assinatura expirada e também não está ativa no Stripe.');
+          return res.json(null);
+        }
+      } catch (stripeError) {
+        console.error('❌ Erro ao verificar renovação no Stripe:', stripeError);
+        return res.json(null);
+      }
+    } else {
+      // A assinatura não está ativa no banco
+      console.log('⚠️ Assinatura não está ativa no banco de dados.');
       return res.json(null);
     }
   } catch (error) {
