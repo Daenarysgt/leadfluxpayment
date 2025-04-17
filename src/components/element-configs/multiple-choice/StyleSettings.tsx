@@ -15,6 +15,8 @@ export interface StyleSettingsProps {
   allowMultipleSelection: boolean;
   indicatorType: 'circle' | 'square';
   indicatorAlign: 'left' | 'right';
+  indicatorColor: string;
+  indicatorIconColor: string;
   continueButtonText: string;
   helperText: string;
   showHelperText: boolean;
@@ -24,6 +26,8 @@ export interface StyleSettingsProps {
   onToggleMultipleSelection: () => void;
   onIndicatorTypeChange: (type: 'circle' | 'square') => void;
   onIndicatorAlignChange: (align: 'left' | 'right') => void;
+  onIndicatorColorChange: (color: string) => void;
+  onIndicatorIconColorChange: (color: string) => void;
   onContinueButtonTextChange: (text: string) => void;
   onHelperTextChange: (text: string) => void;
   onToggleHelperText: () => void;
@@ -36,6 +40,8 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   allowMultipleSelection,
   indicatorType,
   indicatorAlign,
+  indicatorColor,
+  indicatorIconColor,
   continueButtonText,
   helperText,
   showHelperText,
@@ -45,6 +51,8 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   onToggleMultipleSelection,
   onIndicatorTypeChange,
   onIndicatorAlignChange,
+  onIndicatorColorChange,
+  onIndicatorIconColorChange,
   onContinueButtonTextChange,
   onHelperTextChange,
   onToggleHelperText
@@ -180,6 +188,38 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
                   <Label htmlFor="right" className="text-xs">Direita</Label>
                 </div>
               </RadioGroup>
+            </div>
+            
+            <div className="pt-3">
+              <Label className="text-xs mb-2 block">Cor do indicador selecionado</Label>
+              <div className="flex space-x-2 items-center">
+                <div 
+                  className="h-6 w-6 rounded border"
+                  style={{ backgroundColor: indicatorColor || '#8b5cf6' }}
+                />
+                <Input
+                  value={indicatorColor}
+                  onChange={(e) => onIndicatorColorChange(e.target.value)}
+                  placeholder="#8b5cf6"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+            
+            <div className="pt-3">
+              <Label className="text-xs mb-2 block">Cor do ícone do indicador</Label>
+              <div className="flex space-x-2 items-center">
+                <div 
+                  className="h-6 w-6 rounded border"
+                  style={{ backgroundColor: indicatorIconColor || '#FFFFFF' }}
+                />
+                <Input
+                  value={indicatorIconColor}
+                  onChange={(e) => onIndicatorIconColorChange(e.target.value)}
+                  placeholder="#FFFFFF"
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
           </div>
         </CardContent>

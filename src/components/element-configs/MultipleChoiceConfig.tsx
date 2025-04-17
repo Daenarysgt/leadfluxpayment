@@ -21,6 +21,8 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [allowMultipleSelection, setAllowMultipleSelection] = useState(false);
   const [indicatorType, setIndicatorType] = useState<'circle' | 'square'>('circle');
   const [indicatorAlign, setIndicatorAlign] = useState<'left' | 'right'>('left');
+  const [indicatorColor, setIndicatorColor] = useState('#8b5cf6'); // Cor roxa padrão
+  const [indicatorIconColor, setIndicatorIconColor] = useState('#FFFFFF'); // Cor branca padrão
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
@@ -52,6 +54,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get indicator alignment
     setIndicatorAlign(element.content?.indicatorAlign || 'left');
+    
+    // Get indicator color
+    setIndicatorColor(element.content?.indicatorColor || '#8b5cf6');
+    
+    // Get indicator icon color
+    setIndicatorIconColor(element.content?.indicatorIconColor || '#FFFFFF');
     
     // Get continue button text
     setContinueButtonText(element.content?.continueButtonText || "Continuar");
@@ -431,6 +439,28 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  const handleIndicatorColorChange = (color: string) => {
+    setIndicatorColor(color);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        indicatorColor: color
+      }
+    });
+  };
+  
+  const handleIndicatorIconColorChange = (color: string) => {
+    setIndicatorIconColor(color);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        indicatorIconColor: color
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -468,6 +498,8 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         allowMultipleSelection={allowMultipleSelection}
         indicatorType={indicatorType}
         indicatorAlign={indicatorAlign}
+        indicatorColor={indicatorColor}
+        indicatorIconColor={indicatorIconColor}
         continueButtonText={continueButtonText}
         helperText={helperText}
         showHelperText={showHelperText}
@@ -477,6 +509,8 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onToggleMultipleSelection={toggleMultipleSelection}
         onIndicatorTypeChange={handleIndicatorTypeChange}
         onIndicatorAlignChange={handleIndicatorAlignChange}
+        onIndicatorColorChange={handleIndicatorColorChange}
+        onIndicatorIconColorChange={handleIndicatorIconColorChange}
         onContinueButtonTextChange={handleContinueButtonTextChange}
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}

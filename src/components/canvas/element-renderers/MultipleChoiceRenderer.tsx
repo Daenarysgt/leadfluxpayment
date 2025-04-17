@@ -17,6 +17,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     allowMultipleSelection = false,
     indicatorType = "circle", // circle or square
     indicatorAlign = "left", // left or right
+    indicatorColor = "#8b5cf6", // Cor padrão roxa
+    indicatorIconColor = "#FFFFFF", // Cor padrão branca
     continueButtonText = "Continuar",
     helperText = "Selecione uma ou mais opções para avançar",
     showHelperText = true
@@ -164,12 +166,16 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   <div className={cn(
                     "w-5 h-5 flex items-center justify-center border-2",
                     isSelected 
-                      ? "border-violet-500 bg-violet-500" 
+                      ? "" 
                       : "border-gray-300 bg-white"
                   )}
-                  style={{ borderRadius: "4px" }}>
+                  style={{ 
+                    borderRadius: "4px",
+                    backgroundColor: isSelected ? indicatorColor : undefined,
+                    borderColor: isSelected ? indicatorColor : undefined
+                  }}>
                     {isSelected && (
-                      <Check className="h-3.5 w-3.5 text-white" />
+                      <Check className="h-3.5 w-3.5" style={{ color: indicatorIconColor }} />
                     )}
                   </div>
                 );
@@ -178,11 +184,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   <div className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center",
                     isSelected 
-                      ? "border-violet-500 bg-violet-500" 
+                      ? "" 
                       : "border-gray-300 bg-white"
-                  )}>
+                  )}
+                  style={{
+                    backgroundColor: isSelected ? indicatorColor : undefined,
+                    borderColor: isSelected ? indicatorColor : undefined
+                  }}>
                     {isSelected && (
-                      <div className="w-2 h-2 rounded-full bg-white" />
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: indicatorIconColor }} />
                     )}
                   </div>
                 );
@@ -196,7 +206,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   "p-4 border cursor-pointer transition-all duration-200",
                   isSelected && "border-violet-500"
                 )}
-                style={styleObject}
+                style={{
+                  ...styleObject,
+                  borderColor: isSelected ? indicatorColor : styleObject.borderColor
+                }}
                 onClick={() => handleOptionClick(option)}
               >
                 <div className="flex items-center gap-3">
@@ -229,11 +242,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         {allowMultipleSelection && (
           <button 
             className={cn(
-              "w-full mt-4 bg-violet-600 text-white py-3 px-4 rounded-lg font-medium transition-all",
+              "w-full mt-4 py-3 px-4 rounded-lg font-medium transition-all",
               selectedOptions.length > 0 
-                ? "hover:bg-violet-700 cursor-pointer opacity-100" 
+                ? "cursor-pointer opacity-100" 
                 : "opacity-50 cursor-not-allowed"
             )}
+            style={{
+              backgroundColor: indicatorColor,
+              color: indicatorIconColor,
+            }}
             onClick={handleContinue}
             disabled={selectedOptions.length === 0}
           >
