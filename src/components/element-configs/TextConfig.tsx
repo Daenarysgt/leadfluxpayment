@@ -122,7 +122,10 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     const allElements = editorRef.current.querySelectorAll('*');
     allElements.forEach(el => {
       if (el instanceof HTMLElement) {
-        el.style.backgroundColor = 'transparent';
+        // Verifica se o elemento tem data-highlight para não resetar os destaques intencionais
+        if (!el.hasAttribute('data-highlight')) {
+          el.style.backgroundColor = 'transparent';
+        }
       }
     });
   };
@@ -130,9 +133,6 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   // Função para capturar o conteúdo atual do editor
   const captureEditorContent = () => {
     if (!editorRef.current) return null;
-    
-    // Garantir fundo transparente antes de capturar
-    forceTransparentBackground();
     
     // Capturar conteúdo atual
     const content = editorRef.current.innerHTML;
@@ -252,6 +252,17 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   
   // Função para aplicar destaque (highlight) ao texto
   const applyHighlight = (color: string) => {
+    // Salvar a seleção atual
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      toast({
+        title: "Nenhum texto selecionado",
+        description: "Selecione um texto para aplicar o destaque",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Capturar o conteúdo atual antes de aplicar destaque
     const content = captureEditorContent();
     if (content) {
@@ -262,7 +273,62 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     setHighlightColor(color);
     
     // Aplicar cor de fundo ao texto selecionado
-    document.execCommand('backColor', false, color);
+    try {
+      // Cria um span para envolver o texto selecionado
+      const range = selection.getRangeAt(0);
+      
+      if (range.toString().trim() === '') {
+        toast({
+          title: "Texto vazio",
+          description: "Selecione um texto para aplicar o destaque",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Método 1: Usar execCommand
+      document.execCommand('backColor', false, color);
+      
+      // Método 2: Manualmente criar um span com fundo colorido (caso o método 1 falhe)
+      if (!document.queryCommandEnabled('backColor')) {
+        const span = document.createElement('span');
+        span.style.backgroundColor = color;
+        span.setAttribute('data-highlight', 'true');
+        
+        if (range.collapsed) {
+          // Sem seleção, não faz nada
+          return;
+        }
+        
+        // Extrair conteúdo e envelopá-lo no span
+        const fragment = range.extractContents();
+        span.appendChild(fragment);
+        range.insertNode(span);
+        
+        // Limpar seleção
+        selection.removeAllRanges();
+      }
+      
+      // Marca os elementos destacados para não serem resetados
+      setTimeout(() => {
+        if (editorRef.current) {
+          const highlightedElements = editorRef.current.querySelectorAll(`span[style*="background-color: ${color}"]`);
+          highlightedElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.setAttribute('data-highlight', 'true');
+            }
+          });
+        }
+      }, 0);
+    } catch (error) {
+      console.error("Erro ao aplicar destaque:", error);
+      toast({
+        title: "Erro ao aplicar destaque",
+        description: "Tente selecionar o texto novamente",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Focar o editor novamente
     editorRef.current?.focus();
@@ -410,7 +476,12 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             {/* Novo botão de destaque (highlight) */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 gap-1 px-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1 px-2"
+                  title="Selecione um texto e clique aqui para destacá-lo com cor de fundo"
+                >
                   <Highlighter className="h-4 w-4" />
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: highlightColor }}></span>
                 </Button>
@@ -418,6 +489,9 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               <PopoverContent className="w-64 p-2">
                 <div className="pb-2">
                   <Label className="text-xs font-medium">Cor de destaque</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selecione o texto primeiro e depois escolha uma cor para destacá-lo.
+                  </p>
                 </div>
                 <div className="grid grid-cols-10 gap-1">
                   {highlightOptions.map((color) => (

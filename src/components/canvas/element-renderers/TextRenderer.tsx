@@ -1,4 +1,3 @@
-
 import { CanvasElement } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { ElementRendererProps } from "@/types/canvasTypes";
@@ -9,17 +8,30 @@ const TextRenderer = (props: ElementRendererProps) => {
   const renderFormattedText = () => {
     // Se existir texto formatado em HTML, renderizamos ele diretamente
     if (element.content?.formattedText) {
+      // Estilo personalizado para preservar os destaques coloridos
+      const customStyles = `
+        [data-highlight="true"] {
+          background-color: attr(style) !important;
+        }
+        span[style*="background-color:"] {
+          background-color: inherit !important;
+        }
+      `;
+      
       return (
-        <div 
-          className="prose max-w-none bg-transparent"
-          style={{
-            fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-            color: element.content?.fontColor,
-            backgroundColor: 'transparent', // Forçando fundo transparente
-          }}
-          data-transparent-text="true"
-          dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
-        />
+        <>
+          <style>{customStyles}</style>
+          <div 
+            className="prose max-w-none bg-transparent"
+            style={{
+              fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
+              color: element.content?.fontColor,
+              backgroundColor: 'transparent', // Forçando fundo transparente
+            }}
+            data-transparent-text="true"
+            dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
+          />
+        </>
       );
     }
     
