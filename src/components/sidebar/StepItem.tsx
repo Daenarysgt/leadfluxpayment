@@ -58,8 +58,8 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit }: StepIte
         <div className={`
           w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
           ${isActive 
-            ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 text-white' 
-            : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-indigo-500/10 group-hover:via-purple-500/10 group-hover:to-violet-500/10 group-hover:text-violet-700'
+            ? 'bg-gradient-to-r from-blue-700 to-purple-700 text-white' 
+            : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-blue-700/10 group-hover:via-purple-600/10 group-hover:to-purple-700/10 group-hover:text-violet-700'
           }
           transition-all duration-300
         `}>
