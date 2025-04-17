@@ -15,7 +15,8 @@ import {
   Trash,
   GripVertical,
   Edit,
-  Move
+  Move,
+  MoveDown
 } from "lucide-react";
 
 interface BaseElementRendererProps extends ElementRendererProps {
@@ -39,6 +40,7 @@ const BaseElementRenderer = ({
 }: BaseElementRendererProps) => {
   const [isHovering, setIsHovering] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [dropTarget, setDropTarget] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
   
   // Verificar se estamos em modo de preview - sem funcionalidade de drag
@@ -66,6 +68,7 @@ const BaseElementRenderer = ({
     "w-full rounded-md mb-4 border-2 relative group",
     isSelected ? "border-violet-500" : "border-transparent",
     isDragging && "opacity-50 border-dashed border-violet-400",
+    dropTarget && !isDragging && "border-violet-500 bg-violet-50/30 shadow-sm",
     !isPreviewMode && "transition-all duration-200" // Apenas aplicar transição no modo construtor
   );
 
@@ -144,6 +147,53 @@ const BaseElementRenderer = ({
     if (onDragEnd) onDragEnd();
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    // Verificar se temos um elemento sendo arrastado e se é diferente do atual
+    if (e.dataTransfer.types.includes('elementId')) {
+      const draggedId = e.dataTransfer.getData('elementId');
+      
+      // Não permitir soltar sobre si mesmo
+      if (draggedId && draggedId !== element.id) {
+        setDropTarget(true);
+        e.dataTransfer.dropEffect = "move";
+      }
+    }
+  };
+  
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDropTarget(false);
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Reset the drop target styling
+    setDropTarget(false);
+    
+    // Verificar se temos um elemento sendo arrastado
+    if (e.dataTransfer.types.includes('elementId')) {
+      const draggedId = e.dataTransfer.getData('elementId');
+      
+      // Não permitir soltar sobre si mesmo
+      if (draggedId && draggedId !== element.id) {
+        console.log(`Dropping element ${draggedId} over ${element.id}`);
+        
+        // Para mover para cima do elemento alvo
+        if (onMoveUp && draggedId > element.id) {
+          onMoveUp(draggedId);
+        } 
+        // Para mover para baixo do elemento alvo
+        else if (onMoveDown && draggedId < element.id) {
+          onMoveDown(draggedId);
+        }
+      }
+    }
+  };
+
   const showMoveUp = index > 0;
   const showMoveDown = index < totalElements - 1;
 
@@ -156,6 +206,9 @@ const BaseElementRenderer = ({
           onClick={() => onSelect(element.id)}
           onMouseEnter={() => !isPreviewMode && setIsHovering(true)}
           onMouseLeave={() => !isPreviewMode && setIsHovering(false)}
+          onDragOver={!isPreviewMode ? handleDragOver : undefined}
+          onDragLeave={!isPreviewMode ? handleDragLeave : undefined}
+          onDrop={!isPreviewMode ? handleDrop : undefined}
         >
           {/* Conteúdo real do elemento */}
           <div className={cn(
@@ -175,7 +228,7 @@ const BaseElementRenderer = ({
                   ? "bg-violet-500/10 border-2 border-violet-500" 
                   : isHovering 
                     ? "bg-violet-500/5 border-2 border-dashed border-violet-400/60" 
-                    : "bg-transparent border-2 border-transparent"
+                    : dropTarget ? "bg-violet-100/40 border-2 border-violet-500" : "bg-transparent border-2 border-transparent"
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -183,10 +236,20 @@ const BaseElementRenderer = ({
               }}
             >
               {/* Indicador de elemento editável */}
-              {!isSelected && isHovering && (
+              {!isSelected && isHovering && !dropTarget && (
                 <div className="absolute top-2 right-2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
                   <Edit className="h-3 w-3" />
                   <span>Editar</span>
+                </div>
+              )}
+
+              {/* Indicador de drop */}
+              {dropTarget && !isDragging && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="flex items-center gap-1 bg-white text-violet-600 px-3 py-1.5 rounded-full shadow-md text-sm">
+                    <MoveDown className="h-4 w-4" />
+                    <span>Soltar aqui</span>
+                  </div>
                 </div>
               )}
             </div>
