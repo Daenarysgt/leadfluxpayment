@@ -119,11 +119,12 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   const forceTransparentBackground = () => {
     if (!editorRef.current) return;
     
-    const allElements = editorRef.current.querySelectorAll('*');
+    // Usar um seletor mais seletivo - apenas divs e elementos que não têm backgroundColor explícito
+    const allElements = editorRef.current.querySelectorAll('div, p, h1, h2, h3, h4, h5, h6');
     allElements.forEach(el => {
       if (el instanceof HTMLElement) {
-        // Verifica se o elemento tem data-highlight para não resetar os destaques intencionais
-        if (!el.hasAttribute('data-highlight')) {
+        // Não afeta spans, que são usados para destaques
+        if (el.tagName.toLowerCase() !== 'span') {
           el.style.backgroundColor = 'transparent';
         }
       }
@@ -252,91 +253,72 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   
   // Função para aplicar destaque (highlight) ao texto
   const applyHighlight = (color: string) => {
-    // Salvar a seleção atual
+    // Verificar se há seleção de texto
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
       toast({
-        title: "Nenhum texto selecionado",
-        description: "Selecione um texto para aplicar o destaque",
+        title: "Selecione um texto",
+        description: "Você precisa selecionar um texto antes de aplicar um destaque.",
         variant: "destructive",
       });
       return;
     }
-    
-    // Capturar o conteúdo atual antes de aplicar destaque
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
+
+    const range = selection.getRangeAt(0);
+    if (range.toString().trim() === '') {
+      toast({
+        title: "Selecione um texto",
+        description: "A seleção está vazia.",
+        variant: "destructive",
+      });
+      return;
     }
-    
+
     // Atualizar a cor de destaque no estado
     setHighlightColor(color);
     
-    // Aplicar cor de fundo ao texto selecionado
     try {
-      // Cria um span para envolver o texto selecionado
-      const range = selection.getRangeAt(0);
-      
-      if (range.toString().trim() === '') {
-        toast({
-          title: "Texto vazio",
-          description: "Selecione um texto para aplicar o destaque",
-          variant: "destructive",
-        });
-        return;
+      // Focar o editor antes de aplicar o comando
+      if (editorRef.current) {
+        editorRef.current.focus();
       }
       
-      // Método 1: Usar execCommand
-      document.execCommand('backColor', false, color);
-      
-      // Método 2: Manualmente criar um span com fundo colorido (caso o método 1 falhe)
-      if (!document.queryCommandEnabled('backColor')) {
-        const span = document.createElement('span');
-        span.style.backgroundColor = color;
-        span.setAttribute('data-highlight', 'true');
-        
-        if (range.collapsed) {
-          // Sem seleção, não faz nada
-          return;
-        }
-        
-        // Extrair conteúdo e envelopá-lo no span
-        const fragment = range.extractContents();
-        span.appendChild(fragment);
-        range.insertNode(span);
-        
-        // Limpar seleção
-        selection.removeAllRanges();
-      }
-      
-      // Marca os elementos destacados para não serem resetados
+      // Pequeno delay para garantir que o foco foi aplicado
       setTimeout(() => {
+        // Aplicar a cor de fundo diretamente
+        document.execCommand('backColor', false, color);
+        
+        // Capturar o novo conteúdo e atualizar imediatamente
         if (editorRef.current) {
-          const highlightedElements = editorRef.current.querySelectorAll(`span[style*="background-color: ${color}"]`);
-          highlightedElements.forEach(el => {
-            if (el instanceof HTMLElement) {
-              el.setAttribute('data-highlight', 'true');
+          contentBufferRef.current = editorRef.current.innerHTML;
+          setCurrentContent(editorRef.current.innerHTML);
+          
+          // Enviar atualização imediata
+          onUpdate({
+            content: {
+              ...element.content,
+              formattedText: editorRef.current.innerHTML,
+              fontSize,
+              fontColor,
+              marginTop
             }
           });
+          
+          toast({
+            title: "Destaque aplicado",
+            description: "O destaque foi aplicado com sucesso!",
+            duration: 2000,
+          });
         }
-      }, 0);
+      }, 50);
     } catch (error) {
       console.error("Erro ao aplicar destaque:", error);
       toast({
         title: "Erro ao aplicar destaque",
-        description: "Tente selecionar o texto novamente",
+        description: "Ocorreu um erro ao tentar destacar o texto.",
         variant: "destructive",
       });
-      return;
     }
-    
-    // Focar o editor novamente
-    editorRef.current?.focus();
-    
-    // Enviar atualização após um breve atraso
-    setTimeout(() => {
-      handleEditorInput();
-    }, 50);
   };
 
   // Manipulador para mudanças no tamanho da fonte
