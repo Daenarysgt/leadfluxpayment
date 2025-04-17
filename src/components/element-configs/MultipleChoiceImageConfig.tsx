@@ -263,12 +263,55 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                   </div>
                 </TabsContent>
                 <TabsContent value="upload">
-                  <div className="border-2 border-dashed rounded-md p-4 text-center">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">
-                      Arraste uma imagem ou clique para fazer upload
-                    </p>
+                  <div 
+                    className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => {
+                      const input = document.getElementById(`file-upload-${option.id}`) as HTMLInputElement;
+                      input?.click();
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      const files = e.dataTransfer.files;
+                      if (!files || files.length === 0) return;
+                      
+                      const file = files[0];
+                      if (!file.type.startsWith('image/')) {
+                        console.error('Tipo de arquivo não suportado');
+                        return;
+                      }
+                      
+                      handleOptionImageChange(option.id, URL.createObjectURL(file));
+                    }}
+                  >
+                    {option.image ? (
+                      <div className="space-y-2">
+                        <div className="max-h-[150px] overflow-hidden mx-auto">
+                          <img
+                            src={option.image}
+                            alt="Preview"
+                            className="max-h-[150px] object-contain mx-auto"
+                          />
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Clique ou arraste para alterar a imagem
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-500">
+                          Arraste uma imagem ou clique para fazer upload
+                        </p>
+                      </>
+                    )}
                     <input
+                      id={`file-upload-${option.id}`}
                       type="file"
                       className="hidden"
                       accept="image/*"
@@ -285,8 +328,9 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                       variant="ghost"
                       size="sm"
                       className="mt-2"
-                      onClick={() => {
-                        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+                      onClick={(e) => {
+                        e.stopPropagation(); // Evita que o clique se propague para o div pai
+                        const input = document.getElementById(`file-upload-${option.id}`) as HTMLInputElement;
                         input?.click();
                       }}
                     >
