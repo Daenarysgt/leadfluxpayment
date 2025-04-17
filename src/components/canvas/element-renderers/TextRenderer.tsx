@@ -10,11 +10,15 @@ const TextRenderer = (props: ElementRendererProps) => {
     if (element.content?.formattedText) {
       // Estilo personalizado para preservar cores e formatações
       const customStyles = `
-        .text-content > * { 
+        .text-content > div { 
           background-color: transparent !important;
         }
-        .text-content span[style*="background-color"] { 
-          background-color: inherit !important; 
+        .text-content > p { 
+          background-color: transparent !important;
+        }
+        .text-content font[style*="background-color"] { 
+          background-color: inherit !important;
+          padding: 0 2px;
         }
       `;
       

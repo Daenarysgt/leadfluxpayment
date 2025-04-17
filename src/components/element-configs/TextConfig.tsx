@@ -260,8 +260,19 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Atualizar a cor de destaque no estado
     setHighlightColor(color);
     
-    // Aplicar cor de fundo
-    document.execCommand('backColor', false, color);
+    // Aplicar cor de fundo usando execCommand
+    try {
+      // Primeiro tentar com backColor
+      document.execCommand('backColor', false, color);
+      
+      // Se o texto selecionado não mudou de cor, tentar com hiliteColor
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        document.execCommand('hiliteColor', false, color);
+      }
+    } catch (error) {
+      console.error('Error applying highlight:', error);
+    }
     
     // Focar o editor novamente
     editorRef.current?.focus();

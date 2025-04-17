@@ -114,7 +114,12 @@
   }
 
   [data-transparent-text="true"] * {
-    background-color: transparent !important;
+    background-color: transparent;
+  }
+
+  [data-transparent-text="true"] font[style*="background-color"] {
+    background-color: inherit !important;
+    padding: 0 2px;
   }
   
   /* Progress animation for loading component */
