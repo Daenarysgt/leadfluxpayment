@@ -28,6 +28,70 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
   const [sizePercentage, setSizePercentage] = useState(100);
   const [alignment, setAlignment] = useState(element.content?.alignment || "center");
   
+  // Função para converter arquivo em base64
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Função para redimensionar imagem antes de converter para base64
+  const resizeImage = (file: File, maxWidth = 1200, maxHeight = 1200): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          
+          // Calcular as novas dimensões mantendo a proporção
+          if (width > maxWidth) {
+            height = Math.round(height * (maxWidth / width));
+            width = maxWidth;
+          }
+          
+          if (height > maxHeight) {
+            width = Math.round(width * (maxHeight / height));
+            height = maxHeight;
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Converter para blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Falha ao redimensionar imagem'));
+              return;
+            }
+            
+            // Criar novo arquivo a partir do blob
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            
+            resolve(resizedFile);
+          }, file.type);
+        };
+        img.onerror = () => {
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+  
   const handleUrlChange = (url: string) => {
     setImageUrl(url);
     
@@ -78,55 +142,66 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     }
   };
 
-  const handleImageUpload = (file: File) => {
+  const handleImageUpload = async (file: File) => {
     setUploading(true);
     setImageFile(file);
     
-    // Create a URL for the file
-    const fileUrl = URL.createObjectURL(file);
-    
-    // Get image dimensions before setting the URL
-    const img = new Image();
-    img.onload = () => {
-      const newDimensions = {
-        width: img.width,
-        height: img.height,
-        originalWidth: img.width,
-        originalHeight: img.height
-      };
+    try {
+      // Redimensionar a imagem antes de converter para base64
+      const resizedFile = await resizeImage(file);
+      const base64Image = await convertToBase64(resizedFile);
       
-      setImgDimensions(newDimensions);
-      setSizePercentage(100);
-      
-      // Update the element with the new image URL and dimensions
-      onUpdate({
-        content: {
-          ...element.content,
-          imageUrl: fileUrl,
+      // Get image dimensions
+      const img = new Image();
+      img.onload = () => {
+        const newDimensions = {
           width: img.width,
           height: img.height,
-          fileName: file.name
-        }
-      });
+          originalWidth: img.width,
+          originalHeight: img.height
+        };
+        
+        setImgDimensions(newDimensions);
+        setSizePercentage(100);
+        
+        // Update element with base64 image and dimensions
+        onUpdate({
+          content: {
+            ...element.content,
+            imageUrl: base64Image,
+            width: img.width,
+            height: img.height,
+            fileName: file.name
+          }
+        });
+        
+        setUploading(false);
+        
+        toast({
+          title: "Imagem carregada",
+          description: `${file.name} (${img.width}x${img.height})`,
+        });
+      };
       
-      setUploading(false);
+      img.onerror = () => {
+        setUploading(false);
+        toast({
+          title: "Erro ao carregar imagem",
+          description: "Não foi possível carregar a imagem. Tente novamente.",
+          variant: "destructive",
+        });
+      };
       
-      toast({
-        title: "Imagem carregada",
-        description: `${file.name} (${img.width}x${img.height})`,
-      });
-    };
-    
-    img.onerror = () => {
+      img.src = base64Image;
+    } catch (error) {
       setUploading(false);
       toast({
-        title: "Erro ao carregar imagem",
-        description: "Não foi possível carregar a imagem. Tente novamente.",
+        title: "Erro ao processar imagem",
+        description: "Não foi possível processar a imagem. Tente novamente.",
         variant: "destructive",
       });
-    };
-    
-    img.src = fileUrl;
+      console.error("Erro ao processar imagem:", error);
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,7 +378,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
                 onChange={(e) => handleUrlChange(e.target.value)}
                 className="flex-1"
               />
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="sm">
                 <LinkIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -341,7 +416,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
                   className="h-8 w-8"
                   onClick={() => handleSizeChange([Math.max(10, sizePercentage - 10)])}
                 >
@@ -349,7 +424,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
                 </Button>
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
                   className="h-8 w-8"
                   onClick={() => handleSizeChange([Math.min(200, sizePercentage + 10)])}
                 >
@@ -357,7 +432,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
                 </Button>
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
                   className="h-8 w-8"
                   onClick={resetSize}
                 >
