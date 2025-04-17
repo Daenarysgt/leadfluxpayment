@@ -94,6 +94,12 @@ const VideoRenderer = (props: ElementRendererProps) => {
 
   // Verificar se deve bloquear interações com o vídeo
   const shouldBlockInteraction = isDragging || isDraggingGlobal || isHovering;
+  
+  // Verificar se estamos no modo de visualização pública ou preview
+  const isPreviewMode = element.previewMode === true;
+
+  // No modo de preview/public, não devemos bloquear a interação
+  const effectiveBlockInteraction = isPreviewMode ? false : shouldBlockInteraction;
 
   // Render based on video type (url, iframe, js)
   const renderVideo = () => {
@@ -117,14 +123,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div className="relative w-full h-full overflow-hidden">
             <div className={cn(
               "w-full h-full",
-              shouldBlockInteraction && "pointer-events-none"
+              effectiveBlockInteraction && "pointer-events-none"
             )}>
               <iframe 
                 src={embedUrl}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+                style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
               ></iframe>
             </div>
             
@@ -132,7 +138,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
             <div 
               className={cn(
                 "absolute inset-0 transition-opacity duration-200 z-50",
-                shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+                effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
               )}
             />
           </div>
@@ -144,7 +150,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
         <div className="relative w-full h-full overflow-hidden">
           <div className={cn(
             "w-full h-full",
-            shouldBlockInteraction && "pointer-events-none"
+            effectiveBlockInteraction && "pointer-events-none"
           )}>
             <video 
               src={videoUrl}
@@ -154,7 +160,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
               muted={content.muted || false}
               loop={content.loop || false}
               playsInline
-              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+              style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
             />
           </div>
           
@@ -162,7 +168,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0 transition-opacity duration-200 z-50",
-              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+              effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
@@ -175,14 +181,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
         <div className="relative w-full h-full overflow-hidden">
           <div className={cn(
             "w-full h-full",
-            shouldBlockInteraction && "pointer-events-none"
+            effectiveBlockInteraction && "pointer-events-none"
           )}>
             <iframe 
               src={videoUrl}
               className="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+              style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
             ></iframe>
           </div>
           
@@ -190,7 +196,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0 transition-opacity duration-200 z-50",
-              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+              effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
@@ -249,7 +255,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0",
-              isDragging || isDraggingGlobal ? "z-50" : ""
+              (isDragging || isDraggingGlobal) && !isPreviewMode ? "z-50" : ""
             )}
             style={{
               background: 'transparent',
