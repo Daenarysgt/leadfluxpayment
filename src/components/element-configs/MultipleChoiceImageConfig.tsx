@@ -59,6 +59,82 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
+  // Função para converter arquivo em base64
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Função para redimensionar imagem antes de converter para base64
+  const resizeImage = (file: File, maxWidth = 800, maxHeight = 600): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          
+          // Calcular as novas dimensões mantendo a proporção
+          if (width > maxWidth) {
+            height = Math.round(height * (maxWidth / width));
+            width = maxWidth;
+          }
+          
+          if (height > maxHeight) {
+            width = Math.round(width * (maxHeight / height));
+            height = maxHeight;
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Converter para blob
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Falha ao redimensionar imagem'));
+              return;
+            }
+            
+            // Criar novo arquivo a partir do blob
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            
+            resolve(resizedFile);
+          }, file.type);
+        };
+        img.onerror = () => {
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Função para processar o upload de arquivo
+  const handleFileUpload = async (optionId: string, file: File) => {
+    try {
+      // Redimensionar a imagem antes de converter para base64
+      const resizedFile = await resizeImage(file);
+      const base64Image = await convertToBase64(resizedFile);
+      handleOptionImageChange(optionId, base64Image);
+    } catch (error) {
+      console.error("Erro ao processar imagem:", error);
+    }
+  };
+
   const handleOptionBackgroundColorChange = (optionId: string, backgroundColor: string) => {
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
@@ -175,7 +251,6 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     const newOption = {
       id: crypto.randomUUID(),
       text: "Nova opção",
-      image: "/placeholder.svg",
       style: {
         backgroundColor: "#0F172A",
         aspectRatio: "1:1"
@@ -286,7 +361,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                         return;
                       }
                       
-                      handleOptionImageChange(option.id, URL.createObjectURL(file));
+                      handleFileUpload(option.id, file);
                     }}
                   >
                     {option.image ? (
@@ -318,9 +393,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          // In a real implementation, this would upload the file
-                          // For now, we'll just set a placeholder
-                          handleOptionImageChange(option.id, URL.createObjectURL(file));
+                          handleFileUpload(option.id, file);
                         }
                       }}
                     />
