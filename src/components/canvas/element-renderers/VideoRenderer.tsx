@@ -3,7 +3,7 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { Play, Video as VideoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 // Componente de renderização de vídeo: suporta YouTube, URLs de vídeo direto, iframes e JavaScript embeds
 
@@ -11,6 +11,25 @@ const VideoRenderer = (props: ElementRendererProps) => {
   const { element, isDragging } = props;
   const { content = {} } = element;
   const [isHovering, setIsHovering] = useState(false);
+  const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
+  
+  // Detectar se qualquer elemento na página está sendo arrastado
+  useEffect(() => {
+    const handleDragStart = () => setIsDraggingGlobal(true);
+    const handleDragEnd = () => {
+      setIsDraggingGlobal(false);
+      // Reset em um timeout para garantir que estados sejam limpos
+      setTimeout(() => setIsDraggingGlobal(false), 100);
+    };
+    
+    document.addEventListener('dragstart', handleDragStart);
+    document.addEventListener('dragend', handleDragEnd);
+    
+    return () => {
+      document.removeEventListener('dragstart', handleDragStart);
+      document.removeEventListener('dragend', handleDragEnd);
+    };
+  }, []);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -73,6 +92,9 @@ const VideoRenderer = (props: ElementRendererProps) => {
     return embedUrl;
   };
 
+  // Verificar se deve bloquear interações com o vídeo
+  const shouldBlockInteraction = isDragging || isDraggingGlobal || isHovering;
+
   // Render based on video type (url, iframe, js)
   const renderVideo = () => {
     const { videoUrl, videoType } = content;
@@ -92,19 +114,25 @@ const VideoRenderer = (props: ElementRendererProps) => {
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
         return (
-          <div className="relative w-full h-full">
-            <iframe 
-              src={embedUrl}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+          <div className="relative w-full h-full overflow-hidden">
+            <div className={cn(
+              "w-full h-full",
+              shouldBlockInteraction && "pointer-events-none"
+            )}>
+              <iframe 
+                src={embedUrl}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+              ></iframe>
+            </div>
             
-            {/* Overlay para bloquear eventos de mouse durante drag & hover */}
+            {/* Overlay para bloquear eventos de mouse durante drag & hover - agora com z-index alto */}
             <div 
               className={cn(
-                "absolute inset-0 transition-opacity duration-200",
-                (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+                "absolute inset-0 transition-opacity duration-200 z-50",
+                shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
               )}
             />
           </div>
@@ -113,22 +141,28 @@ const VideoRenderer = (props: ElementRendererProps) => {
 
       // Regular video file URL
       return (
-        <div className="relative w-full h-full">
-          <video 
-            src={videoUrl}
-            className="w-full h-full"
-            controls={content.controls !== false}
-            autoPlay={content.autoPlay || false}
-            muted={content.muted || false}
-            loop={content.loop || false}
-            playsInline
-          />
+        <div className="relative w-full h-full overflow-hidden">
+          <div className={cn(
+            "w-full h-full",
+            shouldBlockInteraction && "pointer-events-none"
+          )}>
+            <video 
+              src={videoUrl}
+              className="w-full h-full"
+              controls={content.controls !== false}
+              autoPlay={content.autoPlay || false}
+              muted={content.muted || false}
+              loop={content.loop || false}
+              playsInline
+              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+            />
+          </div>
           
           {/* Overlay para bloquear eventos de mouse durante drag & hover */}
           <div 
             className={cn(
-              "absolute inset-0 transition-opacity duration-200",
-              (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+              "absolute inset-0 transition-opacity duration-200 z-50",
+              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
@@ -138,19 +172,25 @@ const VideoRenderer = (props: ElementRendererProps) => {
     // For iframe embeds
     if (videoType === 'iframe') {
       return (
-        <div className="relative w-full h-full">
-          <iframe 
-            src={videoUrl}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+        <div className="relative w-full h-full overflow-hidden">
+          <div className={cn(
+            "w-full h-full",
+            shouldBlockInteraction && "pointer-events-none"
+          )}>
+            <iframe 
+              src={videoUrl}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
+            ></iframe>
+          </div>
           
           {/* Overlay para bloquear eventos de mouse durante drag & hover */}
           <div 
             className={cn(
-              "absolute inset-0 transition-opacity duration-200",
-              (isDragging || isHovering) ? "bg-black/5" : "pointer-events-none"
+              "absolute inset-0 transition-opacity duration-200 z-50",
+              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
@@ -179,14 +219,19 @@ const VideoRenderer = (props: ElementRendererProps) => {
   return (
     <BaseElementRenderer {...props}>
       <div 
-        className={cn("relative w-full flex items-center", alignmentClass)}
+        className={cn(
+          "relative w-full flex items-center", 
+          alignmentClass,
+          "video-renderer-container"
+        )}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
+        draggable={false}
       >
         <div className={cn(
-          "w-full", 
-          "pointer-events-auto",
-          isDragging && "pointer-events-none" // Desabilitar interação com o vídeo durante drag
+          "w-full relative",
+          isDragging && "pointer-events-none", // Desabilitar interação com o vídeo durante drag
+          isDraggingGlobal && "pointer-events-none" // Também desabilitar quando qualquer elemento estiver sendo arrastado
         )}>
           {aspectRatio ? (
             <div className="w-full max-w-full">
@@ -199,6 +244,18 @@ const VideoRenderer = (props: ElementRendererProps) => {
               {renderVideo()}
             </div>
           )}
+          
+          {/* Camada extra para capturar eventos de hover e bloqueio */}
+          <div 
+            className={cn(
+              "absolute inset-0",
+              isDragging || isDraggingGlobal ? "z-50" : ""
+            )}
+            style={{
+              background: 'transparent',
+              cursor: 'default'
+            }}
+          />
         </div>
       </div>
       {content.title && <p className="text-center mt-2 text-sm">{content.title}</p>}
