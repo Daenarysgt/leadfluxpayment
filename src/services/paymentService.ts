@@ -184,6 +184,63 @@ export const paymentService = {
       isRecent: localTimestamp ? (Date.now() - Number(localTimestamp) < 24 * 60 * 60 * 1000) : false
     });
     
+    // NOVO: Verificar diretamente no banco de dados como primeira opção
+    try {
+      console.log('🔍 Tentando verificação direta no banco via paymentService...');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        console.log('✅ Usuário autenticado:', user.id);
+        
+        // Verificar assinatura diretamente no Supabase
+        const { data: subscriptions, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+        
+        if (!subError && subscriptions && subscriptions.length > 0) {
+          const subscription = subscriptions[0];
+          const now = Math.floor(Date.now() / 1000);
+          
+          console.log('📊 Assinatura encontrada diretamente:', {
+            id: subscription.id,
+            status: subscription.status,
+            plan_id: subscription.plan_id,
+            current_period_end: subscription.current_period_end,
+            valid: subscription.current_period_end > now
+          });
+          
+          // Verificar se ainda está válida
+          if (subscription.current_period_end > now) {
+            console.log('✅ Assinatura válida e ativa encontrada via verificação direta no paymentService!');
+            
+            // Atualizar localStorage
+            localStorage.setItem('subscription_status', 'active');
+            localStorage.setItem('subscription_planId', subscription.plan_id);
+            localStorage.setItem('subscription_activated_at', Date.now().toString());
+            sessionStorage.setItem('subscription_status_backup', 'active');
+            sessionStorage.setItem('subscription_planId_backup', subscription.plan_id);
+            
+            return {
+              planId: subscription.plan_id,
+              status: 'active',
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end || false
+            };
+          } else {
+            console.log('⚠️ Assinatura encontrada diretamente, mas período expirado. Continuando verificação...');
+          }
+        } else {
+          console.log('ℹ️ Nenhuma assinatura ativa encontrada via verificação direta no paymentService');
+        }
+      }
+    } catch (directCheckError) {
+      console.error('❌ Erro na verificação direta via paymentService:', directCheckError);
+      // Continuar com a verificação via API normal
+    }
+    
+    // Continuar com o fluxo normal se a verificação direta falhar
     while (attempts < maxRetries) {
       try {
         // Obter token de autenticação
@@ -352,6 +409,47 @@ export const paymentService = {
           cancelAtPeriodEnd: false
         };
       }
+    }
+    
+    // NOVO: Verificação final direta no banco de dados como último recurso
+    try {
+      console.log('🔍 Última tentativa: verificação direta no banco como recurso final...');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Verificar assinatura diretamente via Supabase
+        const { data: subscriptions, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+        
+        if (!subError && subscriptions && subscriptions.length > 0) {
+          const subscription = subscriptions[0];
+          const now = Math.floor(Date.now() / 1000);
+          
+          // Verificar se ainda está válida
+          if (subscription.current_period_end > now) {
+            console.log('✅ Última verificação: Assinatura válida encontrada diretamente no banco!');
+            
+            // Atualizar localStorage
+            localStorage.setItem('subscription_status', 'active');
+            localStorage.setItem('subscription_planId', subscription.plan_id);
+            localStorage.setItem('subscription_activated_at', Date.now().toString());
+            sessionStorage.setItem('subscription_status_backup', 'active');
+            sessionStorage.setItem('subscription_planId_backup', subscription.plan_id);
+            
+            return {
+              planId: subscription.plan_id,
+              status: 'active',
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end || false
+            };
+          }
+        }
+      }
+    } catch (finalError) {
+      console.error('❌ Erro na verificação final direta no banco:', finalError);
     }
     
     return null;
