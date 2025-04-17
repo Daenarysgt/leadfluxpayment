@@ -64,6 +64,13 @@ const BaseElementRenderer = ({
     }
   }, [isSelected]);
 
+  // Resetar o estado de dropTarget quando o elemento arrastado muda ou termina o arrasto
+  useEffect(() => {
+    if (!isDragging) {
+      setDropTarget(false);
+    }
+  }, [isDragging]);
+
   const baseElementClasses = cn(
     "w-full rounded-md mb-4 border-2 relative group",
     isSelected ? "border-violet-500" : "border-transparent",
@@ -99,6 +106,7 @@ const BaseElementRenderer = ({
     // Set the drag data
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("elementId", element.id);
+    e.dataTransfer.setData("elementIndex", String(index));
     e.dataTransfer.setData("text/plain", element.id);
     
     // Create custom drag preview - um indicador mais compacto
@@ -144,30 +152,53 @@ const BaseElementRenderer = ({
   const handleDragEnd = (e: React.DragEvent) => {
     e.stopPropagation();
     setDragActive(false);
+    setDropTarget(false);
     if (onDragEnd) onDragEnd();
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
+    // Não permitir soltar sobre o elemento sendo arrastado
+    if (isDragging) {
+      return;
+    }
     
-    // Verificar se temos um elemento sendo arrastado e se é diferente do atual
-    if (e.dataTransfer.types.includes('elementId')) {
-      const draggedId = e.dataTransfer.getData('elementId');
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Verificar se temos um elemento sendo arrastado
+    if (e.dataTransfer.types.includes('elementId') && 
+        e.dataTransfer.types.includes('elementIndex')) {
       
-      // Não permitir soltar sobre si mesmo
-      if (draggedId && draggedId !== element.id) {
-        setDropTarget(true);
-        e.dataTransfer.dropEffect = "move";
+      setDropTarget(true);
+      e.dataTransfer.dropEffect = "move";
+      
+      // Dispatchar o evento para o componente pai
+      if (elementRef.current) {
+        const dragEnterEvent = new CustomEvent('elementDragEnter', {
+          bubbles: true,
+          detail: { targetId: element.id }
+        });
+        elementRef.current.dispatchEvent(dragEnterEvent);
       }
     }
   };
   
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setDropTarget(false);
+    e.stopPropagation();
+    
+    // Só limpar se o elemento que estamos deixando é o atual (e não um filho)
+    if (!elementRef.current?.contains(e.relatedTarget as Node)) {
+      setDropTarget(false);
+    }
   };
   
   const handleDrop = (e: React.DragEvent) => {
+    // Não permitir soltar sobre o elemento sendo arrastado
+    if (isDragging) {
+      return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
     
@@ -177,18 +208,25 @@ const BaseElementRenderer = ({
     // Verificar se temos um elemento sendo arrastado
     if (e.dataTransfer.types.includes('elementId')) {
       const draggedId = e.dataTransfer.getData('elementId');
+      const draggedIndex = parseInt(e.dataTransfer.getData('elementIndex'), 10);
       
       // Não permitir soltar sobre si mesmo
       if (draggedId && draggedId !== element.id) {
-        console.log(`Dropping element ${draggedId} over ${element.id}`);
+        console.log(`Dropping element ${draggedId} (index ${draggedIndex}) over ${element.id} (index ${index})`);
         
-        // Para mover para cima do elemento alvo
-        if (onMoveUp && draggedId > element.id) {
-          onMoveUp(draggedId);
+        // Se o índice do elemento arrastado é maior (está abaixo), 
+        // mova-o para antes deste elemento (mova para cima)
+        if (draggedIndex > index) {
+          for (let i = 0; i < (draggedIndex - index); i++) {
+            onMoveUp && onMoveUp(draggedId);
+          }
         } 
-        // Para mover para baixo do elemento alvo
-        else if (onMoveDown && draggedId < element.id) {
-          onMoveDown(draggedId);
+        // Se o índice do elemento arrastado é menor (está acima), 
+        // mova-o para depois deste elemento (mova para baixo)
+        else if (draggedIndex < index) {
+          for (let i = 0; i < (index - draggedIndex); i++) {
+            onMoveDown && onMoveDown(draggedId);
+          }
         }
       }
     }
@@ -206,9 +244,9 @@ const BaseElementRenderer = ({
           onClick={() => onSelect(element.id)}
           onMouseEnter={() => !isPreviewMode && setIsHovering(true)}
           onMouseLeave={() => !isPreviewMode && setIsHovering(false)}
-          onDragOver={!isPreviewMode ? handleDragOver : undefined}
-          onDragLeave={!isPreviewMode ? handleDragLeave : undefined}
-          onDrop={!isPreviewMode ? handleDrop : undefined}
+          onDragOver={!isPreviewMode && !isDragging ? handleDragOver : undefined}
+          onDragLeave={!isPreviewMode && !isDragging ? handleDragLeave : undefined}
+          onDrop={!isPreviewMode && !isDragging ? handleDrop : undefined}
         >
           {/* Conteúdo real do elemento */}
           <div className={cn(
