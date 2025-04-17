@@ -29,6 +29,78 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     setSelectedOptions([]);
   }, [element.id]);
   
+  // Função para executar a navegação com base na opção selecionada
+  const executeNavigation = useCallback(async (optionId: string) => {
+    const option = content.options.find((opt: any) => opt.id === optionId);
+    if (!option || !option.navigation) return;
+    
+    const navigationType = option.navigation.type;
+    
+    // Handle navigation differently based on preview mode
+    if (previewMode && previewProps) {
+      const { activeStep, onStepChange, funnel } = previewProps;
+      console.log("MultipleChoiceRenderer - Executing immediate navigation for option:", option);
+      
+      if (funnel) {
+        // Register selected choice
+        const selection = option.text || option.value;
+        await accessService.registerStepInteraction(
+          funnel.id,
+          activeStep + 1,
+          null, // usar sessionId atual
+          'choice',
+          selection
+        );
+        
+        if (navigationType === "next") {
+          console.log("Preview mode: Navigate to next step");
+          if (activeStep < funnel.steps.length - 1) {
+            onStepChange(activeStep + 1);
+          } else if (activeStep === funnel.steps.length - 1) {
+            // Se for o último step, marcar como conversão
+            await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+          }
+        }
+        else if (navigationType === "step" && option.navigation.stepId) {
+          console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
+          const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+          if (stepIndex !== -1) {
+            if (stepIndex === funnel.steps.length - 1) {
+              // Se for o último step, marcar como conversão
+              await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+            } else {
+              onStepChange(stepIndex);
+            }
+          }
+        }
+        else if (navigationType === "url" && option.navigation.url) {
+          console.log("Preview mode: Open external URL:", option.navigation.url);
+          // Marcar como conversão antes de redirecionar
+          await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+          window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+        }
+      }
+    } else {
+      // Handle navigation in canvas mode
+      if (navigationType === "next") {
+        if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
+          setCurrentStep(currentStep + 1);
+        }
+      }
+      else if (navigationType === "step" && option.navigation.stepId) {
+        if (currentFunnel) {
+          const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
+          if (stepIndex !== -1) {
+            setCurrentStep(stepIndex);
+          }
+        }
+      }
+      else if (navigationType === "url" && option.navigation.url) {
+        window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+      }
+    }
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options]);
+  
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option);
     
@@ -40,11 +112,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           ? prev.filter(id => id !== option.id) 
           : [...prev, option.id];
       } else {
-        // Single selection
+        // Single selection - e navegação imediata se a opção tiver configuração de navegação
+        if (option.navigation) {
+          // Executar navegação imediatamente para single selection
+          setTimeout(() => executeNavigation(option.id), 100);
+        }
         return [option.id];
       }
     });
-  }, [allowMultipleSelection]);
+  }, [allowMultipleSelection, executeNavigation]);
   
   const handleContinue = useCallback(async () => {
     // Exit if no options selected
@@ -59,72 +135,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     
     if (!navigationOption) return;
     
-    const navigationType = navigationOption.navigation.type;
-    
-    // Handle navigation differently based on preview mode
-    if (previewMode && previewProps) {
-      const { activeStep, onStepChange, funnel } = previewProps;
-      console.log("Preview mode - Current step:", activeStep);
-      
-      if (funnel) {
-        // Register all selected choices
-        const selections = selectedOptionsData.map((opt: any) => opt.text || opt.value).join(", ");
-        await accessService.registerStepInteraction(
-          funnel.id,
-          activeStep + 1,
-          null, // usar sessionId atual
-          'choice',
-          selections
-        );
-        
-        if (navigationType === "next") {
-          console.log("Preview mode: Navigate to next step");
-          if (activeStep < funnel.steps.length - 1) {
-            onStepChange(activeStep + 1);
-          } else if (activeStep === funnel.steps.length - 1) {
-            // Se for o último step, marcar como conversão
-            await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-          }
-        }
-        else if (navigationType === "step" && navigationOption.navigation.stepId) {
-          console.log("Preview mode: Navigate to specific step:", navigationOption.navigation.stepId);
-          const stepIndex = funnel.steps.findIndex(step => step.id === navigationOption.navigation.stepId);
-          if (stepIndex !== -1) {
-            if (stepIndex === funnel.steps.length - 1) {
-              // Se for o último step, marcar como conversão
-              await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
-            } else {
-              onStepChange(stepIndex);
-            }
-          }
-        }
-        else if (navigationType === "url" && navigationOption.navigation.url) {
-          console.log("Preview mode: Open external URL:", navigationOption.navigation.url);
-          // Marcar como conversão antes de redirecionar
-          await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-          window.open(navigationOption.navigation.url, navigationOption.navigation.openInNewTab ? "_blank" : "_self");
-        }
-      }
-    } else {
-      // Handle navigation in canvas mode
-      if (navigationType === "next") {
-        if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
-          setCurrentStep(currentStep + 1);
-        }
-      }
-      else if (navigationType === "step" && navigationOption.navigation.stepId) {
-        if (currentFunnel) {
-          const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigationOption.navigation.stepId);
-          if (stepIndex !== -1) {
-            setCurrentStep(stepIndex);
-          }
-        }
-      }
-      else if (navigationType === "url" && navigationOption.navigation.url) {
-        window.open(navigationOption.navigation.url, navigationOption.navigation.openInNewTab ? "_blank" : "_self");
-      }
-    }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, selectedOptions, content.options]);
+    // Executar a navegação padrão para múltipla seleção (botão continuar)
+    executeNavigation(navigationOption.id);
+  }, [selectedOptions, content?.options, executeNavigation]);
 
   return (
     <BaseElementRenderer {...props}>
@@ -238,7 +251,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           })}
         </div>
         
-        {/* Botão de continuar para seleção múltipla - sempre exibido quando múltipla seleção estiver ativada */}
+        {/* Botão de continuar para seleção múltipla - mostrado apenas quando múltipla seleção estiver ativada */}
         {allowMultipleSelection && (
           <button 
             className={cn(
@@ -248,8 +261,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 : "opacity-50 cursor-not-allowed"
             )}
             style={{
-              backgroundColor: indicatorColor,
-              color: indicatorIconColor,
+              backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
+              color: selectedOptions.length > 0 ? "white" : "#a0a0a0"
             }}
             onClick={handleContinue}
             disabled={selectedOptions.length === 0}
