@@ -64,12 +64,21 @@ const BaseElementRenderer = ({
     }
   }, [isSelected]);
 
-  // Resetar o estado de dropTarget quando o isDragging muda
+  // Resetar o estado de dropTarget e dragActive quando isDragging muda
   useEffect(() => {
     if (!isDragging) {
       setDropTarget(false);
+      setDragActive(false);
     }
   }, [isDragging]);
+
+  // Limpar estados ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      setDragActive(false);
+      setDropTarget(false);
+    };
+  }, []);
 
   const baseElementClasses = cn(
     "w-full rounded-md mb-4 border-2 relative group",
@@ -103,7 +112,7 @@ const BaseElementRenderer = ({
     e.stopPropagation();
     setDragActive(true);
     
-    // Set the drag data
+    // Set the drag data - importante definir no início
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("elementId", element.id);
     e.dataTransfer.setData("text/plain", element.id);
@@ -149,10 +158,21 @@ const BaseElementRenderer = ({
   };
   
   const handleDragEnd = (e: React.DragEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    
+    // Limpar os estados locais
     setDragActive(false);
     setDropTarget(false);
+    
+    // Notificar o componente pai
     if (onDragEnd) onDragEnd();
+    
+    // Garantir que o estado de drag seja limpo
+    setTimeout(() => {
+      setDragActive(false);
+      setDropTarget(false);
+    }, 50);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -160,15 +180,24 @@ const BaseElementRenderer = ({
     if (isDragging) return;
     
     e.preventDefault();
+    e.stopPropagation();
     
     // Verificar se estamos arrastando um elemento
     const isElementDrag = e.dataTransfer.types.includes('elementId');
     
     if (isElementDrag) {
-      const draggedId = e.dataTransfer.getData('elementId');
-      
-      // Não aceitar soltar sobre si mesmo
-      if (draggedId !== element.id) {
+      try {
+        // Tentar ler o elementId (pode falhar durante o dragOver)
+        // Isso ocorre porque o dataTransfer só pode ser lido durante o evento drop
+        const draggedId = e.dataTransfer.getData('elementId');
+        
+        // Não aceitar soltar sobre si mesmo
+        if (draggedId && draggedId !== element.id) {
+          setDropTarget(true);
+          e.dataTransfer.dropEffect = "move";
+        }
+      } catch (error) {
+        // Apenas definir o estado visual
         setDropTarget(true);
         e.dataTransfer.dropEffect = "move";
       }
@@ -177,6 +206,7 @@ const BaseElementRenderer = ({
   
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
     // Verificar se realmente saímos deste elemento e não entramos em um filho dele
     if (!elementRef.current?.contains(e.relatedTarget as Node)) {
@@ -191,6 +221,7 @@ const BaseElementRenderer = ({
     
     // Limpar o estado visual
     setDropTarget(false);
+    setDragActive(false);
     
     // Se o elemento que estamos arrastando é este, não faça nada
     if (isDragging) return;
@@ -201,8 +232,7 @@ const BaseElementRenderer = ({
     if (draggedElementId && draggedElementId !== element.id) {
       console.log(`Element dropped: ${draggedElementId} on ${element.id}`);
       
-      // BuilderCanvas vai lidar com a reordenação real através do setDropTargetId
-      // Devemos apenas acionar um evento que ele possa capturar
+      // BuilderCanvas vai lidar com a reordenação real
       if (elementRef.current) {
         const dropEvent = new CustomEvent('elementDropped', {
           bubbles: true,
@@ -213,6 +243,12 @@ const BaseElementRenderer = ({
         });
         
         elementRef.current.dispatchEvent(dropEvent);
+        
+        // Garantir que qualquer alteração de estado seja limpa após o drop
+        setTimeout(() => {
+          setDropTarget(false);
+          setDragActive(false);
+        }, 50);
       }
     }
   };

@@ -114,12 +114,23 @@ const BuilderCanvas = ({
       if (sourceIndex !== -1 && targetIndex !== -1) {
         console.log("BuilderCanvas - Reordering from index", sourceIndex, "to", targetIndex);
         reorderElements(sourceIndex, targetIndex);
+        
+        toast({
+          title: "Elemento reordenado",
+          description: "O elemento foi movido para a nova posição."
+        });
       }
     }
     
+    // Limpar os estados
     setDraggedElementId(null);
     setDropTargetId(null);
-  }, [draggedElementId, dropTargetId, elements, reorderElements]);
+    
+    // Usar um setTimeout para garantir que a UI atualize após o drag acabar
+    setTimeout(() => {
+      setRenderKey(prev => prev + 1);
+    }, 100);
+  }, [draggedElementId, dropTargetId, elements, reorderElements, toast]);
   
   // Add a specific drop handler for elements
   const handleElementDrop = useCallback((e: React.DragEvent) => {
@@ -144,8 +155,14 @@ const BuilderCanvas = ({
       });
     }
     
+    // Limpar estados
     setDraggedElementId(null);
     setDropTargetId(null);
+    
+    // Forçar uma atualização da UI
+    setTimeout(() => {
+      setRenderKey(prev => prev + 1);
+    }, 100);
   }, [dropTargetId, elements, reorderElements, toast]);
   
   // Escutar o evento personalizado elementDropped
@@ -168,14 +185,37 @@ const BuilderCanvas = ({
             title: "Elemento reordenado",
             description: "O elemento foi movido para a nova posição."
           });
+          
+          // Limpar estados
+          setDraggedElementId(null);
+          setDropTargetId(null);
+          
+          // Forçar uma atualização da UI após a reordenação
+          setTimeout(() => {
+            setRenderKey(prev => prev + 1);
+          }, 100);
         }
       }
     };
     
+    // Adicionar event listener global para dragend para garantir limpeza de estado
+    const handleGlobalDragEnd = () => {
+      setDraggedElementId(null);
+      setDropTargetId(null);
+      setIsExternalDragOver(false);
+      
+      // Forçar uma atualização da UI após qualquer operação de drag
+      setTimeout(() => {
+        setRenderKey(prev => prev + 1);
+      }, 100);
+    };
+    
     canvasRef.current.addEventListener('elementDropped', handleElementDropped as EventListener);
+    document.addEventListener('dragend', handleGlobalDragEnd);
     
     return () => {
       canvasRef.current?.removeEventListener('elementDropped', handleElementDropped as EventListener);
+      document.removeEventListener('dragend', handleGlobalDragEnd);
     };
   }, [elements, reorderElements, toast]);
   
@@ -227,6 +267,11 @@ const BuilderCanvas = ({
         });
       }
     }
+    
+    // Forçar atualização da UI
+    setTimeout(() => {
+      setRenderKey(prev => prev + 1);
+    }, 100);
   }, [addElement, onElementSelect, toast]);
   
   // Force re-render when element updates are received - place all effects after all callbacks
@@ -292,6 +337,7 @@ const BuilderCanvas = ({
                 e.preventDefault();
                 e.stopPropagation();
               }}
+              onDrop={handleElementDrop}
             >
               <CanvasElementRenderer
                 element={element}
