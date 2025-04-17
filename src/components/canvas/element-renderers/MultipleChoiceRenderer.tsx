@@ -30,14 +30,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   }, [element.id]);
   
   // Função para executar a navegação com base na opção selecionada
-  const executeNavigation = useCallback(async (optionId: string, customOption?: any) => {
-    // Se o modo de múltipla seleção estiver ativo, não executar navegação individual
-    if (allowMultipleSelection) {
-      return;
-    }
-    
-    // Se um objeto de opção customizado foi fornecido, use-o
-    const option = customOption || content.options.find((opt: any) => opt.id === optionId);
+  const executeNavigation = useCallback(async (optionId: string) => {
+    const option = content.options.find((opt: any) => opt.id === optionId);
     if (!option || !option.navigation) return;
     
     const navigationType = option.navigation.type;
@@ -132,7 +126,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
       }
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, allowMultipleSelection]);
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options]);
   
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option);
@@ -140,15 +134,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Handle multiple selection
     setSelectedOptions(prev => {
       if (allowMultipleSelection) {
-        // Toggle selection - apenas alterna seleção sem navegação no modo múltipla seleção
+        // Toggle selection
         return prev.includes(option.id) 
           ? prev.filter(id => id !== option.id) 
           : [...prev, option.id];
       } else {
-        // Single selection - navegação imediata apenas em modo de seleção única
+        // Single selection - e navegação imediata se a opção tiver configuração de navegação
         if (option.navigation) {
-          // Executar navegação imediatamente apenas para single selection
-          setTimeout(() => executeNavigation(option.id, option), 100);
+          // Executar navegação imediatamente para single selection
+          setTimeout(() => executeNavigation(option.id), 100);
         }
         return [option.id];
       }
@@ -159,46 +153,6 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Exit if no options selected
     if (selectedOptions.length === 0) return;
     
-    // Se houver uma configuração específica de navegação para o botão continuar, usar ela
-    if (content.continueButtonNavigation && content.continueButtonNavigation.type !== "none") {
-      console.log("Usando navegação configurada para o botão continuar:", content.continueButtonNavigation);
-      
-      // Registrar todas as opções selecionadas
-      const selectedOptionsData = content.options.filter((opt: any) => 
-        selectedOptions.includes(opt.id)
-      );
-      const selections = selectedOptionsData.map((opt: any) => opt.text || opt.value).join(", ");
-      
-      if (previewMode && previewProps) {
-        const { activeStep, funnel } = previewProps;
-        
-        if (funnel) {
-          try {
-            await accessService.registerStepInteraction(
-              funnel.id,
-              activeStep + 1,
-              null, // usar sessionId atual
-              'choice',
-              selections
-            );
-          } catch (error) {
-            console.error("Error registering step interaction:", error);
-          }
-        }
-      }
-      
-      // Criar um objeto de navegação baseado no continueButtonNavigation
-      const navOption = {
-        id: "continue-button",
-        navigation: content.continueButtonNavigation
-      };
-      
-      // Executar a navegação usando o objeto criado
-      executeNavigation("continue-button", navOption);
-      return;
-    }
-    
-    // Comportamento anterior - usar a navegação da primeira opção selecionada
     const selectedOptionsData = content.options.filter((opt: any) => 
       selectedOptions.includes(opt.id)
     );
@@ -209,8 +163,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     if (!navigationOption) return;
     
     // Executar a navegação padrão para múltipla seleção (botão continuar)
-    executeNavigation(navigationOption.id, navigationOption);
-  }, [selectedOptions, content?.options, executeNavigation, content?.continueButtonNavigation, previewMode, previewProps]);
+    executeNavigation(navigationOption.id);
+  }, [selectedOptions, content?.options, executeNavigation]);
 
   return (
     <BaseElementRenderer {...props}>

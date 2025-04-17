@@ -26,11 +26,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
-  
-  // Estado para navegação do botão continuar
-  const [continueButtonNavigationType, setContinueButtonNavigationType] = useState<"next" | "step" | "url" | "none">("next");
-  const [continueButtonStepId, setContinueButtonStepId] = useState<string>("");
-  const [continueButtonUrl, setContinueButtonUrl] = useState<string>("");
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -52,9 +47,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     setBorderRadius(element.content?.style?.borderRadius || DEFAULT_BORDER_RADIUS);
     
     // Get multiple selection setting
-    const multipleSelection = !!element.content?.allowMultipleSelection;
-    console.log("Setting initial allowMultipleSelection state:", multipleSelection, "from element:", element.content?.allowMultipleSelection);
-    setAllowMultipleSelection(multipleSelection);
+    setAllowMultipleSelection(element.content?.allowMultipleSelection || false);
     
     // Get indicator type
     setIndicatorType(element.content?.indicatorType || 'circle');
@@ -76,47 +69,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get show helper text setting
     setShowHelperText(element.content?.showHelperText === true);
-    
-    // Set continue button navigation settings
-    setContinueButtonNavigationType(element.content?.continueButtonNavigation?.type || "next");
-    setContinueButtonStepId(element.content?.continueButtonNavigation?.stepId || "");
-    setContinueButtonUrl(element.content?.continueButtonNavigation?.url || "");
   }, [element]);
-
-  // Função para sincronizar a navegação de todas as opções com a navegação do botão Continuar
-  const syncOptionsNavigationWithContinueButton = () => {
-    if (!element.content?.options) return;
-    
-    // Obtém a navegação atual do botão Continuar
-    const continueNavType = element.content?.continueButtonNavigation?.type || "next";
-    const continueStepId = element.content?.continueButtonNavigation?.stepId || "";
-    const continueUrl = element.content?.continueButtonNavigation?.url || "";
-    
-    // Prepara a navegação que será aplicada a todas as opções
-    const newNavigation = {
-      type: continueNavType
-    };
-    
-    // Adiciona stepId ou url se necessário
-    if (continueNavType === "step" && continueStepId) {
-      Object.assign(newNavigation, { stepId: continueStepId });
-    } else if (continueNavType === "url" && continueUrl) {
-      Object.assign(newNavigation, { url: continueUrl });
-    }
-    
-    // Atualiza todas as opções com a mesma navegação do botão Continuar
-    const updatedOptions = element.content.options.map((option: any) => ({
-      ...option,
-      navigation: newNavigation
-    }));
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        options: updatedOptions
-      }
-    });
-  };
 
   // These ensure our handlers apply the changes immediately
   const handleTitleChange = (title: string) => {
@@ -398,23 +351,14 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
 
   const toggleMultipleSelection = () => {
     const newAllowMultipleSelection = !allowMultipleSelection;
-    console.log("Toggling multiple selection from", allowMultipleSelection, "to", newAllowMultipleSelection);
     setAllowMultipleSelection(newAllowMultipleSelection);
     
-    // Atualiza o estado de allowMultipleSelection
     onUpdate({
       content: {
         ...element.content,
         allowMultipleSelection: newAllowMultipleSelection
       }
     });
-    
-    // Se estiver ativando múltipla seleção, sincroniza a navegação de todas as opções
-    // com a navegação do botão Continuar
-    if (newAllowMultipleSelection) {
-      console.log("Synchronizing options navigation with continue button");
-      syncOptionsNavigationWithContinueButton();
-    }
   };
   
   const handleIndicatorTypeChange = (type: 'circle' | 'square') => {
@@ -517,67 +461,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
-  // Adicionar handlers para navegação do botão continuar
-  const handleContinueButtonNavigationTypeChange = (type: "next" | "step" | "url" | "none") => {
-    setContinueButtonNavigationType(type);
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        continueButtonNavigation: {
-          ...(element.content.continueButtonNavigation || {}),
-          type
-        }
-      }
-    });
-    
-    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
-    if (allowMultipleSelection) {
-      // Precisamos fazer isso após a atualização do estado, então usamos um setTimeout
-      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
-    }
-  };
-  
-  const handleContinueButtonStepIdChange = (stepId: string) => {
-    setContinueButtonStepId(stepId);
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        continueButtonNavigation: {
-          ...(element.content.continueButtonNavigation || {}),
-          type: "step",
-          stepId
-        }
-      }
-    });
-    
-    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
-    if (allowMultipleSelection) {
-      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
-    }
-  };
-  
-  const handleContinueButtonUrlChange = (url: string) => {
-    setContinueButtonUrl(url);
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        continueButtonNavigation: {
-          ...(element.content.continueButtonNavigation || {}),
-          type: "url",
-          url
-        }
-      }
-    });
-    
-    // Se múltipla seleção estiver ativa, sincroniza a navegação de todas as opções
-    if (allowMultipleSelection) {
-      setTimeout(() => syncOptionsNavigationWithContinueButton(), 0);
-    }
-  };
-
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -589,7 +472,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       
       <OptionsList 
         options={element.content?.options || []}
-        allowMultipleSelection={allowMultipleSelection}
         showEmojis={showEmojis}
         showImages={showImages}
         emojiOptions={EMOJI_OPTIONS}
@@ -621,10 +503,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         continueButtonText={continueButtonText}
         helperText={helperText}
         showHelperText={showHelperText}
-        continueButtonNavigationType={continueButtonNavigationType}
-        continueButtonStepId={continueButtonStepId}
-        continueButtonUrl={continueButtonUrl}
-        steps={steps}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
@@ -636,9 +514,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onContinueButtonTextChange={handleContinueButtonTextChange}
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}
-        onContinueButtonNavigationTypeChange={handleContinueButtonNavigationTypeChange}
-        onContinueButtonStepIdChange={handleContinueButtonStepIdChange}
-        onContinueButtonUrlChange={handleContinueButtonUrlChange}
       />
     </div>
   );

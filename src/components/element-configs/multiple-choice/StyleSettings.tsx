@@ -7,9 +7,6 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronRight, CornerUpRight, ExternalLink, X } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 export interface StyleSettingsProps {
   showEmojis: boolean;
@@ -23,10 +20,6 @@ export interface StyleSettingsProps {
   continueButtonText: string;
   helperText: string;
   showHelperText: boolean;
-  continueButtonNavigationType: "next" | "step" | "url" | "none";
-  continueButtonStepId?: string;
-  continueButtonUrl?: string;
-  steps?: Array<{ id: string; title: string }>;
   onToggleEmojis: () => void;
   onToggleImages: () => void;
   onBorderRadiusChange: (value: number[]) => void;
@@ -38,9 +31,6 @@ export interface StyleSettingsProps {
   onContinueButtonTextChange: (text: string) => void;
   onHelperTextChange: (text: string) => void;
   onToggleHelperText: () => void;
-  onContinueButtonNavigationTypeChange: (type: "next" | "step" | "url" | "none") => void;
-  onContinueButtonStepIdChange: (stepId: string) => void;
-  onContinueButtonUrlChange: (url: string) => void;
 }
 
 const StyleSettings: React.FC<StyleSettingsProps> = ({
@@ -55,10 +45,6 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   continueButtonText,
   helperText,
   showHelperText,
-  continueButtonNavigationType,
-  continueButtonStepId,
-  continueButtonUrl,
-  steps = [],
   onToggleEmojis,
   onToggleImages,
   onBorderRadiusChange,
@@ -69,10 +55,7 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   onIndicatorIconColorChange,
   onContinueButtonTextChange,
   onHelperTextChange,
-  onToggleHelperText,
-  onContinueButtonNavigationTypeChange,
-  onContinueButtonStepIdChange,
-  onContinueButtonUrlChange
+  onToggleHelperText
 }) => {
   const form = useForm();
 
@@ -123,27 +106,11 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
             
             <Label htmlFor="allowMultipleSelection" className="text-xs flex items-center justify-between">
               Permitir múltipla seleção
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="allowMultipleSelection"
-                  checked={allowMultipleSelection}
-                  onCheckedChange={(checked) => {
-                    console.log("Switch toggled directly to:", checked);
-                    onToggleMultipleSelection();
-                  }}
-                />
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    console.log("Button clicked to toggle", !allowMultipleSelection);
-                    onToggleMultipleSelection();
-                  }}
-                  className="text-xs text-blue-500 hover:text-blue-700"
-                >
-                  {allowMultipleSelection ? "Desativar" : "Ativar"}
-                </button>
-              </div>
+              <Switch
+                id="allowMultipleSelection"
+                checked={allowMultipleSelection}
+                onCheckedChange={onToggleMultipleSelection}
+              />
             </Label>
             
             {allowMultipleSelection && (
@@ -177,84 +144,6 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
                     onChange={(e) => onContinueButtonTextChange(e.target.value)}
                     className="text-xs"
                   />
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium">Navegação do botão continuar</Label>
-                  <Select 
-                    value={continueButtonNavigationType}
-                    onValueChange={(value) => onContinueButtonNavigationTypeChange(value as "next" | "step" | "url" | "none")}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Selecione a ação" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none" className="text-xs">
-                        <div className="flex items-center">
-                          <X className="h-3.5 w-3.5 mr-1.5" />
-                          <span>Nenhum</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="next" className="text-xs">
-                        <div className="flex items-center">
-                          <ChevronRight className="h-3.5 w-3.5 mr-1.5" />
-                          <span>Ir para próxima etapa</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="step" className="text-xs">
-                        <div className="flex items-center">
-                          <CornerUpRight className="h-3.5 w-3.5 mr-1.5" />
-                          <span>Ir para etapa específica</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="url" className="text-xs">
-                        <div className="flex items-center">
-                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                          <span>Abrir URL externa</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  {continueButtonNavigationType === "step" && steps.length > 0 && (
-                    <div className="pt-1">
-                      <Select 
-                        value={continueButtonStepId || ""}
-                        onValueChange={(value) => onContinueButtonStepIdChange(value)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Selecione uma etapa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {steps.map((step) => (
-                            <SelectItem key={step.id} value={step.id} className="text-xs">
-                              {step.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  
-                  {continueButtonNavigationType === "step" && steps.length === 0 && (
-                    <div className="pt-1 text-xs text-amber-600">
-                      Nenhuma etapa disponível. Crie etapas primeiro.
-                    </div>
-                  )}
-                  
-                  {continueButtonNavigationType === "url" && (
-                    <div className="pt-1">
-                      <Input
-                        type="url"
-                        placeholder="https://www.example.com"
-                        className="h-8 text-xs"
-                        value={continueButtonUrl || ""}
-                        onChange={(e) => onContinueButtonUrlChange(e.target.value)}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             )}

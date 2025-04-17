@@ -17,12 +17,11 @@ interface OptionsListProps {
       selectedTextColor?: string;
     };
     navigation?: {
-      type: "next" | "step" | "url" | "none";
+      type: "next" | "step" | "url";
       stepId?: string;
       url?: string;
     };
   }>;
-  allowMultipleSelection: boolean;
   showEmojis: boolean;
   showImages: boolean;
   emojiOptions: string[];
@@ -35,7 +34,7 @@ interface OptionsListProps {
   onOptionSelectedBackgroundColorChange?: (optionId: string, color: string) => void;
   onOptionSelectedBorderColorChange?: (optionId: string, color: string) => void;
   onOptionSelectedTextColorChange?: (optionId: string, color: string) => void;
-  onOptionNavigationTypeChange: (optionId: string, type: "next" | "step" | "url" | "none") => void;
+  onOptionNavigationTypeChange: (optionId: string, type: "next" | "step" | "url") => void;
   onOptionStepIdChange: (optionId: string, stepId: string) => void;
   onOptionUrlChange: (optionId: string, url: string) => void;
   onDeleteOption: (optionId: string) => void;
@@ -43,13 +42,12 @@ interface OptionsListProps {
   onOptionSelectedStyleChange?: (optionId: string, property: string, value: string) => void;
 }
 
-const OptionsList: React.FC<OptionsListProps> = ({
+const OptionsList = ({
   options,
-  allowMultipleSelection,
   showEmojis,
   showImages,
   emojiOptions,
-  steps,
+  steps = [],
   onOptionTextChange,
   onOptionEmojiChange,
   onOptionBackgroundColorChange,
@@ -64,7 +62,7 @@ const OptionsList: React.FC<OptionsListProps> = ({
   onDeleteOption,
   onAddOption,
   onOptionSelectedStyleChange
-}) => {
+}: OptionsListProps) => {
   // Handler para as cores de seleção
   const handleSelectedBackgroundColorChange = (optionId: string, color: string) => {
     if (onOptionSelectedStyleChange) {
@@ -98,7 +96,6 @@ const OptionsList: React.FC<OptionsListProps> = ({
           <OptionItem
             key={`option-${option.id}`}
             option={option}
-            allowMultipleSelection={allowMultipleSelection}
             showEmojis={showEmojis}
             showImages={showImages}
             emojiOptions={emojiOptions}

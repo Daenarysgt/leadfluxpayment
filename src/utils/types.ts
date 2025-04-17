@@ -209,5 +209,4 @@ export interface MultipleChoiceContent {
   continueButtonText?: string;
   helperText?: string;
   showHelperText?: boolean;
-  continueButtonNavigation?: Navigation;
 }
