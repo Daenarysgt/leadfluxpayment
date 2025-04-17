@@ -44,13 +44,17 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       if (funnel) {
         // Register selected choice
         const selection = option.text || option.value;
-        await accessService.registerStepInteraction(
-          funnel.id,
-          activeStep + 1,
-          null, // usar sessionId atual
-          'choice',
-          selection
-        );
+        try {
+          await accessService.registerStepInteraction(
+            funnel.id,
+            activeStep + 1,
+            null, // usar sessionId atual
+            'choice',
+            selection
+          );
+        } catch (error) {
+          console.error("Error registering step interaction:", error);
+        }
         
         if (navigationType === "next") {
           console.log("Preview mode: Navigate to next step");
@@ -64,21 +68,38 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         else if (navigationType === "step" && option.navigation.stepId) {
           console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
           const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+          console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
+          
           if (stepIndex !== -1) {
             if (stepIndex === funnel.steps.length - 1) {
               // Se for o último step, marcar como conversão
-              await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
-            } else {
-              onStepChange(stepIndex);
+              try {
+                await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+              } catch (error) {
+                console.error("Error updating progress:", error);
+              }
             }
+            
+            // Força um atraso mínimo antes de mudar a etapa (para garantir que 
+            // as operações assíncronas terminem)
+            setTimeout(() => {
+              console.log("Actually changing step to:", stepIndex);
+              onStepChange(stepIndex);
+            }, 100);
           }
         }
         else if (navigationType === "url" && option.navigation.url) {
           console.log("Preview mode: Open external URL:", option.navigation.url);
           // Marcar como conversão antes de redirecionar
-          await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+          try {
+            await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+          } catch (error) {
+            console.error("Error updating progress before URL redirect:", error);
+          }
           window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
         }
+      } else {
+        console.warn("No funnel object available in preview props");
       }
     } else {
       // Handle navigation in canvas mode

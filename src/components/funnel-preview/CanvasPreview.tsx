@@ -27,26 +27,40 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   }, [funnel]);
   
   const handleStepChange = async (index: number) => {
-    if (!funnel) return;
+    console.log("CanvasPreview - handleStepChange called with index:", index);
     
-    // Registrar interação do usuário com o funil para a etapa ATUAL
-    await accessService.registerStepInteraction(
-      funnel.id,
-      activeStep + 1, // Usar activeStep em vez de index para registrar a etapa atual
-      sessionId,
-      'click'
-    );
-    
-    // Se chegou na última etapa
-    if (index === funnel.steps.length - 1) {
-      // Apenas atualiza o progresso e marca como conversão
-      await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
-    } else {
-      // Se não for a última etapa, apenas atualiza o progresso
-      await accessService.updateProgress(funnel.id, index + 1, sessionId);
+    if (!funnel) {
+      console.warn("CanvasPreview - No funnel available for navigation");
+      return;
     }
     
-    onStepChange(index);
+    try {
+      // Registrar interação do usuário com o funil para a etapa ATUAL
+      await accessService.registerStepInteraction(
+        funnel.id,
+        activeStep + 1, // Usar activeStep em vez de index para registrar a etapa atual
+        sessionId,
+        'click'
+      );
+      
+      // Se chegou na última etapa
+      if (index === funnel.steps.length - 1) {
+        // Apenas atualiza o progresso e marca como conversão
+        await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
+      } else {
+        // Se não for a última etapa, apenas atualiza o progresso
+        await accessService.updateProgress(funnel.id, index + 1, sessionId);
+      }
+    } catch (error) {
+      console.error("CanvasPreview - Error during step interaction:", error);
+      // Continue com a navegação mesmo com erro de registro
+    }
+    
+    console.log("CanvasPreview - Changing step to:", index);
+    // Garante que a mudança de etapa não seja bloqueada pelo processamento assíncrono
+    setTimeout(() => {
+      onStepChange(index);
+    }, 50);
   };
   
   return (

@@ -55,10 +55,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const canvasElements = stepData.canvasElements || [];
 
   const handleStepChange = (newStep: number) => {
+    console.log("FunnelPreview - handleStepChange called, navigating from", safeCurrentStep, "to", newStep);
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
     if (onNextStep) {
+      console.log("FunnelPreview - Notifying parent component of step change");
       onNextStep(newStep);
     }
   };
