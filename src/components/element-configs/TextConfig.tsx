@@ -88,7 +88,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         console.log("TextConfig - Updating editor from element formattedText");
         editorRef.current.innerHTML = element.content.formattedText;
         setCurrentContent(element.content.formattedText);
-        forceTransparentBackground();
+        // NÃO forçar fundo transparente aqui para preservar destaque
         setIsContentRestored(true);
       }
     }
@@ -108,7 +108,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
           console.log("TextConfig - Restoring content:", contentBufferRef.current);
           editorRef.current.innerHTML = contentBufferRef.current;
           setCurrentContent(contentBufferRef.current);
-          forceTransparentBackground();
+          // NÃO forçar fundo transparente aqui para preservar destaque
           setIsContentRestored(true);
         }
       }, 50);
@@ -119,14 +119,11 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   const forceTransparentBackground = () => {
     if (!editorRef.current) return;
     
-    // Usar um seletor mais seletivo - apenas divs e elementos que não têm backgroundColor explícito
-    const allElements = editorRef.current.querySelectorAll('div, p, h1, h2, h3, h4, h5, h6');
+    // Usar um seletor muito específico para garantir que não afetem spans que têm backgroundColor
+    const allElements = editorRef.current.querySelectorAll('div:not([style*="background"]), p:not([style*="background"])');
     allElements.forEach(el => {
       if (el instanceof HTMLElement) {
-        // Não afeta spans, que são usados para destaques
-        if (el.tagName.toLowerCase() !== 'span') {
-          el.style.backgroundColor = 'transparent';
-        }
+        el.style.backgroundColor = 'transparent';
       }
     });
   };
@@ -135,7 +132,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   const captureEditorContent = () => {
     if (!editorRef.current) return null;
     
-    // Capturar conteúdo atual
+    // Capturar conteúdo atual sem forçar transparência
     const content = editorRef.current.innerHTML;
     return content;
   };
@@ -216,8 +213,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Aplicar comando de formatação
     document.execCommand(command, false, value);
     
-    // Garantir fundo transparente após formatação
-    setTimeout(forceTransparentBackground, 0);
+    // NÃO chamar forceTransparentBackground para preservar destaques
     
     // Focar o editor novamente
     editorRef.current?.focus();
@@ -239,8 +235,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Aplicar cor
     document.execCommand('foreColor', false, color);
     
-    // Garantir fundo transparente após aplicar cor
-    setTimeout(forceTransparentBackground, 0);
+    // NÃO chamar forceTransparentBackground para preservar destaques
     
     // Focar o editor novamente
     editorRef.current?.focus();
@@ -278,39 +273,39 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     setHighlightColor(color);
     
     try {
-      // Focar o editor antes de aplicar o comando
-      if (editorRef.current) {
-        editorRef.current.focus();
-      }
+      // MÉTODO DIRETO: criar um span com estilo e substituir a seleção
+      const selectedContent = range.extractContents();
+      const highlightSpan = document.createElement('span');
+      highlightSpan.style.backgroundColor = color;
+      highlightSpan.appendChild(selectedContent);
+      range.insertNode(highlightSpan);
       
-      // Pequeno delay para garantir que o foco foi aplicado
-      setTimeout(() => {
-        // Aplicar a cor de fundo diretamente
-        document.execCommand('backColor', false, color);
+      // Limpar a seleção
+      selection.removeAllRanges();
+      
+      // Capturar o novo conteúdo e atualizar imediatamente
+      if (editorRef.current) {
+        const newContent = editorRef.current.innerHTML;
+        contentBufferRef.current = newContent;
+        setCurrentContent(newContent);
         
-        // Capturar o novo conteúdo e atualizar imediatamente
-        if (editorRef.current) {
-          contentBufferRef.current = editorRef.current.innerHTML;
-          setCurrentContent(editorRef.current.innerHTML);
-          
-          // Enviar atualização imediata
-          onUpdate({
-            content: {
-              ...element.content,
-              formattedText: editorRef.current.innerHTML,
-              fontSize,
-              fontColor,
-              marginTop
-            }
-          });
-          
-          toast({
-            title: "Destaque aplicado",
-            description: "O destaque foi aplicado com sucesso!",
-            duration: 2000,
-          });
-        }
-      }, 50);
+        // Enviar atualização imediata
+        onUpdate({
+          content: {
+            ...element.content,
+            formattedText: newContent,
+            fontSize,
+            fontColor,
+            marginTop
+          }
+        });
+        
+        toast({
+          title: "Destaque aplicado",
+          description: "O destaque foi aplicado com sucesso!",
+          duration: 2000,
+        });
+      }
     } catch (error) {
       console.error("Erro ao aplicar destaque:", error);
       toast({

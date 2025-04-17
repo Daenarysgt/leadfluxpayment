@@ -10,9 +10,15 @@ const TextRenderer = (props: ElementRendererProps) => {
     if (element.content?.formattedText) {
       // Estilo personalizado para preservar os destaques coloridos
       const customStyles = `
+        /* Garantir que todos os spans mantenham suas cores de fundo */
         span[style*="background-color"] {
           background-color: inherit !important;
           display: inline !important;
+        }
+        
+        /* Manter fundo transparente nos outros elementos */
+        div, p, h1, h2, h3, h4, h5, h6 {
+          background-color: transparent !important;
         }
       `;
       
