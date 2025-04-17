@@ -432,7 +432,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 pb-16 space-y-6">
       <TitleInput 
         title={element.content?.title || ""} 
         onChange={handleTitleChange} 
