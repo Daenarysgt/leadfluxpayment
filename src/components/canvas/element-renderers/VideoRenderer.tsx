@@ -13,8 +13,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
   
+  // Verificar se estamos no modo preview (visualização pública)
+  const isPreviewMode = !!element.previewMode;
+  
   // Detectar se qualquer elemento na página está sendo arrastado
+  // Mas apenas se não estivermos no modo preview
   useEffect(() => {
+    if (isPreviewMode) return; // Não instalar listeners no modo preview
+    
     const handleDragStart = () => setIsDraggingGlobal(true);
     const handleDragEnd = () => {
       setIsDraggingGlobal(false);
@@ -29,7 +35,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
       document.removeEventListener('dragstart', handleDragStart);
       document.removeEventListener('dragend', handleDragEnd);
     };
-  }, []);
+  }, [isPreviewMode]);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -92,18 +98,88 @@ const VideoRenderer = (props: ElementRendererProps) => {
     return embedUrl;
   };
 
-  // Verificar se deve bloquear interações com o vídeo
-  const shouldBlockInteraction = isDragging || isDraggingGlobal || isHovering;
-  
-  // Verificar se estamos no modo de visualização pública ou preview
-  const isPreviewMode = element.previewMode === true;
+  // Função para renderizar o vídeo no modo preview (sem bloqueios)
+  const renderPreviewVideo = () => {
+    const { videoUrl, videoType, embedCode } = content;
 
-  // No modo de preview/public, não devemos bloquear a interação
-  const effectiveBlockInteraction = isPreviewMode ? false : shouldBlockInteraction;
+    if (!videoUrl) {
+      return (
+        <div className="h-40 w-full flex flex-col items-center justify-center bg-gray-100 rounded-md">
+          <VideoIcon className="h-12 w-12 text-gray-400 mb-2" />
+          <p className="text-sm text-gray-500">Vídeo não configurado</p>
+        </div>
+      );
+    }
 
-  // Render based on video type (url, iframe, js)
-  const renderVideo = () => {
+    // Para URLs de vídeo (mp4, webm, etc.)
+    if (videoType === 'url') {
+      // Tratamento especial para URLs do YouTube
+      if (isYouTubeUrl(videoUrl)) {
+        const embedUrl = getYouTubeEmbedUrl(videoUrl);
+        return (
+          <div className="w-full h-full">
+            <iframe 
+              src={embedUrl}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        );
+      }
+
+      // URLs de vídeo regulares
+      return (
+        <div className="w-full h-full">
+          <video 
+            src={videoUrl}
+            className="w-full h-full"
+            controls={content.controls !== false}
+            autoPlay={content.autoPlay || false}
+            muted={content.muted || false}
+            loop={content.loop || false}
+            playsInline
+          />
+        </div>
+      );
+    }
+    
+    // Para embeds iframe
+    if (videoType === 'iframe') {
+      return (
+        <div className="w-full h-full">
+          <iframe 
+            src={videoUrl}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      );
+    }
+    
+    // Para embeds JavaScript
+    if (videoType === 'js' && embedCode) {
+      return (
+        <div 
+          className="w-full h-full"
+          dangerouslySetInnerHTML={{ __html: embedCode }}
+        />
+      );
+    }
+    
+    // Fallback
+    return (
+      <div className="h-40 w-full flex items-center justify-center bg-gray-100 rounded-md">
+        <VideoIcon className="h-12 w-12 text-gray-400" />
+      </div>
+    );
+  };
+
+  // Função para renderizar o vídeo no modo de edição (com bloqueios)
+  const renderEditorVideo = () => {
     const { videoUrl, videoType } = content;
+    const shouldBlockInteraction = isDragging || isDraggingGlobal || isHovering;
 
     if (!videoUrl) {
       return (
@@ -114,104 +190,43 @@ const VideoRenderer = (props: ElementRendererProps) => {
       );
     }
 
-    // No modo preview, renderizar sem bloqueios
-    if (isPreviewMode) {
-      // For standard video URLs (mp4, webm, etc.)
-      if (videoType === 'url') {
-        // Handle YouTube URLs specially
-        if (isYouTubeUrl(videoUrl)) {
-          const embedUrl = getYouTubeEmbedUrl(videoUrl);
-          return (
-            <div className="relative w-full h-full overflow-hidden">
-              <iframe 
-                src={embedUrl}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-          );
-        }
-
-        // Regular video file URL
-        return (
-          <div className="relative w-full h-full overflow-hidden">
-            <video 
-              src={videoUrl}
-              className="w-full h-full"
-              controls={content.controls !== false}
-              autoPlay={content.autoPlay || false}
-              muted={content.muted || false}
-              loop={content.loop || false}
-              playsInline
-            />
-          </div>
-        );
-      }
-      
-      // For iframe embeds
-      if (videoType === 'iframe') {
-        return (
-          <div className="relative w-full h-full overflow-hidden">
-            <iframe 
-              src={videoUrl}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-        );
-      }
-      
-      // For JavaScript embeds
-      if (videoType === 'js') {
-        return (
-          <div 
-            className="w-full h-full" 
-            dangerouslySetInnerHTML={{ __html: content.embedCode || '' }}
-          />
-        );
-      }
-    }
-
-    // Modo builder abaixo - com bloqueios de interação quando necessário
-    // For standard video URLs (mp4, webm, etc.)
+    // Para URLs de vídeo (mp4, webm, etc.)
     if (videoType === 'url') {
-      // Handle YouTube URLs specially
+      // Tratamento especial para URLs do YouTube
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
         return (
           <div className="relative w-full h-full overflow-hidden">
             <div className={cn(
               "w-full h-full",
-              effectiveBlockInteraction && "pointer-events-none"
+              shouldBlockInteraction && "pointer-events-none"
             )}>
               <iframe 
                 src={embedUrl}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
+                style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
               ></iframe>
             </div>
             
-            {/* Overlay para bloquear eventos de mouse durante drag & hover - agora com z-index alto */}
+            {/* Overlay para bloquear eventos de mouse durante drag & hover */}
             <div 
               className={cn(
                 "absolute inset-0 transition-opacity duration-200 z-50",
-                effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+                shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
               )}
             />
           </div>
         );
       }
 
-      // Regular video file URL
+      // URLs de vídeo regulares
       return (
         <div className="relative w-full h-full overflow-hidden">
           <div className={cn(
             "w-full h-full",
-            effectiveBlockInteraction && "pointer-events-none"
+            shouldBlockInteraction && "pointer-events-none"
           )}>
             <video 
               src={videoUrl}
@@ -221,7 +236,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
               muted={content.muted || false}
               loop={content.loop || false}
               playsInline
-              style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
+              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
             />
           </div>
           
@@ -229,27 +244,27 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0 transition-opacity duration-200 z-50",
-              effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
       );
     }
     
-    // For iframe embeds
+    // Para embeds iframe
     if (videoType === 'iframe') {
       return (
         <div className="relative w-full h-full overflow-hidden">
           <div className={cn(
             "w-full h-full",
-            effectiveBlockInteraction && "pointer-events-none"
+            shouldBlockInteraction && "pointer-events-none"
           )}>
             <iframe 
               src={videoUrl}
               className="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{ pointerEvents: effectiveBlockInteraction ? 'none' : 'auto' }}
+              style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
             ></iframe>
           </div>
           
@@ -257,14 +272,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0 transition-opacity duration-200 z-50",
-              effectiveBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
+              shouldBlockInteraction ? "bg-black/10" : "pointer-events-none opacity-0"
             )}
           />
         </div>
       );
     }
     
-    // For JavaScript embeds (just show a preview placeholder in builder)
+    // Para embeds JavaScript (apenas um placeholder no editor)
     if (videoType === 'js') {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100">
@@ -283,6 +298,37 @@ const VideoRenderer = (props: ElementRendererProps) => {
     );
   };
   
+  // Escolher o renderizador baseado no modo
+  const renderVideo = isPreviewMode ? renderPreviewVideo : renderEditorVideo;
+  
+  // Componente para modo de visualização (sem wrappers extras)
+  if (isPreviewMode) {
+    return (
+      <BaseElementRenderer {...props}>
+        <div 
+          className={cn(
+            "relative w-full flex items-center", 
+            alignmentClass
+          )}
+        >
+          {aspectRatio ? (
+            <div className="w-full max-w-full">
+              <AspectRatio ratio={aspectRatio}>
+                {renderPreviewVideo()}
+              </AspectRatio>
+            </div>
+          ) : (
+            <div className="w-full">
+              {renderPreviewVideo()}
+            </div>
+          )}
+        </div>
+        {content.title && <p className="text-center mt-2 text-sm">{content.title}</p>}
+      </BaseElementRenderer>
+    );
+  }
+  
+  // Componente para modo de edição (com wrappers e proteções)
   return (
     <BaseElementRenderer {...props}>
       <div 
@@ -291,24 +337,24 @@ const VideoRenderer = (props: ElementRendererProps) => {
           alignmentClass,
           "video-renderer-container"
         )}
-        onMouseEnter={!isPreviewMode ? () => setIsHovering(true) : undefined}
-        onMouseLeave={!isPreviewMode ? () => setIsHovering(false) : undefined}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
         draggable={false}
       >
         <div className={cn(
           "w-full relative",
-          !isPreviewMode && isDragging && "pointer-events-none", 
-          !isPreviewMode && isDraggingGlobal && "pointer-events-none"
+          isDragging && "pointer-events-none",
+          isDraggingGlobal && "pointer-events-none"
         )}>
           {aspectRatio ? (
             <div className="w-full max-w-full">
               <AspectRatio ratio={aspectRatio}>
-                {renderVideo()}
+                {renderEditorVideo()}
               </AspectRatio>
             </div>
           ) : (
             <div className="w-full">
-              {renderVideo()}
+              {renderEditorVideo()}
             </div>
           )}
           
@@ -316,7 +362,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
           <div 
             className={cn(
               "absolute inset-0",
-              (isDragging || isDraggingGlobal) && !isPreviewMode ? "z-50" : ""
+              (isDragging || isDraggingGlobal) ? "z-50" : ""
             )}
             style={{
               background: 'transparent',
