@@ -93,36 +93,75 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           <p className="text-sm text-muted-foreground">{content.description}</p>
         )}
         <div className="space-y-2">
-          {content.options?.map((option: any) => (
-            <div
-              key={option.id}
-              className={cn(
-                "p-4 border rounded-lg cursor-pointer transition-all duration-200",
-                "hover:bg-muted/50",
-                selectedOption === option.id && "border-violet-500 bg-violet-50"
-              )}
-              onClick={() => handleOptionClick(option)}
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                  selectedOption === option.id ? "border-violet-500 bg-violet-500" : "border-gray-300"
-                )}>
-                  {selectedOption === option.id && (
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{option.text}</div>
-                  {option.description && (
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {option.description}
+          {content.options?.map((option: any) => {
+            // Prepare styles based on option configurations
+            const optionStyle = option.style || {};
+            const isSelected = selectedOption === option.id;
+            const borderRadius = content.style?.borderRadius || 8; // Default border radius
+            const hoverColor = content.style?.hoverColor || "#f3f4f6"; // Default hover color
+            
+            // Inline styles for the option
+            const styleObject = {
+              backgroundColor: isSelected ? "#f5f3ff" : optionStyle.backgroundColor || "",
+              borderColor: isSelected ? "#8b5cf6" : optionStyle.borderColor || "",
+              color: optionStyle.textColor || "",
+              borderRadius: `${borderRadius}px`,
+              transition: "all 0.2s ease",
+            };
+            
+            // Create CSS class name for hover effect
+            const hoverClass = `hover-option-${option.id}`;
+            
+            // Add a style tag for this specific option's hover effect if not already added
+            if (!document.getElementById(hoverClass) && typeof document !== 'undefined') {
+              const style = document.createElement('style');
+              style.id = hoverClass;
+              style.innerHTML = `
+                .${hoverClass}:hover {
+                  background-color: ${!isSelected ? (hoverColor || "#f3f4f6") : ""} !important;
+                  color: ${optionStyle.hoverTextColor || ""} !important;
+                }
+              `;
+              document.head.appendChild(style);
+            }
+            
+            return (
+              <div
+                key={option.id}
+                className={cn(
+                  "p-4 border cursor-pointer transition-all duration-200",
+                  isSelected && "border-violet-500",
+                  hoverClass
+                )}
+                style={styleObject}
+                onClick={() => handleOptionClick(option)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                    isSelected ? "border-violet-500 bg-violet-500" : "border-gray-300"
+                  )}>
+                    {isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 flex items-center">
+                    {option.emoji && (
+                      <span className="mr-2 text-xl">{option.emoji}</span>
+                    )}
+                    <div>
+                      <span className="font-medium">{option.text}</span>
+                      {option.description && (
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {option.description}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </BaseElementRenderer>

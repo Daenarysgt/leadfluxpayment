@@ -13,11 +13,61 @@ export const getDefaultContent = (componentType: string) => {
       return { 
         title: "Você distrai facilmente?",
         options: [
-          { id: crypto.randomUUID(), text: "Distrai-se facilmente", emoji: "😵" },
-          { id: crypto.randomUUID(), text: "Ocasionalmente, perde a concentração", emoji: "😊" },
-          { id: crypto.randomUUID(), text: "Raramente perde a concentração", emoji: "🙂" },
-          { id: crypto.randomUUID(), text: "Muito concentrado", emoji: "🧐" },
-        ]
+          { 
+            id: crypto.randomUUID(), 
+            text: "Distrai-se facilmente", 
+            emoji: "😵",
+            style: {
+              backgroundColor: "#ffffff",
+              borderColor: "#e5e7eb",
+              textColor: "#000000",
+              hoverTextColor: "#4B5563"
+            },
+            navigation: { type: "next" }
+          },
+          { 
+            id: crypto.randomUUID(), 
+            text: "Ocasionalmente, perde a concentração", 
+            emoji: "😊",
+            style: {
+              backgroundColor: "#ffffff",
+              borderColor: "#e5e7eb",
+              textColor: "#000000",
+              hoverTextColor: "#4B5563"
+            },
+            navigation: { type: "next" }
+          },
+          { 
+            id: crypto.randomUUID(), 
+            text: "Raramente perde a concentração", 
+            emoji: "🙂",
+            style: {
+              backgroundColor: "#ffffff",
+              borderColor: "#e5e7eb",
+              textColor: "#000000",
+              hoverTextColor: "#4B5563"
+            },
+            navigation: { type: "next" }
+          },
+          { 
+            id: crypto.randomUUID(), 
+            text: "Muito concentrado", 
+            emoji: "🧐",
+            style: {
+              backgroundColor: "#ffffff",
+              borderColor: "#e5e7eb",
+              textColor: "#000000",
+              hoverTextColor: "#4B5563"
+            },
+            navigation: { type: "next" }
+          },
+        ],
+        style: {
+          borderRadius: 6,
+          hoverColor: "#f3f4f6"
+        },
+        showEmojis: true,
+        showImages: false
       };
     case ComponentType.MultipleChoiceImage:
       return {

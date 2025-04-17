@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/utils/store";
@@ -275,16 +274,27 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     const newShowEmojis = !showEmojis;
     setShowEmojis(newShowEmojis);
     
-    // Create a deep copy of options to avoid reference issues
-    const updatedOptions = element.content.options.map((option: any) => ({
-      ...option,
-      emoji: newShowEmojis ? (option.emoji || "😊") : undefined
-    }));
+    // Aplica ou remove emojis das opções
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (newShowEmojis && !option.emoji) {
+        // Se ativando emojis e a opção não tem emoji, adicionar um padrão
+        return { 
+          ...option, 
+          emoji: "😊" // Emoji padrão
+        };
+      } else if (!newShowEmojis && option.emoji) {
+        // Se desativando emojis e a opção tem emoji, remover
+        const { emoji, ...optionWithoutEmoji } = option;
+        return optionWithoutEmoji;
+      }
+      return option;
+    });
     
     onUpdate({
       content: {
         ...element.content,
-        options: updatedOptions
+        options: updatedOptions,
+        showEmojis: newShowEmojis
       }
     });
   };
@@ -293,16 +303,27 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     const newShowImages = !showImages;
     setShowImages(newShowImages);
     
-    // Create a deep copy of options to avoid reference issues
-    const updatedOptions = element.content.options.map((option: any) => ({
-      ...option,
-      image: newShowImages ? (option.image || "/placeholder.svg") : undefined
-    }));
+    // Aplica ou remove imagens das opções
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (newShowImages && !option.image) {
+        // Se ativando imagens e a opção não tem imagem, adicionar um padrão
+        return { 
+          ...option, 
+          image: "/placeholder.svg" // Imagem padrão
+        };
+      } else if (!newShowImages && option.image) {
+        // Se desativando imagens e a opção tem imagem, remover
+        const { image, ...optionWithoutImage } = option;
+        return optionWithoutImage;
+      }
+      return option;
+    });
     
     onUpdate({
       content: {
         ...element.content,
-        options: updatedOptions
+        options: updatedOptions,
+        showImages: newShowImages
       }
     });
   };
@@ -311,11 +332,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     const radius = value[0];
     setBorderRadius(radius);
     
+    // Atualiza o estilo global do elemento
     onUpdate({
       content: {
         ...element.content,
         style: {
-          ...(element.content?.style || {}),
+          ...(element.content.style || {}),
           borderRadius: radius
         }
       }
@@ -325,11 +347,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const handleHoverColorChange = (color: string) => {
     setHoverColor(color);
     
+    // Atualiza o estilo global do elemento
     onUpdate({
       content: {
         ...element.content,
         style: {
-          ...(element.content?.style || {}),
+          ...(element.content.style || {}),
           hoverColor: color
         }
       }
