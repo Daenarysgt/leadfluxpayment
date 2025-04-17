@@ -114,6 +114,67 @@ const VideoRenderer = (props: ElementRendererProps) => {
       );
     }
 
+    // No modo preview, renderizar sem bloqueios
+    if (isPreviewMode) {
+      // For standard video URLs (mp4, webm, etc.)
+      if (videoType === 'url') {
+        // Handle YouTube URLs specially
+        if (isYouTubeUrl(videoUrl)) {
+          const embedUrl = getYouTubeEmbedUrl(videoUrl);
+          return (
+            <div className="relative w-full h-full overflow-hidden">
+              <iframe 
+                src={embedUrl}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          );
+        }
+
+        // Regular video file URL
+        return (
+          <div className="relative w-full h-full overflow-hidden">
+            <video 
+              src={videoUrl}
+              className="w-full h-full"
+              controls={content.controls !== false}
+              autoPlay={content.autoPlay || false}
+              muted={content.muted || false}
+              loop={content.loop || false}
+              playsInline
+            />
+          </div>
+        );
+      }
+      
+      // For iframe embeds
+      if (videoType === 'iframe') {
+        return (
+          <div className="relative w-full h-full overflow-hidden">
+            <iframe 
+              src={videoUrl}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        );
+      }
+      
+      // For JavaScript embeds
+      if (videoType === 'js') {
+        return (
+          <div 
+            className="w-full h-full" 
+            dangerouslySetInnerHTML={{ __html: content.embedCode || '' }}
+          />
+        );
+      }
+    }
+
+    // Modo builder abaixo - com bloqueios de interação quando necessário
     // For standard video URLs (mp4, webm, etc.)
     if (videoType === 'url') {
       // Handle YouTube URLs specially
@@ -230,14 +291,14 @@ const VideoRenderer = (props: ElementRendererProps) => {
           alignmentClass,
           "video-renderer-container"
         )}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={!isPreviewMode ? () => setIsHovering(true) : undefined}
+        onMouseLeave={!isPreviewMode ? () => setIsHovering(false) : undefined}
         draggable={false}
       >
         <div className={cn(
           "w-full relative",
-          isDragging && "pointer-events-none", // Desabilitar interação com o vídeo durante drag
-          isDraggingGlobal && "pointer-events-none" // Também desabilitar quando qualquer elemento estiver sendo arrastado
+          !isPreviewMode && isDragging && "pointer-events-none", 
+          !isPreviewMode && isDraggingGlobal && "pointer-events-none"
         )}>
           {aspectRatio ? (
             <div className="w-full max-w-full">
