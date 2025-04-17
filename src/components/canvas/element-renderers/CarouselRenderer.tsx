@@ -1,14 +1,14 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ChevronLeft, ChevronRight, ArrowLeft, ArrowRight, CircleChevronLeft, CircleChevronRight } from "lucide-react";
 
 const CarouselRenderer = (props: ElementRendererProps) => {
   const { element } = props;
-  const { content } = element;
+  const { content = {} } = element;
   const [activeIndex, setActiveIndex] = useState(0);
   
   // Determine alignment class based on the content.alignment property
@@ -56,6 +56,13 @@ const CarouselRenderer = (props: ElementRendererProps) => {
   const options = useMemo(() => content?.options || [], [content?.options]);
   const hasImages = options.length > 0;
   
+  // Navigation settings
+  const showNavigation = content?.showNavigation !== false; // Default to true if not specified
+  const navigationType = content?.navigationType || "default"; // default, arrows, circles
+  const showIndicators = content?.showIndicators !== false; // Default to true if not specified
+  const indicatorColor = content?.indicatorColor || "#7c3aed"; // Use default color if not specified
+  const indicatorInactiveColor = content?.indicatorInactiveColor || "#d1d5db"; // Default gray-300
+  
   const handlePrevious = useCallback(() => {
     setActiveIndex((prev) => {
       if (prev - 1 < 0) {
@@ -77,6 +84,23 @@ const CarouselRenderer = (props: ElementRendererProps) => {
   const goToSlide = useCallback((index: number) => {
     setActiveIndex(index);
   }, []);
+  
+  // Get the appropriate navigation icons based on navigationType
+  const NavPrevIcon = useMemo(() => {
+    switch (navigationType) {
+      case "arrows": return ArrowLeft;
+      case "circles": return CircleChevronLeft;
+      default: return ChevronLeft;
+    }
+  }, [navigationType]);
+  
+  const NavNextIcon = useMemo(() => {
+    switch (navigationType) {
+      case "arrows": return ArrowRight;
+      case "circles": return CircleChevronRight;
+      default: return ChevronRight;
+    }
+  }, [navigationType]);
   
   // Memoize carousel items
   const carouselItems = useMemo(() => {
@@ -101,13 +125,19 @@ const CarouselRenderer = (props: ElementRendererProps) => {
         )}
         
         {item.text && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-sm">
+          <div 
+            className="absolute bottom-0 left-0 right-0 p-2 text-sm"
+            style={{
+              backgroundColor: content.captionBgColor || "rgba(0, 0, 0, 0.5)",
+              color: content.captionTextColor || "white"
+            }}
+          >
             {item.text}
           </div>
         )}
       </div>
     ));
-  }, [options, activeIndex]);
+  }, [options, activeIndex, content.captionBgColor, content.captionTextColor]);
   
   return (
     <BaseElementRenderer {...props}>
@@ -128,34 +158,37 @@ const CarouselRenderer = (props: ElementRendererProps) => {
               )}
               
               {/* Navigation arrows */}
-              {options.length > 1 && (
+              {options.length > 1 && showNavigation && (
                 <>
                   <button 
                     onClick={handlePrevious}
                     className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/30 text-white rounded-full p-1 hover:bg-black/50"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m15 18-6-6 6-6"/></svg>
+                    <NavPrevIcon className="w-5 h-5" />
                   </button>
                   <button 
                     onClick={handleNext}
                     className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/30 text-white rounded-full p-1 hover:bg-black/50"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="m9 18 6-6-6-6"/></svg>
+                    <NavNextIcon className="w-5 h-5" />
                   </button>
                 </>
               )}
             </div>
             
             {/* Indicators */}
-            {options.length > 1 && (
+            {options.length > 1 && showIndicators && (
               <div className="flex justify-center mt-2 gap-1">
                 {options.map((_, index) => (
                   <button
                     key={index}
                     className={cn(
                       "w-2 h-2 rounded-full transition-all",
-                      index === activeIndex ? "bg-primary w-4" : "bg-gray-300"
+                      index === activeIndex ? "w-4" : ""
                     )}
+                    style={{
+                      backgroundColor: index === activeIndex ? indicatorColor : indicatorInactiveColor
+                    }}
                     onClick={() => goToSlide(index)}
                   />
                 ))}
