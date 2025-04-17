@@ -364,29 +364,29 @@ const BaseElementRenderer = ({
           
           {/* Botões de navegação fixados no lado */}
           {!isPreviewMode && (isSelected || isHovering) && (
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-white rounded-lg p-1.5 shadow-lg z-[999] border border-violet-200">
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-lg p-1 shadow-lg z-[999] border border-violet-200">
               {showMoveUp && (
                 <button 
-                  className="w-7 h-7 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
+                  className="w-6 h-6 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveUp}
                   style={{
                     position: 'relative',
                     zIndex: 9999
                   }}
                 >
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-3.5 w-3.5" />
                 </button>
               )}
               {showMoveDown && (
                 <button 
-                  className="w-7 h-7 bg-violet-500 hover:bg-violet-600 rounded-full flex items-center justify-center text-white"
+                  className="w-6 h-6 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 rounded-full flex items-center justify-center text-white"
                   onClick={handleMoveDown}
                   style={{
                     position: 'relative',
                     zIndex: 9999
                   }}
                 >
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
