@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useStore } from "@/utils/store";
 import { useEffect, useState } from "react";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Funnel } from "@/utils/types";
+import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
 
 const Preview = () => {
   const { funnelId } = useParams<{ funnelId: string }>();
@@ -98,6 +98,9 @@ const Preview = () => {
           />
         </div>
       </main>
+      
+      {/* Debugger do Facebook Pixel - apenas em desenvolvimento */}
+      {process.env.NODE_ENV === 'development' && <FacebookPixelDebugger />}
     </div>
   );
 };

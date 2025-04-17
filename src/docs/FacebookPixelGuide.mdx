@@ -1,0 +1,89 @@
+# Guia de Integração do Facebook Pixel
+
+Este guia explica como configurar, testar e validar o Facebook Pixel no seu funil LeadFlux.
+
+## Configuração Inicial
+
+1. Acesse o [Gerenciador de Eventos do Facebook](https://www.facebook.com/events_manager)
+2. Crie um novo Pixel ou selecione um existente
+3. Copie o ID do Pixel (número de 15-16 dígitos)
+4. No LeadFlux, vá para **Configurações > Integrações**
+5. Insira o ID do Pixel e salve
+
+## Eventos Automáticos
+
+O LeadFlux pode rastrear automaticamente dois tipos de eventos:
+
+- **PageView**: disparado sempre que um usuário visualiza uma página do funil
+- **CompleteRegistration**: disparado quando o usuário atinge a última página do funil
+
+Estes eventos podem ser ativados ou desativados nas configurações.
+
+## Eventos Personalizados para Botões
+
+Você pode configurar eventos personalizados para botões específicos:
+
+1. Selecione um botão no editor
+2. Vá para a aba "Ação"
+3. Em "Evento do Facebook Pixel", selecione um evento predefinido ou crie um personalizado
+4. Configure parâmetros adicionais se necessário
+
+### Eventos Disponíveis
+
+- **InitiateCheckout**: quando o usuário inicia um processo de checkout
+- **Lead**: quando o usuário se torna um lead
+- **Contact**: quando o usuário faz contato
+- **AddToCart**: quando o usuário adiciona um item ao carrinho
+- **Purchase**: quando o usuário faz uma compra
+- **Subscribe**: quando o usuário se inscreve em algo
+- **Evento Personalizado**: defina seu próprio nome de evento
+
+## Parâmetros Avançados
+
+Dependendo do evento, você pode adicionar parâmetros como:
+
+- **Valor monetário**: para eventos como Purchase ou InitiateCheckout
+- **Moeda**: a moeda usada na transação
+- **Tipo de lead**: para classificar diferentes tipos de leads
+
+## Testando a Integração
+
+### Modo de Debug
+
+1. Ative o "Modo de teste" nos parâmetros avançados de um botão
+2. Visualize o funil em modo de preview
+3. Os eventos serão exibidos no console do navegador quando disparados
+
+### Validação no Facebook
+
+Para validar os eventos no Facebook:
+
+1. Instale a extensão [Facebook Pixel Helper](https://chrome.google.com/webstore/detail/facebook-pixel-helper/fdgfkebogiimcoedlicjlajpkdmockpc)
+2. Navegue pelo seu funil
+3. Clique no ícone da extensão para ver os eventos disparados
+4. Verifique se os eventos e parâmetros estão sendo enviados corretamente
+
+## Solução de Problemas
+
+### O Pixel não está rastreando
+
+- Verifique se o ID do Pixel está correto
+- Certifique-se de que o rastreamento está ativado nas configurações
+- Verifique se há bloqueadores de rastreamento no navegador
+
+### Eventos personalizados não aparecem
+
+- Verifique se o botão tem um evento configurado
+- Verifique se o evento tem o nome correto (sem espaços ou caracteres especiais)
+- Ative o modo de debug para verificar se o evento está sendo disparado
+
+## Boas Práticas
+
+1. **Teste em produção**: Sempre teste os eventos em um ambiente de produção
+2. **Verifique os parâmetros**: Certifique-se de que os parâmetros estão corretos para campanhas de remarketing
+3. **Use nomes consistentes**: Para eventos personalizados, use nomes claros e consistentes
+4. **Documente seus eventos**: Mantenha um registro dos eventos configurados e seus propósitos
+
+---
+
+Para mais informações, consulte a [documentação oficial do Facebook Pixel](https://developers.facebook.com/docs/facebook-pixel). 
