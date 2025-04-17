@@ -527,6 +527,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       
       <OptionsList 
         options={element.content?.options || []}
+        allowMultipleSelection={allowMultipleSelection}
         showEmojis={showEmojis}
         showImages={showImages}
         emojiOptions={EMOJI_OPTIONS}

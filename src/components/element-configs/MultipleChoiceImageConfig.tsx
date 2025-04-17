@@ -364,54 +364,63 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
               
               <div className="space-y-2">
                 <Label>Navegação</Label>
-                <Select 
-                  defaultValue={option.navigation?.type || "next"}
-                  onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a ação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">
-                      <div className="flex items-center">
-                        <X className="h-4 w-4 mr-2" />
-                        <span>Nenhum</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="next">Ir para próxima etapa</SelectItem>
-                    <SelectItem value="step">Ir para etapa específica</SelectItem>
-                    <SelectItem value="url">Abrir URL externa</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {option.navigation?.type === "step" && (
-                  <div className="pt-2">
+                {!element.content?.allowMultipleSelection ? (
+                  <>
                     <Select 
-                      defaultValue={option.navigation?.stepId || ""}
-                      onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
+                      defaultValue={option.navigation?.type || "next"}
+                      onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma etapa" />
+                        <SelectValue placeholder="Selecione a ação" />
                       </SelectTrigger>
                       <SelectContent>
-                        {steps.map((step) => (
-                          <SelectItem key={step.id} value={step.id}>
-                            {step.title}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="none">
+                          <div className="flex items-center">
+                            <X className="h-4 w-4 mr-2" />
+                            <span>Nenhum</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="next">Ir para próxima etapa</SelectItem>
+                        <SelectItem value="step">Ir para etapa específica</SelectItem>
+                        <SelectItem value="url">Abrir URL externa</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                )}
-                
-                {option.navigation?.type === "url" && (
-                  <div className="pt-2">
-                    <Input
-                      type="url"
-                      placeholder="https://www.example.com"
-                      value={option.navigation?.url || ""}
-                      onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
-                    />
+                    
+                    {option.navigation?.type === "step" && (
+                      <div className="pt-2">
+                        <Select 
+                          defaultValue={option.navigation?.stepId || ""}
+                          onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma etapa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {steps.map((step) => (
+                              <SelectItem key={step.id} value={step.id}>
+                                {step.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {option.navigation?.type === "url" && (
+                      <div className="pt-2">
+                        <Input
+                          type="url"
+                          placeholder="https://www.example.com"
+                          value={option.navigation?.url || ""}
+                          onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-amber-600 py-1">
+                    A navegação individual está desativada quando a múltipla seleção está ativa.
+                    Configure a navegação no botão "Continuar".
                   </div>
                 )}
               </div>

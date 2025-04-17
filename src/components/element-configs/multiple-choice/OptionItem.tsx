@@ -29,6 +29,7 @@ interface OptionItemProps {
   showImages: boolean;
   emojiOptions: string[];
   steps?: Array<{ id: string; title: string }>;
+  allowMultipleSelection: boolean;
   onTextChange: (id: string, text: string) => void;
   onEmojiChange: (id: string, emoji: string) => void;
   onBackgroundColorChange: (id: string, color: string) => void;
@@ -51,6 +52,7 @@ const OptionItem = ({
   showImages,
   emojiOptions,
   steps = [],
+  allowMultipleSelection,
   onTextChange,
   onEmojiChange,
   onBackgroundColorChange,
@@ -229,81 +231,92 @@ const OptionItem = ({
       
       <Separator className="my-2" />
       
-      <div className="space-y-2">
-        <Label className="text-xs">Navegação</Label>
-        <Select 
-          defaultValue={navigationType}
-          onValueChange={(value) => onNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Selecione a ação" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none" className="text-xs">
-              <div className="flex items-center">
-                <X className="h-3.5 w-3.5 mr-1.5" />
-                <span>Nenhum</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="next" className="text-xs">
-              <div className="flex items-center">
-                <ChevronRight className="h-3.5 w-3.5 mr-1.5" />
-                <span>Ir para próxima etapa</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="step" className="text-xs">
-              <div className="flex items-center">
-                <CornerUpRight className="h-3.5 w-3.5 mr-1.5" />
-                <span>Ir para etapa específica</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="url" className="text-xs">
-              <div className="flex items-center">
-                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                <span>Abrir URL externa</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        
-        {navigationType === "step" && steps.length > 0 && (
-          <div className="pt-1">
-            <Select 
-              defaultValue={option.navigation?.stepId || ""}
-              onValueChange={(value) => onStepIdChange(option.id, value)}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Selecione uma etapa" />
-              </SelectTrigger>
-              <SelectContent>
-                {steps.map((step) => (
-                  <SelectItem key={step.id} value={step.id} className="text-xs">
-                    {step.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {navigationType === "step" && steps.length === 0 && (
-          <div className="pt-1 text-xs text-amber-600">
-            Nenhuma etapa disponível. Crie etapas primeiro.
-          </div>
-        )}
-        
-        {navigationType === "url" && (
-          <div className="pt-1">
-            <Input
-              type="url"
-              placeholder="https://www.example.com"
-              className="h-8 text-xs"
-              value={option.navigation?.url || ""}
-              onChange={(e) => onUrlChange(option.id, e.target.value)}
-            />
-          </div>
-        )}
-      </div>
+      {/* Seção de navegação - escondida quando múltipla seleção estiver ativada */}
+      {!allowMultipleSelection && (
+        <div className="space-y-2">
+          <Label className="text-xs">Navegação</Label>
+          <Select 
+            defaultValue={navigationType}
+            onValueChange={(value) => onNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecione a ação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none" className="text-xs">
+                <div className="flex items-center">
+                  <X className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Nenhum</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="next" className="text-xs">
+                <div className="flex items-center">
+                  <ChevronRight className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Ir para próxima etapa</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="step" className="text-xs">
+                <div className="flex items-center">
+                  <CornerUpRight className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Ir para etapa específica</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="url" className="text-xs">
+                <div className="flex items-center">
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Abrir URL externa</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {navigationType === "step" && steps.length > 0 && (
+            <div className="pt-1">
+              <Select 
+                defaultValue={option.navigation?.stepId || ""}
+                onValueChange={(value) => onStepIdChange(option.id, value)}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Selecione uma etapa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {steps.map((step) => (
+                    <SelectItem key={step.id} value={step.id} className="text-xs">
+                      {step.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {navigationType === "step" && steps.length === 0 && (
+            <div className="pt-1 text-xs text-amber-600">
+              Nenhuma etapa disponível. Crie etapas primeiro.
+            </div>
+          )}
+          
+          {navigationType === "url" && (
+            <div className="pt-1">
+              <Input
+                type="url"
+                placeholder="https://www.example.com"
+                className="h-8 text-xs"
+                value={option.navigation?.url || ""}
+                onChange={(e) => onUrlChange(option.id, e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Mensagem informativa quando múltipla seleção estiver ativada */}
+      {allowMultipleSelection && (
+        <div className="text-xs text-amber-600 py-1">
+          A navegação individual está desativada quando a múltipla seleção está ativa.
+          Configure a navegação no botão "Continuar".
+        </div>
+      )}
     </div>
   );
 };
