@@ -348,6 +348,9 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   ];
   
   const highlightOptions = [
+    // Cores básicas vibrantes primeiro
+    "#FF0000", "#0000FF", "#FFFF00", "#00FF00", "#000000", "#FFFFFF",
+    // Depois as cores existentes
     "#ffff00", "#00ffff", "#ff9900", "#ff00ff", "#FF5A5A", "#7DF9FF", "#FDFD96", "#CCCCFF", "#FFD1DC", "#CDB5CD",
     "#C9A9A6", "#B0E0E6", "#D3FFCE", "#DCDCDC", "#FFF8DC", "#E0FFFF", "#FEDFC9", "#E8D0A9", "#FDE1DF", "#FFB6C1"
   ];
