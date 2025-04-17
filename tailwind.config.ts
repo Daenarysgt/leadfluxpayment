@@ -125,8 +125,8 @@ export default {
           "50%": { transform: "rotate(3deg)" },
         },
         "glow": {
-          "0%, 100%": { boxShadow: "0 0 5px rgba(124, 58, 237, 0.5)" },
-          "50%": { boxShadow: "0 0 20px rgba(124, 58, 237, 0.8)" },
+          "0%, 100%": { boxShadow: "0 0 5px var(--glow-color, rgba(124, 58, 237, 0.5))" },
+          "50%": { boxShadow: "0 0 20px var(--glow-color, rgba(124, 58, 237, 0.8))" },
         },
         "scale": {
           "0%, 100%": { transform: "scale(1)" },

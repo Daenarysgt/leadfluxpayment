@@ -290,6 +290,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               backgroundColor: buttonColor
             } : {}),
             "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
+            "--glow-color": buttonColor + "80", // Adicionar variável de cor para a animação glow (com 50% de opacidade)
           } as React.CSSProperties}
           onClick={performNavigation}
         >
