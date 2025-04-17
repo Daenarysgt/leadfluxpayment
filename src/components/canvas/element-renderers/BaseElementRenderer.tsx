@@ -140,7 +140,7 @@ const BaseElementRenderer = ({
           
           {/* Only show drag handle when the element is selected */}
           {isSelected && onDragStart && !isPreviewMode && (
-            <div className="absolute left-0 top-0 bottom-0 flex items-center">
+            <div className="absolute left-0 top-0 bottom-0 flex items-center z-20">
               <div 
                 className="w-8 h-8 bg-violet-100 flex items-center justify-center cursor-grab active:cursor-grabbing rounded-br transition-opacity"
                 draggable={true}
@@ -155,7 +155,7 @@ const BaseElementRenderer = ({
           
           {/* Only show up/down buttons when NOT in preview mode */}
           {!isPreviewMode && (
-            <div className="absolute -left-10 top-0 h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute -left-10 top-0 h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
               {showMoveUp && (
                 <button 
                   className="w-8 h-8 bg-white rounded-full shadow flex items-center justify-center mb-1 hover:bg-gray-100"
@@ -179,7 +179,7 @@ const BaseElementRenderer = ({
           
           {/* Right-side element actions */}
           {isSelected && !isPreviewMode && (
-            <div className="absolute right-2 top-2 flex items-center gap-1 bg-white/80 rounded-md p-1 shadow-sm">
+            <div className="absolute right-2 top-2 flex items-center gap-1 bg-white/80 rounded-md p-1 shadow-sm z-20">
               {onDuplicate && (
                 <button
                   className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100"
