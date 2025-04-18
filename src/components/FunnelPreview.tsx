@@ -87,54 +87,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   // Verificar se há imagem de fundo configurada para ajustar a visualização
   const hasBackgroundImage = !!activeFunnel.settings.backgroundImage;
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
-  const contentStyle = activeFunnel.settings.contentStyle || 'solid';
+  const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
   // Determinar o estilo baseado na configuração
-  let containerStyles: React.CSSProperties = {};
-  
-  switch (contentStyle) {
-    case 'transparent':
-      containerStyles = {
-        backgroundColor: 'transparent',
-        color: hasBackgroundImage ? 'white' : 'inherit',
-      };
-      break;
-      
-    case 'glassmorphism':
-      containerStyles = {
-        backgroundColor: hasBackgroundImage 
-          ? 'rgba(255, 255, 255, 0.15)'
-          : (backgroundColor || '#ffffff'),
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        color: hasBackgroundImage ? 'white' : 'inherit',
-      };
-      break;
-      
-    case 'gradient':
-      containerStyles = {
-        background: hasBackgroundImage
-          ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.8))'
-          : (backgroundColor || '#ffffff'),
-        color: hasBackgroundImage ? 'white' : 'inherit',
-      };
-      break;
-      
-    case 'solid':
-    default:
-      containerStyles = {
-        backgroundColor: hasBackgroundImage 
-          ? `rgba(0, 0, 0, ${useBackgroundOpacity ? activeFunnel.settings.backgroundOpacity : 0.8})` 
-          : (backgroundColor || '#ffffff'),
-        color: hasBackgroundImage ? 'white' : 'inherit',
-      };
-      break;
-  }
-  
-  // Propriedades comuns para todos os estilos
-  containerStyles = {
-    ...containerStyles,
+  let containerStyles: React.CSSProperties = {
+    backgroundColor: 'transparent',
+    color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: '0.5rem',
     padding: '1.5rem',
