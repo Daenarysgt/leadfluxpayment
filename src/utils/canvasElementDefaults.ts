@@ -229,10 +229,15 @@ export const getDefaultContent = (componentType: string) => {
       return { 
         title: "Inscreva-se na nossa newsletter", 
         description: "Receba as últimas atualizações diretamente na sua caixa de entrada.",
-        placeholder: "Seu endereço de email", 
+        captureFields: [
+          {
+            id: crypto.randomUUID(),
+            type: "email",
+            placeholder: "Seu endereço de email"
+          }
+        ],
         buttonText: "Inscrever-se",
         successMessage: "Obrigado por se inscrever!",
-        captureType: "email",
         style: {
           primaryColor: "#8B5CF6",
           titleAlignment: "center"

@@ -141,7 +141,7 @@ const LoadingRenderer: React.FC<ElementRendererProps> = (props) => {
     center: 'text-center',
     right: 'text-right'
   };
-  
+
   return (
     <BaseElementRenderer {...props}>
       <div className="p-6 flex flex-col items-center w-full">
@@ -152,7 +152,7 @@ const LoadingRenderer: React.FC<ElementRendererProps> = (props) => {
         {content?.title && (
           <h3 
             className={`text-xl font-semibold mb-3 w-full ${alignmentClasses[titleAlignment as keyof typeof alignmentClasses]}`}
-            style={{ color: primaryColor }}
+              style={{ color: primaryColor }}
           >
             {content.title}
           </h3>
@@ -167,8 +167,8 @@ const LoadingRenderer: React.FC<ElementRendererProps> = (props) => {
         {autoRedirect && showRedirectText && (
           <div className="mt-3 text-base font-medium py-2" style={{ color: primaryColor }}>
             Redirecionando em <span className="font-bold text-lg">{Math.ceil(redirectDelay - (progress / 100 * redirectDelay))}s</span>...
-          </div>
-        )}
+            </div>
+          )}
       </div>
     </BaseElementRenderer>
   );
