@@ -1,4 +1,3 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
@@ -193,8 +192,11 @@ const CartesianRenderer = (props: ElementRendererProps) => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
-                      className="bg-red-500 h-2.5 rounded-full" 
-                      style={{ width: `${item.leftValue}%` }}
+                      className="h-2.5 rounded-full" 
+                      style={{ 
+                        width: `${item.leftValue}%`,
+                        backgroundColor: item.leftColor || "#FF6B6B"
+                      }}
                     ></div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{item.leftLabel}</div>
@@ -207,8 +209,11 @@ const CartesianRenderer = (props: ElementRendererProps) => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div 
-                      className="bg-green-500 h-2.5 rounded-full" 
-                      style={{ width: `${item.rightValue}%` }}
+                      className="h-2.5 rounded-full" 
+                      style={{ 
+                        width: `${item.rightValue}%`,
+                        backgroundColor: item.rightColor || "#67E8C3"
+                      }}
                     ></div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">{item.rightLabel}</div>

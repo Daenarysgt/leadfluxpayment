@@ -9,6 +9,7 @@ import { PlusCircle, Trash2, MoveHorizontal, MoveVertical, Sliders } from "lucid
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ColorPicker } from "./common/ColorPicker";
 
 interface CartesianConfigProps {
   element: CanvasElement;
@@ -26,6 +27,8 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
       leftValue: 50,
       rightLabel: "Alto",
       rightValue: 90,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     },
     {
       title: "Nível de Lucro",
@@ -33,6 +36,8 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
       leftValue: 25,
       rightLabel: "Alto", 
       rightValue: 70,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     },
     {
       title: "Taxa de conversão",
@@ -40,6 +45,8 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
       leftValue: 31,
       rightLabel: "Alta",
       rightValue: 76,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     }
   ];
   
@@ -83,6 +90,8 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
       leftValue: 30,
       rightLabel: "Alto",
       rightValue: 70,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     };
     
     handleContentChange('comparisonData', [...comparisonData, newItem]);
@@ -160,7 +169,7 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
   };
 
   return (
-    <div className="space-y-4 p-1">
+    <div className="space-y-4 p-1 pb-36">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full mb-4">
           <TabsTrigger value="basic" className="flex-1">Básico</TabsTrigger>
@@ -216,7 +225,7 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <ConfigLabel>Mostrar Métricas de Comparação</ConfigLabel>
               <Switch 
@@ -224,6 +233,52 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
                 onCheckedChange={(checked) => handleContentChange('showComparison', checked)}
               />
             </div>
+            
+            {content.showComparison !== false && (
+              <div className="border p-4 rounded-lg space-y-4">
+                <ConfigLabel>Cores das Métricas</ConfigLabel>
+                
+                {comparisonData.map((item, index) => (
+                  <div key={index} className="border p-3 rounded-md space-y-3">
+                    <div className="font-medium text-sm">{item.title}</div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground">Cor Esquerda</div>
+                        <div className="flex">
+                          <Input
+                            type="text"
+                            value={item.leftColor || "#FF6B6B"}
+                            onChange={(e) => updateComparisonItem(index, 'leftColor', e.target.value)}
+                            className="h-8 w-full"
+                          />
+                          <ColorPicker
+                            value={item.leftColor || "#FF6B6B"}
+                            onChange={(color) => updateComparisonItem(index, 'leftColor', color)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground">Cor Direita</div>
+                        <div className="flex">
+                          <Input
+                            type="text"
+                            value={item.rightColor || "#67E8C3"}
+                            onChange={(e) => updateComparisonItem(index, 'rightColor', e.target.value)}
+                            className="h-8 w-full"
+                          />
+                          <ColorPicker
+                            value={item.rightColor || "#67E8C3"}
+                            onChange={(color) => updateComparisonItem(index, 'rightColor', color)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
         
