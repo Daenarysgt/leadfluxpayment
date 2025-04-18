@@ -16,7 +16,11 @@ import {
   ArrowUp,
   ArrowDown,
   Highlighter,
-  Type
+  Type,
+  Heading1,
+  Heading2,
+  Heading3,
+  Text
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -263,6 +267,33 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     
     // Focar o editor novamente
     editorRef.current?.focus();
+    
+    // Enviar atualização após um breve atraso
+    setTimeout(() => {
+      handleEditorInput();
+    }, 50);
+  };
+
+  // Função para aplicar formatação de headings
+  const applyHeading = (headingTag: string) => {
+    // Capturar o conteúdo atual antes de formatar
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Aplicar formatação de heading
+    document.execCommand('formatBlock', false, headingTag);
+    
+    // Focar o editor novamente
+    editorRef.current?.focus();
+    
+    // Notificar mudança
+    toast({
+      title: "Estilo de texto alterado",
+      description: `Texto formatado como ${headingTag.toUpperCase()}`,
+      duration: 2000
+    });
     
     // Enviar atualização após um breve atraso
     setTimeout(() => {
@@ -582,6 +613,67 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             </ToggleGroup>
           </div>
           
+          {/* Nova barra para formatação de headings */}
+          <div className="flex flex-wrap gap-2 mb-3 border-t pt-2">
+            <p className="text-xs text-muted-foreground w-full mb-1">
+              Selecione o texto e escolha o estilo:
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-lg font-bold"
+              onClick={() => applyHeading('<h1>')}
+              title="Título principal (H1)"
+            >
+              <Heading1 className="h-4 w-4 mr-1" /> H1
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-base font-bold"
+              onClick={() => applyHeading('<h2>')}
+              title="Subtítulo grande (H2)"
+            >
+              <Heading2 className="h-4 w-4 mr-1" /> H2
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-sm font-bold"
+              onClick={() => applyHeading('<h3>')}
+              title="Subtítulo médio (H3)"
+            >
+              <Heading3 className="h-4 w-4 mr-1" /> H3
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-xs font-bold"
+              onClick={() => applyHeading('<h4>')}
+              title="Subtítulo pequeno (H4)"
+            >
+              H4
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 text-xs font-bold"
+              onClick={() => applyHeading('<h5>')}
+              title="Subtítulo muito pequeno (H5)"
+            >
+              H5
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8"
+              onClick={() => applyHeading('<p>')}
+              title="Parágrafo normal"
+            >
+              <Text className="h-4 w-4 mr-1" /> P
+            </Button>
+          </div>
+          
           <div
             ref={editorRef}
             contentEditable
@@ -650,7 +742,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             />
           </div>
           
-          {/* Novo controle para espaçamento entre linhas */}
+          {/* Controle para espaçamento entre linhas */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="line-height">Espaçamento entre linhas</Label>
@@ -686,7 +778,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             />
           </div>
           
-          {/* Novo controle para espaçamento entre letras */}
+          {/* Controle para espaçamento entre letras */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="letter-spacing">Espaçamento entre letras</Label>
