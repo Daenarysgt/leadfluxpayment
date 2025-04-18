@@ -18,5 +18,6 @@ export { default as CaptureRenderer } from './CaptureRenderer';
 export { default as LoadingRenderer } from './LoadingRenderer';
 export { default as CartesianRenderer } from './CartesianRenderer';
 export { default as VideoRenderer } from './VideoRenderer';
+export { default as PricingRenderer } from './PricingRenderer';
 export { default as GenericElementRenderer } from './GenericElementRenderer';
 export { default as BaseElementRenderer } from './BaseElementRenderer'; 
