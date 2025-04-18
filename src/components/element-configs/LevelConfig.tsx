@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
+import { Label } from "@/components/ui/label";
 
 interface LevelConfigProps {
   element: CanvasElement;
@@ -41,6 +42,19 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
       }
     });
   };
+
+  // Get style settings
+  const primaryColor = style?.primaryColor || "#8B5CF6";
+  const titleAlignment = style?.titleAlignment || "center";
+  const showLabels = style?.showLabels !== false;
+  const showMiddleLabel = style?.showMiddleLabel !== false;
+  const showPercentage = style?.showPercentage === true;
+  const beginnerLabel = style?.beginnerLabel || "Beginner";
+  const expertLabel = style?.expertLabel || "Expert";
+  const middleLabel = style?.middleLabel || "Intermediário";
+  const labelsColor = style?.labelsColor || "#6B7280";
+  const percentageColor = style?.percentageColor || primaryColor;
+  const secondaryColor = style?.secondaryColor || "#8B5CF6";
 
   return (
     <div className="space-y-4 p-1">
@@ -91,34 +105,14 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
               onValueChange={(values) => handleContentChange('maxValue', values[0])}
             />
           </div>
-          
-          <div className="space-y-2">
-            <ConfigLabel>Texto do nível (ex: "Level 3 of 6")</ConfigLabel>
-            <Input 
-              value={content.levelText || 'Level %value% of %max%'} 
-              onChange={(e) => handleContentChange('levelText', e.target.value)}
-              placeholder="Level %value% of %max%"
-            />
-            <p className="text-xs text-gray-500">
-              Use %value% para o valor atual e %max% para o valor máximo
-            </p>
-          </div>
         </TabsContent>
         
         <TabsContent value="style" className="space-y-4 pb-16">
           <div className="space-y-2">
             <ConfigLabel>Cor da barra de progresso</ConfigLabel>
             <ColorPicker 
-              value={style.primaryColor || '#8B5CF6'} 
+              value={primaryColor} 
               onChange={(color) => handleStyleChange('primaryColor', color)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <ConfigLabel>Cor do texto do nível</ConfigLabel>
-            <ColorPicker 
-              value={style.levelTextColor || style.primaryColor || '#8B5CF6'} 
-              onChange={(color) => handleStyleChange('levelTextColor', color)}
             />
           </div>
           
@@ -129,7 +123,7 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
                 <button
                   key={align}
                   type="button"
-                  className={`border rounded p-2 ${style.titleAlignment === align ? 'bg-primary text-white' : 'bg-background'}`}
+                  className={`border rounded p-2 ${titleAlignment === align ? 'bg-primary text-white' : 'bg-background'}`}
                   onClick={() => handleStyleChange('titleAlignment', align)}
                 >
                   {align.charAt(0).toUpperCase() + align.slice(1)}
@@ -138,61 +132,164 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
             </div>
           </div>
           
-          <div className="flex items-center justify-between">
-            <ConfigLabel>Mostrar rótulos</ConfigLabel>
-            <Switch 
-              checked={style.showLabels !== false} 
-              onCheckedChange={(checked) => handleStyleChange('showLabels', checked)}
-            />
-          </div>
-          
-          {style.showLabels !== false && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <ConfigLabel>Rótulo Inicial</ConfigLabel>
-                <Input 
-                  value={style.beginnerLabel || 'Beginner'} 
-                  onChange={(e) => handleStyleChange('beginnerLabel', e.target.value)}
-                  placeholder="Iniciante"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <ConfigLabel>Rótulo Final</ConfigLabel>
-                <Input 
-                  value={style.expertLabel || 'Expert'} 
-                  onChange={(e) => handleStyleChange('expertLabel', e.target.value)}
-                  placeholder="Especialista"
-                />
-              </div>
-              
-              <div className="space-y-2 col-span-2">
-                <ConfigLabel>Cor dos rótulos</ConfigLabel>
-                <ColorPicker 
-                  value={style.labelsColor || '#6B7280'} 
-                  onChange={(color) => handleStyleChange('labelsColor', color)}
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between">
-            <ConfigLabel>Mostrar porcentagem</ConfigLabel>
-            <Switch 
-              checked={style.showPercentage === true} 
-              onCheckedChange={(checked) => handleStyleChange('showPercentage', checked)}
-            />
-          </div>
-          
-          {style.showPercentage === true && (
-            <div className="space-y-2">
-              <ConfigLabel>Cor da porcentagem</ConfigLabel>
-              <ColorPicker 
-                value={style.percentageColor || style.primaryColor || '#8B5CF6'} 
-                onChange={(color) => handleStyleChange('percentageColor', color)}
+          {/* Labels settings */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-sm font-medium">Show Labels</Label>
+              <Switch 
+                checked={showLabels}
+                onCheckedChange={(checked) => {
+                  handleStyleChange('showLabels', checked);
+                }}
               />
             </div>
-          )}
+            
+            {showLabels && (
+              <>
+                <div className="flex justify-between items-center mt-2">
+                  <Label className="text-sm font-medium">Show Middle Label</Label>
+                  <Switch 
+                    checked={showMiddleLabel}
+                    onCheckedChange={(checked) => {
+                      handleStyleChange('showMiddleLabel', checked);
+                    }}
+                  />
+                </div>
+              
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs mb-2 block">Beginner Label</Label>
+                    <Input
+                      value={beginnerLabel}
+                      onChange={(e) => {
+                        handleStyleChange('beginnerLabel', e.target.value);
+                      }}
+                      className="h-8"
+                    />
+                  </div>
+                  
+                  {showMiddleLabel && (
+                    <div>
+                      <Label className="text-xs mb-2 block">Middle Label</Label>
+                      <Input
+                        value={middleLabel}
+                        onChange={(e) => {
+                          handleStyleChange('middleLabel', e.target.value);
+                        }}
+                        className="h-8"
+                      />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <Label className="text-xs mb-2 block">Expert Label</Label>
+                    <Input
+                      value={expertLabel}
+                      onChange={(e) => {
+                        handleStyleChange('expertLabel', e.target.value);
+                      }}
+                      className="h-8"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-xs mb-2 block">Labels Color</Label>
+                  <div className="flex">
+                    <Input
+                      type="text"
+                      value={labelsColor}
+                      onChange={(e) => {
+                        handleStyleChange('labelsColor', e.target.value);
+                      }}
+                      className="h-8 w-full"
+                    />
+                    <ColorPicker
+                      value={labelsColor}
+                      onChange={(color) => {
+                        handleStyleChange('labelsColor', color);
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {/* Percentage settings */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-sm font-medium">Show Percentage</Label>
+              <Switch 
+                checked={showPercentage}
+                onCheckedChange={(checked) => {
+                  handleStyleChange('showPercentage', checked);
+                }}
+              />
+            </div>
+            
+            {showPercentage && (
+              <div>
+                <Label className="text-xs mb-2 block">Percentage Color</Label>
+                <div className="flex">
+                  <Input
+                    type="text"
+                    value={percentageColor}
+                    onChange={(e) => {
+                      handleStyleChange('percentageColor', e.target.value);
+                    }}
+                    className="h-8 w-full"
+                  />
+                  <ColorPicker
+                    value={percentageColor}
+                    onChange={(color) => {
+                      handleStyleChange('percentageColor', color);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <Label className="text-xs mb-2 block">Primary Color</Label>
+            <div className="flex">
+              <Input
+                type="text"
+                value={primaryColor}
+                onChange={(e) => {
+                  handleStyleChange('primaryColor', e.target.value);
+                }}
+                className="h-8 w-full"
+              />
+              <ColorPicker
+                value={primaryColor}
+                onChange={(color) => {
+                  handleStyleChange('primaryColor', color);
+                }}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label className="text-xs mb-2 block">Secondary Color</Label>
+            <div className="flex">
+              <Input
+                type="text"
+                value={secondaryColor}
+                onChange={(e) => {
+                  handleStyleChange('secondaryColor', e.target.value);
+                }}
+                className="h-8 w-full"
+              />
+              <ColorPicker
+                value={secondaryColor}
+                onChange={(color) => {
+                  handleStyleChange('secondaryColor', color);
+                }}
+              />
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -19,24 +19,20 @@ const LevelRenderer = (props: ElementRendererProps) => {
   // Get style settings or use defaults
   const style = content?.style || {};
   const primaryColor = style.primaryColor || "#8B5CF6";
+  const secondaryColor = style.secondaryColor || primaryColor;
   const titleAlignment = style.titleAlignment || "center";
   const showLabels = style.showLabels !== false;
+  const showMiddleLabel = style.showMiddleLabel !== false;
   const showPercentage = style.showPercentage === true;
   
   // Get custom label texts
   const beginnerLabel = style.beginnerLabel || "Beginner";
   const expertLabel = style.expertLabel || "Expert";
+  const middleLabel = style.middleLabel || "Intermediate";
   
   // Get text colors
   const labelsColor = style.labelsColor || "#6B7280";
-  const levelTextColor = style.levelTextColor || primaryColor;
   const percentageColor = style.percentageColor || primaryColor;
-  
-  // Process custom level text if provided
-  const levelTextTemplate = content?.levelText || "Level %value% of %max%";
-  const levelText = levelTextTemplate
-    .replace("%value%", value.toString())
-    .replace("%max%", maxValue.toString());
 
   return (
     <BaseElementRenderer {...props}>
@@ -56,8 +52,13 @@ const LevelRenderer = (props: ElementRendererProps) => {
         </div>
         
         {showLabels && (
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm relative">
             <span style={{ color: labelsColor }}>{beginnerLabel}</span>
+            {showMiddleLabel && (
+              <span style={{ color: labelsColor, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                {middleLabel}
+              </span>
+            )}
             <span style={{ color: labelsColor }}>{expertLabel}</span>
           </div>
         )}
@@ -69,10 +70,6 @@ const LevelRenderer = (props: ElementRendererProps) => {
             </span>
           </div>
         )}
-        
-        <div className="mt-4 text-center font-medium" style={{ color: levelTextColor }}>
-          {levelText}
-        </div>
       </div>
     </BaseElementRenderer>
   );
