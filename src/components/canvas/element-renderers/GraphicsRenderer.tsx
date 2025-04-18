@@ -32,6 +32,10 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
   const chartType = content?.chartType || "bar";
   const valueLabel = content?.valueLabel || "value";
   
+  // Debug
+  console.log("GraphicsRenderer - valueLabel:", valueLabel);
+  console.log("GraphicsRenderer - content:", content);
+  
   // Fix for chartData structure - transform the data if it's in the old format
   let chartData: ChartData = [];
   
@@ -113,12 +117,21 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
         );
       
       case "pie":
+        // Configuração para o gráfico de pizza com rótulo personalizado
+        const pieData = processedData.map(item => ({
+          ...item,
+          name: item.name,
+          value: item.value,
+          // Garantir que exista o campo com o nome do valueLabel
+          [valueLabel]: item.value
+        }));
+        
         return (
           <ChartContainer 
             className="w-full aspect-video max-h-80"
             config={{
-              [valueLabel]: { label: valueLabel || "Valor", color: chartColors.line },
-              ...processedData.reduce((acc, item, index) => {
+              value: { label: valueLabel || "Valor", color: "#8B5CF6" },
+              ...pieData.reduce((acc, item, index) => {
                 acc[item.name] = { 
                   label: item.name, 
                   color: item.color || chartColors.pie[index] 
@@ -129,18 +142,18 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
           >
             <PieChart>
               <Pie
-                data={processedData}
+                data={pieData}
                 cx="50%"
                 cy="50%"
                 labelLine={showLabels}
                 outerRadius={80}
                 innerRadius={style?.donut ? 40 : 0}
-                dataKey={valueLabel || "value"}
-                animationDuration={750}
+                dataKey="value"
                 nameKey="name"
-                name={valueLabel || "Valor"}
+                fill="#8884d8"
+                label={showLabels}
               >
-                {processedData.map((entry, index) => (
+                {pieData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={entry.color || chartColors.pie[index]}
@@ -149,15 +162,23 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
               </Pie>
               {showTooltip && (
                 <Tooltip 
-                  content={
-                    <ChartTooltipContent 
-                      labelKey="name" 
-                      nameKey={valueLabel !== "" ? valueLabel : undefined}
-                    />
-                  } 
+                  formatter={(value, name, entry) => {
+                    // Se for um nome específico (o valueLabel), customiza o display
+                    return [value, name === "value" && valueLabel ? valueLabel : name];
+                  }}
                 />
               )}
-              {showLegend && <Legend />}
+              {showLegend && (
+                <Legend 
+                  formatter={(value, entry) => {
+                    // Substituir "value" pelo valueLabel personalizado na legenda
+                    if (entry && entry.dataKey === "value" && valueLabel) {
+                      return valueLabel;
+                    }
+                    return value;
+                  }}
+                />
+              )}
             </PieChart>
           </ChartContainer>
         );

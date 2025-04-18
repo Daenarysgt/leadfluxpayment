@@ -212,12 +212,19 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="valueLabel">Texto do Valor (Legenda)</Label>
+            <Label htmlFor="valueLabel" className="text-base font-medium flex items-center">
+              <span className="mr-2">Texto do Valor (Legenda)</span>
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+            </Label>
             <Input
               id="valueLabel"
               value={valueLabel}
-              onChange={(e) => handleUpdate({ valueLabel: e.target.value })}
+              onChange={(e) => {
+                console.log("Alterando valueLabel para:", e.target.value);
+                handleUpdate({ valueLabel: e.target.value });
+              }}
               placeholder="value"
+              className="border-blue-200 focus:border-blue-500"
             />
             <p className="text-xs text-gray-500">Deixe vazio para remover o texto</p>
           </div>
