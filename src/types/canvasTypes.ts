@@ -119,7 +119,7 @@ export interface PricingContent {
   boxShadow?: boolean;
   highlightTag?: string;
   isHighlighted?: boolean;
-  style?: 'default' | 'minimal' | 'featured';
+  style?: 'default' | 'minimal' | 'featured' | 'modern' | 'card' | 'horizontal';
   alignment?: 'left' | 'center' | 'right';
   navigation?: {
     type: 'next' | 'step' | 'url';

@@ -204,8 +204,11 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">Padrão</SelectItem>
+                <SelectItem value="modern">Moderno</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
                 <SelectItem value="minimal">Minimalista</SelectItem>
                 <SelectItem value="featured">Destaque</SelectItem>
+                <SelectItem value="horizontal">Horizontal</SelectItem>
               </SelectContent>
             </Select>
           </div>
