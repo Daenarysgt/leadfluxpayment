@@ -89,22 +89,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Determinar o estilo baseado na configuração e tipo de dispositivo
-  let containerStyles: React.CSSProperties = {
-    backgroundColor: 'transparent',
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    transition: 'all 0.3s ease',
-    borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.75rem' : '1.5rem',
-  };
-
   // Classes condicionais baseadas no tipo de dispositivo
   const wrapperClass = isMobile 
-    ? "w-full mobile-full-width" 
+    ? "w-full mobile-full-width p-0 m-0" 
     : "w-full";
   
   const contentWrapperClass = isMobile 
-    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
+    ? "flex flex-col items-center w-full mobile-full-width mx-0 py-2 px-0" 
     : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
   
   const logoWrapperClass = isMobile
@@ -116,11 +107,20 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     : "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
-    ? "w-full mobile-full-width"
+    ? "w-full mobile-full-width p-0 m-0"
     : "w-full";
 
+  // Estilo do container principal específico para mobile
+  const mainContainerStyle = isMobile ? {
+    width: '100%',
+    maxWidth: '100%',
+    padding: 0,
+    margin: 0,
+    borderRadius: 0
+  } : {};
+
   return (
-    <div className={wrapperClass} style={customStyles}>
+    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -162,7 +162,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        <div className={contentClass} style={containerStyles}>
+        <div className={contentClass} style={mainContainerStyle}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}

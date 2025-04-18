@@ -90,16 +90,17 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem',
-    margin: '0 auto',
+    padding: isMobile ? '0' : '1rem',
+    margin: isMobile ? '0' : '0 auto',
     position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
+    left: '0',
+    right: '0',
+    width: isMobile ? '100%' : 'auto',
   };
 
   // Classes condicionais para desktop e mobile
   const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+    ? "w-full mx-0 min-h-[300px] mobile-full-width" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
   return (
@@ -127,7 +128,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
           if (adjustedElement.dimensions) {
             adjustedElement.dimensions = {
               ...adjustedElement.dimensions,
-              width: Math.min(adjustedElement.dimensions.width, window.innerWidth - 20) // Limitar largura
+              width: window.innerWidth // Usar a largura total da janela
             };
           }
         }
@@ -151,8 +152,10 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         const elementWrapperStyle: React.CSSProperties = isMobile ? {
           position: 'relative',
           left: '0',
-          margin: '0 auto',
+          right: '0',
+          margin: '0',
           width: '100%',
+          padding: '0',
           transform: 'none'
         } : {};
         

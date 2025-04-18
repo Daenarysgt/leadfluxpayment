@@ -18,6 +18,23 @@ const PublicFunnel = () => {
   const [requiresPassword, setRequiresPassword] = useState(false);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Detectar se é dispositivo móvel
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    // Verificar no carregamento
+    checkMobile();
+    
+    // Adicionar listener para redimensionamento
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const loadFunnel = async () => {
@@ -140,21 +157,45 @@ const PublicFunnel = () => {
     );
   }
 
+  // Classes condicionais baseadas no tipo de dispositivo
+  const containerClass = isMobile 
+    ? "min-h-screen flex flex-col items-center justify-center p-0 m-0 mobile-full-width" 
+    : "min-h-screen flex flex-col items-center justify-center p-4 md:p-8";
+  
+  const innerClass = isMobile 
+    ? "w-full mobile-full-width p-0 m-0" 
+    : "w-full max-w-3xl";
+    
+  // Estilos específicos para mobile
+  const containerStyle = isMobile ? {
+    width: '100%',
+    maxWidth: '100%',
+    padding: 0,
+    margin: 0,
+    overflow: 'hidden',
+    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+  } : {
+    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8" 
-         style={{ 
-           backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
-           backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
-           backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                           funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-           backgroundPosition: 'center',
-           backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-           backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
-         }}>
-      <div className="w-full max-w-3xl">
+    <div className={containerClass} style={containerStyle}>
+      <div className={innerClass}>
         <FunnelPreview 
           funnel={funnel} 
-          isMobile={false} 
+          isMobile={isMobile} 
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
           key={`public-${funnel.id}-step-${currentStepIndex}`}

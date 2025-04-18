@@ -177,15 +177,24 @@ const DomainFunnel = () => {
 
   // Classes condicionais baseadas no tipo de dispositivo
   const containerClass = isMobile 
-    ? "min-h-screen flex flex-col items-center justify-center bg-white p-0 mobile-full-width" 
+    ? "min-h-screen flex flex-col items-center justify-center bg-white p-0 m-0 mobile-full-width" 
     : "min-h-screen flex flex-col items-center justify-center bg-white p-4 md:p-8";
   
   const innerClass = isMobile 
-    ? "w-full mobile-full-width" 
+    ? "w-full mobile-full-width p-0 m-0" 
     : "w-full max-w-3xl";
+    
+  // Estilos específicos para mobile
+  const containerStyle = isMobile ? {
+    width: '100%',
+    maxWidth: '100%',
+    padding: 0,
+    margin: 0,
+    overflow: 'hidden'
+  } : {};
 
   return (
-    <div className={containerClass}>
+    <div className={containerClass} style={containerStyle}>
       <div className={innerClass}>
         <FunnelPreview 
           funnel={funnel} 
