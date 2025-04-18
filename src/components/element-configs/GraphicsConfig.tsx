@@ -272,16 +272,33 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Dados do Gráfico</h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setEditingItem(null);
-                  setTempItem({ name: "", value: 0, color: "" });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" /> Novo Item
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // Gerar cores aleatórias para todos os itens
+                    const newData = chartData.map(item => ({
+                      ...item,
+                      color: getRandomColor(item.name + Date.now())
+                    }));
+                    handleUpdate({ chartData: newData });
+                  }}
+                  title="Gerar novas cores aleatórias para todos os itens"
+                >
+                  <PieChart className="h-4 w-4 mr-1" /> Gerar Cores
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setEditingItem(null);
+                    setTempItem({ name: "", value: 0, color: "" });
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Novo Item
+                </Button>
+              </div>
             </div>
             
             {chartData.length > 0 ? (
@@ -301,10 +318,19 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                         <TableCell className="font-medium truncate max-w-[120px]">{item.name}</TableCell>
                         <TableCell>{item.value}</TableCell>
                         <TableCell>
-                          <div 
-                            className="w-6 h-6 rounded-full ml-auto"
-                            style={{ backgroundColor: item.color || getRandomColor(item.name) }}
-                          />
+                          <div className="flex items-center justify-end">
+                            <Input
+                              type="color"
+                              value={item.color || getRandomColor(item.name)}
+                              onChange={(e) => {
+                                const newData = [...chartData];
+                                newData[index] = { ...item, color: e.target.value };
+                                handleUpdate({ chartData: newData });
+                              }}
+                              className="w-6 h-6 p-0 cursor-pointer rounded-full"
+                              title="Clique para mudar a cor"
+                            />
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-2">
@@ -376,19 +402,20 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="itemColor" className="text-xs">Cor (hex)</Label>
+                  <Label htmlFor="itemColor" className="text-xs">Cor</Label>
                   <div className="flex gap-2">
                     <Input
                       id="itemColor"
                       value={tempItem.color}
                       onChange={(e) => setTempItem({ ...tempItem, color: e.target.value })}
                       placeholder="#8B5CF6"
+                      className="flex-1"
                     />
-                    <div 
-                      className="w-6 h-6 rounded-md border shrink-0"
-                      style={{ 
-                        backgroundColor: tempItem.color || getRandomColor(tempItem.name) 
-                      }}
+                    <Input
+                      type="color"
+                      value={tempItem.color || getRandomColor(tempItem.name)}
+                      onChange={(e) => setTempItem({ ...tempItem, color: e.target.value })}
+                      className="w-10 h-8 p-0 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -490,12 +517,13 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                   value={style?.barColor || ""}
                   onChange={(e) => handleStyleUpdate({ barColor: e.target.value })}
                   placeholder="#8B5CF6"
+                  className="flex-1"
                 />
-                <div 
-                  className="w-10 h-10 rounded-md border"
-                  style={{ 
-                    backgroundColor: style?.barColor || "#8B5CF6" 
-                  }}
+                <Input
+                  type="color"
+                  value={style?.barColor || "#8B5CF6"}
+                  onChange={(e) => handleStyleUpdate({ barColor: e.target.value })}
+                  className="w-10 h-8 p-0 cursor-pointer"
                 />
               </div>
             </div>
@@ -510,12 +538,13 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                   value={style?.lineColor || ""}
                   onChange={(e) => handleStyleUpdate({ lineColor: e.target.value })}
                   placeholder="#0EA5E9"
+                  className="flex-1"
                 />
-                <div 
-                  className="w-10 h-10 rounded-md border"
-                  style={{ 
-                    backgroundColor: style?.lineColor || "#0EA5E9" 
-                  }}
+                <Input
+                  type="color"
+                  value={style?.lineColor || "#0EA5E9"}
+                  onChange={(e) => handleStyleUpdate({ lineColor: e.target.value })}
+                  className="w-10 h-8 p-0 cursor-pointer"
                 />
               </div>
             </div>
@@ -537,7 +566,7 @@ function getDefaultData() {
 }
 
 function getRandomColor(seed: string): string {
-  // Lista de cores vibrantes predefinidas
+  // Lista ampliada de cores vibrantes
   const colors = [
     "#8B5CF6", // Roxo
     "#0EA5E9", // Azul
@@ -547,9 +576,22 @@ function getRandomColor(seed: string): string {
     "#F59E0B", // Âmbar
     "#6366F1", // Índigo
     "#EC4899", // Rosa escuro
+    "#3B82F6", // Azul violeta
+    "#EF4444", // Vermelho
+    "#14B8A6", // Verde azulado
+    "#8B5CF6", // Púrpura
+    "#F43F5E", // Rosa avermelhado
+    "#22C55E", // Verde esmeralda
+    "#A855F7", // Púrpura claro
+    "#F59E0B", // Laranja dourado
   ];
   
-  // Usa o nome como seed para selecionar uma cor
+  // Se não há seed ou é uma string vazia, retorna uma cor aleatória
+  if (!seed || seed.trim() === "") {
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+  
+  // Usa o nome e timestamp como seed para selecionar uma cor
   const index = Math.abs(seed.split("").reduce((acc, char) => {
     return acc + char.charCodeAt(0);
   }, 0) % colors.length);
