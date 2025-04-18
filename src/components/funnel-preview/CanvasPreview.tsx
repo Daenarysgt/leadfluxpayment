@@ -14,6 +14,23 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: CanvasPreviewProps) => {
   console.log("CanvasPreview - Rendering with", canvasElements.length, "elements");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Detectar se é dispositivo móvel
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    // Verificar no carregamento
+    checkMobile();
+    
+    // Adicionar listener para redimensionamento
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     const initSession = async () => {
@@ -67,36 +84,84 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Determinar o estilo baseado na configuração
+  // Determinar o estilo baseado na configuração e tipo de dispositivo
   let containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
-    borderRadius: '0',
-    padding: '0.25rem',
+    borderRadius: isMobile ? '0' : '0.5rem',
+    padding: isMobile ? '0.25rem' : '1rem',
+    margin: '0 auto',
+    position: 'relative',
+    left: isMobile ? '0' : 'auto',
+    right: isMobile ? '0' : 'auto',
   };
+
+  // Classes condicionais para desktop e mobile
+  const containerClass = isMobile 
+    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+    : "w-full mx-auto min-h-[300px] rounded-lg";
   
   return (
     <div 
-      className="w-full mx-auto min-h-[300px] mobile-full-width"
+      className={containerClass}
       style={containerStyles}
     >
       {canvasElements.map((element, index) => {
         console.log("CanvasPreview - Processing element:", element.id, element.type);
         
+        // Ajustar a posição dos elementos em dispositivos móveis
+        const adjustedElement = { ...element };
+        
+        // Para dispositivos móveis, modificar as posições e dimensões
+        if (isMobile) {
+          // Assegurar que elementos com position tenham left=0 para evitar deslocamento
+          if (adjustedElement.position) {
+            adjustedElement.position = {
+              ...adjustedElement.position,
+              x: 0 // Forçar alinhamento à esquerda
+            };
+          }
+          
+          // Assegurar largura máxima para caber na tela
+          if (adjustedElement.dimensions) {
+            adjustedElement.dimensions = {
+              ...adjustedElement.dimensions,
+              width: Math.min(adjustedElement.dimensions.width, window.innerWidth - 20) // Limitar largura
+            };
+          }
+        }
+        
         // Add preview properties to the element for navigation
         const elementWithPreviewProps = {
-          ...element,
+          ...adjustedElement,
           previewMode: true,
           previewProps: {
             activeStep,
             onStepChange: handleStepChange,
-            funnel
+            funnel,
+            isMobile
           }
         };
         
+        // Adicionar classes específicas para telas móveis aos elementos
+        const elementWrapperClass = isMobile ? "w-full mobile-element" : "w-full";
+        
+        // Estilos específicos para o wrapper do elemento
+        const elementWrapperStyle: React.CSSProperties = isMobile ? {
+          position: 'relative',
+          left: '0',
+          margin: '0 auto',
+          width: '100%',
+          transform: 'none'
+        } : {};
+        
         return (
-          <div key={element.id} className="w-full">
+          <div 
+            key={element.id} 
+            className={elementWrapperClass}
+            style={elementWrapperStyle}
+          >
             <ElementFactory 
               element={elementWithPreviewProps}
               onSelect={() => {}} 

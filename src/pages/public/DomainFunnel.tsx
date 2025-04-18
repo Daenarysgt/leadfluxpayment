@@ -14,6 +14,23 @@ const DomainFunnel = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Detectar se é dispositivo móvel baseado na largura da tela
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    // Verificar no carregamento
+    checkMobile();
+    
+    // Adicionar listener para redimensionamento
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     const loadFunnel = async () => {
@@ -158,12 +175,21 @@ const DomainFunnel = () => {
     );
   }
 
+  // Classes condicionais baseadas no tipo de dispositivo
+  const containerClass = isMobile 
+    ? "min-h-screen flex flex-col items-center justify-center bg-white p-0 mobile-full-width" 
+    : "min-h-screen flex flex-col items-center justify-center bg-white p-4 md:p-8";
+  
+  const innerClass = isMobile 
+    ? "w-full mobile-full-width" 
+    : "w-full max-w-3xl";
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-0 mobile-full-width">
-      <div className="w-full mobile-full-width">
+    <div className={containerClass}>
+      <div className={innerClass}>
         <FunnelPreview 
           funnel={funnel} 
-          isMobile={true} 
+          isMobile={isMobile} 
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
           key={`domain-${funnel.id}-step-${currentStepIndex}`}

@@ -19,21 +19,53 @@
     <script>
       // Garantir que o viewport seja configurado corretamente em dispositivos móveis
       (function() {
-        function fixViewport() {
-          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        function fixMobileViewport() {
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
           if (isMobile) {
+            // Garantir que não haja espaço à esquerda
             document.documentElement.style.width = '100%';
             document.body.style.width = '100%';
             document.body.style.margin = '0';
             document.body.style.padding = '0';
             document.body.style.overflow = 'visible';
+            document.body.style.position = 'relative';
+            document.body.style.left = '0';
             
-            // Forçar atualização após carregamento
+            // Aplicar para todos os elementos com classe mobile-full-width
             setTimeout(function() {
-              window.scrollTo(0, 0);
               const viewportWidth = window.innerWidth;
+              const mobileElements = document.querySelectorAll('.mobile-full-width');
+              
               if (document.getElementById('root')) {
-                document.getElementById('root').style.width = viewportWidth + 'px';
+                document.getElementById('root').style.width = '100%';
+                document.getElementById('root').style.left = '0';
+                document.getElementById('root').style.position = 'relative';
+                document.getElementById('root').style.margin = '0';
+                document.getElementById('root').style.padding = '0';
+              }
+              
+              if (mobileElements.length > 0) {
+                mobileElements.forEach(function(el) {
+                  el.style.width = '100%';
+                  el.style.maxWidth = '100%';
+                  el.style.left = '0';
+                  el.style.margin = '0 auto';
+                  el.style.padding = '0';
+                  el.style.position = 'relative';
+                  el.style.transform = 'none';
+                });
+              }
+              
+              // Também ajustar elementos com classe específica para elementos de canvas
+              const canvasElements = document.querySelectorAll('.mobile-element');
+              if (canvasElements.length > 0) {
+                canvasElements.forEach(function(el) {
+                  el.style.width = '100%';
+                  el.style.maxWidth = '100%';
+                  el.style.left = '0';
+                  el.style.margin = '0 auto';
+                  el.style.transform = 'none';
+                });
               }
             }, 100);
           }
@@ -41,13 +73,22 @@
         
         // Executar ao carregar
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', fixViewport);
+          document.addEventListener('DOMContentLoaded', fixMobileViewport);
         } else {
-          fixViewport();
+          fixMobileViewport();
         }
         
         // Executar ao redimensionar
-        window.addEventListener('resize', fixViewport);
+        window.addEventListener('resize', fixMobileViewport);
+        
+        // Executar após carregamento completo
+        window.addEventListener('load', fixMobileViewport);
+        
+        // Executar periodicamente nos primeiros segundos para garantir
+        const interval = setInterval(fixMobileViewport, 500);
+        setTimeout(function() {
+          clearInterval(interval);
+        }, 3000);
       })();
     </script>
   </head>

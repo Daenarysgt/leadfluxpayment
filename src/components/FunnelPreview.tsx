@@ -89,17 +89,38 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Determinar o estilo baseado na configuração
+  // Determinar o estilo baseado na configuração e tipo de dispositivo
   let containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
-    borderRadius: '0',
-    padding: '0.75rem',
+    borderRadius: isMobile ? '0' : '0.5rem',
+    padding: isMobile ? '0.75rem' : '1.5rem',
   };
 
+  // Classes condicionais baseadas no tipo de dispositivo
+  const wrapperClass = isMobile 
+    ? "w-full mobile-full-width" 
+    : "w-full";
+  
+  const contentWrapperClass = isMobile 
+    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
+    : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
+  
+  const logoWrapperClass = isMobile
+    ? "w-full flex justify-center py-2 mb-1" 
+    : "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
+  
+  const progressBarClass = isMobile
+    ? "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3"
+    : "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
+  
+  const contentClass = isMobile
+    ? "w-full mobile-full-width"
+    : "w-full";
+
   return (
-    <div className="w-full mobile-full-width" style={customStyles}>
+    <div className={wrapperClass} style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -109,10 +130,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      <div className="flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0">
+      <div className={contentWrapperClass}>
         {/* Logotipo */}
         {validLogo && (
-          <div className="w-full flex justify-center py-2 mb-1">
+          <div className={logoWrapperClass}>
             <img 
               src={validLogo} 
               alt="Logo" 
@@ -130,7 +151,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         {activeFunnel.settings.showProgressBar && (
-          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3">
+          <div className={progressBarClass}>
             <div 
               className="h-full transition-all duration-500 ease-out"
               style={{ 
@@ -141,7 +162,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        <div className="w-full mobile-full-width" style={containerStyles}>
+        <div className={contentClass} style={containerStyles}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}
