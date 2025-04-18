@@ -1,10 +1,10 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
-import { Star } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
 
 const TestimonialsRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -15,6 +15,28 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
   
   // Get testimonials or use empty array if none
   const testimonials = content?.testimonials || [];
+  
+  // Estado para o carrossel
+  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // Efeito para avançar automaticamente o carrossel a cada 5 segundos
+  useEffect(() => {
+    if (displayStyle === 'carousel' && testimonials.length > 1) {
+      const interval = setInterval(() => {
+        setActiveIndex((current) => (current + 1) % testimonials.length);
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [displayStyle, testimonials.length]);
+  
+  const nextSlide = () => {
+    setActiveIndex((current) => (current + 1) % testimonials.length);
+  };
+  
+  const prevSlide = () => {
+    setActiveIndex((current) => (current - 1 + testimonials.length) % testimonials.length);
+  };
   
   const renderStars = (rating: number) => {
     return (
@@ -31,6 +53,71 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
       </div>
     );
   };
+  
+  const renderTestimonial = (testimonial: any, index: number) => {
+    return (
+      <div 
+        key={testimonial.id || index}
+        className={cn(
+          "border rounded-lg overflow-hidden",
+          displayStyle === "rectangular" && "flex flex-col",
+          displayStyle === "horizontal" && "flex flex-row items-center",
+          displayStyle === "carousel" && "flex flex-col"
+        )}
+        style={{
+          backgroundColor: content?.style?.backgroundColor || "white",
+          borderColor: content?.style?.borderColor || "#e5e7eb"
+        }}
+      >
+        <div className={cn(
+          "p-4",
+          displayStyle === "horizontal" && "flex-1"
+        )}>
+          {testimonial.rating && (
+            <div className="mb-2">
+              {renderStars(testimonial.rating)}
+            </div>
+          )}
+          
+          {testimonial.text && (
+            <p className={cn(
+              "text-gray-700 italic",
+              displayStyle === "rectangular" && "mb-4",
+              displayStyle === "grid" && "mb-3 line-clamp-3",
+              displayStyle === "horizontal" && "mb-2"
+            )}>"{testimonial.text}"</p>
+          )}
+          
+          <div className={cn(
+            "flex items-center",
+            displayStyle === "horizontal" && "mt-auto"
+          )}>
+            <Avatar className="mr-3 h-10 w-10">
+              {testimonial.avatar ? (
+                <AvatarImage 
+                  src={testimonial.avatar} 
+                  alt={testimonial.name || ""} 
+                />
+              ) : (
+                <AvatarFallback className="bg-gray-100 text-gray-500">
+                  {testimonial.name ? testimonial.name.charAt(0).toUpperCase() : "?"}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            
+            <div>
+              {testimonial.name && (
+                <p className="font-medium">{testimonial.name}</p>
+              )}
+              {testimonial.role && (
+                <p className="text-sm text-gray-500">{testimonial.role}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <BaseElementRenderer {...props}>
@@ -44,60 +131,68 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
           </h2>
         )}
         
-        <div className={cn(
-          "grid gap-4",
-          displayStyle === "rectangular" && "grid-cols-1"
-        )}>
-          {testimonials.map((testimonial: any) => (
-            <div 
-              key={testimonial.id}
-              className={cn(
-                "border rounded-lg overflow-hidden",
-                displayStyle === "rectangular" && "flex flex-col"
-              )}
-              style={{
-                backgroundColor: content?.style?.backgroundColor || "white",
-                borderColor: content?.style?.borderColor || "#e5e7eb"
-              }}
-            >
-              <div className="p-4">
-                {testimonial.rating && (
-                  <div className="mb-2">
-                    {renderStars(testimonial.rating)}
-                  </div>
-                )}
-                
-                {testimonial.text && (
-                  <p className="text-gray-700 italic mb-4">"{testimonial.text}"</p>
-                )}
-                
-                <div className="flex items-center">
-                  <Avatar className="mr-3 h-10 w-10">
-                    {testimonial.avatar ? (
-                      <AvatarImage 
-                        src={testimonial.avatar} 
-                        alt={testimonial.name || ""} 
-                      />
-                    ) : (
-                      <AvatarFallback className="bg-gray-100 text-gray-500">
-                        {testimonial.name ? testimonial.name.charAt(0).toUpperCase() : "?"}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  
-                  <div>
-                    {testimonial.name && (
-                      <p className="font-medium">{testimonial.name}</p>
-                    )}
-                    {testimonial.role && (
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
-                    )}
-                  </div>
-                </div>
+        {displayStyle === "rectangular" && (
+          <div className="space-y-4">
+            {testimonials.map((testimonial: any, index: number) => renderTestimonial(testimonial, index))}
+          </div>
+        )}
+        
+        {displayStyle === "horizontal" && (
+          <div className="flex overflow-x-auto gap-4 pb-2">
+            {testimonials.map((testimonial: any, index: number) => (
+              <div key={testimonial.id || index} className="flex-none w-[320px]">
+                {renderTestimonial(testimonial, index)}
               </div>
+            ))}
+          </div>
+        )}
+        
+        {displayStyle === "grid" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {testimonials.map((testimonial: any, index: number) => renderTestimonial(testimonial, index))}
+          </div>
+        )}
+        
+        {displayStyle === "carousel" && testimonials.length > 0 && (
+          <div className="relative">
+            <div className="overflow-hidden rounded-lg">
+              {renderTestimonial(testimonials[activeIndex], activeIndex)}
             </div>
-          ))}
-        </div>
+            
+            {testimonials.length > 1 && (
+              <>
+                <button 
+                  onClick={prevSlide} 
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
+                  aria-label="Depoimento anterior"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button 
+                  onClick={nextSlide} 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md"
+                  aria-label="Próximo depoimento"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                
+                <div className="flex justify-center mt-3 gap-1">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveIndex(index)}
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        activeIndex === index ? "bg-primary" : "bg-gray-300"
+                      )}
+                      aria-label={`Ir para depoimento ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </BaseElementRenderer>
   );

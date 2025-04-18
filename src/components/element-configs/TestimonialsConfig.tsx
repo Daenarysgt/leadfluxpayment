@@ -163,7 +163,7 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-5">
+      <div className="p-4 pb-20 space-y-5">
         <div className="space-y-2">
           <Label htmlFor="title">Título</Label>
           <Input
@@ -382,6 +382,76 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
         
         <div className="space-y-3">
           <h3 className="font-medium">Aparência</h3>
+          
+          <div className="space-y-3">
+            <Label htmlFor="displayStyle">Estilo de Visualização</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant={element.content?.style?.displayStyle === "rectangular" || !element.content?.style?.displayStyle ? "default" : "outline"}
+                size="sm"
+                onClick={() => onUpdate({
+                  content: {
+                    ...element.content,
+                    style: {
+                      ...(element.content?.style || {}),
+                      displayStyle: "rectangular"
+                    }
+                  }
+                })}
+                className="w-full"
+              >
+                Cartões
+              </Button>
+              <Button 
+                variant={element.content?.style?.displayStyle === "horizontal" ? "default" : "outline"}
+                size="sm"
+                onClick={() => onUpdate({
+                  content: {
+                    ...element.content,
+                    style: {
+                      ...(element.content?.style || {}),
+                      displayStyle: "horizontal"
+                    }
+                  }
+                })}
+                className="w-full"
+              >
+                Lista Horizontal
+              </Button>
+              <Button 
+                variant={element.content?.style?.displayStyle === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => onUpdate({
+                  content: {
+                    ...element.content,
+                    style: {
+                      ...(element.content?.style || {}),
+                      displayStyle: "grid"
+                    }
+                  }
+                })}
+                className="w-full"
+              >
+                Grade 2x2
+              </Button>
+              <Button 
+                variant={element.content?.style?.displayStyle === "carousel" ? "default" : "outline"}
+                size="sm"
+                onClick={() => onUpdate({
+                  content: {
+                    ...element.content,
+                    style: {
+                      ...(element.content?.style || {}),
+                      displayStyle: "carousel"
+                    }
+                  }
+                })}
+                className="w-full"
+              >
+                Carrossel
+              </Button>
+            </div>
+          </div>
           
           <div className="grid grid-cols-2 gap-3">
             <div>
