@@ -186,9 +186,14 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     }) : null;
   }, [content?.options, getAspectRatioValue, handleOptionClick]);
   
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: content?.marginTop ? `${content.marginTop}px` : undefined
+  };
+  
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4">
+      <div className="p-4" style={containerStyle}>
         {content?.title && (
           <h2 className="text-xl font-semibold text-center mb-4">{content.title}</h2>
         )}

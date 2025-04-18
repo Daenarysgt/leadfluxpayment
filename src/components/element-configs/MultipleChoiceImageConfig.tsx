@@ -3,13 +3,14 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/utils/store";
 import TitleInput from "./multiple-choice/TitleInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Upload, Link, X } from "lucide-react";
+import { Plus, Trash2, Upload, Link, X, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Slider } from "@/components/ui/slider";
 
 interface MultipleChoiceImageConfigProps {
   element: any;
@@ -18,6 +19,9 @@ interface MultipleChoiceImageConfigProps {
 
 const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageConfigProps) => {
   const { currentFunnel } = useStore();
+  
+  // Estado para armazenar a margem superior
+  const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
   
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
@@ -279,272 +283,228 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
+  // Manipulador para mudanças na margem superior
+  const handleMarginTopChange = (value: number[]) => {
+    // Atualizar a margem superior no estado local
+    setMarginTop(value[0]);
+    
+    // Atualizar o elemento
+    onUpdate({
+      content: {
+        ...element.content,
+        marginTop: value[0]
+      }
+    });
+  };
+
   return (
-    <div className="p-4 space-y-6">
-      <TitleInput 
-        title={element.content?.title || ""} 
-        onChange={handleTitleChange} 
-      />
-      
-      <Separator />
-      
-      <div className="space-y-4">
-        <h4 className="font-medium">Opções</h4>
-        
-        <div className="space-y-4">
-          {element.content?.options?.map((option: any) => (
-            <div key={option.id} className="border rounded-md p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded overflow-hidden bg-gray-100">
-                  {option.image && (
-                    <img src={option.image} alt="" className="h-full w-full object-cover" />
-                  )}
-                </div>
-                
-                <Input
-                  value={option.text}
-                  onChange={(e) => handleOptionTextChange(option.id, e.target.value)}
-                  className="flex-1"
-                  placeholder="Texto da opção"
-                />
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteOption(option.id)}
-                  disabled={element.content.options.length <= 1}
-                >
-                  <Trash2 className="h-4 w-4 text-gray-500" />
-                </Button>
-              </div>
+    <div className="space-y-4">
+      <Tabs defaultValue="content">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="content">Conteúdo</TabsTrigger>
+          <TabsTrigger value="style">Estilo</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content">
+          <div className="space-y-4">
+            <TitleInput
+              title={element.content?.title || ""}
+              onChange={handleTitleChange}
+            />
+
+            <Separator />
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Opções</h3>
               
-              <Tabs defaultValue="url" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="url">URL da imagem</TabsTrigger>
-                  <TabsTrigger value="upload">Upload</TabsTrigger>
-                </TabsList>
-                <TabsContent value="url" className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      value={option.image || ""}
-                      onChange={(e) => handleOptionImageChange(option.id, e.target.value)}
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      className="flex-1"
-                    />
-                    <Button variant="outline" size="sm">
-                      <Link className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="upload">
-                  <div 
-                    className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-slate-50 transition-colors"
-                    onClick={() => {
-                      const input = document.getElementById(`file-upload-${option.id}`) as HTMLInputElement;
-                      input?.click();
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      const files = e.dataTransfer.files;
-                      if (!files || files.length === 0) return;
-                      
-                      const file = files[0];
-                      if (!file.type.startsWith('image/')) {
-                        console.error('Tipo de arquivo não suportado');
-                        return;
-                      }
-                      
-                      handleFileUpload(option.id, file);
-                    }}
-                  >
-                    {option.image ? (
-                      <div className="space-y-2">
-                        <div className="max-h-[150px] overflow-hidden mx-auto">
-                          <img
-                            src={option.image}
-                            alt="Preview"
-                            className="max-h-[150px] object-contain mx-auto"
-                          />
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          Clique ou arraste para alterar a imagem
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500">
-                          Arraste uma imagem ou clique para fazer upload
-                        </p>
-                      </>
-                    )}
-                    <input
-                      id={`file-upload-${option.id}`}
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleFileUpload(option.id, file);
-                        }
-                      }}
-                    />
+              {element.content?.options.map((option: any) => (
+                <div key={option.id} className="space-y-2 border p-2 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`option-${option.id}`}>Texto da opção</Label>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation(); // Evita que o clique se propague para o div pai
-                        const input = document.getElementById(`file-upload-${option.id}`) as HTMLInputElement;
-                        input?.click();
-                      }}
+                      onClick={() => handleDeleteOption(option.id)}
                     >
-                      Selecionar arquivo
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </TabsContent>
-              </Tabs>
-              
-              <div className="space-y-2">
-                <Label htmlFor={`aspect-ratio-${option.id}`}>Proporção da imagem</Label>
-                <RadioGroup 
-                  defaultValue={option.style?.aspectRatio || "1:1"}
-                  onValueChange={(value) => handleOptionAspectRatioChange(option.id, value as "1:1" | "16:9" | "9:16" | "4:3")}
-                  className="grid grid-cols-4 gap-2"
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="border rounded p-2 mb-1 w-12 h-12 flex items-center justify-center">
-                      <div className="bg-gray-200 w-10 h-10"></div>
-                    </div>
-                    <div className="flex items-center">
-                      <RadioGroupItem value="1:1" id={`aspect-1:1-${option.id}`} className="mr-1" />
-                      <Label htmlFor={`aspect-1:1-${option.id}`} className="text-xs">1:1</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-center">
-                    <div className="border rounded p-2 mb-1 w-12 h-12 flex items-center justify-center">
-                      <div className="bg-gray-200 w-10 h-6"></div>
-                    </div>
-                    <div className="flex items-center">
-                      <RadioGroupItem value="16:9" id={`aspect-16:9-${option.id}`} className="mr-1" />
-                      <Label htmlFor={`aspect-16:9-${option.id}`} className="text-xs">16:9</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-center">
-                    <div className="border rounded p-2 mb-1 w-12 h-12 flex items-center justify-center">
-                      <div className="bg-gray-200 w-6 h-10"></div>
-                    </div>
-                    <div className="flex items-center">
-                      <RadioGroupItem value="9:16" id={`aspect-9:16-${option.id}`} className="mr-1" />
-                      <Label htmlFor={`aspect-9:16-${option.id}`} className="text-xs">9:16</Label>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-center">
-                    <div className="border rounded p-2 mb-1 w-12 h-12 flex items-center justify-center">
-                      <div className="bg-gray-200 w-10 h-7.5"></div>
-                    </div>
-                    <div className="flex items-center">
-                      <RadioGroupItem value="4:3" id={`aspect-4:3-${option.id}`} className="mr-1" />
-                      <Label htmlFor={`aspect-4:3-${option.id}`} className="text-xs">4:3</Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor={`bg-color-${option.id}`}>Cor de fundo</Label>
-                <div className="flex space-x-2">
-                  <div 
-                    className="h-10 w-10 rounded border"
-                    style={{ backgroundColor: option.style?.backgroundColor || '#0F172A' }}
-                  />
+
                   <Input
-                    id={`bg-color-${option.id}`}
-                    type="text"
-                    value={option.style?.backgroundColor || '#0F172A'}
-                    onChange={(e) => handleOptionBackgroundColorChange(option.id, e.target.value)}
-                    placeholder="#0F172A"
+                    id={`option-${option.id}`}
+                    value={option.text || ""}
+                    onChange={(e) => handleOptionTextChange(option.id, e.target.value)}
+                    placeholder="Texto da opção"
                   />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Navegação</Label>
-                <Select 
-                  defaultValue={option.navigation?.type || "next"}
-                  onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as "next" | "step" | "url" | "none")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a ação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">
-                      <div className="flex items-center">
-                        <X className="h-4 w-4 mr-2" />
-                        <span>Nenhum</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="next">Ir para próxima etapa</SelectItem>
-                    <SelectItem value="step">Ir para etapa específica</SelectItem>
-                    <SelectItem value="url">Abrir URL externa</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {option.navigation?.type === "step" && (
-                  <div className="pt-2">
-                    <Select 
-                      defaultValue={option.navigation?.stepId || ""}
-                      onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma etapa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {steps.map((step) => (
-                          <SelectItem key={step.id} value={step.id}>
-                            {step.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  <div className="space-y-2">
+                    <Label>URL da imagem</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={option.image || ""}
+                        onChange={(e) => handleOptionImageChange(option.id, e.target.value)}
+                        placeholder="/placeholder.svg"
+                        className="flex-1"
+                      />
+                      <label 
+                        htmlFor={`file-upload-${option.id}`}
+                        className="cursor-pointer flex items-center justify-center px-3 py-2 bg-primary text-primary-foreground rounded-md"
+                      >
+                        <Upload className="h-4 w-4" />
+                      </label>
+                      <input
+                        id={`file-upload-${option.id}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            handleFileUpload(option.id, e.target.files[0]);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
-                )}
-                
-                {option.navigation?.type === "url" && (
-                  <div className="pt-2">
+
+                  <div className="space-y-2">
+                    <Label>Cor de fundo</Label>
                     <Input
-                      type="url"
-                      placeholder="https://www.example.com"
-                      value={option.navigation?.url || ""}
-                      onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
+                      type="color"
+                      value={option.style?.backgroundColor || "#0F172A"}
+                      onChange={(e) => handleOptionBackgroundColorChange(option.id, e.target.value)}
                     />
                   </div>
-                )}
+
+                  <div className="space-y-2">
+                    <Label>Proporção da imagem</Label>
+                    <RadioGroup
+                      value={option.style?.aspectRatio || "1:1"}
+                      onValueChange={(value) => handleOptionAspectRatioChange(option.id, value as any)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="1:1" id={`aspect-1-1-${option.id}`} />
+                        <Label htmlFor={`aspect-1-1-${option.id}`}>1:1</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="16:9" id={`aspect-16-9-${option.id}`} />
+                        <Label htmlFor={`aspect-16-9-${option.id}`}>16:9</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="9:16" id={`aspect-9-16-${option.id}`} />
+                        <Label htmlFor={`aspect-9-16-${option.id}`}>9:16</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="4:3" id={`aspect-4-3-${option.id}`} />
+                        <Label htmlFor={`aspect-4-3-${option.id}`}>4:3</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Navegação ao clicar</Label>
+                    <Select
+                      value={option.navigation?.type || "next"}
+                      onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a navegação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="next">Próximo passo</SelectItem>
+                        <SelectItem value="step">Passo específico</SelectItem>
+                        <SelectItem value="url">URL externa</SelectItem>
+                        <SelectItem value="none">Nenhuma ação</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {option.navigation?.type === "step" && (
+                      <div className="space-y-2">
+                        <Label>Selecione o passo</Label>
+                        <Select
+                          value={option.navigation?.stepId || ""}
+                          onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o passo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {steps.map((step) => (
+                              <SelectItem key={step.id} value={step.id}>
+                                {step.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {option.navigation?.type === "url" && (
+                      <div className="space-y-2">
+                        <Label>URL externa</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            value={option.navigation?.url || ""}
+                            onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
+                            placeholder="https://exemplo.com"
+                            className="flex-1"
+                          />
+                          <Link className="h-4 w-4" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                variant="outline"
+                onClick={handleAddOption}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Opção
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="style">
+          <div className="space-y-4">
+            {/* Seção de Margem Superior */}
+            <div className="space-y-2">
+              <Label htmlFor="margin-top">Margem superior</Label>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleMarginTopChange([marginTop - 5])}
+                  disabled={marginTop <= 0}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleMarginTopChange([marginTop + 5])}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <div className="flex-1">
+                  <Slider
+                    id="margin-top"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[marginTop]}
+                    onValueChange={handleMarginTopChange}
+                  />
+                </div>
+                <span className="text-sm text-gray-500 w-10 text-right">{marginTop}px</span>
               </div>
             </div>
-          ))}
-        </div>
-        
-        <Button
-          variant="outline" 
-          size="sm"
-          onClick={handleAddOption}
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Adicionar opção
-        </Button>
-      </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
