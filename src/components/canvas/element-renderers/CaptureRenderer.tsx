@@ -55,6 +55,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   // Get style settings or use defaults
   const titleAlignment = content?.style?.titleAlignment || "center";
   const primaryColor = content?.style?.primaryColor || "#8B5CF6";
+  const marginTop = content?.style?.marginTop;
   
   const handleChange = (fieldId: string, value: string) => {
     setFormValues(prev => ({
@@ -233,9 +234,14 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     }
   };
 
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
+  };
+
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4 w-full">
+      <div className="p-4 w-full" style={containerStyle}>
         <div className={cn("mb-4", `text-${titleAlignment}`)}>
           <h3 className="text-lg font-medium">{title}</h3>
           {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}

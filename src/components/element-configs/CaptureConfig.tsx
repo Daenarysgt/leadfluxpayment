@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, HelpCircle } from "lucide-react";
+import { PlusCircle, Trash2, HelpCircle, ArrowUp, ArrowDown } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useStore } from "@/utils/store";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 
 interface CaptureConfigProps {
   element: CanvasElement;
@@ -57,6 +58,7 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   }
 
   const [activeTab, setActiveTab] = useState("content");
+  const [marginTop, setMarginTop] = useState(style.marginTop || 0);
   
   const handleContentChange = (key: string, value: any) => {
     onUpdate({
@@ -133,6 +135,15 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
         )
       }
     });
+  };
+
+  // Manipulador para mudanças na margem superior
+  const handleMarginTopChange = (value: number[]) => {
+    // Atualizar a margem superior no estado local
+    setMarginTop(value[0]);
+    
+    // Atualizar o elemento
+    handleStyleChange('marginTop', value[0]);
   };
 
   return (
@@ -266,6 +277,42 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
                 </button>
               ))}
             </div>
+          </div>
+          
+          {/* Controle de Margem Superior */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <ConfigLabel htmlFor="margin-top">Margem superior</ConfigLabel>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{marginTop}px</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop - 5])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop + 5])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="margin-top"
+              min={-100}
+              max={100}
+              step={1}
+              value={[marginTop]}
+              onValueChange={handleMarginTopChange}
+            />
           </div>
         </TabsContent>
         
