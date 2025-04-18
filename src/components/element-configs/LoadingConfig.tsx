@@ -1,13 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CanvasElement } from "@/types/canvasTypes";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { useStore } from "@/utils/store";
 
 interface LoadingConfigProps {
   element: CanvasElement;
@@ -20,6 +21,31 @@ const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
   const navigation = content.navigation || {};
   
   const [activeTab, setActiveTab] = useState("content");
+  const { currentFunnel } = useStore();
+  const [funnelSteps, setFunnelSteps] = useState<any[]>([]);
+  
+  // Carregar as etapas do funil atual
+  useEffect(() => {
+    try {
+      if (currentFunnel && currentFunnel.steps && currentFunnel.steps.length > 0) {
+        // Ordenar as etapas por ordem
+        const sortedSteps = [...currentFunnel.steps].sort((a, b) => {
+          const orderA = a.order_index ?? 0;
+          const orderB = b.order_index ?? 0;
+          return orderA - orderB;
+        });
+        
+        setFunnelSteps(sortedSteps);
+        console.log("Etapas do funil carregadas:", sortedSteps.length);
+      } else {
+        console.log("Nenhuma etapa disponível no funil atual");
+        setFunnelSteps([]);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar etapas do funil:", error);
+      setFunnelSteps([]);
+    }
+  }, [currentFunnel]);
   
   const handleContentChange = (key: string, value: any) => {
     onUpdate({
@@ -206,11 +232,21 @@ const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
                       <SelectValue placeholder="Selecione uma etapa" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(element as any).funnel?.steps?.map((step: any) => (
-                        <SelectItem key={step.id} value={step.id}>
-                          {step.name || `Etapa ${step.order}`}
-                        </SelectItem>
-                      )) || <SelectItem value="" disabled>Sem etapas disponíveis</SelectItem>}
+                      {funnelSteps.length > 0 ? (
+                        funnelSteps.map((step) => (
+                          <SelectItem key={step.id} value={step.id}>
+                            {step.title || `Etapa ${step.order_index || 0}`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <>
+                          <SelectItem value="step-1">Etapa 1</SelectItem>
+                          <SelectItem value="step-2">Etapa 2</SelectItem>
+                          <SelectItem value="step-3">Etapa 3</SelectItem>
+                          <SelectItem value="step-4">Etapa 4</SelectItem>
+                          <SelectItem value="step-5">Etapa 5</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
