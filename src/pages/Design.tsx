@@ -875,25 +875,44 @@ const Design = () => {
                           </p>
                           
                           <div className="mt-4">
-                            <Label className="text-sm">Opacidade do conteúdo</Label>
-                            <div className="flex items-center mt-2 gap-4">
-                              <input 
-                                type="range" 
-                                min="0" 
-                                max="1" 
-                                step="0.1"
-                                value={currentFunnel.settings?.backgroundOpacity || 0.8}
-                                onChange={(e) => handleColorChange('backgroundOpacity', parseFloat(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                              />
-                              <span className="text-sm font-mono w-10 text-center">
-                                {Math.round((currentFunnel.settings?.backgroundOpacity || 0.8) * 100)}%
-                              </span>
-                            </div>
+                            <Label className="text-sm">Estilo do conteúdo</Label>
+                            <select 
+                              className="w-full h-10 px-3 mt-2 rounded-md border border-input bg-background"
+                              value={currentFunnel.settings?.contentStyle || "solid"}
+                              onChange={(e) => handleColorChange('contentStyle', e.target.value)}
+                            >
+                              <option value="solid">Sólido (fundo opaco)</option>
+                              <option value="glassmorphism">Vidro (efeito translúcido)</option>
+                              <option value="transparent">Transparente (sem fundo)</option>
+                              <option value="gradient">Gradiente (degradê sutil)</option>
+                            </select>
                             <p className="text-xs text-gray-500 mt-1">
-                              Controla a transparência do fundo do conteúdo quando uma imagem é usada como fundo.
+                              Define o estilo visual do container de conteúdo sobre a imagem de fundo.
                             </p>
                           </div>
+                          
+                          {currentFunnel.settings?.contentStyle === 'solid' && (
+                            <div className="mt-4">
+                              <Label className="text-sm">Opacidade do conteúdo</Label>
+                              <div className="flex items-center mt-2 gap-4">
+                                <input 
+                                  type="range" 
+                                  min="0" 
+                                  max="1" 
+                                  step="0.1"
+                                  value={currentFunnel.settings?.backgroundOpacity || 0.8}
+                                  onChange={(e) => handleColorChange('backgroundOpacity', parseFloat(e.target.value))}
+                                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                />
+                                <span className="text-sm font-mono w-10 text-center">
+                                  {Math.round((currentFunnel.settings?.backgroundOpacity || 0.8) * 100)}%
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Controla a transparência do fundo do conteúdo (apenas no modo sólido).
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -87,15 +87,58 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   // Verificar se há imagem de fundo configurada para ajustar a visualização
   const hasBackgroundImage = !!activeFunnel.settings.backgroundImage;
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
-  const containerStyle = {
-    backgroundColor: hasBackgroundImage 
-      ? `rgba(0, 0, 0, ${useBackgroundOpacity ? activeFunnel.settings.backgroundOpacity : 0.8})` 
-      : (backgroundColor || '#ffffff'),
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    backdropFilter: hasBackgroundImage ? 'blur(2px)' : 'none',
+  const contentStyle = activeFunnel.settings.contentStyle || 'solid';
+  
+  // Determinar o estilo baseado na configuração
+  let containerStyles: React.CSSProperties = {};
+  
+  switch (contentStyle) {
+    case 'transparent':
+      containerStyles = {
+        backgroundColor: 'transparent',
+        color: hasBackgroundImage ? 'white' : 'inherit',
+        textShadow: hasBackgroundImage ? '0 1px 3px rgba(0,0,0,0.7)' : 'none',
+      };
+      break;
+      
+    case 'glassmorphism':
+      containerStyles = {
+        backgroundColor: hasBackgroundImage 
+          ? 'rgba(255, 255, 255, 0.15)'
+          : (backgroundColor || '#ffffff'),
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+      
+    case 'gradient':
+      containerStyles = {
+        background: hasBackgroundImage
+          ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.8))'
+          : (backgroundColor || '#ffffff'),
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+      
+    case 'solid':
+    default:
+      containerStyles = {
+        backgroundColor: hasBackgroundImage 
+          ? `rgba(0, 0, 0, ${useBackgroundOpacity ? activeFunnel.settings.backgroundOpacity : 0.8})` 
+          : (backgroundColor || '#ffffff'),
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+  }
+  
+  // Propriedades comuns para todos os estilos
+  containerStyles = {
+    ...containerStyles,
+    transition: 'all 0.3s ease',
     borderRadius: '0.5rem',
     padding: '1.5rem',
-    transition: 'all 0.3s ease',
   };
 
   return (
@@ -141,7 +184,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        <div className="w-full" style={containerStyle}>
+        <div className="w-full" style={containerStyles}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}

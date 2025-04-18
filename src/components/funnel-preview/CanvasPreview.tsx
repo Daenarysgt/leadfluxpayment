@@ -64,18 +64,65 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   };
   
   const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
+  const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
+  const contentStyle = funnel?.settings?.contentStyle || 'solid';
+  
+  // Determinar o estilo baseado na configuração
+  let containerStyles: React.CSSProperties = {};
+  
+  switch (contentStyle) {
+    case 'transparent':
+      containerStyles = {
+        backgroundColor: 'transparent',
+        color: hasBackgroundImage ? 'white' : 'inherit',
+        textShadow: hasBackgroundImage ? '0 1px 3px rgba(0,0,0,0.7)' : 'none',
+      };
+      break;
+      
+    case 'glassmorphism':
+      containerStyles = {
+        backgroundColor: hasBackgroundImage 
+          ? 'rgba(255, 255, 255, 0.15)'
+          : (funnel?.settings?.backgroundColor || '#ffffff'),
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+      
+    case 'gradient':
+      containerStyles = {
+        background: hasBackgroundImage
+          ? 'linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.8))'
+          : (funnel?.settings?.backgroundColor || '#ffffff'),
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+      
+    case 'solid':
+    default:
+      containerStyles = {
+        backgroundColor: hasBackgroundImage 
+          ? `rgba(0, 0, 0, ${useBackgroundOpacity ? funnel.settings.backgroundOpacity : 0.8})` 
+          : (funnel?.settings?.backgroundColor || '#ffffff'),
+        color: hasBackgroundImage ? 'white' : 'inherit',
+      };
+      break;
+  }
+  
+  // Propriedades comuns para todos os estilos
+  containerStyles = {
+    ...containerStyles,
+    transition: 'all 0.3s ease',
+    borderRadius: '0.5rem',
+    padding: '1.5rem',
+  };
   
   return (
     <div 
-      className="w-full mx-auto min-h-[300px] rounded-lg p-6"
-      style={{
-        backgroundColor: funnel?.settings?.backgroundImage 
-          ? `rgba(0, 0, 0, ${useBackgroundOpacity ? funnel.settings.backgroundOpacity : 0.8})` 
-          : (funnel?.settings?.backgroundColor || '#ffffff'),
-        transition: 'all 0.3s ease',
-        color: funnel?.settings?.backgroundImage ? 'white' : 'inherit',
-        backdropFilter: funnel?.settings?.backgroundImage ? 'blur(2px)' : 'none',
-      }}
+      className="w-full mx-auto min-h-[300px] rounded-lg"
+      style={containerStyles}
     >
       {canvasElements.map((element, index) => {
         console.log("CanvasPreview - Processing element:", element.id, element.type);
