@@ -294,9 +294,15 @@ const BuilderCanvas = ({
     }
     
     // Tentar corrigir formatos comuns de base64 sem o prefixo
-    if (logo.startsWith('/9j/') || logo.startsWith('iVBOR')) {
-      console.log("BuilderCanvas - Tentando corrigir formato do logo");
+    if (logo.startsWith('/9j/')) {
+      console.log("BuilderCanvas - Tentando corrigir formato do logo como JPEG");
       return `data:image/jpeg;base64,${logo}`;
+    }
+    
+    // Se começa com iVBOR, é um PNG (que suporta transparência)
+    if (logo.startsWith('iVBOR')) {
+      console.log("BuilderCanvas - Tentando corrigir formato do logo como PNG");
+      return `data:image/png;base64,${logo}`;
     }
     
     // Caso não seja possível identificar o formato, retornar null

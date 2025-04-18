@@ -472,11 +472,18 @@ const Design = () => {
                               canvas.width = width;
                               canvas.height = height;
                               
-                              const ctx = canvas.getContext('2d');
-                              ctx?.drawImage(img, 0, 0, width, height);
+                              const ctx = canvas.getContext('2d', { alpha: true });
+                              if (ctx) {
+                                // Limpar o canvas com fundo transparente
+                                ctx.clearRect(0, 0, width, height);
+                                ctx.drawImage(img, 0, 0, width, height);
+                              }
                               
                               // Converter para base64 com qualidade reduzida
-                              let base64Logo = canvas.toDataURL('image/jpeg', 0.8);
+                              // Se o arquivo original for PNG, preservar como PNG para manter transparência
+                              let base64Logo = file.type === 'image/png' ? 
+                                canvas.toDataURL('image/png') : 
+                                canvas.toDataURL('image/jpeg', 0.8);
                               
                               console.log("Design - Logo processado, tamanho:", base64Logo.length);
                               
@@ -484,7 +491,10 @@ const Design = () => {
                               if (base64Logo.length > 500000) { // 500KB
                                 console.warn("Design - Logo muito grande, tentando reduzir mais");
                                 // Tentar reduzir ainda mais a qualidade
-                                base64Logo = canvas.toDataURL('image/jpeg', 0.6);
+                                // Manter PNG para arquivos PNG mesmo com compressão, para preservar transparência
+                                base64Logo = file.type === 'image/png' ? 
+                                  canvas.toDataURL('image/png', 0.8) : 
+                                  canvas.toDataURL('image/jpeg', 0.6);
                                 console.log("Design - Logo reduzido novamente, novo tamanho:", base64Logo.length);
                               }
                               
