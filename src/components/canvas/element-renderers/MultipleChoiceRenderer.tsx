@@ -24,6 +24,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     showHelperText = true
   } = content || {};
   
+  // Get style settings
+  const style = content?.style || {};
+  const marginTop = style.marginTop;
+  
   // Reset selected options when element changes
   useEffect(() => {
     setSelectedOptions([]);
@@ -166,9 +170,14 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     executeNavigation(navigationOption.id);
   }, [selectedOptions, content?.options, executeNavigation]);
 
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
+  };
+
   return (
     <BaseElementRenderer {...props}>
-      <div className="space-y-4">
+      <div className="space-y-4" style={containerStyle}>
         {content.title && (
           <h3 className="text-lg font-medium">{content.title}</h3>
         )}

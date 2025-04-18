@@ -5,6 +5,10 @@ import TitleInput from "./multiple-choice/TitleInput";
 import OptionsList from "./multiple-choice/OptionsList";
 import StyleSettings from "./multiple-choice/StyleSettings";
 import { EMOJI_OPTIONS, DEFAULT_BORDER_RADIUS } from "./multiple-choice/constants";
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface MultipleChoiceConfigProps {
   element: any;
@@ -26,6 +30,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
+  const [marginTop, setMarginTop] = useState(element.content?.style?.marginTop || 0);
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -69,6 +74,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get show helper text setting
     setShowHelperText(element.content?.showHelperText === true);
+    
+    // Get margin top
+    setMarginTop(element.content?.style?.marginTop || 0);
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -461,6 +469,21 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  const handleMarginTopChange = (value: number[]) => {
+    const marginTopValue = value[0];
+    setMarginTop(marginTopValue);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          marginTop: marginTopValue
+        }
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -515,6 +538,44 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}
       />
+
+      <Separator />
+      
+      {/* Controle de Margem Superior */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="margin-top">Margem superior</Label>
+          <div className="flex items-center gap-1">
+            <span className="text-sm text-muted-foreground">{marginTop}px</span>
+            <div className="flex flex-col">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-5 w-5"
+                onClick={() => handleMarginTopChange([marginTop - 5])}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-5 w-5"
+                onClick={() => handleMarginTopChange([marginTop + 5])}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Slider
+          id="margin-top"
+          min={-100}
+          max={100}
+          step={1}
+          value={[marginTop]}
+          onValueChange={handleMarginTopChange}
+        />
+      </div>
     </div>
   );
 };
