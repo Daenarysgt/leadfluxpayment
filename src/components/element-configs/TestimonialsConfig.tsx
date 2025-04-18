@@ -7,6 +7,7 @@ import { Plus, Trash2, Star, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ColorPicker } from "./common/ColorPicker";
 
 interface TestimonialsConfigProps {
   element: any;
@@ -508,34 +509,18 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="bgColor">Cor de fundo</Label>
-              <div className="flex mt-1">
-                <div 
-                  className="h-8 w-8 rounded border mr-2"
-                  style={{ backgroundColor: element.content?.style?.backgroundColor || 'white' }}
-                />
-                <Input
-                  id="bgColor"
-                  value={element.content?.style?.backgroundColor || "white"}
-                  onChange={(e) => handleBackgroundColorChange(e.target.value)}
-                  placeholder="#FFFFFF"
-                />
-              </div>
+              <ColorPicker
+                value={element.content?.style?.backgroundColor || "white"}
+                onChange={handleBackgroundColorChange}
+              />
             </div>
             
             <div>
               <Label htmlFor="borderColor">Cor da borda</Label>
-              <div className="flex mt-1">
-                <div 
-                  className="h-8 w-8 rounded border mr-2"
-                  style={{ backgroundColor: element.content?.style?.borderColor || '#e5e7eb' }}
-                />
-                <Input
-                  id="borderColor"
-                  value={element.content?.style?.borderColor || "#e5e7eb"}
-                  onChange={(e) => handleBorderColorChange(e.target.value)}
-                  placeholder="#e5e7eb"
-                />
-              </div>
+              <ColorPicker
+                value={element.content?.style?.borderColor || "#e5e7eb"}
+                onChange={handleBorderColorChange}
+              />
             </div>
           </div>
           
@@ -546,102 +531,34 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
             <div className="grid grid-cols-1 gap-3">
               <div>
                 <Label htmlFor="titleColor">Cor do Título</Label>
-                <div className="flex mt-1">
-                  <div 
-                    className="h-8 w-8 rounded border mr-2"
-                    style={{ backgroundColor: element.content?.style?.titleColor || '#111827' }}
-                  />
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      id="titleColor"
-                      value={element.content?.style?.titleColor || "#111827"}
-                      onChange={(e) => handleTitleColorChange(e.target.value)}
-                      placeholder="#111827"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={element.content?.style?.titleColor || "#111827"}
-                      onChange={(e) => handleTitleColorChange(e.target.value)}
-                      className="w-10 h-8 p-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
+                <ColorPicker
+                  value={element.content?.style?.titleColor || "#111827"}
+                  onChange={handleTitleColorChange}
+                />
               </div>
               
               <div>
                 <Label htmlFor="textColor">Cor do Depoimento</Label>
-                <div className="flex mt-1">
-                  <div 
-                    className="h-8 w-8 rounded border mr-2"
-                    style={{ backgroundColor: element.content?.style?.textColor || '#374151' }}
-                  />
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      id="textColor"
-                      value={element.content?.style?.textColor || "#374151"}
-                      onChange={(e) => handleTextColorChange(e.target.value)}
-                      placeholder="#374151"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={element.content?.style?.textColor || "#374151"}
-                      onChange={(e) => handleTextColorChange(e.target.value)}
-                      className="w-10 h-8 p-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
+                <ColorPicker
+                  value={element.content?.style?.textColor || "#374151"}
+                  onChange={handleTextColorChange}
+                />
               </div>
               
               <div>
                 <Label htmlFor="nameColor">Cor do Nome</Label>
-                <div className="flex mt-1">
-                  <div 
-                    className="h-8 w-8 rounded border mr-2"
-                    style={{ backgroundColor: element.content?.style?.nameColor || '#111827' }}
-                  />
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      id="nameColor"
-                      value={element.content?.style?.nameColor || "#111827"}
-                      onChange={(e) => handleNameColorChange(e.target.value)}
-                      placeholder="#111827"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={element.content?.style?.nameColor || "#111827"}
-                      onChange={(e) => handleNameColorChange(e.target.value)}
-                      className="w-10 h-8 p-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
+                <ColorPicker
+                  value={element.content?.style?.nameColor || "#111827"}
+                  onChange={handleNameColorChange}
+                />
               </div>
               
               <div>
                 <Label htmlFor="roleColor">Cor do Cargo/Empresa</Label>
-                <div className="flex mt-1">
-                  <div 
-                    className="h-8 w-8 rounded border mr-2"
-                    style={{ backgroundColor: element.content?.style?.roleColor || '#6B7280' }}
-                  />
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      id="roleColor"
-                      value={element.content?.style?.roleColor || "#6B7280"}
-                      onChange={(e) => handleRoleColorChange(e.target.value)}
-                      placeholder="#6B7280"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={element.content?.style?.roleColor || "#6B7280"}
-                      onChange={(e) => handleRoleColorChange(e.target.value)}
-                      className="w-10 h-8 p-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
+                <ColorPicker
+                  value={element.content?.style?.roleColor || "#6B7280"}
+                  onChange={handleRoleColorChange}
+                />
               </div>
             </div>
           </div>
