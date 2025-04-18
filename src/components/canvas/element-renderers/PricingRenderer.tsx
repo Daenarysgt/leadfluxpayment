@@ -100,8 +100,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
           </span>
         )}
         {discount && (
-          <span className={`${variant === "horizontal" ? "" : variants[variant as keyof typeof variants]} px-2 py-0.5 rounded text-xs font-medium shadow-sm`}
-            style={variant === "horizontal" ? { backgroundColor: accentColor, color: "#ffffff" } : undefined}>
+          <span className={`${variant === "featured" || variant === "horizontal" ? "" : variants[variant as keyof typeof variants]} px-2 py-0.5 rounded text-xs font-medium shadow-sm`}
+            style={variant === "featured" || variant === "horizontal" ? { backgroundColor: accentColor, color: "#ffffff" } : undefined}>
             {discount}% {discountLabel}
           </span>
         )}
@@ -504,16 +504,18 @@ const PricingRenderer = (props: ElementRendererProps) => {
             }}
           >
             <div className="mb-6">
-              <div className="flex items-center justify-center mb-1">
+              <div className={`flex items-center ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"} mb-1`}>
                 <span className="text-xl mr-1">{currency}</span>
                 <span className="text-5xl font-bold">{formatPrice(price)}</span>
               </div>
               
-              {renderDiscount("default")}
-              
-              {paymentLabel && (
-                <div className="text-sm text-gray-500 mt-1">{paymentLabel}</div>
-              )}
+              <div className={`flex items-center ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"} gap-3`}>
+                {renderDiscount("featured")}
+                
+                {paymentLabel && (
+                  <div className="text-sm text-gray-500">{paymentLabel}</div>
+                )}
+              </div>
             </div>
             
             {renderFeatures("default")}
