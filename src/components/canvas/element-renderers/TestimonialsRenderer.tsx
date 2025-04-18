@@ -55,6 +55,11 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
   };
   
   const renderTestimonial = (testimonial: any, index: number) => {
+    // Obter as cores configuradas ou usar valores padrão
+    const textColor = content?.style?.textColor || "#374151";
+    const nameColor = content?.style?.nameColor || "#111827";
+    const roleColor = content?.style?.roleColor || "#6B7280";
+    
     return (
       <div 
         key={testimonial.id || index}
@@ -80,12 +85,15 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
           )}
           
           {testimonial.text && (
-            <p className={cn(
-              "text-gray-700 italic",
-              displayStyle === "rectangular" && "mb-4",
-              displayStyle === "grid" && "mb-3 line-clamp-3",
-              displayStyle === "horizontal" && "mb-2"
-            )}>"{testimonial.text}"</p>
+            <p 
+              className={cn(
+                "italic",
+                displayStyle === "rectangular" && "mb-4",
+                displayStyle === "grid" && "mb-3 line-clamp-3",
+                displayStyle === "horizontal" && "mb-2"
+              )}
+              style={{ color: textColor }}
+            >"{testimonial.text}"</p>
           )}
           
           <div className={cn(
@@ -107,10 +115,14 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
             
             <div>
               {testimonial.name && (
-                <p className="font-medium">{testimonial.name}</p>
+                <p className="font-medium" style={{ color: nameColor }}>
+                  {testimonial.name}
+                </p>
               )}
               {testimonial.role && (
-                <p className="text-sm text-gray-500">{testimonial.role}</p>
+                <p className="text-sm" style={{ color: roleColor }}>
+                  {testimonial.role}
+                </p>
               )}
             </div>
           </div>
@@ -126,7 +138,7 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
           <h2 className={cn(
             "text-xl font-semibold mb-4", 
             content?.style?.titleAlignment === "center" ? "text-center" : "text-left"
-          )}>
+          )} style={{ color: content?.style?.titleColor || "#111827" }}>
             {content.title}
           </h2>
         )}

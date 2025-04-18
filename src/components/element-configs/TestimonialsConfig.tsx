@@ -118,6 +118,54 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
     });
   };
 
+  const handleTextColorChange = (textColor: string) => {
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          textColor
+        }
+      }
+    });
+  };
+
+  const handleNameColorChange = (nameColor: string) => {
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          nameColor
+        }
+      }
+    });
+  };
+
+  const handleRoleColorChange = (roleColor: string) => {
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          roleColor
+        }
+      }
+    });
+  };
+
+  const handleTitleColorChange = (titleColor: string) => {
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          titleColor
+        }
+      }
+    });
+  };
+
   const handleImageUpload = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
@@ -150,7 +198,11 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
           displayStyle: "rectangular",
           titleAlignment: "center",
           backgroundColor: "white",
-          borderColor: "#e5e7eb"
+          borderColor: "#e5e7eb",
+          titleColor: "#111827",
+          textColor: "#374151",
+          nameColor: "#111827",
+          roleColor: "#6B7280"
         }
       }
     });
@@ -483,6 +535,113 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
                   onChange={(e) => handleBorderColorChange(e.target.value)}
                   placeholder="#e5e7eb"
                 />
+              </div>
+            </div>
+          </div>
+          
+          <Separator className="my-2" />
+          
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Cores dos Textos</h4>
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <Label htmlFor="titleColor">Cor do Título</Label>
+                <div className="flex mt-1">
+                  <div 
+                    className="h-8 w-8 rounded border mr-2"
+                    style={{ backgroundColor: element.content?.style?.titleColor || '#111827' }}
+                  />
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      id="titleColor"
+                      value={element.content?.style?.titleColor || "#111827"}
+                      onChange={(e) => handleTitleColorChange(e.target.value)}
+                      placeholder="#111827"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="color"
+                      value={element.content?.style?.titleColor || "#111827"}
+                      onChange={(e) => handleTitleColorChange(e.target.value)}
+                      className="w-10 h-8 p-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="textColor">Cor do Depoimento</Label>
+                <div className="flex mt-1">
+                  <div 
+                    className="h-8 w-8 rounded border mr-2"
+                    style={{ backgroundColor: element.content?.style?.textColor || '#374151' }}
+                  />
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      id="textColor"
+                      value={element.content?.style?.textColor || "#374151"}
+                      onChange={(e) => handleTextColorChange(e.target.value)}
+                      placeholder="#374151"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="color"
+                      value={element.content?.style?.textColor || "#374151"}
+                      onChange={(e) => handleTextColorChange(e.target.value)}
+                      className="w-10 h-8 p-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="nameColor">Cor do Nome</Label>
+                <div className="flex mt-1">
+                  <div 
+                    className="h-8 w-8 rounded border mr-2"
+                    style={{ backgroundColor: element.content?.style?.nameColor || '#111827' }}
+                  />
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      id="nameColor"
+                      value={element.content?.style?.nameColor || "#111827"}
+                      onChange={(e) => handleNameColorChange(e.target.value)}
+                      placeholder="#111827"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="color"
+                      value={element.content?.style?.nameColor || "#111827"}
+                      onChange={(e) => handleNameColorChange(e.target.value)}
+                      className="w-10 h-8 p-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="roleColor">Cor do Cargo/Empresa</Label>
+                <div className="flex mt-1">
+                  <div 
+                    className="h-8 w-8 rounded border mr-2"
+                    style={{ backgroundColor: element.content?.style?.roleColor || '#6B7280' }}
+                  />
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      id="roleColor"
+                      value={element.content?.style?.roleColor || "#6B7280"}
+                      onChange={(e) => handleRoleColorChange(e.target.value)}
+                      placeholder="#6B7280"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="color"
+                      value={element.content?.style?.roleColor || "#6B7280"}
+                      onChange={(e) => handleRoleColorChange(e.target.value)}
+                      className="w-10 h-8 p-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
