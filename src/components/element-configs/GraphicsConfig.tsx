@@ -89,7 +89,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
       newData[editingItem] = { 
         name: tempItem.name || `Item ${editingItem + 1}`, 
         value: Number(tempItem.value) || 0,
-        color: tempItem.color || getRandomColor(tempItem.name) 
+        color: chartData[editingItem].color || getRandomColor(tempItem.name + Date.now())
       };
       
       handleUpdate({ chartData: newData });
@@ -102,7 +102,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
         { 
           name: tempItem.name || `Item ${chartData.length + 1}`, 
           value: Number(tempItem.value) || Math.floor(Math.random() * 500),
-          color: tempItem.color || getRandomColor(tempItem.name || `Item ${chartData.length + 1}`) 
+          color: getRandomColor(tempItem.name + Date.now())
         }
       ];
       
@@ -390,7 +390,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                     placeholder="Nome da categoria"
                   />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <Label htmlFor="itemValue" className="text-xs">Valor</Label>
                   <Input
                     id="itemValue"
@@ -400,24 +400,6 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                     onChange={(e) => setTempItem({ ...tempItem, value: Number(e.target.value) })}
                     placeholder="0"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="itemColor" className="text-xs">Cor</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="itemColor"
-                      value={tempItem.color}
-                      onChange={(e) => setTempItem({ ...tempItem, color: e.target.value })}
-                      placeholder="#8B5CF6"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={tempItem.color || getRandomColor(tempItem.name)}
-                      onChange={(e) => setTempItem({ ...tempItem, color: e.target.value })}
-                      className="w-10 h-8 p-0 cursor-pointer"
-                    />
-                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-2">
