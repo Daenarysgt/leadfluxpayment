@@ -7,7 +7,7 @@ import { Plus, Trash2, Star, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ColorPicker } from "./common/ColorPicker";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 
 interface TestimonialsConfigProps {
   element: any;
@@ -509,18 +509,24 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="bgColor">Cor de fundo</Label>
-              <ColorPicker
-                value={element.content?.style?.backgroundColor || "white"}
-                onChange={handleBackgroundColorChange}
-              />
+              <div className="mt-2">
+                <AdvancedColorPicker
+                  value={element.content?.style?.backgroundColor || "white"}
+                  onChange={handleBackgroundColorChange}
+                  size="lg"
+                />
+              </div>
             </div>
             
             <div>
               <Label htmlFor="borderColor">Cor da borda</Label>
-              <ColorPicker
-                value={element.content?.style?.borderColor || "#e5e7eb"}
-                onChange={handleBorderColorChange}
-              />
+              <div className="mt-2">
+                <AdvancedColorPicker
+                  value={element.content?.style?.borderColor || "#e5e7eb"}
+                  onChange={handleBorderColorChange}
+                  size="lg"
+                />
+              </div>
             </div>
           </div>
           
@@ -531,34 +537,46 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
             <div className="grid grid-cols-1 gap-3">
               <div>
                 <Label htmlFor="titleColor">Cor do Título</Label>
-                <ColorPicker
-                  value={element.content?.style?.titleColor || "#111827"}
-                  onChange={handleTitleColorChange}
-                />
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={element.content?.style?.titleColor || "#111827"}
+                    onChange={handleTitleColorChange}
+                    size="lg"
+                  />
+                </div>
               </div>
               
               <div>
                 <Label htmlFor="textColor">Cor do Depoimento</Label>
-                <ColorPicker
-                  value={element.content?.style?.textColor || "#374151"}
-                  onChange={handleTextColorChange}
-                />
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={element.content?.style?.textColor || "#374151"}
+                    onChange={handleTextColorChange}
+                    size="lg"
+                  />
+                </div>
               </div>
               
               <div>
                 <Label htmlFor="nameColor">Cor do Nome</Label>
-                <ColorPicker
-                  value={element.content?.style?.nameColor || "#111827"}
-                  onChange={handleNameColorChange}
-                />
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={element.content?.style?.nameColor || "#111827"}
+                    onChange={handleNameColorChange}
+                    size="lg"
+                  />
+                </div>
               </div>
               
               <div>
                 <Label htmlFor="roleColor">Cor do Cargo/Empresa</Label>
-                <ColorPicker
-                  value={element.content?.style?.roleColor || "#6B7280"}
-                  onChange={handleRoleColorChange}
-                />
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={element.content?.style?.roleColor || "#6B7280"}
+                    onChange={handleRoleColorChange}
+                    size="lg"
+                  />
+                </div>
               </div>
             </div>
           </div>
