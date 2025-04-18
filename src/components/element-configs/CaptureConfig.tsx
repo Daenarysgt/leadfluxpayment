@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CanvasElement } from "@/types/canvasTypes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from "./common/ColorPicker";
@@ -35,19 +35,37 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   const { currentFunnel } = useStore();
   const steps = currentFunnel?.steps || [];
   
-  // Detectar e migrar de versão antiga para nova
-  let captureFields = content.captureFields;
+  // Ref para controlar se a migração já foi feita
+  const migrationDoneRef = useRef(false);
   
-  if (!captureFields || !Array.isArray(captureFields) || captureFields.length === 0) {
-    // Compatibilidade com versão anterior - migrar campo único para array
-    captureFields = [{
-      id: uuidv4(),
-      type: content.captureType || 'email',
-      placeholder: content.placeholder || 'Seu endereço de email'
-    }];
-    
-    // Atualiza o elemento para o novo formato
-    setTimeout(() => {
+  // Estado local para campos de captura
+  const [captureFields, setCaptureFields] = useState<CaptureField[]>(() => {
+    const fields = content.captureFields;
+    if (!fields || !Array.isArray(fields) || fields.length === 0) {
+      // Compatibilidade com versão anterior - migrar campo único para array
+      return [{
+        id: uuidv4(),
+        type: content.captureType || 'email',
+        placeholder: content.placeholder || 'Seu endereço de email'
+      }];
+    }
+    return fields;
+  });
+
+  const [activeTab, setActiveTab] = useState("content");
+  const [marginTop, setMarginTop] = useState(style.marginTop || 0);
+  const [showButton, setShowButton] = useState(content.showButton !== false);
+  
+  // Efeito para migração de versão antiga para nova, executado apenas uma vez
+  useEffect(() => {
+    // Verificar se a migração é necessária e se ainda não foi feita
+    if (!migrationDoneRef.current && 
+        (!content.captureFields || !Array.isArray(content.captureFields) || content.captureFields.length === 0)) {
+      
+      // Marcar que a migração foi feita
+      migrationDoneRef.current = true;
+      
+      // Atualizar o elemento com os novos campos
       onUpdate({
         ...element,
         content: {
@@ -55,13 +73,9 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
           captureFields: captureFields
         }
       });
-    }, 0);
-  }
+    }
+  }, [element.id]); // Dependência apenas do ID do elemento para garantir execução única
 
-  const [activeTab, setActiveTab] = useState("content");
-  const [marginTop, setMarginTop] = useState(style.marginTop || 0);
-  const [showButton, setShowButton] = useState(content.showButton !== false);
-  
   const handleContentChange = (key: string, value: any) => {
     onUpdate({
       ...element,
@@ -105,11 +119,14 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
       placeholder: 'Novo campo'
     };
 
+    const updatedFields = [...captureFields, newField];
+    setCaptureFields(updatedFields);
+
     onUpdate({
       ...element,
       content: {
         ...content,
-        captureFields: [...captureFields, newField]
+        captureFields: updatedFields
       }
     });
   };
@@ -118,23 +135,29 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
     // Não permitir remover se só tiver um campo
     if (captureFields.length <= 1) return;
 
+    const updatedFields = captureFields.filter(field => field.id !== id);
+    setCaptureFields(updatedFields);
+
     onUpdate({
       ...element,
       content: {
         ...content,
-        captureFields: captureFields.filter(field => field.id !== id)
+        captureFields: updatedFields
       }
     });
   };
 
   const updateCaptureField = (id: string, key: string, value: string) => {
+    const updatedFields = captureFields.map(field => 
+      field.id === id ? { ...field, [key]: value } : field
+    );
+    setCaptureFields(updatedFields);
+
     onUpdate({
       ...element,
       content: {
         ...content,
-        captureFields: captureFields.map(field => 
-          field.id === id ? { ...field, [key]: value } : field
-        )
+        captureFields: updatedFields
       }
     });
   };
