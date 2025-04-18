@@ -102,30 +102,30 @@ const PricingRenderer = (props: ElementRendererProps) => {
       switch (navigation.type) {
         case "next":
           console.log("Preview mode: Navigate to next step");
-          if (funnel && funnel.steps.length > 0) {
-            const isLastStep = activeStep === funnel.steps.length - 1;
-            console.log("Is last step?", isLastStep);
+          // CORREÇÃO: Chamar onStepChange sem condições adicionais para garantir que sempre navegue
+          try {
+            console.log("Tentando navegar para a próxima etapa:", activeStep + 1);
+            onStepChange(activeStep + 1);
+            console.log("Navegação executada com sucesso");
             
-            if (isLastStep) {
-              // Se for o último step, registrar o clique e marcar como conversão
+            // Somente registrar conversão se for a última etapa
+            if (activeStep === funnel.steps.length - 1) {
               console.log("Registrando conversão para o funil:", funnel.id);
               try {
-                // Registrar o clique do botão
                 await accessService.registerStepInteraction(
                   funnel.id,
                   Number(activeStep + 1),
                   null,
                   'click'
                 );
-                // Marcar como conversão
                 await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
                 console.log("Conversão registrada com sucesso!");
               } catch (error) {
                 console.error("Erro ao registrar conversão:", error);
               }
-            } else if (activeStep < funnel.steps.length - 1) {
-              onStepChange(activeStep + 1);
             }
+          } catch (error) {
+            console.error("Erro ao navegar para a próxima etapa:", error);
           }
           break;
         case "step":
@@ -136,28 +136,29 @@ const PricingRenderer = (props: ElementRendererProps) => {
             
             if (stepIndex !== -1) {
               console.log("Navegando para o stepIndex:", stepIndex);
-              const isLastStep = stepIndex === funnel.steps.length - 1;
-              console.log("Is last step (specific)?", isLastStep);
-              
-              if (isLastStep) {
-                // Se for o último step, registrar o clique e marcar como conversão
-                console.log("Registrando conversão para o funil (specific):", funnel.id);
-                try {
-                  // Registrar o clique do botão
-                  await accessService.registerStepInteraction(
-                    funnel.id,
-                    Number(stepIndex + 1),
-                    null,
-                    'click'
-                  );
-                  // Marcar como conversão
-                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
-                  console.log("Conversão registrada com sucesso (specific)!");
-                } catch (error) {
-                  console.error("Erro ao registrar conversão (specific):", error);
-                }
-              } else {
+              // CORREÇÃO: Chamar onStepChange sem condições adicionais
+              try {
                 onStepChange(stepIndex);
+                console.log("Navegação para etapa específica executada com sucesso");
+                
+                // Somente registrar conversão se for a última etapa
+                if (stepIndex === funnel.steps.length - 1) {
+                  console.log("Registrando conversão para o funil (specific):", funnel.id);
+                  try {
+                    await accessService.registerStepInteraction(
+                      funnel.id,
+                      Number(stepIndex + 1),
+                      null,
+                      'click'
+                    );
+                    await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
+                    console.log("Conversão registrada com sucesso (specific)!");
+                  } catch (error) {
+                    console.error("Erro ao registrar conversão (specific):", error);
+                  }
+                }
+              } catch (error) {
+                console.error("Erro ao navegar para etapa específica:", error);
               }
             } else {
               console.error("Step ID não encontrado:", navigation.stepId);
@@ -187,29 +188,57 @@ const PricingRenderer = (props: ElementRendererProps) => {
       console.log("Usando navegação no modo canvas");
       console.log("CurrentFunnel:", currentFunnel);
       console.log("CurrentStep:", currentStep);
+      
       // Handle navigation in canvas mode
       switch (navigation.type) {
         case "next":
-          if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
-            setCurrentStep(currentStep + 1);
-          }
-          break;
-        case "step":
-          if (navigation.stepId && currentFunnel) {
-            const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
-            if (stepIndex !== -1) {
-              setCurrentStep(stepIndex);
+          try {
+            console.log("Canvas mode: Tentando navegar para a próxima etapa:", currentStep + 1);
+            if (currentFunnel && currentFunnel.steps && currentFunnel.steps.length > 0) {
+              setCurrentStep(currentStep + 1);
+              console.log("Canvas mode: Navegação executada com sucesso");
             } else {
-              console.error("Step ID não encontrado no modo canvas:", navigation.stepId);
+              console.error("Canvas mode: Funil inválido ou sem etapas");
             }
-          } else {
-            console.error("Navigation.stepId não definido ou currentFunnel não disponível no modo canvas");
+          } catch (error) {
+            console.error("Canvas mode: Erro ao navegar para a próxima etapa:", error);
           }
           break;
-        case "url":
-          if (navigation.url) {
-            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          
+        case "step":
+          try {
+            console.log("Canvas mode: Tentando navegar para etapa específica:", navigation.stepId);
+            if (navigation.stepId && currentFunnel && currentFunnel.steps) {
+              const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
+              if (stepIndex !== -1) {
+                setCurrentStep(stepIndex);
+                console.log("Canvas mode: Navegação para etapa específica executada com sucesso");
+              } else {
+                console.error("Canvas mode: Step ID não encontrado:", navigation.stepId);
+              }
+            } else {
+              console.error("Canvas mode: Navigation.stepId não definido ou currentFunnel inválido");
+            }
+          } catch (error) {
+            console.error("Canvas mode: Erro ao navegar para etapa específica:", error);
           }
+          break;
+          
+        case "url":
+          try {
+            if (navigation.url) {
+              console.log("Canvas mode: Abrindo URL:", navigation.url);
+              window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+            } else {
+              console.error("Canvas mode: URL não definida");
+            }
+          } catch (error) {
+            console.error("Canvas mode: Erro ao abrir URL:", error);
+          }
+          break;
+          
+        default:
+          console.error("Canvas mode: Tipo de navegação desconhecido:", navigation.type);
           break;
       }
     }
@@ -394,6 +423,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
               }}
               onClick={(e) => {
                 console.log("Botão do pricing clicado (minimalStyle)");
+                console.log("Configuração de navegação:", navigation.type, navigation);
                 e.stopPropagation();
                 handleNavigation();
               }}
@@ -500,6 +530,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 }}
                 onClick={(e) => {
                   console.log("Botão do pricing clicado (featuredStyle)");
+                  console.log("Configuração de navegação:", navigation.type, navigation);
                   e.stopPropagation();
                   handleNavigation();
                 }}
@@ -605,6 +636,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
               }}
               onClick={(e) => {
                 console.log("Botão do pricing clicado (horizontalStyle)");
+                console.log("Configuração de navegação:", navigation.type, navigation);
                 e.stopPropagation();
                 handleNavigation();
               }}
