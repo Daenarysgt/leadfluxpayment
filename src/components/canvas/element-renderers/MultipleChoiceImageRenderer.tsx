@@ -6,7 +6,6 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useCallback, useMemo } from "react";
 import { accessService } from "@/services/accessService";
-import { getElementMarginStyle } from "./index";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -189,7 +188,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={getElementMarginStyle(content)}>
+      <div className="p-4">
         {content?.title && (
           <h2 className="text-xl font-semibold text-center mb-4">{content.title}</h2>
         )}

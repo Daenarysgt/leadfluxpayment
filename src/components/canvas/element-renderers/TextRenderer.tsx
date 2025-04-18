@@ -1,7 +1,6 @@
 import { CanvasElement } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { ElementRendererProps } from "@/types/canvasTypes";
-import { getElementMarginStyle } from "./index";
 
 const TextRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -65,9 +64,14 @@ const TextRenderer = (props: ElementRendererProps) => {
     );
   };
   
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : undefined
+  };
+  
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={getElementMarginStyle(element.content)}>
+      <div className="p-4" style={containerStyle}>
         {renderFormattedText()}
       </div>
     </BaseElementRenderer>

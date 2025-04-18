@@ -4,7 +4,6 @@ import { Play, Video as VideoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { getElementMarginStyle } from "./index";
 
 // Componente de renderização de vídeo: suporta YouTube, URLs de vídeo direto, iframes e JavaScript embeds
 
@@ -416,49 +415,47 @@ const VideoRenderer = (props: ElementRendererProps) => {
   // Componente para modo de edição (com wrappers e proteções)
   return (
     <BaseElementRenderer {...props}>
-      <div className="w-full" style={getElementMarginStyle(content)}>
-        <div 
-          className={cn(
-            "relative w-full flex items-center", 
-            alignmentClass,
-            "video-renderer-container"
-          )}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-          draggable={false}
-        >
-          <div className={cn(
-            "w-full relative",
-            isDragging && "pointer-events-none",
-            isDraggingGlobal && "pointer-events-none"
-          )}>
-            {aspectRatio ? (
-              <div className="w-full max-w-full">
-                <AspectRatio ratio={aspectRatio}>
-                  {renderEditorVideo()}
-                </AspectRatio>
-              </div>
-            ) : (
-              <div className="w-full">
+      <div 
+        className={cn(
+          "relative w-full flex items-center", 
+          alignmentClass,
+          "video-renderer-container"
+        )}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        draggable={false}
+      >
+        <div className={cn(
+          "w-full relative",
+          isDragging && "pointer-events-none",
+          isDraggingGlobal && "pointer-events-none"
+        )}>
+          {aspectRatio ? (
+            <div className="w-full max-w-full">
+              <AspectRatio ratio={aspectRatio}>
                 {renderEditorVideo()}
-              </div>
+              </AspectRatio>
+            </div>
+          ) : (
+            <div className="w-full">
+              {renderEditorVideo()}
+            </div>
+          )}
+          
+          {/* Camada extra para capturar eventos de hover e bloqueio */}
+          <div 
+            className={cn(
+              "absolute inset-0",
+              (isDragging || isDraggingGlobal) ? "z-50" : ""
             )}
-            
-            {/* Camada extra para capturar eventos de hover e bloqueio */}
-            <div 
-              className={cn(
-                "absolute inset-0",
-                (isDragging || isDraggingGlobal) ? "z-50" : ""
-              )}
-              style={{
-                background: 'transparent',
-                cursor: 'default'
-              }}
-            />
-          </div>
+            style={{
+              background: 'transparent',
+              cursor: 'default'
+            }}
+          />
         </div>
-        {content.title && <p className="text-center mt-2 text-sm">{content.title}</p>}
       </div>
+      {content.title && <p className="text-center mt-2 text-sm">{content.title}</p>}
     </BaseElementRenderer>
   );
 };

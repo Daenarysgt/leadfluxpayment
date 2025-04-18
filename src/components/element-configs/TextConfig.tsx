@@ -22,7 +22,6 @@ import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import MarginTopConfig from "./common/MarginTopConfig";
 
 interface TextConfigProps {
   element: CanvasElement;
@@ -486,40 +485,74 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
           />
         </TabsContent>
         
-        <TabsContent value="style" className="space-y-4">
+        <TabsContent value="style" className="space-y-6 pt-4">
           <div className="space-y-2">
-            <Label>Tamanho da fonte</Label>
-            <div className="flex items-center gap-4">
-              <Slider
-                value={[fontSize]}
-                min={10}
-                max={72}
-                step={1}
-                onValueChange={handleFontSizeChange}
-                className="flex-1"
-              />
-              <span className="text-sm w-12 text-right">{fontSize}px</span>
+            <div className="flex justify-between">
+              <Label htmlFor="font-size">Tamanho da fonte</Label>
+              <span className="text-sm text-muted-foreground">{fontSize}px</span>
             </div>
+            <Slider
+              id="font-size"
+              min={10}
+              max={72}
+              step={1}
+              value={[fontSize]}
+              onValueChange={handleFontSizeChange}
+            />
           </div>
-        
+          
           <div className="space-y-2">
-            <Label>Cor padrão do texto</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="margin-top">Margem superior</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{marginTop}px</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop - 5])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop + 5])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="margin-top"
+              min={-100}
+              max={100}
+              step={1}
+              value={[marginTop]}
+              onValueChange={handleMarginTopChange}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="font-color">Cor padrão do texto</Label>
+            <div className="grid grid-cols-10 gap-1 mt-2">
               {colorOptions.map((color) => (
                 <button
                   key={color}
-                  className="w-6 h-6 rounded-full border border-gray-300"
-                  style={{ backgroundColor: color }}
+                  type="button"
                   onClick={() => handleDefaultColorChange(color)}
+                  className={`w-5 h-5 rounded hover:ring-2 hover:ring-offset-1 ${
+                    fontColor === color ? 'ring-2 ring-offset-1 ring-black' : ''
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
                 />
               ))}
             </div>
           </div>
-          
-          <MarginTopConfig
-            value={marginTop}
-            onChange={(value) => handleMarginTopChange([value])}
-          />
         </TabsContent>
       </Tabs>
     </div>

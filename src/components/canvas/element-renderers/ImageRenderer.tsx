@@ -1,36 +1,67 @@
+
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
-import { getElementMarginStyle } from "./index";
+import { ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useMemo } from "react";
 
 const ImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
-  const { content = {} } = element;
+  const { content } = element;
+  
+  // Determine alignment class based on the content.alignment property
+  const alignmentClass = useMemo(() => {
+    return content?.alignment ? {
+      'left': 'justify-start',
+      'center': 'justify-center',
+      'right': 'justify-end'
+    }[content.alignment] : 'justify-center';
+  }, [content?.alignment]);
+  
+  // Get aspect ratio value based on the content
+  const aspectRatio = useMemo(() => {
+    const getAspectRatioValue = (ratio?: string) => {
+      switch (ratio) {
+        case "1:1": return 1;
+        case "16:9": return 16/9;
+        case "9:16": return 9/16;
+        case "4:3": return 4/3;
+        case "original": return undefined; // Return undefined for original aspect ratio
+        default: return undefined;
+      }
+    };
+    return getAspectRatioValue(content?.aspectRatio);
+  }, [content?.aspectRatio]);
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={getElementMarginStyle(content)}>
+      <div className={cn("relative w-full flex items-center", alignmentClass)}>
         {content?.imageUrl ? (
-          <div className="relative rounded-lg overflow-hidden">
+          content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
+            <div className="w-full max-w-full">
+              <AspectRatio ratio={aspectRatio}>
+                <img 
+                  src={content.imageUrl} 
+                  alt={content.altText || "Imagem"} 
+                  className="w-full h-full object-cover"
+                />
+              </AspectRatio>
+            </div>
+          ) : (
             <img 
               src={content.imageUrl} 
-              alt={content.alt || 'Image'}
-              className="w-full h-auto object-cover"
+              alt={content.altText || "Imagem"} 
+              className="max-w-full object-contain"
               style={{
-                maxHeight: content.maxHeight ? `${content.maxHeight}px` : undefined,
-                borderRadius: content.borderRadius ? `${content.borderRadius}px` : undefined,
-                border: content.border ? `${content.borderWidth || 1}px ${content.borderStyle || 'solid'} ${content.borderColor || '#e2e8f0'}` : undefined,
-                boxShadow: content.shadow ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : undefined
+                maxHeight: content.height ? `${content.height}px` : 'auto',
+                width: content.width ? `${content.width}px` : 'auto'
               }}
             />
-            {content.caption && (
-              <div className="text-sm text-gray-500 text-center mt-2">
-                {content.caption}
-              </div>
-            )}
-          </div>
+          )
         ) : (
-          <div className="h-40 bg-gray-100 flex items-center justify-center rounded-lg">
-            <span className="text-gray-400">Selecione uma imagem</span>
+          <div className="h-40 w-full flex items-center justify-center bg-gray-100">
+            <ImageIcon className="h-12 w-12 text-gray-400" />
           </div>
         )}
       </div>
