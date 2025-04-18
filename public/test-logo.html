@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Logo LeadFlux</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .test-container {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    h1 {
+      color: #333;
+    }
+    button {
+      background-color: #0066ff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Teste de Exibição de Logo</h1>
+  <p>Esta página testa a exibição do logo em um funil embedado do LeadFlux.</p>
+  
+  <div class="test-container">
+    <h2>Instruções</h2>
+    <p>1. Adicione o ID do funil no campo abaixo</p>
+    <p>2. Clique em "Carregar Funil" para visualizar o funil com o logo</p>
+    
+    <div>
+      <label for="funnel-id">ID do Funil:</label>
+      <input type="text" id="funnel-id" placeholder="Digite o ID do funil">
+      <button onclick="loadFunnel()">Carregar Funil</button>
+    </div>
+  </div>
+  
+  <div class="test-container">
+    <h2>Funil</h2>
+    <div id="funnel-root" style="width: 100%;"></div>
+  </div>
+
+  <script>
+    // Função para carregar o funil quando o usuário clicar no botão
+    function loadFunnel() {
+      const funnelId = document.getElementById('funnel-id').value.trim();
+      if (!funnelId) {
+        alert('Por favor, insira um ID de funil válido.');
+        return;
+      }
+      
+      // Limpar o container
+      const container = document.getElementById('funnel-root');
+      container.innerHTML = '';
+      
+      // Configurar o ID do funil
+      container.setAttribute('data-funnel-id', funnelId);
+      
+      // Carregar o script do embed
+      const script = document.createElement('script');
+      script.src = '/embed.js';
+      document.body.appendChild(script);
+      
+      // Para garantir que o script seja recarregado se o usuário tentar outro funil
+      script.onload = function() {
+        console.log('Script de embed carregado com sucesso.');
+      };
+    }
+  </script>
+</body>
+</html> 

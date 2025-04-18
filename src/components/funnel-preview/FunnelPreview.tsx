@@ -43,6 +43,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   // Use backgroundColor from settings or fallback to white
   const funnelBgColor = backgroundColor || '#ffffff';
   
+  // Debug log para verificar se o logo está chegando
+  console.log("FunnelPreview - Logo encontrado nas settings:", !!logo, typeof logo);
+  
   // Check if this is the last step of the funnel
   const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
 

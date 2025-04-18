@@ -6,6 +6,9 @@ import { useStore } from "@/utils/store";
 const PreviewSection = () => {
   const { currentFunnel, currentStep, setCurrentStep } = useStore();
 
+  // Debug: verificar se o logo existe no funnel
+  console.log("PreviewSection - Logo existe no funnel:", !!currentFunnel?.settings?.logo);
+
   const handleStepChange = (newStep: number) => {
     setCurrentStep(newStep);
   };
@@ -21,7 +24,7 @@ const PreviewSection = () => {
       <div className="flex-1 overflow-y-auto flex items-center justify-center p-6">
         <div className="w-full max-w-md mx-auto">
           <FunnelPreview 
-            funnel={currentFunnel ? JSON.parse(JSON.stringify(currentFunnel)) : undefined}
+            funnel={currentFunnel}
             stepIndex={currentStep}
             onNextStep={handleStepChange}
             key={`preview-${currentFunnel?.id}-step-${currentStep}`}
