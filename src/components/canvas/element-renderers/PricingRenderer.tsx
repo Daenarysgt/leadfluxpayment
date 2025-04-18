@@ -549,72 +549,64 @@ const PricingRenderer = (props: ElementRendererProps) => {
         : { backgroundColor };
 
     return (
-      <div className="w-full overflow-hidden">
-        {/* Container principal com scroll horizontal em telas pequenas */}
-        <div className="overflow-x-auto pb-2">
-          <div 
-            className={cn(
-              "rounded-xl p-4 transition-all w-full mx-auto flex flex-row items-center gap-4 min-w-[600px]", 
-              {
-                "shadow-lg": boxShadow,
-                "border": true,
-                "border-gray-200": !isHighlighted,
-                "border-amber-300": isHighlighted,
-                "text-left": true
-              }
-            )}
-            style={{ 
-              ...bgStyle,
-              color: textColor,
-              borderRadius: `${borderRadius}px`
-            }}
-          >
-            <div className="w-1/3 space-y-2 pr-2">
-              <div className="flex items-center gap-2 mb-2">
-                {isHighlighted && <Shield className="h-5 w-5 text-amber-500 flex-shrink-0" />}
-                <h3 className="text-lg sm:text-xl font-bold truncate">{title}</h3>
-              </div>
-              {subtitle && <p className="text-xs sm:text-sm text-gray-600 pb-2 line-clamp-2">{subtitle}</p>}
-              
-              <div className="space-y-1">
-                <div className="flex items-baseline flex-wrap">
-                  <span className="text-base sm:text-lg font-medium mr-1">{currency}</span>
-                  <span className="text-2xl sm:text-3xl font-bold">{formatPrice(price)}</span>
-                  {paymentLabel && (
-                    <span className="text-xs sm:text-sm text-gray-500 ml-2">/{paymentLabel}</span>
-                  )}
-                </div>
-                {renderDiscount("horizontal")}
-              </div>
+      <div 
+        className={cn(
+          "rounded-xl p-4 transition-all w-full mx-auto", 
+          {
+            "shadow-lg": boxShadow,
+            "border": true,
+            "border-gray-200": !isHighlighted,
+            "border-amber-300": isHighlighted,
+            "text-left": true
+          }
+        )}
+        style={{ 
+          ...bgStyle,
+          color: textColor,
+          borderRadius: `${borderRadius}px`
+        }}
+      >
+        {/* Layout sempre em grid com 3 colunas fixas */}
+        <div className="grid grid-cols-3 gap-2 items-center">
+          {/* Primeira coluna - Título e Preço */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              {isHighlighted && <Shield className="h-5 w-5 text-amber-500 flex-shrink-0" />}
+              <h3 className="text-lg font-bold truncate">{title}</h3>
             </div>
+            {subtitle && <p className="text-xs text-gray-600 line-clamp-2">{subtitle}</p>}
             
-            <div className="w-1/3 max-h-[150px] overflow-y-auto px-2">
-              {renderFeatures("horizontal")}
-            </div>
-            
-            <div className="w-1/3 text-right flex justify-end pl-2">
-              <Button 
-                className="px-4 sm:px-8 py-4 sm:py-6 font-medium text-sm sm:text-base rounded-lg shadow-md transition-all hover:shadow-lg whitespace-nowrap"
-                style={{ 
-                  background: useGradient
-                    ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                    : buttonColor, 
-                  color: buttonTextColor,
-                  borderRadius: `${borderRadius}px`
-                }}
-              >
-                {buttonText}
-              </Button>
+            <div className="space-y-1">
+              <div className="flex items-baseline flex-wrap">
+                <span className="text-base font-medium mr-1">{currency}</span>
+                <span className="text-2xl font-bold">{formatPrice(price)}</span>
+                {paymentLabel && (
+                  <span className="text-xs text-gray-500 ml-1">/{paymentLabel}</span>
+                )}
+              </div>
+              {renderDiscount("horizontal")}
             </div>
           </div>
-        </div>
-        
-        {/* Indicador de rolagem para telas pequenas */}
-        <div className="mt-1 hidden sm:hidden mx-auto w-fit">
-          <div className="flex gap-1 items-center justify-center">
-            <div className="w-4 h-1 rounded-full bg-gray-300"></div>
-            <div className="w-5 h-1 rounded-full bg-gray-400"></div>
-            <div className="w-4 h-1 rounded-full bg-gray-300"></div>
+          
+          {/* Segunda coluna - Recursos */}
+          <div className="max-h-[150px] overflow-y-auto">
+            {renderFeatures("horizontal")}
+          </div>
+          
+          {/* Terceira coluna - Botão */}
+          <div className="flex justify-end">
+            <Button 
+              className="px-4 py-4 font-medium text-sm rounded-lg shadow-md transition-all whitespace-nowrap"
+              style={{ 
+                background: useGradient
+                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                  : buttonColor, 
+                color: buttonTextColor,
+                borderRadius: `${borderRadius}px`
+              }}
+            >
+              {buttonText}
+            </Button>
           </div>
         </div>
       </div>
