@@ -584,6 +584,16 @@ export const persistenceService = {
     try {
       console.log('PersistenceService - Salvando configurações do funil:', funnel.id);
       
+      // Verificar se temos logo e imprimir seu tamanho
+      if (funnel.settings?.logo) {
+        console.log('PersistenceService - Logo encontrado nas configurações, tamanho:', 
+          funnel.settings.logo.length, 
+          'tipo:', typeof funnel.settings.logo
+        );
+      } else {
+        console.log('PersistenceService - Sem logo nas configurações');
+      }
+      
       // Extrair apenas os dados de configuração
       const settingsUpdate = {
         id: funnel.id,
@@ -603,6 +613,14 @@ export const persistenceService = {
       
       // Persistir apenas as configurações
       const updatedFunnel = await funnelService.updateFunnel(funnel.id, settingsUpdate);
+      console.log('PersistenceService - Configurações persistidas com sucesso');
+      
+      // Verificar se o logo foi preservado no funnel retornado
+      if (funnel.settings?.logo && !updatedFunnel.settings?.logo) {
+        console.error('PersistenceService - Logo perdido após persistência!');
+      } else if (updatedFunnel.settings?.logo) {
+        console.log('PersistenceService - Logo preservado no funil retornado');
+      }
       
       // Buscar funil atualizado
       const { data: refreshedFunnel } = await supabase

@@ -56,21 +56,27 @@ const DesignTab = ({ funnel }: DesignTabProps) => {
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
           
-          // Converter para blob
+          // Definir qualidade menor para JPEG para garantir que o tamanho seja adequado
+          const quality = 0.7; // 70% de qualidade para reduzir tamanho
+          const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          
+          // Converter para blob com qualidade reduzida
           canvas.toBlob((blob) => {
             if (!blob) {
               reject(new Error('Falha ao redimensionar imagem'));
               return;
             }
             
+            console.log("DesignTab - Tamanho do blob após redimensionamento:", blob.size, "bytes");
+            
             // Criar novo arquivo a partir do blob
             const resizedFile = new File([blob], file.name, {
-              type: file.type,
+              type: outputType,
               lastModified: Date.now(),
             });
             
             resolve(resizedFile);
-          }, file.type);
+          }, outputType, quality);
         };
         img.onerror = () => {
           reject(new Error('Erro ao carregar imagem para redimensionamento'));
@@ -95,9 +101,14 @@ const DesignTab = ({ funnel }: DesignTabProps) => {
     setUploading(true);
     
     try {
+      console.log("DesignTab - Iniciando processamento de imagem:", file.name, file.type, file.size);
+      
       // Redimensionar logo antes de converter para base64
       const resizedFile = await resizeImage(file);
+      console.log("DesignTab - Imagem redimensionada com sucesso");
+      
       const base64Logo = await convertToBase64(resizedFile);
+      console.log("DesignTab - Imagem convertida para base64, tamanho:", base64Logo.length);
       
       // Atualizar funnel com o novo logo
       const updatedFunnel = {
@@ -107,6 +118,8 @@ const DesignTab = ({ funnel }: DesignTabProps) => {
           logo: base64Logo,
         },
       };
+      
+      console.log("DesignTab - Atualizando funnel com novo logo", !!updatedFunnel.settings.logo);
       
       useStore.getState().updateFunnel(updatedFunnel);
       

@@ -445,97 +445,111 @@ const Design = () => {
                           setSaving(true);
                           
                           try {
-                            // Função para converter arquivo em base64
-                            const convertToBase64 = (file: File): Promise<string> => {
-                              return new Promise((resolve, reject) => {
-                                const reader = new FileReader();
-                                reader.readAsDataURL(file);
-                                reader.onload = () => resolve(reader.result as string);
-                                reader.onerror = (error) => reject(error);
+                            console.log("Design - Processando logotipo:", file.name, file.type, file.size);
+                            
+                            // Redimensionar imagem para um tamanho menor
+                            const canvas = document.createElement('canvas');
+                            const maxWidth = 300;
+                            const maxHeight = 100;
+                            
+                            const img = new Image();
+                            
+                            img.onload = async () => {
+                              let width = img.width;
+                              let height = img.height;
+                              
+                              // Redimensionar mantendo proporção
+                              if (width > maxWidth) {
+                                height = Math.round(height * (maxWidth / width));
+                                width = maxWidth;
+                              }
+                              
+                              if (height > maxHeight) {
+                                width = Math.round(width * (maxHeight / height));
+                                height = maxHeight;
+                              }
+                              
+                              canvas.width = width;
+                              canvas.height = height;
+                              
+                              const ctx = canvas.getContext('2d');
+                              ctx?.drawImage(img, 0, 0, width, height);
+                              
+                              // Converter para base64 com qualidade reduzida
+                              let base64Logo = canvas.toDataURL('image/jpeg', 0.8);
+                              
+                              console.log("Design - Logo processado, tamanho:", base64Logo.length);
+                              
+                              // Verificar se o logo não é grande demais para armazenamento
+                              if (base64Logo.length > 500000) { // 500KB
+                                console.warn("Design - Logo muito grande, tentando reduzir mais");
+                                // Tentar reduzir ainda mais a qualidade
+                                base64Logo = canvas.toDataURL('image/jpeg', 0.6);
+                                console.log("Design - Logo reduzido novamente, novo tamanho:", base64Logo.length);
+                              }
+                              
+                              // Atualizar funil com o logo
+                              const updatedFunnel = {
+                                ...currentFunnel,
+                                settings: {
+                                  ...currentFunnel.settings,
+                                  logo: base64Logo
+                                }
+                              };
+                              
+                              // Atualizar estado local para feedback visual imediato
+                              updateFunnel(updatedFunnel);
+                              
+                              // Persistir alteração no banco de dados
+                              try {
+                                console.log("Design - Persistindo logo no banco de dados");
+                                await persistenceService.saveFunnelSettings(updatedFunnel);
+                                console.log("Design - Logo persistido com sucesso");
+                                
+                                toast({
+                                  title: "Logotipo atualizado",
+                                  description: "O logotipo foi atualizado com sucesso."
+                                });
+                              } catch (saveError) {
+                                console.error("Design - Erro ao persistir logo:", saveError);
+                                toast({
+                                  title: "Erro ao salvar",
+                                  description: "O logotipo foi atualizado localmente, mas não foi possível salvar no servidor.",
+                                  variant: "destructive"
+                                });
+                              }
+                              
+                              setSaving(false);
+                            };
+                            
+                            img.onerror = () => {
+                              console.error("Design - Erro ao carregar imagem");
+                              toast({
+                                title: "Erro ao processar imagem",
+                                description: "Não foi possível carregar a imagem.",
+                                variant: "destructive"
                               });
-                            };
-                          
-                            // Função para redimensionar imagem
-                            const resizeImage = (file: File, maxWidth = 300, maxHeight = 100): Promise<File> => {
-                              return new Promise((resolve, reject) => {
-                                const reader = new FileReader();
-                                reader.readAsDataURL(file);
-                                reader.onload = (event) => {
-                                  const img = new Image();
-                                  img.src = event.target?.result as string;
-                                  img.onload = () => {
-                                    let width = img.width;
-                                    let height = img.height;
-                                    
-                                    // Calcular as novas dimensões mantendo a proporção
-                                    if (width > maxWidth) {
-                                      height = Math.round(height * (maxWidth / width));
-                                      width = maxWidth;
-                                    }
-                                    
-                                    if (height > maxHeight) {
-                                      width = Math.round(width * (maxHeight / height));
-                                      height = maxHeight;
-                                    }
-                                    
-                                    const canvas = document.createElement('canvas');
-                                    canvas.width = width;
-                                    canvas.height = height;
-                                    
-                                    const ctx = canvas.getContext('2d');
-                                    ctx?.drawImage(img, 0, 0, width, height);
-                                    
-                                    // Converter para blob
-                                    canvas.toBlob((blob) => {
-                                      if (!blob) {
-                                        reject(new Error('Falha ao redimensionar imagem'));
-                                        return;
-                                      }
-                                      
-                                      // Criar novo arquivo a partir do blob
-                                      const resizedFile = new File([blob], file.name, {
-                                        type: file.type,
-                                        lastModified: Date.now(),
-                                      });
-                                      
-                                      resolve(resizedFile);
-                                    }, file.type);
-                                  };
-                                  img.onerror = () => {
-                                    reject(new Error('Erro ao carregar imagem para redimensionamento'));
-                                  };
-                                };
-                                reader.onerror = (error) => reject(error);
-                              });
+                              setSaving(false);
                             };
                             
-                            // Redimensionar logo antes de converter para base64
-                            const resizedFile = await resizeImage(file);
-                            const base64Logo = await convertToBase64(resizedFile);
-                            
-                            // Atualizar funnel com o novo logo
-                            const updatedFunnel = {
-                              ...currentFunnel,
-                              settings: {
-                                ...currentFunnel.settings,
-                                logo: base64Logo,
-                              },
+                            // Carregar a imagem
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              img.src = e.target?.result as string;
                             };
+                            reader.onerror = () => {
+                              console.error("Design - Erro ao ler arquivo");
+                              setSaving(false);
+                            };
+                            reader.readAsDataURL(file);
                             
-                            updateFunnel(updatedFunnel);
-                            
-                            toast({
-                              title: "Logotipo atualizado",
-                              description: "O logotipo foi atualizado com sucesso.",
-                            });
                           } catch (error) {
+                            console.error("Design - Erro ao processar imagem:", error);
                             toast({
                               title: "Erro ao processar imagem",
                               description: "Não foi possível processar a imagem. Tente novamente.",
-                              variant: "destructive",
+                              variant: "destructive"
                             });
-                            console.error("Erro ao processar imagem:", error);
-                          } finally {
                             setSaving(false);
                           }
                         }}

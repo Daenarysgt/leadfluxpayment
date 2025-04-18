@@ -94,16 +94,46 @@
       
       // Adicionar logo se existir nas configurações
       if (funnelData.settings?.logo) {
-        const logoContainer = document.createElement('div');
-        logoContainer.className = 'flex justify-center py-4 mb-2';
+        console.log('Embed - Logo encontrado no funil:', funnelData.settings.logo.substring(0, 50) + '...');
         
-        const logoImg = document.createElement('img');
-        logoImg.src = funnelData.settings.logo;
-        logoImg.alt = 'Logo';
-        logoImg.className = 'leadflux-logo';
+        // Verificar se o logo é uma string base64 válida
+        let logoUrl = funnelData.settings.logo;
+        if (typeof logoUrl === 'string' && !logoUrl.startsWith('data:image/')) {
+          console.error('Embed - Logo não é uma string base64 válida:', logoUrl.substring(0, 20));
+          // Tentar adicionar cabeçalho data:image se não estiver presente
+          if (logoUrl.startsWith('/9j/') || logoUrl.startsWith('iVBOR')) {
+            logoUrl = 'data:image/jpeg;base64,' + logoUrl;
+            console.log('Embed - Tentando corrigir logo com prefix data:image');
+          } else {
+            console.error('Embed - Não foi possível corrigir o formato do logo');
+            // Não exibir logo inválido
+            logoUrl = null;
+          }
+        }
         
-        logoContainer.appendChild(logoImg);
-        stepContainer.appendChild(logoContainer);
+        if (logoUrl) {
+          const logoContainer = document.createElement('div');
+          logoContainer.className = 'flex justify-center py-4 mb-2';
+          
+          const logoImg = document.createElement('img');
+          logoImg.src = logoUrl;
+          logoImg.alt = 'Logo';
+          logoImg.className = 'leadflux-logo';
+          
+          // Adicionar handlers para debug
+          logoImg.onerror = function() {
+            console.error('Embed - Erro ao carregar logotipo');
+            // Remover container se a imagem não carregar
+            logoContainer.style.display = 'none';
+          };
+          
+          logoImg.onload = function() {
+            console.log('Embed - Logotipo carregado com sucesso');
+          };
+          
+          logoContainer.appendChild(logoImg);
+          stepContainer.appendChild(logoContainer);
+        }
       }
       
       // Adicionar barra de progresso se configurado

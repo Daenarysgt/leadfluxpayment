@@ -285,7 +285,17 @@ export const funnelService = {
   // Atualizar um funil existente
   async updateFunnel(id: string, updates: Partial<Funnel>) {
     try {
-      console.log('Enviando atualização para o Supabase:', {id, updates});
+      console.log('Enviando atualização para o Supabase:', {id, updatesKeys: Object.keys(updates)});
+      
+      // Log do logo se existir nas atualizações
+      if (updates.settings?.logo) {
+        console.log('funnelService - Logo presente nas atualizações, tamanho:', 
+          updates.settings.logo.length, 
+          'primeiros chars:', updates.settings.logo.substring(0, 30) + '...'
+        );
+      } else if (updates.settings) {
+        console.log('funnelService - Updates contém settings mas sem logo');
+      }
       
       // Importante: NÃO enviar steps diretamente, pois é uma relação e não uma coluna
       const dataToUpdate: any = {
@@ -311,7 +321,17 @@ export const funnelService = {
         dataToUpdate[key] === undefined && delete dataToUpdate[key]
       );
       
-      console.log('Dados formatados para atualização:', dataToUpdate);
+      console.log('Dados formatados para atualização:', {
+        ...dataToUpdate,
+        settings: dataToUpdate.settings ? 
+          {
+            ...dataToUpdate.settings,
+            logo: dataToUpdate.settings.logo ? 
+              `${dataToUpdate.settings.logo.substring(0, 30)}... (tamanho: ${dataToUpdate.settings.logo.length})` : 
+              'não definido'
+          } : 
+          'não definido'
+      });
       
       const { data, error } = await supabase
         .from('funnels')
@@ -331,7 +351,22 @@ export const funnelService = {
         throw error;
       }
       
-      console.log('Funil atualizado com sucesso:', data);
+      // Verificar se o logo foi preservado na resposta
+      if (dataToUpdate.settings?.logo && !data.settings?.logo) {
+        console.error('funnelService - Logo perdido após persistência no Supabase!');
+      } else if (data.settings?.logo) {
+        console.log('funnelService - Logo preservado na resposta do Supabase, tamanho:', 
+          data.settings.logo.length
+        );
+      }
+      
+      console.log('Funil atualizado com sucesso:', {
+        id: data.id, 
+        name: data.name,
+        settingsKeys: data.settings ? Object.keys(data.settings) : 'sem settings',
+        stepsCount: data.steps?.length || 0
+      });
+      
       return data;
     } catch (error) {
       console.error('Error updating funnel:', error);

@@ -34,6 +34,16 @@ export const updateFunnelAction = (set: any) => async (funnel: Funnel) => {
   try {
     console.log('Iniciando atualização do funil na store:', funnel.id);
     
+    // Verificar se o logo existe e está sendo preservado
+    if (funnel.settings && funnel.settings.logo) {
+      console.log('updateFunnelAction - Logo encontrado nas configurações:', 
+        typeof funnel.settings.logo, 
+        funnel.settings.logo.substring(0, 30) + '...'
+      );
+    } else {
+      console.log('updateFunnelAction - Logo não encontrado nas configurações');
+    }
+    
     // Verificar se temos steps para persistir (apenas para log)
     if (funnel.steps && funnel.steps.length > 0) {
       console.log(`updateFunnelAction - Funil com ${funnel.steps.length} steps`);
@@ -50,6 +60,14 @@ export const updateFunnelAction = (set: any) => async (funnel: Funnel) => {
     
     // Criar uma cópia profunda para garantir que todas as referências são quebradas
     const funnelToUpdate = JSON.parse(JSON.stringify(funnel));
+    
+    // Verificar se o logo foi preservado na serialização
+    if (funnel.settings?.logo && (!funnelToUpdate.settings || !funnelToUpdate.settings.logo)) {
+      console.error('updateFunnelAction - Logo perdido durante serialização JSON!');
+      // Garantir que o logo seja preservado
+      if (!funnelToUpdate.settings) funnelToUpdate.settings = {};
+      funnelToUpdate.settings.logo = funnel.settings.logo;
+    }
     
     // Garantir que o timestamp de atualização é definido
     if (!funnelToUpdate.updated_at) {

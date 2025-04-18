@@ -45,7 +45,16 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Debug log para verificar se o logo está chegando
   console.log("FunnelPreview - Logo encontrado nas settings:", !!logo, typeof logo);
+  console.log("FunnelPreview - Valor do logo:", logo);
+  console.log("FunnelPreview - Settings completo:", activeFunnel.settings);
   
+  // Verificar se o logo é uma string base64 válida
+  let validLogo = logo;
+  if (typeof logo === 'string' && !logo.startsWith('data:image/')) {
+    console.error("FunnelPreview - Logo não é uma string base64 válida");
+    validLogo = null;
+  }
+
   // Check if this is the last step of the funnel
   const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
 
@@ -84,12 +93,22 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
       <div className="flex flex-col items-center w-full max-w-xl mx-auto" style={customStyles}>
         {/* Logo */}
-        {logo && (
+        {validLogo && (
           <div className="w-full flex justify-center py-4">
             <img 
-              src={logo} 
+              src={validLogo} 
               alt="Logo" 
               className="max-h-14 object-contain"
+              onError={(e) => {
+                console.error("FunnelPreview - Erro ao carregar logo:", e);
+                // Adicionar fallback se necessário
+                // e.currentTarget.src = '/placeholder-logo.png';
+                // Ou esconder o elemento
+                e.currentTarget.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log("FunnelPreview - Logo carregado com sucesso");
+              }}
             />
           </div>
         )}
