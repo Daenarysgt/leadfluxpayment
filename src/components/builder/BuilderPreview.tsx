@@ -17,11 +17,14 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   }
 
   // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
+  // Determinar se há uma imagem de fundo para aplicar estilo apropriado
+  const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
+  
   return (
     <div className="h-full overflow-auto flex items-center justify-center" 
          style={{ 
            backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
-           backgroundImage: currentFunnel.settings?.backgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
+           backgroundImage: hasBackgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
            backgroundSize: currentFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
                            currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
            backgroundPosition: 'center',

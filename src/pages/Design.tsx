@@ -163,7 +163,7 @@ const Design = () => {
       });
   };
 
-  const handleColorChange = (field: string, value: string | boolean) => {
+  const handleColorChange = (field: string, value: string | boolean | number) => {
     if (!currentFunnel) return;
     
     // Evitar atualização quando o valor não mudou
@@ -873,6 +873,27 @@ const Design = () => {
                           <p className="text-xs text-gray-500">
                             Escolha como a imagem de fundo deve ser exibida na página.
                           </p>
+                          
+                          <div className="mt-4">
+                            <Label className="text-sm">Opacidade do conteúdo</Label>
+                            <div className="flex items-center mt-2 gap-4">
+                              <input 
+                                type="range" 
+                                min="0" 
+                                max="1" 
+                                step="0.1"
+                                value={currentFunnel.settings?.backgroundOpacity || 0.8}
+                                onChange={(e) => handleColorChange('backgroundOpacity', parseFloat(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                              />
+                              <span className="text-sm font-mono w-10 text-center">
+                                {Math.round((currentFunnel.settings?.backgroundOpacity || 0.8) * 100)}%
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Controla a transparência do fundo do conteúdo quando uma imagem é usada como fundo.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>

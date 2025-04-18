@@ -55,6 +55,7 @@ export interface FunnelSettings {
   logo?: string;
   backgroundImage?: string;
   backgroundImageStyle?: 'cover' | 'contain' | 'repeat' | 'fixed';
+  backgroundOpacity?: number;
   showProgressBar: boolean;
   collectLeadData: boolean;
   showPreviousButton?: boolean;

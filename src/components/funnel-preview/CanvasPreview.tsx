@@ -63,12 +63,18 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     }, 50);
   };
   
+  const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
+  
   return (
     <div 
       className="w-full mx-auto min-h-[300px] rounded-lg p-6"
       style={{
-        backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
-        transition: 'background-color 0.3s ease'
+        backgroundColor: funnel?.settings?.backgroundImage 
+          ? `rgba(0, 0, 0, ${useBackgroundOpacity ? funnel.settings.backgroundOpacity : 0.8})` 
+          : (funnel?.settings?.backgroundColor || '#ffffff'),
+        transition: 'all 0.3s ease',
+        color: funnel?.settings?.backgroundImage ? 'white' : 'inherit',
+        backdropFilter: funnel?.settings?.backgroundImage ? 'blur(2px)' : 'none',
       }}
     >
       {canvasElements.map((element, index) => {

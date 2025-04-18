@@ -84,6 +84,20 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     }
   };
 
+  // Verificar se há imagem de fundo configurada para ajustar a visualização
+  const hasBackgroundImage = !!activeFunnel.settings.backgroundImage;
+  const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
+  const containerStyle = {
+    backgroundColor: hasBackgroundImage 
+      ? `rgba(0, 0, 0, ${useBackgroundOpacity ? activeFunnel.settings.backgroundOpacity : 0.8})` 
+      : (backgroundColor || '#ffffff'),
+    color: hasBackgroundImage ? 'white' : 'inherit',
+    backdropFilter: hasBackgroundImage ? 'blur(2px)' : 'none',
+    borderRadius: '0.5rem',
+    padding: '1.5rem',
+    transition: 'all 0.3s ease',
+  };
+
   return (
     <div className="w-full" style={customStyles}>
       {/* Facebook Pixel integration */}
@@ -127,7 +141,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        <div className="w-full">
+        <div className="w-full" style={containerStyle}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}
