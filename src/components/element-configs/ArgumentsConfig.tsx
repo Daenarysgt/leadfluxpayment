@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 
 interface ArgumentsConfigProps {
   element: CanvasElement;
@@ -381,22 +382,11 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
               
               <div className="space-y-2">
                 <Label>Cor dos marcadores</Label>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
-                    style={{ backgroundColor: checkmarkColor }}
-                    onClick={() => {
-                      // Lógica para seletor de cor, isso poderia ser substituído por um seletor de cor adequado
-                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", checkmarkColor);
-                      if (newColor) {
-                        handleStyleUpdate({ checkmarkColor: newColor });
-                      }
-                    }}
-                  />
-                  <Input 
-                    value={checkmarkColor} 
-                    onChange={(e) => handleStyleUpdate({ checkmarkColor: e.target.value })}
-                    placeholder="#22c55e"
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={checkmarkColor}
+                    onChange={(color) => handleStyleUpdate({ checkmarkColor: color })}
+                    size="lg"
                   />
                 </div>
               </div>
@@ -405,63 +395,33 @@ const ArgumentsConfig = ({ element, onUpdate }: ArgumentsConfigProps) => {
               
               <div className="space-y-2">
                 <Label>Cor do título</Label>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
-                    style={{ backgroundColor: titleColor }}
-                    onClick={() => {
-                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", titleColor);
-                      if (newColor) {
-                        handleStyleUpdate({ titleColor: newColor });
-                      }
-                    }}
-                  />
-                  <Input 
-                    value={titleColor} 
-                    onChange={(e) => handleStyleUpdate({ titleColor: e.target.value })}
-                    placeholder="#000000"
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={titleColor}
+                    onChange={(color) => handleStyleUpdate({ titleColor: color })}
+                    size="lg"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Cor da descrição</Label>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
-                    style={{ backgroundColor: descriptionColor }}
-                    onClick={() => {
-                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", descriptionColor);
-                      if (newColor) {
-                        handleStyleUpdate({ descriptionColor: newColor });
-                      }
-                    }}
-                  />
-                  <Input 
-                    value={descriptionColor} 
-                    onChange={(e) => handleStyleUpdate({ descriptionColor: e.target.value })}
-                    placeholder="#6b7280"
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={descriptionColor}
+                    onChange={(color) => handleStyleUpdate({ descriptionColor: color })}
+                    size="lg"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Cor do texto dos argumentos</Label>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-8 h-8 rounded-md border cursor-pointer flex-shrink-0"
-                    style={{ backgroundColor: argumentsColor }}
-                    onClick={() => {
-                      const newColor = prompt("Digite o código de cor em formato hexadecimal (ex: #ff0000)", argumentsColor);
-                      if (newColor) {
-                        handleStyleUpdate({ argumentsColor: newColor });
-                      }
-                    }}
-                  />
-                  <Input 
-                    value={argumentsColor} 
-                    onChange={(e) => handleStyleUpdate({ argumentsColor: e.target.value })}
-                    placeholder="#374151"
+                <div className="mt-2">
+                  <AdvancedColorPicker
+                    value={argumentsColor}
+                    onChange={(color) => handleStyleUpdate({ argumentsColor: color })}
+                    size="lg"
                   />
                 </div>
               </div>
