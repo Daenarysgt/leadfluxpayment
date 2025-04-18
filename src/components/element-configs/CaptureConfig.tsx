@@ -115,7 +115,7 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   };
 
   return (
-    <div className="space-y-4 p-1">
+    <div className="space-y-4 p-1 pb-24">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full mb-4">
           <TabsTrigger value="content" className="flex-1">Conteúdo</TabsTrigger>
