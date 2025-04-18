@@ -142,7 +142,15 @@ const PublicFunnel = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8" 
-         style={{ backgroundColor: funnel.settings?.backgroundColor || '#ffffff' }}>
+         style={{ 
+           backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+           backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+           backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                           funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+           backgroundPosition: 'center',
+           backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+           backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+         }}>
       <div className="w-full max-w-3xl">
         <FunnelPreview 
           funnel={funnel} 

@@ -655,6 +655,227 @@ const Design = () => {
                         <Badge className="ml-auto">Fundo da página</Badge>
                       </div>
                     </div>
+                    
+                    {/* Nova seção de imagem de fundo */}
+                    <div className="space-y-1.5 mt-6">
+                      <Label className="text-sm font-medium">Imagem de Fundo</Label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        A imagem de fundo substituirá a cor de fundo sólida quando definida.
+                      </p>
+                      
+                      {currentFunnel.settings?.backgroundImage ? (
+                        <div className="space-y-3 mt-3">
+                          <div className="border rounded-md p-4 flex items-center justify-between">
+                            <div className="max-w-[200px] max-h-[80px] overflow-hidden">
+                              <div 
+                                className="h-20 w-full rounded-md bg-cover bg-center"
+                                style={{ backgroundImage: `url(${currentFunnel.settings.backgroundImage})` }}
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updatedFunnel = {
+                                  ...currentFunnel,
+                                  settings: {
+                                    ...currentFunnel.settings,
+                                    backgroundImage: undefined,
+                                  },
+                                };
+                                updateFunnel(updatedFunnel);
+                                
+                                toast({
+                                  title: "Imagem de fundo removida",
+                                  description: "A imagem de fundo foi removida com sucesso.",
+                                });
+                              }}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="h-5 w-5" />
+                            </Button>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => document.getElementById('background-image-upload')?.click()}
+                          >
+                            Trocar imagem de fundo
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors mt-3"
+                          onClick={() => document.getElementById('background-image-upload')?.click()}
+                        >
+                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium mb-1">
+                            Clique para fazer upload da imagem de fundo
+                          </p>
+                          <p className="text-xs text-muted-foreground mb-4">
+                            PNG, JPG (recomendado: 1920x1080px)
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                          >
+                            Selecionar arquivo
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <input
+                        id="background-image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          
+                          const file = files[0];
+                          
+                          if (!file.type.startsWith('image/')) {
+                            toast({
+                              title: "Formato não suportado",
+                              description: "Por favor, envie apenas arquivos de imagem.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
+                          setSaving(true);
+                          
+                          try {
+                            console.log("Design - Processando imagem de fundo:", file.name, file.type, file.size);
+                            
+                            // Redimensionar imagem para um tamanho menor
+                            const canvas = document.createElement('canvas');
+                            const maxWidth = 1920;
+                            const maxHeight = 1080;
+                            
+                            const img = new Image();
+                            
+                            img.onload = async () => {
+                              let width = img.width;
+                              let height = img.height;
+                              
+                              // Redimensionar mantendo proporção
+                              if (width > maxWidth) {
+                                height = Math.round(height * (maxWidth / width));
+                                width = maxWidth;
+                              }
+                              
+                              if (height > maxHeight) {
+                                width = Math.round(width * (maxHeight / height));
+                                height = maxHeight;
+                              }
+                              
+                              canvas.width = width;
+                              canvas.height = height;
+                              
+                              const ctx = canvas.getContext('2d');
+                              ctx?.drawImage(img, 0, 0, width, height);
+                              
+                              // Converter para base64 com qualidade reduzida
+                              let base64BackgroundImage = canvas.toDataURL('image/jpeg', 0.7);
+                              
+                              console.log("Design - Imagem de fundo processada, tamanho:", base64BackgroundImage.length);
+                              
+                              // Verificar se a imagem não é grande demais para armazenamento
+                              if (base64BackgroundImage.length > 1000000) { // 1MB
+                                console.warn("Design - Imagem muito grande, tentando reduzir mais");
+                                // Tentar reduzir ainda mais a qualidade
+                                base64BackgroundImage = canvas.toDataURL('image/jpeg', 0.5);
+                                console.log("Design - Imagem reduzida novamente, novo tamanho:", base64BackgroundImage.length);
+                              }
+                              
+                              // Atualizar funil com a imagem de fundo
+                              const updatedFunnel = {
+                                ...currentFunnel,
+                                settings: {
+                                  ...currentFunnel.settings,
+                                  backgroundImage: base64BackgroundImage
+                                }
+                              };
+                              
+                              // Atualizar estado local para feedback visual imediato
+                              updateFunnel(updatedFunnel);
+                              
+                              // Persistir alteração no banco de dados
+                              try {
+                                console.log("Design - Persistindo imagem de fundo no banco de dados");
+                                await persistenceService.saveFunnelSettings(updatedFunnel);
+                                console.log("Design - Imagem de fundo persistida com sucesso");
+                                
+                                toast({
+                                  title: "Imagem de fundo atualizada",
+                                  description: "A imagem de fundo foi atualizada com sucesso."
+                                });
+                              } catch (saveError) {
+                                console.error("Design - Erro ao persistir imagem de fundo:", saveError);
+                                toast({
+                                  title: "Erro ao salvar",
+                                  description: "A imagem foi atualizada localmente, mas não foi possível salvar no servidor.",
+                                  variant: "destructive"
+                                });
+                              }
+                              
+                              setSaving(false);
+                            };
+                            
+                            img.onerror = () => {
+                              console.error("Design - Erro ao carregar imagem");
+                              toast({
+                                title: "Erro ao processar imagem",
+                                description: "Não foi possível carregar a imagem.",
+                                variant: "destructive"
+                              });
+                              setSaving(false);
+                            };
+                            
+                            // Carregar a imagem
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              img.src = e.target?.result as string;
+                            };
+                            reader.onerror = () => {
+                              console.error("Design - Erro ao ler arquivo");
+                              setSaving(false);
+                            };
+                            reader.readAsDataURL(file);
+                            
+                          } catch (error) {
+                            console.error("Design - Erro ao processar imagem:", error);
+                            toast({
+                              title: "Erro ao processar imagem",
+                              description: "Não foi possível processar a imagem. Tente novamente.",
+                              variant: "destructive"
+                            });
+                            setSaving(false);
+                          }
+                        }}
+                      />
+                      
+                      {currentFunnel.settings?.backgroundImage && (
+                        <div className="mt-3 space-y-2">
+                          <Label className="text-sm">Estilo da imagem de fundo</Label>
+                          <select 
+                            className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                            value={currentFunnel.settings?.backgroundImageStyle || "cover"}
+                            onChange={(e) => handleColorChange('backgroundImageStyle', e.target.value)}
+                          >
+                            <option value="cover">Cobrir (preencher tela)</option>
+                            <option value="contain">Conter (mostrar imagem inteira)</option>
+                            <option value="repeat">Repetir (padrão)</option>
+                            <option value="fixed">Fixo (sem rolagem)</option>
+                          </select>
+                          <p className="text-xs text-gray-500">
+                            Escolha como a imagem de fundo deve ser exibida na página.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
                 

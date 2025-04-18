@@ -19,7 +19,15 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
   return (
     <div className="h-full overflow-auto flex items-center justify-center" 
-         style={{ backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff' }}>
+         style={{ 
+           backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
+           backgroundImage: currentFunnel.settings?.backgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
+           backgroundSize: currentFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                           currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+           backgroundPosition: 'center',
+           backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+           backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+         }}>
       <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
         <FunnelPreview 
           funnel={JSON.parse(JSON.stringify(currentFunnel))} 
