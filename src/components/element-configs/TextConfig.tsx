@@ -759,6 +759,9 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
           
           <div className="space-y-2">
             <Label htmlFor="font-color">Cor padrão do texto</Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
+              Clique duas vezes na cor desejada para selecioná-la.
+            </p>
             <div className="grid grid-cols-10 gap-1 mt-2">
               {colorOptions.map((color) => (
                 <button
