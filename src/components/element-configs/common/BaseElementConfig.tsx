@@ -62,10 +62,13 @@ const BaseElementConfig = ({
           
           <TabsContent value="style" className="space-y-4">
             {showMarginConfig && (
-              <MarginTopConfig
-                value={element.content?.marginTop}
-                onChange={handleMarginTopChange}
-              />
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Espaçamento</h3>
+                <MarginTopConfig
+                  value={element.content?.marginTop}
+                  onChange={handleMarginTopChange}
+                />
+              </div>
             )}
             
             {styleTabs?.map(tab => (

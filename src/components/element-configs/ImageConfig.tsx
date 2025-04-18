@@ -8,6 +8,7 @@ import { Upload, Link as LinkIcon, ImageIcon, ZoomIn, ZoomOut, Maximize, AlignLe
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import MarginTopConfig from "./common/MarginTopConfig";
 
 interface ImageConfigProps {
   element: any;
@@ -27,6 +28,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
   });
   const [sizePercentage, setSizePercentage] = useState(100);
   const [alignment, setAlignment] = useState(element.content?.alignment || "center");
+  const marginTop = element.content?.marginTop || 0;
   
   // Função para converter arquivo em base64
   const convertToBase64 = (file: File): Promise<string> => {
@@ -268,6 +270,18 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     }
   };
 
+  const handleMarginTopChange = (value: number) => {
+    const updatedContent = {
+      ...element.content,
+      marginTop: value
+    };
+    
+    onUpdate({
+      ...element,
+      content: updatedContent
+    });
+  };
+
   return (
     <div className="p-4 space-y-6">
       <div>
@@ -497,6 +511,17 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
           </p>
         </div>
       </div>
+      
+      <TabsContent value="style" className="space-y-4">
+        {/* Margin Top Config */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground">Espaçamento</h3>
+          <MarginTopConfig
+            value={marginTop}
+            onChange={handleMarginTopChange}
+          />
+        </div>
+      </TabsContent>
     </div>
   );
 };

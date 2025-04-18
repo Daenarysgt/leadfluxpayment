@@ -9,6 +9,7 @@ import { HelpCircle, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStore } from "@/utils/store";
+import MarginTopConfig from "./common/MarginTopConfig";
 
 interface ButtonConfigProps {
   element: CanvasElement;
@@ -31,6 +32,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const delayEnabled = Boolean(content.delayEnabled);
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
+  const marginTop = content.marginTop || 0;
   
   const [activeTab, setActiveTab] = useState("style");
   
@@ -68,6 +70,10 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
         },
       },
     });
+  };
+
+  const handleMarginTopChange = (value: number) => {
+    handleStyleUpdate({ marginTop: value });
   };
 
   return (
@@ -201,7 +207,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
               />
             </div>
           </div>
-
+          
           {/* Text Color Picker */}
           <div className="space-y-2">
             <Label htmlFor="text-color">Cor do Texto</Label>
@@ -219,6 +225,15 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 className="w-32 uppercase"
               />
             </div>
+          </div>
+          
+          {/* Margin Top Config */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Espaçamento</h3>
+            <MarginTopConfig
+              value={marginTop}
+              onChange={handleMarginTopChange}
+            />
           </div>
 
           {/* Animation Type */}
