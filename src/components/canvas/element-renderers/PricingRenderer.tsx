@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { CheckCircle2, DollarSign, Tag, Check, Star, Shield, Award, ArrowRight } from "lucide-react";
 import { accessService } from "@/services/accessService";
+import { useStore } from "@/utils/store";
 
 const PricingRenderer = (props: ElementRendererProps) => {
   const { element, onUpdate, isSelected, onSelect, previewMode, previewProps } = props;
   const content = element.content as PricingContent;
+  const { setCurrentStep, currentFunnel, currentStep } = useStore();
 
   const {
     title = "Método Beauty",
@@ -41,7 +43,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
     useButtonGradient = true,
     gradientStart = "#3B82F6",
     gradientEnd = "#8B5CF6",
-    gradientDirection = "to right"
+    gradientDirection = "to right",
+    navigation = { type: "next" }
   } = content || {};
 
   const handleContentUpdate = useCallback(
@@ -58,6 +61,121 @@ const PricingRenderer = (props: ElementRendererProps) => {
     },
     [element, content, onUpdate]
   );
+
+  // Função para tratar navegação
+  const handleNavigation = async () => {
+    console.log("PricingRenderer - handleNavigation called");
+    console.log("Navigation config:", navigation);
+    
+    if (!navigation) return;
+    
+    // Verificar o modo de preview
+    if (previewMode && previewProps) {
+      const { activeStep, onStepChange, funnel } = previewProps;
+      console.log("Preview mode navigation with activeStep:", activeStep);
+      console.log("Total steps:", funnel?.steps?.length);
+      
+      switch (navigation.type) {
+        case "next":
+          console.log("Preview mode: Navigate to next step");
+          if (funnel && funnel.steps.length > 0) {
+            const isLastStep = activeStep === funnel.steps.length - 1;
+            console.log("Is last step?", isLastStep);
+            
+            if (isLastStep) {
+              // Se for o último step, registrar o clique e marcar como conversão
+              console.log("Registrando conversão para o funil:", funnel.id);
+              try {
+                // Registrar o clique do botão
+                await accessService.registerStepInteraction(
+                  funnel.id,
+                  Number(activeStep + 1),
+                  null,
+                  'click'
+                );
+                // Marcar como conversão
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+                console.log("Conversão registrada com sucesso!");
+              } catch (error) {
+                console.error("Erro ao registrar conversão:", error);
+              }
+            } else if (activeStep < funnel.steps.length - 1) {
+              onStepChange(activeStep + 1);
+            }
+          }
+          break;
+        case "step":
+          if (navigation.stepId && funnel) {
+            console.log("Preview mode: Navigate to specific step:", navigation.stepId);
+            const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
+            if (stepIndex !== -1) {
+              const isLastStep = stepIndex === funnel.steps.length - 1;
+              console.log("Is last step (specific)?", isLastStep);
+              
+              if (isLastStep) {
+                // Se for o último step, registrar o clique e marcar como conversão
+                console.log("Registrando conversão para o funil (specific):", funnel.id);
+                try {
+                  // Registrar o clique do botão
+                  await accessService.registerStepInteraction(
+                    funnel.id,
+                    Number(stepIndex + 1),
+                    null,
+                    'click'
+                  );
+                  // Marcar como conversão
+                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
+                  console.log("Conversão registrada com sucesso (specific)!");
+                } catch (error) {
+                  console.error("Erro ao registrar conversão (specific):", error);
+                }
+              } else {
+                onStepChange(stepIndex);
+              }
+            }
+          }
+          break;
+        case "url":
+          if (navigation.url) {
+            console.log("Preview mode: Navigate to URL:", navigation.url);
+            if (funnel) {
+              // Marcar como conversão antes de redirecionar
+              console.log("Registrando conversão antes de redirecionar:", funnel.id);
+              try {
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+                console.log("Conversão registrada com sucesso (URL)!");
+              } catch (error) {
+                console.error("Erro ao registrar conversão (URL):", error);
+              }
+            }
+            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          }
+          break;
+      }
+    } else {
+      // Handle navigation in canvas mode
+      switch (navigation.type) {
+        case "next":
+          if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+          }
+          break;
+        case "step":
+          if (navigation.stepId && currentFunnel) {
+            const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
+            if (stepIndex !== -1) {
+              setCurrentStep(stepIndex);
+            }
+          }
+          break;
+        case "url":
+          if (navigation.url) {
+            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          }
+          break;
+      }
+    }
+  };
 
   // Função para tratar o valor do preço para exibição
   const formatPrice = (value: number) => {
@@ -157,85 +275,6 @@ const PricingRenderer = (props: ElementRendererProps) => {
     );
   };
 
-  // Função para lidar com a navegação quando o botão é clicado
-  const handleNavigation = async () => {
-    if (!content.navigation) return;
-    
-    const { navigation } = content;
-    
-    // Handle navigation differently based on preview mode
-    if (previewMode && previewProps) {
-      const { activeStep, onStepChange, funnel } = previewProps;
-      
-      switch (navigation.type) {
-        case "next":
-          if (funnel && funnel.steps.length > 0) {
-            const isLastStep = activeStep === funnel.steps.length - 1;
-            
-            if (isLastStep) {
-              // Se for o último step, registrar o clique e marcar como conversão
-              try {
-                // Registrar o clique do botão
-                await accessService.registerStepInteraction(
-                  funnel.id,
-                  Number(activeStep + 1),
-                  null,
-                  'click'
-                );
-                // Marcar como conversão
-                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-              } catch (error) {
-                console.error("Erro ao registrar conversão:", error);
-              }
-            } else if (activeStep < funnel.steps.length - 1) {
-              onStepChange(activeStep + 1);
-            }
-          }
-          break;
-        case "step":
-          if (navigation.stepId && funnel) {
-            const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
-            if (stepIndex !== -1) {
-              const isLastStep = stepIndex === funnel.steps.length - 1;
-              
-              if (isLastStep) {
-                // Se for o último step, registrar o clique e marcar como conversão
-                try {
-                  // Registrar o clique do botão
-                  await accessService.registerStepInteraction(
-                    funnel.id,
-                    Number(stepIndex + 1),
-                    null,
-                    'click'
-                  );
-                  // Marcar como conversão
-                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
-                } catch (error) {
-                  console.error("Erro ao registrar conversão:", error);
-                }
-              } else {
-                onStepChange(stepIndex);
-              }
-            }
-          }
-          break;
-        case "url":
-          if (navigation.url) {
-            if (funnel) {
-              // Marcar como conversão antes de redirecionar
-              try {
-                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-              } catch (error) {
-                console.error("Erro ao registrar conversão (URL):", error);
-              }
-            }
-            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
-          }
-          break;
-      }
-    }
-  };
-
   // Estilo minimalista aprimorado
   const renderMinimalStyle = () => {
     // Determinar se deve usar gradiente no fundo
@@ -267,7 +306,6 @@ const PricingRenderer = (props: ElementRendererProps) => {
             "shadow-sm": boxShadow,
             "border": true,
             "border-gray-200": !isHighlighted,
-            "border-blue-300": isHighlighted,
             "text-left": alignment === "left",
             "text-center": alignment === "center",
             "text-right": alignment === "right"
@@ -319,7 +357,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
               onClick={handleNavigation}
             >
               {buttonText}
-              {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
+              {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
             </Button>
           </div>
           
@@ -421,7 +459,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 onClick={handleNavigation}
               >
                 {buttonText}
-                {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
+                {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
               </Button>
             </div>
           </div>
@@ -522,7 +560,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
               onClick={handleNavigation}
             >
               {buttonText}
-              {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
+              {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
             </Button>
           </div>
         </div>
