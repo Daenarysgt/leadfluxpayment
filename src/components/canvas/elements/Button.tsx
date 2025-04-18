@@ -14,7 +14,7 @@ export function Button({ element, onClick, isEditor }: ButtonProps) {
 
   // Extract content and properties with defaults
   const content = element.content || {};
-  const buttonText = content.buttonText || "Continuar";
+  const buttonText = content.buttonText || content.defaultButtonText || "Continuar";
   const alignment = content.alignment || "center";
   const size = content.size || "default";
   const variant = content.variant || "default";

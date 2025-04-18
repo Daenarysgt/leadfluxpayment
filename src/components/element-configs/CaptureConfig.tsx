@@ -13,6 +13,7 @@ import { useStore } from "@/utils/store";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 
 interface CaptureConfigProps {
   element: CanvasElement;
@@ -59,6 +60,7 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
 
   const [activeTab, setActiveTab] = useState("content");
   const [marginTop, setMarginTop] = useState(style.marginTop || 0);
+  const [showButton, setShowButton] = useState(content.showButton !== false);
   
   const handleContentChange = (key: string, value: any) => {
     onUpdate({
@@ -145,6 +147,20 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
     // Atualizar o elemento
     handleStyleChange('marginTop', value[0]);
   };
+
+  // Update element when debounced values change
+  useEffect(() => {
+    onUpdate({
+      ...element,
+      content: {
+        ...content,
+        style: {
+          ...style,
+          marginTop: marginTop
+        }
+      }
+    });
+  }, [marginTop, style, onUpdate, content]);
 
   return (
     <div className="space-y-4 p-1 pb-24">
@@ -245,6 +261,18 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
           </div>
           
           <div className="space-y-2">
+            <ConfigLabel>Texto padrão do botão</ConfigLabel>
+            <Input 
+              value={content.defaultButtonText || ''} 
+              onChange={(e) => handleContentChange('defaultButtonText', e.target.value)}
+              placeholder="Inscrever-se"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este texto será usado como padrão quando o campo acima estiver vazio
+            </p>
+          </div>
+          
+          <div className="space-y-2">
             <ConfigLabel>Mensagem de sucesso</ConfigLabel>
             <Input 
               value={content.successMessage || ''} 
@@ -252,6 +280,29 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
               placeholder="Obrigado por se inscrever!"
             />
           </div>
+
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="show-button" className="cursor-pointer">Show Button</Label>
+            <Switch
+              id="show-button"
+              checked={showButton}
+              onCheckedChange={(value) => {
+                setShowButton(value);
+                handleContentChange('showButton', value);
+              }}
+            />
+          </div>
+
+          {showButton && (
+            <div className="space-y-2">
+              <Label>Button Text</Label>
+              <Input
+                placeholder="Subscribe"
+                value={content.buttonText || ''}
+                onChange={(e) => handleContentChange('buttonText', e.target.value)}
+              />
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="style" className="space-y-4">

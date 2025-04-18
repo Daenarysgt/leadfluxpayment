@@ -38,7 +38,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const [isVisible, setIsVisible] = useState(!content.delayEnabled);
   
   // Destructure all the configurable properties with defaults
-  const buttonText = content.buttonText || "Continuar";
+  const buttonText = content.buttonText || content.defaultButtonText || "Continuar";
   const alignment = content.alignment || "center";
   const size = content.size || "default";
   const variant = content.variant || "default";

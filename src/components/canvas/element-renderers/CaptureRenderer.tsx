@@ -26,10 +26,11 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   const [submitted, setSubmitted] = useState(false);
   
   // Get capture settings or use defaults
-  const title = content?.title || "Join our newsletter";
-  const description = content?.description || "Get the latest updates directly to your inbox.";
-  const buttonText = content?.buttonText || "Subscribe";
+  const title = content?.title || "";
+  const description = content?.description || "";
+  const buttonText = content?.buttonText || content?.defaultButtonText || "Subscribe";
   const successMessage = content?.successMessage || "Thank you for subscribing!";
+  const showButton = content?.showButton !== false; // Por padrão, mostra o botão
   
   // Configurações de navegação
   const navigation = content?.navigation || { type: "next" };
@@ -242,10 +243,12 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4 w-full" style={containerStyle}>
-        <div className={cn("mb-4", `text-${titleAlignment}`)}>
-          <h3 className="text-lg font-medium">{title}</h3>
-          {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
-        </div>
+        {(title || description) && (
+          <div className={cn("mb-4", `text-${titleAlignment}`)}>
+            {title && <h3 className="text-lg font-medium">{title}</h3>}
+            {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+          </div>
+        )}
         
         {!submitted ? (
           <form onSubmit={handleSubmit} className="space-y-2">
@@ -260,16 +263,18 @@ const CaptureRenderer = (props: ElementRendererProps) => {
                 required
               />
             ))}
-            <Button 
-              type="submit" 
-              className="w-full"
-              style={{ 
-                backgroundColor: primaryColor,
-                borderColor: primaryColor,
-              }}
-            >
-              {buttonText}
-            </Button>
+            {showButton && (
+              <Button 
+                type="submit" 
+                className="w-full"
+                style={{ 
+                  backgroundColor: primaryColor,
+                  borderColor: primaryColor,
+                }}
+              >
+                {buttonText}
+              </Button>
+            )}
           </form>
         ) : (
           <div className="flex flex-col items-center justify-center p-6 text-center">
