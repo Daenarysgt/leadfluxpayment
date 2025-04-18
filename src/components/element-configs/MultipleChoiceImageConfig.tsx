@@ -478,7 +478,6 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                   variant="outline"
                   size="sm"
                   onClick={() => handleMarginTopChange([marginTop - 5])}
-                  disabled={marginTop <= 0}
                 >
                   <ArrowDown className="h-4 w-4" />
                 </Button>
@@ -492,7 +491,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                 <div className="flex-1">
                   <Slider
                     id="margin-top"
-                    min={0}
+                    min={-100}
                     max={100}
                     step={1}
                     value={[marginTop]}
