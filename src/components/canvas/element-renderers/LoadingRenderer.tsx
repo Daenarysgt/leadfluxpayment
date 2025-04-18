@@ -5,12 +5,10 @@ import { Spinner } from "./loading-styles/Spinner";
 import { Dots } from "./loading-styles/Dots";
 import { Progress } from "./loading-styles/Progress";
 import { useStepNavigation } from "@/hooks/useStepNavigation";
+import BaseElementRenderer from "./BaseElementRenderer";
 
-const LoadingRenderer: React.FC<ElementRendererProps> = ({ 
-  element, 
-  isSelected, 
-  onSelect
-}) => {
+const LoadingRenderer: React.FC<ElementRendererProps> = (props) => {
+  const { element, isSelected, onSelect } = props;
   const [progress, setProgress] = useState(0);
   const { navigateToNextStep, navigateToStep } = useStepNavigation();
   
@@ -145,35 +143,34 @@ const LoadingRenderer: React.FC<ElementRendererProps> = ({
   };
   
   return (
-    <div 
-      className={`p-6 flex flex-col items-center w-full ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={() => onSelect(element.id)}
-    >
-      <div className="mb-6 w-full max-w-md mx-auto">
-        {renderLoadingStyle()}
-      </div>
-      
-      {content?.title && (
-        <h3 
-          className={`text-xl font-semibold mb-3 w-full ${alignmentClasses[titleAlignment as keyof typeof alignmentClasses]}`}
-          style={{ color: primaryColor }}
-        >
-          {content.title}
-        </h3>
-      )}
-      
-      {content?.description && (
-        <p className={`text-base text-gray-600 w-full mb-4 ${alignmentClasses[titleAlignment as keyof typeof alignmentClasses]}`}>
-          {content.description}
-        </p>
-      )}
-      
-      {autoRedirect && showRedirectText && (
-        <div className="mt-3 text-base font-medium py-2" style={{ color: primaryColor }}>
-          Redirecionando em <span className="font-bold text-lg">{Math.ceil(redirectDelay - (progress / 100 * redirectDelay))}s</span>...
+    <BaseElementRenderer {...props}>
+      <div className="p-6 flex flex-col items-center w-full">
+        <div className="mb-6 w-full max-w-md mx-auto">
+          {renderLoadingStyle()}
         </div>
-      )}
-    </div>
+        
+        {content?.title && (
+          <h3 
+            className={`text-xl font-semibold mb-3 w-full ${alignmentClasses[titleAlignment as keyof typeof alignmentClasses]}`}
+            style={{ color: primaryColor }}
+          >
+            {content.title}
+          </h3>
+        )}
+        
+        {content?.description && (
+          <p className={`text-base text-gray-600 w-full mb-4 ${alignmentClasses[titleAlignment as keyof typeof alignmentClasses]}`}>
+            {content.description}
+          </p>
+        )}
+        
+        {autoRedirect && showRedirectText && (
+          <div className="mt-3 text-base font-medium py-2" style={{ color: primaryColor }}>
+            Redirecionando em <span className="font-bold text-lg">{Math.ceil(redirectDelay - (progress / 100 * redirectDelay))}s</span>...
+          </div>
+        )}
+      </div>
+    </BaseElementRenderer>
   );
 };
 
