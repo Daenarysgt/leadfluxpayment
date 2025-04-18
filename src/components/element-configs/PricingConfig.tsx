@@ -66,7 +66,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
     boxShadow: true,
     highlightTag: "",
     isHighlighted: false,
-    style: "default",
+    style: "horizontal",
     alignment: "center",
     priceAlignment: "center",
     featuresAlignment: "left",
@@ -271,16 +271,13 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
           <div className="space-y-2">
             <Label>Estilo do Pricing</Label>
             <Select
-              value={content.style || "default"}
+              value={content.style || "horizontal"}
               onValueChange={(value) => updateContent("style", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Escolha o estilo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Padrão</SelectItem>
-                <SelectItem value="modern">Moderno</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
                 <SelectItem value="minimal">Minimalista</SelectItem>
                 <SelectItem value="featured">Destaque</SelectItem>
                 <SelectItem value="horizontal">Horizontal</SelectItem>

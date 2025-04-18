@@ -97,6 +97,11 @@ export interface ButtonContent {
   facebookEvent?: string;
 }
 
+export type PricingAlignment = "left" | "center" | "right";
+
+export type PricingStyle = "minimal" | "featured" | "horizontal";
+export type PricingGradientDirection = 'to right' | 'to bottom' | 'to bottom right' | 'to top right';
+
 export interface PricingContent {
   title?: string;
   subtitle?: string;
@@ -119,7 +124,7 @@ export interface PricingContent {
   boxShadow?: boolean;
   highlightTag?: string;
   isHighlighted?: boolean;
-  style?: 'default' | 'minimal' | 'featured' | 'modern' | 'card' | 'horizontal';
+  style?: PricingStyle;
   alignment?: 'left' | 'center' | 'right';
   priceAlignment?: 'left' | 'center' | 'right';
   featuresAlignment?: 'left' | 'center' | 'right';
@@ -127,7 +132,7 @@ export interface PricingContent {
   gradientEnd?: string;
   useGradient?: boolean;
   useButtonGradient?: boolean;
-  gradientDirection?: 'to right' | 'to bottom' | 'to bottom right' | 'to top right';
+  gradientDirection?: PricingGradientDirection;
   gradientPreset?: string;
   navigation?: {
     type: 'next' | 'step' | 'url';
