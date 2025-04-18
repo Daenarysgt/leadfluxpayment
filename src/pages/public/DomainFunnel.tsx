@@ -181,15 +181,15 @@ const DomainFunnel = () => {
     : "min-h-screen flex flex-col items-center justify-center bg-white p-4 md:p-8";
   
   const innerClass = isMobile 
-    ? "w-full mobile-full-width p-0 m-0" 
+    ? "w-full mobile-full-width" 
     : "w-full max-w-3xl";
     
   // Estilos específicos para mobile
   const containerStyle = isMobile ? {
     width: '100%',
     maxWidth: '100%',
-    padding: 0,
-    margin: 0,
+    padding: '0',
+    margin: '0',
     overflow: 'hidden'
   } : {};
 

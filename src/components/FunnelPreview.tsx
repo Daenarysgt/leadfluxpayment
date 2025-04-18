@@ -91,11 +91,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Classes condicionais baseadas no tipo de dispositivo
   const wrapperClass = isMobile 
-    ? "w-full mobile-full-width p-0 m-0" 
+    ? "w-full mobile-full-width" 
     : "w-full";
   
   const contentWrapperClass = isMobile 
-    ? "flex flex-col items-center w-full mobile-full-width mx-0 py-2 px-0" 
+    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
     : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
   
   const logoWrapperClass = isMobile
@@ -107,7 +107,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     : "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
-    ? "w-full mobile-full-width p-0 m-0"
+    ? "w-full mobile-full-width"
     : "w-full";
 
   // Estilo do container principal específico para mobile
