@@ -5,6 +5,7 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { useCallback, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
 import { Check } from "lucide-react";
+import { getElementMarginStyle } from "./index";
 
 const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -168,135 +169,137 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
 
   return (
     <BaseElementRenderer {...props}>
-      <div className="space-y-4">
-        {content.title && (
-          <h3 className="text-lg font-medium">{content.title}</h3>
-        )}
-        {content.description && (
-          <p className="text-sm text-muted-foreground">{content.description}</p>
-        )}
-        
-        {/* Texto auxiliar para seleção múltipla (apenas se showHelperText for true) */}
-        {allowMultipleSelection && showHelperText && helperText && (
-          <p className="text-sm text-muted-foreground">
-            {helperText}
-          </p>
-        )}
-        
-        <div className="space-y-2">
-          {content.options?.map((option: any) => {
-            // Prepare styles based on option configurations
-            const optionStyle = option.style || {};
-            const isSelected = selectedOptions.includes(option.id);
-            const borderRadius = content.style?.borderRadius || 8; // Default border radius
-            
-            // Inline styles for the option
-            const styleObject = {
-              backgroundColor: isSelected ? (optionStyle.selectedBackgroundColor || "#f5f3ff") : (optionStyle.backgroundColor || ""),
-              borderColor: isSelected ? (optionStyle.selectedBorderColor || "#8b5cf6") : (optionStyle.borderColor || ""),
-              color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
-              borderRadius: `${borderRadius}px`,
-              transition: "all 0.2s ease",
-            };
-            
-            // Prepare the indicator element (circle or square)
-            const renderIndicator = () => {
-              if (indicatorType === "square") {
-                return (
-                  <div className={cn(
-                    "w-5 h-5 flex items-center justify-center border-2",
-                    isSelected 
-                      ? "" 
-                      : "border-gray-300 bg-white"
-                  )}
-                  style={{ 
-                    borderRadius: "4px",
-                    backgroundColor: isSelected ? indicatorColor : undefined,
-                    borderColor: isSelected ? indicatorColor : undefined
-                  }}>
-                    {isSelected && (
-                      <Check className="h-3.5 w-3.5" style={{ color: indicatorIconColor }} />
+      <div className="p-4" style={getElementMarginStyle(content)}>
+        <div className="space-y-4">
+          {content.title && (
+            <h3 className="text-lg font-medium">{content.title}</h3>
+          )}
+          {content.description && (
+            <p className="text-sm text-muted-foreground">{content.description}</p>
+          )}
+          
+          {/* Texto auxiliar para seleção múltipla (apenas se showHelperText for true) */}
+          {allowMultipleSelection && showHelperText && helperText && (
+            <p className="text-sm text-muted-foreground">
+              {helperText}
+            </p>
+          )}
+          
+          <div className="space-y-2">
+            {content.options?.map((option: any) => {
+              // Prepare styles based on option configurations
+              const optionStyle = option.style || {};
+              const isSelected = selectedOptions.includes(option.id);
+              const borderRadius = content.style?.borderRadius || 8; // Default border radius
+              
+              // Inline styles for the option
+              const styleObject = {
+                backgroundColor: isSelected ? (optionStyle.selectedBackgroundColor || "#f5f3ff") : (optionStyle.backgroundColor || ""),
+                borderColor: isSelected ? (optionStyle.selectedBorderColor || "#8b5cf6") : (optionStyle.borderColor || ""),
+                color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
+                borderRadius: `${borderRadius}px`,
+                transition: "all 0.2s ease",
+              };
+              
+              // Prepare the indicator element (circle or square)
+              const renderIndicator = () => {
+                if (indicatorType === "square") {
+                  return (
+                    <div className={cn(
+                      "w-5 h-5 flex items-center justify-center border-2",
+                      isSelected 
+                        ? "" 
+                        : "border-gray-300 bg-white"
                     )}
-                  </div>
-                );
-              } else {
-                return (
-                  <div className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    isSelected 
-                      ? "" 
-                      : "border-gray-300 bg-white"
-                  )}
-                  style={{
-                    backgroundColor: isSelected ? indicatorColor : undefined,
-                    borderColor: isSelected ? indicatorColor : undefined
-                  }}>
-                    {isSelected && (
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: indicatorIconColor }} />
-                    )}
-                  </div>
-                );
-              }
-            };
-            
-            return (
-              <div
-                key={option.id}
-                className={cn(
-                  "p-4 border cursor-pointer transition-all duration-200",
-                  isSelected && "border-violet-500"
-                )}
-                style={{
-                  ...styleObject,
-                  borderColor: isSelected ? indicatorColor : styleObject.borderColor
-                }}
-                onClick={() => handleOptionClick(option)}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Posicionamento condicional do indicador */}
-                  {indicatorAlign === "left" && renderIndicator()}
-                  
-                  <div className="flex-1 flex items-center">
-                    {option.emoji && (
-                      <span className="mr-2 text-xl">{option.emoji}</span>
-                    )}
-                    <div>
-                      <span className="font-medium">{option.text}</span>
-                      {option.description && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {option.description}
-                        </div>
+                    style={{ 
+                      borderRadius: "4px",
+                      backgroundColor: isSelected ? indicatorColor : undefined,
+                      borderColor: isSelected ? indicatorColor : undefined
+                    }}>
+                      {isSelected && (
+                        <Check className="h-3.5 w-3.5" style={{ color: indicatorIconColor }} />
                       )}
                     </div>
+                  );
+                } else {
+                  return (
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                      isSelected 
+                        ? "" 
+                        : "border-gray-300 bg-white"
+                    )}
+                    style={{
+                      backgroundColor: isSelected ? indicatorColor : undefined,
+                      borderColor: isSelected ? indicatorColor : undefined
+                    }}>
+                      {isSelected && (
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: indicatorIconColor }} />
+                      )}
+                    </div>
+                  );
+                }
+              };
+              
+              return (
+                <div
+                  key={option.id}
+                  className={cn(
+                    "p-4 border cursor-pointer transition-all duration-200",
+                    isSelected && "border-violet-500"
+                  )}
+                  style={{
+                    ...styleObject,
+                    borderColor: isSelected ? indicatorColor : styleObject.borderColor
+                  }}
+                  onClick={() => handleOptionClick(option)}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Posicionamento condicional do indicador */}
+                    {indicatorAlign === "left" && renderIndicator()}
+                    
+                    <div className="flex-1 flex items-center">
+                      {option.emoji && (
+                        <span className="mr-2 text-xl">{option.emoji}</span>
+                      )}
+                      <div>
+                        <span className="font-medium">{option.text}</span>
+                        {option.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {option.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Indicador à direita quando configurado */}
+                    {indicatorAlign === "right" && renderIndicator()}
                   </div>
-                  
-                  {/* Indicador à direita quando configurado */}
-                  {indicatorAlign === "right" && renderIndicator()}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          
+          {/* Botão de continuar para seleção múltipla - mostrado apenas quando múltipla seleção estiver ativada */}
+          {allowMultipleSelection && (
+            <button 
+              className={cn(
+                "w-full mt-4 py-3 px-4 rounded-lg font-medium transition-all",
+                selectedOptions.length > 0 
+                  ? "cursor-pointer opacity-100" 
+                  : "opacity-50 cursor-not-allowed"
+              )}
+              style={{
+                backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
+                color: selectedOptions.length > 0 ? "white" : "#a0a0a0"
+              }}
+              onClick={handleContinue}
+              disabled={selectedOptions.length === 0}
+            >
+              {continueButtonText}
+            </button>
+          )}
         </div>
-        
-        {/* Botão de continuar para seleção múltipla - mostrado apenas quando múltipla seleção estiver ativada */}
-        {allowMultipleSelection && (
-          <button 
-            className={cn(
-              "w-full mt-4 py-3 px-4 rounded-lg font-medium transition-all",
-              selectedOptions.length > 0 
-                ? "cursor-pointer opacity-100" 
-                : "opacity-50 cursor-not-allowed"
-            )}
-            style={{
-              backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
-              color: selectedOptions.length > 0 ? "white" : "#a0a0a0"
-            }}
-            onClick={handleContinue}
-            disabled={selectedOptions.length === 0}
-          >
-            {continueButtonText}
-          </button>
-        )}
       </div>
     </BaseElementRenderer>
   );

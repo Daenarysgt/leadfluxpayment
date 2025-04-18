@@ -7,6 +7,7 @@ import { useStore } from "@/utils/store";
 import { ArrowRight } from "lucide-react";
 import { accessService } from "@/services/accessService";
 import { safelyTrackEvent } from "@/utils/pixelUtils";
+import { getElementMarginStyle } from "./index";
 
 // Função para ajustar uma cor hex, tornando-a mais clara ou escura
 const adjustColor = (color: string, amount: number): string => {
@@ -265,7 +266,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
 
   return (
     <BaseElementRenderer {...props}>
-      <div className={cn("w-full flex", alignmentClass)}>
+      <div className={cn("w-full flex", alignmentClass)} style={getElementMarginStyle(content)}>
         <Button
           className={buttonClass}
           style={{
