@@ -265,19 +265,6 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
               />
             </div>
           </div>
-          
-          {chartType === "pie" && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="donut" className="cursor-pointer">Formato Donut</Label>
-                <Switch
-                  id="donut"
-                  checked={style?.donut || false}
-                  onCheckedChange={(checked) => handleStyleUpdate({ donut: checked })}
-                />
-              </div>
-            </div>
-          )}
         </TabsContent>
         
         <TabsContent value="data" className="space-y-4">
@@ -468,6 +455,70 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
               </Button>
             </div>
           </div>
+          
+          {chartType === "pie" && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="donut" className="cursor-pointer">Formato Donut</Label>
+                  <Switch
+                    id="donut"
+                    checked={style?.donut || false}
+                    onCheckedChange={(checked) => handleStyleUpdate({ donut: checked })}
+                  />
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="font-medium">Cores das Fatias</Label>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Gerar cores aleatórias para todos os itens
+                      const newData = chartData.map(item => ({
+                        ...item,
+                        color: getRandomColor(item.name + Date.now())
+                      }));
+                      handleUpdate({ chartData: newData });
+                    }}
+                    title="Gerar novas cores aleatórias para todos os itens"
+                  >
+                    <PieChart className="h-4 w-4 mr-1" /> Gerar Cores
+                  </Button>
+                </div>
+                
+                <ScrollArea className="h-[250px] border rounded-md">
+                  <div className="p-3 space-y-3">
+                    {chartData.map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-2 border rounded-md bg-gray-50">
+                        <div className="flex-1">
+                          <p className="font-medium truncate">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.value}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="color"
+                            value={item.color || getRandomColor(item.name)}
+                            onChange={(e) => {
+                              const newData = [...chartData];
+                              newData[index] = { ...item, color: e.target.value };
+                              handleUpdate({ chartData: newData });
+                            }}
+                            className="w-10 h-8 p-0 cursor-pointer"
+                            title={`Alterar cor de ${item.name}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </>
+          )}
           
           {chartType === "bar" && (
             <div className="space-y-2">
