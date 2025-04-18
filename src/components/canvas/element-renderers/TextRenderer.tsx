@@ -30,7 +30,9 @@ const TextRenderer = (props: ElementRendererProps) => {
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
               color: element.content?.fontColor,
-              fontFamily: element.content?.fontFamily || 'Inter'
+              fontFamily: element.content?.fontFamily || 'Inter',
+              lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
+              letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
             }}
             dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
           />
@@ -46,7 +48,9 @@ const TextRenderer = (props: ElementRendererProps) => {
           style={{
             fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
             color: element.content?.fontColor,
-            fontFamily: element.content?.fontFamily || 'Inter'
+            fontFamily: element.content?.fontFamily || 'Inter',
+            lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
+            letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
           }}
         >
           {element.content?.title || "Título aqui"}
@@ -57,7 +61,9 @@ const TextRenderer = (props: ElementRendererProps) => {
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize - 4}px` : undefined,
               color: element.content?.fontColor,
-              fontFamily: element.content?.fontFamily || 'Inter'
+              fontFamily: element.content?.fontFamily || 'Inter',
+              lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
+              letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
             }}
           >
             {element.content.description}

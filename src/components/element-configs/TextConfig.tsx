@@ -56,6 +56,8 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   const [fontColor, setFontColor] = useState(element.content?.fontColor || "#000000");
   const [fontFamily, setFontFamily] = useState(element.content?.fontFamily || "Inter");
   const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
+  const [lineHeight, setLineHeight] = useState(element.content?.lineHeight || 1.5);
+  const [letterSpacing, setLetterSpacing] = useState(element.content?.letterSpacing || 0);
   const [currentContent, setCurrentContent] = useState<string>(""); // Controle do conteúdo atual
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("content");
@@ -108,6 +110,14 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
       editorRef.current.style.fontFamily = fontFamily;
     }
   }, [fontFamily]);
+
+  // Aplicar espaçamento entre linhas e letras quando mudarem
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.style.lineHeight = String(lineHeight);
+      editorRef.current.style.letterSpacing = `${letterSpacing}px`;
+    }
+  }, [lineHeight, letterSpacing]);
 
   // Sincronizar o contentBufferRef com qualquer mudança nos dados do elemento
   useEffect(() => {
@@ -205,6 +215,8 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         fontColor,
         fontFamily,
         marginTop,
+        lineHeight,
+        letterSpacing,
         ...(options.extraStyles || {})
       }
     };
@@ -352,6 +364,46 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     
     // Atualizar a margem superior no estado local
     setMarginTop(value[0]);
+    
+    // Enviar atualização com o conteúdo preservado
+    commitUpdate({ styleOnly: true, immediate: true });
+  };
+
+  // Manipulador para mudanças no espaçamento entre linhas
+  const handleLineHeightChange = (value: number[]) => {
+    // Capturar o conteúdo atual antes de mudar o espaçamento
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Atualizar o espaçamento entre linhas no estado local
+    setLineHeight(value[0]);
+    
+    // Aplicar ao editor para visualização imediata
+    if (editorRef.current) {
+      editorRef.current.style.lineHeight = String(value[0]);
+    }
+    
+    // Enviar atualização com o conteúdo preservado
+    commitUpdate({ styleOnly: true, immediate: true });
+  };
+
+  // Manipulador para mudanças no espaçamento entre letras
+  const handleLetterSpacingChange = (value: number[]) => {
+    // Capturar o conteúdo atual antes de mudar o espaçamento
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Atualizar o espaçamento entre letras no estado local
+    setLetterSpacing(value[0]);
+    
+    // Aplicar ao editor para visualização imediata
+    if (editorRef.current) {
+      editorRef.current.style.letterSpacing = `${value[0]}px`;
+    }
     
     // Enviar atualização com o conteúdo preservado
     commitUpdate({ styleOnly: true, immediate: true });
@@ -542,7 +594,13 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
                 commitUpdate({ immediate: true });
               }
             }}
-            style={{ fontSize: `${fontSize}px`, color: fontColor, backgroundColor: 'transparent' }}
+            style={{ 
+              fontSize: `${fontSize}px`, 
+              color: fontColor, 
+              backgroundColor: 'transparent',
+              lineHeight: String(lineHeight),
+              letterSpacing: `${letterSpacing}px`
+            }}
             data-transparent-text="true"
           />
         </TabsContent>
@@ -589,6 +647,78 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               step={1}
               value={[fontSize]}
               onValueChange={handleFontSizeChange}
+            />
+          </div>
+          
+          {/* Novo controle para espaçamento entre linhas */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="line-height">Espaçamento entre linhas</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{lineHeight.toFixed(1)}x</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleLineHeightChange([Math.max(0.5, lineHeight - 0.1)])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleLineHeightChange([Math.min(3, lineHeight + 0.1)])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="line-height"
+              min={0.5}
+              max={3}
+              step={0.1}
+              value={[lineHeight]}
+              onValueChange={handleLineHeightChange}
+            />
+          </div>
+          
+          {/* Novo controle para espaçamento entre letras */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="letter-spacing">Espaçamento entre letras</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{letterSpacing}px</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleLetterSpacingChange([Math.max(-5, letterSpacing - 0.5)])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleLetterSpacingChange([Math.min(20, letterSpacing + 0.5)])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="letter-spacing"
+              min={-5}
+              max={20}
+              step={0.5}
+              value={[letterSpacing]}
+              onValueChange={handleLetterSpacingChange}
             />
           </div>
           
