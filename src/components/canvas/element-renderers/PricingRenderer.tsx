@@ -65,10 +65,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
   // Função para tratar navegação
   const handleNavigation = async () => {
     console.log("PricingRenderer - handleNavigation called");
-    console.log("Navigation config:", navigation);
+    console.log("Navigation config:", JSON.stringify(navigation));
     console.log("PreviewMode:", previewMode);
-    console.log("PreviewProps:", previewProps);
-    console.log("Element:", element);
     
     if (!navigation) {
       console.error("Navigation object is not defined");
@@ -79,9 +77,27 @@ const PricingRenderer = (props: ElementRendererProps) => {
     if (previewMode && previewProps) {
       console.log("Entrando no modo de preview");
       const { activeStep, onStepChange, funnel } = previewProps;
-      console.log("Preview mode navigation with activeStep:", activeStep);
-      console.log("Total steps:", funnel?.steps?.length);
-      console.log("Funnel:", funnel);
+      
+      // Verificar se temos todos os dados necessários
+      if (typeof activeStep === 'undefined') {
+        console.error("activeStep não definido em previewProps");
+        return;
+      }
+      
+      if (!onStepChange || typeof onStepChange !== 'function') {
+        console.error("onStepChange não é uma função válida em previewProps");
+        return;
+      }
+      
+      if (!funnel || !funnel.steps || !Array.isArray(funnel.steps)) {
+        console.error("funnel ou funnel.steps inválido em previewProps:", funnel);
+        return;
+      }
+      
+      console.log("Preview mode com dados válidos:");
+      console.log("- activeStep:", activeStep);
+      console.log("- Total steps:", funnel.steps.length);
+      console.log("- Etapas disponíveis:", funnel.steps.map(s => ({ id: s.id, title: s.title })));
       
       switch (navigation.type) {
         case "next":
@@ -115,8 +131,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
         case "step":
           if (navigation.stepId && funnel) {
             console.log("Preview mode: Navigate to specific step:", navigation.stepId);
+            // Encontre o índice correspondente à etapa (usando findIndex)
             const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
+            
             if (stepIndex !== -1) {
+              console.log("Navegando para o stepIndex:", stepIndex);
               const isLastStep = stepIndex === funnel.steps.length - 1;
               console.log("Is last step (specific)?", isLastStep);
               
@@ -140,7 +159,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
               } else {
                 onStepChange(stepIndex);
               }
+            } else {
+              console.error("Step ID não encontrado:", navigation.stepId);
             }
+          } else {
+            console.error("Navigation.stepId não definido ou funnel não disponível");
           }
           break;
         case "url":
@@ -176,7 +199,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
             const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
             if (stepIndex !== -1) {
               setCurrentStep(stepIndex);
+            } else {
+              console.error("Step ID não encontrado no modo canvas:", navigation.stepId);
             }
+          } else {
+            console.error("Navigation.stepId não definido ou currentFunnel não disponível no modo canvas");
           }
           break;
         case "url":
@@ -343,10 +370,10 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <div className={`flex ${priceAlignment === "center" ? "justify-center" : priceAlignment === "right" ? "justify-end" : "justify-start"}`}>
             <div className={`flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
               <div className="flex items-baseline">
-                <span className="text-lg mr-1">{currency}</span>
-                <span className="text-4xl font-bold">{formatPrice(price)}</span>
+                <span className="text-base font-medium mr-1">{currency}</span>
+                <span className="text-2xl font-bold">{formatPrice(price)}</span>
                 {paymentLabel && (
-                  <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
+                  <span className="text-xs text-gray-500 ml-1">/{paymentLabel}</span>
                 )}
               </div>
               
@@ -619,4 +646,4 @@ const PricingRenderer = (props: ElementRendererProps) => {
   );
 };
 
-export default PricingRenderer; 
+export default PricingRenderer;

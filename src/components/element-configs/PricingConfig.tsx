@@ -45,7 +45,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
   // Get steps from current funnel for the step selector
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
-    title: step.title
+    title: step.title || `Etapa ${step.order_index || step.id}`
   })) || [];
 
   const [content, setContent] = useState<PricingContent>(element.content || {
@@ -90,6 +90,9 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
       openInNewTab: false
     }
   });
+
+  console.log("PricingConfig - Etapas disponíveis:", steps);
+  console.log("PricingConfig - Navegação atual:", content.navigation);
 
   // Referência para controlar o debounce das atualizações
   const updateTimeoutRef = useRef<number | null>(null);
@@ -635,30 +638,33 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
             </Select>
           </div>
 
-          {content.navigation?.type === "step" && steps.length > 0 && (
+          {content.navigation?.type === "step" && (
             <div className="space-y-2">
               <Label htmlFor="step-selector">Selecionar Passo</Label>
-              <Select
-                value={content.navigation?.stepId || ""}
-                onValueChange={(value) => updateNestedContent("navigation", "stepId", value)}
-              >
-                <SelectTrigger id="step-selector">
-                  <SelectValue placeholder="Escolha um passo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {steps.map((step) => (
-                    <SelectItem key={step.id} value={step.id}>
-                      {step.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {content.navigation?.type === "step" && steps.length === 0 && (
-            <div className="text-sm text-amber-600 mt-2">
-              Nenhum passo disponível. Adicione passos no funil primeiro.
+              {steps.length > 0 ? (
+                <Select
+                  value={content.navigation?.stepId || ""}
+                  onValueChange={(value) => {
+                    console.log("Etapa selecionada:", value);
+                    updateNestedContent("navigation", "stepId", value);
+                  }}
+                >
+                  <SelectTrigger id="step-selector">
+                    <SelectValue placeholder="Escolha um passo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {steps.map((step) => (
+                      <SelectItem key={step.id} value={step.id}>
+                        {step.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="text-sm text-amber-600 mt-2 p-2 bg-amber-50 rounded-md border border-amber-200">
+                  Nenhum passo disponível. Adicione passos ao funil primeiro.
+                </div>
+              )}
             </div>
           )}
 
