@@ -44,6 +44,7 @@ export interface ElementRendererProps {
   isDragging?: boolean;
   index: number;
   totalElements: number;
+  previewMode?: boolean;
 }
 
 export interface ComparisonItem {
