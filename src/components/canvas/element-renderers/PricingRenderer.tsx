@@ -100,7 +100,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
           </span>
         )}
         {discount && (
-          <span className={`${variants[variant as keyof typeof variants]} px-2 py-0.5 rounded text-xs font-medium shadow-sm`}>
+          <span className={`${variant === "horizontal" ? "" : variants[variant as keyof typeof variants]} px-2 py-0.5 rounded text-xs font-medium shadow-sm`}
+            style={variant === "horizontal" ? { backgroundColor: accentColor, color: "#ffffff" } : undefined}>
             {discount}% {discountLabel}
           </span>
         )}
@@ -541,12 +542,24 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Novo estilo horizontal
   const renderHorizontalStyle = () => {
-    // Determinar se deve usar gradiente no fundo ou manter o degradê do isHighlighted
+    // Determinar se deve usar gradiente no fundo
     const bgStyle = useGradient
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` }
-      : isHighlighted 
-        ? { background: "linear-gradient(to right, #fff7ed, #ffffff)" }
-        : { backgroundColor };
+      : { backgroundColor };
+
+    // Determinar o alinhamento do preço
+    const priceAlignClass = priceAlignment === "center" 
+      ? "justify-center text-center" 
+      : priceAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
+        
+    // Determinar o alinhamento dos recursos
+    const featuresAlignClass = featuresAlignment === "center" 
+      ? "justify-center text-center" 
+      : featuresAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
 
     return (
       <div 
@@ -557,7 +570,6 @@ const PricingRenderer = (props: ElementRendererProps) => {
             "border": true,
             "border-gray-200": !isHighlighted,
             "border-amber-300": isHighlighted,
-            "text-left": true
           }
         )}
         style={{ 
@@ -569,27 +581,33 @@ const PricingRenderer = (props: ElementRendererProps) => {
         {/* Layout sempre em grid com 3 colunas fixas */}
         <div className="grid grid-cols-3 gap-2 items-center">
           {/* Primeira coluna - Título e Preço */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              {isHighlighted && <Shield className="h-5 w-5 text-amber-500 flex-shrink-0" />}
+          <div className={`space-y-2 ${priceAlignClass}`}>
+            <div className={`flex items-center gap-2 mb-2 ${priceAlignment === "center" ? "justify-center" : priceAlignment === "right" ? "justify-end" : "justify-start"}`}>
+              {isHighlighted && (
+                <div style={{ color: accentColor }}>
+                  <Shield className="h-5 w-5 flex-shrink-0" />
+                </div>
+              )}
               <h3 className="text-lg font-bold truncate">{title}</h3>
             </div>
             {subtitle && <p className="text-xs text-gray-600 line-clamp-2">{subtitle}</p>}
             
             <div className="space-y-1">
-              <div className="flex items-baseline flex-wrap">
+              <div className={`flex items-baseline flex-wrap ${priceAlignment === "center" ? "justify-center" : priceAlignment === "right" ? "justify-end" : "justify-start"}`}>
                 <span className="text-base font-medium mr-1">{currency}</span>
                 <span className="text-2xl font-bold">{formatPrice(price)}</span>
                 {paymentLabel && (
                   <span className="text-xs text-gray-500 ml-1">/{paymentLabel}</span>
                 )}
               </div>
-              {renderDiscount("horizontal")}
+              <div className={priceAlignClass}>
+                {renderDiscount("horizontal")}
+              </div>
             </div>
           </div>
           
           {/* Segunda coluna - Recursos */}
-          <div className="max-h-[150px] overflow-y-auto">
+          <div className={`max-h-[150px] overflow-y-auto ${featuresAlignClass}`}>
             {renderFeatures("horizontal")}
           </div>
           
@@ -598,9 +616,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
             <Button 
               className="px-4 py-4 font-medium text-sm rounded-lg shadow-md transition-all whitespace-nowrap"
               style={{ 
-                background: useGradient
-                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                  : buttonColor, 
+                backgroundColor: buttonColor, 
                 color: buttonTextColor,
                 borderRadius: `${borderRadius}px`
               }}
