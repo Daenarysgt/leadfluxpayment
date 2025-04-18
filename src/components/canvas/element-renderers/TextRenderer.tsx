@@ -65,13 +65,17 @@ const TextRenderer = (props: ElementRendererProps) => {
   };
   
   // Calcular o estilo para margem superior
-  const containerStyle = {
-    marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : undefined
-  };
+  const marginTopValue = element.content?.marginTop ? element.content.marginTop : 0;
   
+  // Aplicar a margem superior como uma propriedade CSS personalizada para evitar sobrescritas
+  const containerStyle = {
+    '--element-margin-top': `${marginTopValue}px`,
+  } as React.CSSProperties;
+  
+  // Adicionamos uma classe especial que aplica a margem usando a variável CSS
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={containerStyle}>
+      <div className="p-4 preserve-margin-top" style={containerStyle}>
         {renderFormattedText()}
       </div>
     </BaseElementRenderer>

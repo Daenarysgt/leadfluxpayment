@@ -222,6 +222,11 @@
     height: auto !important;
     object-fit: contain !important;
   }
+  
+  /* Classe para preservar a margem superior configurada no editor */
+  .preserve-margin-top {
+    margin-top: var(--element-margin-top) !important;
+  }
 }
 
 /* Desktop Styles - para manter o layout centralizado original em desktop */
@@ -326,7 +331,21 @@
   }
 
   /* Garantir que conteúdo interno de elementos específicos também seja ajustado */
-  div[class*="element-renderer"] > div {
+  div[class*="element-renderer"] > div:not(.preserve-margin-top) {
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Versão específica para .preserve-margin-top que mantém apenas a margem superior */
+  div[class*="element-renderer"] > div.preserve-margin-top {
     width: 100% !important;
     max-width: 100% !important;
     left: 0 !important;
@@ -336,6 +355,18 @@
     margin-left: 0 !important;
     margin-right: 0 !important;
     box-sizing: border-box !important;
+    /* A margin-top será aplicada pela classe .preserve-margin-top */
+  }
+
+  /* Preservar estilos inline de margin-top em todos os elementos dentro do canvas */
+  div[class*="element-renderer"] > div[style*="margin-top"] {
+    --preserve-margin-top: attr(style margin-top);
+    margin-top: initial !important;
+  }
+
+  /* Garantir que a margem superior definida inline seja preservada */
+  [style*="margin-top"] {
+    margin-top: initial !important; /* Remover esta sobrescrita para permitir estilos inline de margin-top */
   }
   
   /* Ajustar botões e elementos interativos */

@@ -187,13 +187,16 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   }, [content?.options, getAspectRatioValue, handleOptionClick]);
   
   // Calcular o estilo para margem superior
+  const marginTopValue = content?.marginTop ? content.marginTop : 0;
+  
+  // Aplicar a margem superior como uma propriedade CSS personalizada para evitar sobrescritas
   const containerStyle = {
-    marginTop: content?.marginTop ? `${content.marginTop}px` : undefined
-  };
+    '--element-margin-top': `${marginTopValue}px`,
+  } as React.CSSProperties;
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={containerStyle}>
+      <div className="p-4 preserve-margin-top" style={containerStyle}>
         {content?.title && (
           <h2 className="text-xl font-semibold text-center mb-4">{content.title}</h2>
         )}
