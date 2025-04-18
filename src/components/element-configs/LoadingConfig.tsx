@@ -221,6 +221,17 @@ const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
                 </Select>
               </div>
 
+              <div className="flex items-center justify-between mt-4">
+                <ConfigLabel>Mostrar texto de contagem regressiva</ConfigLabel>
+                <Switch 
+                  checked={navigation.showRedirectText !== false} 
+                  onCheckedChange={(checked) => handleNavigationChange('showRedirectText', checked)}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Exibe o texto "Redirecionando em X segundos..." abaixo do elemento de carregamento
+              </p>
+
               {navigation.type === 'step' && (
                 <div className="space-y-2">
                   <ConfigLabel>Etapa de destino</ConfigLabel>

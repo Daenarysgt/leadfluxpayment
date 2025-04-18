@@ -14,5 +14,6 @@ export interface LoadingElement {
     stepId?: string;
     url?: string;
     openInNewTab?: boolean;
+    showRedirectText?: boolean;
   };
 } 

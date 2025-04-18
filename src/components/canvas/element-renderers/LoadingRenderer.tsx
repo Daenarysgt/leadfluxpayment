@@ -31,7 +31,8 @@ const LoadingRenderer: React.FC<ElementRendererProps> = ({
   const {
     autoRedirect = false,
     redirectDelay = 3,
-    type = 'next'
+    type = 'next',
+    showRedirectText = true
   } = navigation;
   
   // Calculate progress step based on redirect delay
@@ -167,7 +168,7 @@ const LoadingRenderer: React.FC<ElementRendererProps> = ({
         </p>
       )}
       
-      {autoRedirect && (
+      {autoRedirect && showRedirectText && (
         <div className="mt-3 text-base font-medium py-2" style={{ color: primaryColor }}>
           Redirecionando em <span className="font-bold text-lg">{Math.ceil(redirectDelay - (progress / 100 * redirectDelay))}s</span>...
         </div>
