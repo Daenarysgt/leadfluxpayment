@@ -19,6 +19,7 @@ import CartesianConfig from "./CartesianConfig";
 import RatingConfig from "./RatingConfig";
 import VideoConfig from "./VideoConfig";
 import SpacerConfig from "./SpacerConfig";
+import PricingConfig from "./PricingConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -195,6 +196,15 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     case ComponentType.Spacer:
       return (
         <SpacerConfig
+          key={stableKey}
+          element={element}
+          onUpdate={onUpdate}
+        />
+      );
+
+    case ComponentType.Pricing:
+      return (
+        <PricingConfig
           key={stableKey}
           element={element}
           onUpdate={onUpdate}

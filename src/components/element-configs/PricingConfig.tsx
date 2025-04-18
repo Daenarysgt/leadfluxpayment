@@ -2,15 +2,23 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CanvasElement } from '@/types/canvasTypes';
 
 interface PricingConfigProps {
-  element: any;
-  onChange: (updates: any) => void;
+  element: CanvasElement;
+  onUpdate: (updates: Partial<CanvasElement>) => void;
 }
 
-export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange }) => {
+export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onUpdate }) => {
+  const content = element.content || {};
+
   const handleChange = (field: string, value: string) => {
-    onChange({ ...element, [field]: value });
+    onUpdate({
+      content: {
+        ...content,
+        [field]: value
+      }
+    });
   };
 
   return (
@@ -18,7 +26,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Variante</Label>
         <Select
-          value={element.variant || 'default'}
+          value={content.variant || 'default'}
           onValueChange={(value) => handleChange('variant', value)}
         >
           <SelectTrigger>
@@ -35,7 +43,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Título</Label>
         <Input
-          value={element.title || ''}
+          value={content.title || ''}
           onChange={(e) => handleChange('title', e.target.value)}
           placeholder="Título do plano"
         />
@@ -44,7 +52,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Preço</Label>
         <Input
-          value={element.price || ''}
+          value={content.price || ''}
           onChange={(e) => handleChange('price', e.target.value)}
           placeholder="R$ 0,00"
         />
@@ -53,7 +61,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Descrição</Label>
         <Input
-          value={element.description || ''}
+          value={content.description || ''}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Descrição do plano"
         />
@@ -62,7 +70,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Texto do Botão</Label>
         <Input
-          value={element.buttonText || ''}
+          value={content.buttonText || ''}
           onChange={(e) => handleChange('buttonText', e.target.value)}
           placeholder="Comprar Agora"
         />
@@ -71,7 +79,7 @@ export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onChange 
       <div className="space-y-2">
         <Label>Desconto</Label>
         <Input
-          value={element.discount || ''}
+          value={content.discount || ''}
           onChange={(e) => handleChange('discount', e.target.value)}
           placeholder="50% OFF"
         />
