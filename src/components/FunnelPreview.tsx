@@ -97,7 +97,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       containerStyles = {
         backgroundColor: 'transparent',
         color: hasBackgroundImage ? 'white' : 'inherit',
-        textShadow: hasBackgroundImage ? '0 1px 3px rgba(0,0,0,0.7)' : 'none',
       };
       break;
       
