@@ -26,6 +26,12 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
+      .leadflux-logo {
+        max-height: 60px;
+        object-fit: contain;
+        margin: 0 auto 1rem auto;
+        display: block;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -86,6 +92,34 @@
       stepContainer.className = 'leadflux-funnel max-w-3xl mx-auto p-6 rounded-lg';
       stepContainer.style.backgroundColor = funnelData.settings?.backgroundColor || '#ffffff';
       
+      // Adicionar logo se existir nas configurações
+      if (funnelData.settings?.logo) {
+        const logoContainer = document.createElement('div');
+        logoContainer.className = 'flex justify-center py-4 mb-2';
+        
+        const logoImg = document.createElement('img');
+        logoImg.src = funnelData.settings.logo;
+        logoImg.alt = 'Logo';
+        logoImg.className = 'leadflux-logo';
+        
+        logoContainer.appendChild(logoImg);
+        stepContainer.appendChild(logoContainer);
+      }
+      
+      // Adicionar barra de progresso se configurado
+      if (funnelData.settings?.showProgressBar) {
+        const progressContainer = document.createElement('div');
+        progressContainer.className = 'w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6';
+        
+        const progressBar = document.createElement('div');
+        progressBar.className = 'h-full transition-all duration-500 ease-out';
+        progressBar.style.width = `${((stepIndex + 1) / steps.length) * 100}%`;
+        progressBar.style.backgroundColor = funnelData.settings?.primaryColor || '#0066ff';
+        
+        progressContainer.appendChild(progressBar);
+        stepContainer.appendChild(progressContainer);
+      }
+      
       // Renderizar elementos do passo
       if (step.canvasElements && step.canvasElements.length > 0) {
         // Renderizar elementos do canvas
@@ -122,7 +156,7 @@
         });
       } else {
         // Fallback para quando não há elementos do canvas
-        stepContainer.innerHTML = `
+        stepContainer.innerHTML += `
           <h2 class="text-xl font-semibold mb-4">${step.title || 'Sem título'}</h2>
           <p class="mb-6">${step.description || ''}</p>
           <button class="leadflux-btn px-6 py-3 rounded-md text-white font-medium" 
@@ -141,20 +175,6 @@
             }
           });
         }
-      }
-      
-      // Adicionar barra de progresso se configurado
-      if (funnelData.settings?.showProgressBar) {
-        const progressContainer = document.createElement('div');
-        progressContainer.className = 'w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6';
-        
-        const progressBar = document.createElement('div');
-        progressBar.className = 'h-full transition-all duration-500 ease-out';
-        progressBar.style.width = `${((stepIndex + 1) / steps.length) * 100}%`;
-        progressBar.style.backgroundColor = funnelData.settings?.primaryColor || '#0066ff';
-        
-        progressContainer.appendChild(progressBar);
-        stepContainer.insertBefore(progressContainer, stepContainer.firstChild);
       }
       
       // Adicionar ao container principal

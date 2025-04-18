@@ -39,7 +39,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     return <div className="text-center py-8">No step data available</div>;
   }
   
-  const { primaryColor, backgroundColor } = activeFunnel.settings;
+  const { primaryColor, backgroundColor, logo } = activeFunnel.settings;
   // Use backgroundColor from settings or fallback to white
   const funnelBgColor = backgroundColor || '#ffffff';
   
@@ -80,6 +80,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       )}
 
       <div className="flex flex-col items-center w-full max-w-xl mx-auto" style={customStyles}>
+        {/* Logo */}
+        {logo && (
+          <div className="w-full flex justify-center py-4">
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="max-h-14 object-contain"
+            />
+          </div>
+        )}
+        
+        {/* Progress Bar */}
         {activeFunnel.settings.showProgressBar && (
           <ProgressBar 
             currentStep={safeCurrentStep} 
