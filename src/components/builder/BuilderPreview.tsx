@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import FunnelPreview from "@/components/FunnelPreview"; // Importação direta do componente principal
 import { useStore } from "@/utils/store";
 
 const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   const { currentFunnel, currentStep } = useStore();
+  
+  // Adicionar log para debug do logotipo
+  useEffect(() => {
+    if (currentFunnel?.settings?.logo) {
+      console.log("BuilderPreview - Logo detectado no funnel:", 
+        currentFunnel.settings.logo.substring(0, 50) + "..." // Mostrar apenas o início para não poluir o console
+      );
+    } else {
+      console.log("BuilderPreview - Nenhum logo encontrado no funnel");
+    }
+  }, [currentFunnel?.id, currentFunnel?.settings?.logo]);
   
   if (!currentFunnel) {
     return (
@@ -16,12 +27,12 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
     );
   }
 
-  // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
+  // Using a unique key with both funnel ID and step index ensures a full re-render when switching steps
   return (
     <div className="h-full overflow-auto flex items-center justify-center">
       <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
         <FunnelPreview 
-          funnel={JSON.parse(JSON.stringify(currentFunnel))} 
+          funnel={currentFunnel} 
           isMobile={isMobile} 
           stepIndex={currentStep}
           key={`preview-${currentFunnel.id}-step-${currentStep}`} 
