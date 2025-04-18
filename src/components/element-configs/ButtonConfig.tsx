@@ -5,10 +5,11 @@ import { CanvasElement } from "@/types/canvasTypes";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { HelpCircle, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { HelpCircle, AlignLeft, AlignCenter, AlignRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStore } from "@/utils/store";
+import { Slider } from "@/components/ui/slider";
 
 interface ButtonConfigProps {
   element: CanvasElement;
@@ -31,6 +32,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const delayEnabled = Boolean(content.delayEnabled);
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
+  const marginTop = content.marginTop !== undefined ? content.marginTop : 0;
   
   const [activeTab, setActiveTab] = useState("style");
   
@@ -70,6 +72,21 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
     });
   };
 
+  const handleMarginTopChange = (value: number[]) => {
+    const newMarginTop = value[0];
+    handleStyleUpdate({ marginTop: newMarginTop });
+  };
+
+  const incrementMarginTop = () => {
+    const newMarginTop = marginTop + 1;
+    handleStyleUpdate({ marginTop: newMarginTop });
+  };
+
+  const decrementMarginTop = () => {
+    const newMarginTop = Math.max(0, marginTop - 1);
+    handleStyleUpdate({ marginTop: newMarginTop });
+  };
+
   return (
     <div className="p-6 space-y-6 pb-32">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -87,6 +104,40 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
               value={buttonText}
               onChange={(e) => handleStyleUpdate({ buttonText: e.target.value })}
               placeholder="Continuar"
+            />
+          </div>
+
+          {/* Margin Top */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="margin-top">Margem Superior: {marginTop}px</Label>
+              <div className="flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 rounded-full p-0"
+                  onClick={decrementMarginTop}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <span className="w-10 text-center">{marginTop}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 rounded-full p-0"
+                  onClick={incrementMarginTop}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Slider
+              id="margin-top"
+              min={0}
+              max={100}
+              step={1}
+              value={[marginTop]}
+              onValueChange={handleMarginTopChange}
             />
           </div>
 
