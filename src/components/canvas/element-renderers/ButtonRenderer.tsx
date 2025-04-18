@@ -261,56 +261,52 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     }
   };
 
-  // Calculate the container style (alignment and margin)
-  const containerStyle = {
-    '--element-margin-top': content.marginTop ? `${content.marginTop}px` : '0px',
-  } as React.CSSProperties;
-  
-  const buttonStyle = {
-    backgroundColor: variant === 'default' ? buttonColor : 'transparent',
-    color: textColor,
-    borderColor: variant === 'outline' ? buttonColor : 'transparent',
-    ...(variant === "gradient" ? { 
-      background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
-    } : {}),
-    ...(variant === "neon" ? { 
-      backgroundColor: buttonColor,
-      boxShadow: `0 0 10px ${buttonColor}7A` 
-    } : {}),
-    ...(variant === "3d" ? {
-      borderBottomColor: adjustColor(buttonColor, -30),
-      backgroundColor: buttonColor
-    } : {}),
-    "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
-    "--glow-color": buttonColor + "80", // Adicionar variável de cor para a animação glow (com 50% de opacidade)
-  };
-  
   if (!isVisible) return null;
 
   return (
     <BaseElementRenderer {...props}>
-      <div className={`flex ${alignmentClass} w-full preserve-margin-top exact-spacing`} style={containerStyle}>
-        {isVisible && (
-          <Button
-            className={buttonClass}
-            style={buttonStyle}
-            onClick={performNavigation}
-            disabled={!isVisible}
-          >
-            {buttonText}
-            {navigation.type === "next" && <ArrowRight className="ml-2 h-4 w-4" />}
-            
-            {/* Indicador de Facebook Pixel (apenas visível quando for o modo editor) */}
-            {!previewMode && facebookEvent && facebookEvent !== "none" && (
-              <span className="ml-1.5 text-xs bg-blue-500 text-white px-1 py-0.5 rounded-sm flex items-center">
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 mr-0.5">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="currentColor" />
-                </svg>
-                {facebookEvent === "custom" ? facebookCustomEventName || "Custom" : facebookEvent}
-              </span>
-            )}
-          </Button>
-        )}
+      <div className={cn("w-full flex", alignmentClass)}>
+        <Button
+          className={buttonClass}
+          style={{
+            backgroundColor: 
+              variant === "default" || variant === "secondary" || variant === "rounded" || variant === "3d" ? buttonColor : 
+              variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
+              undefined,
+            borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
+            color: variant === "outline" || variant === "ghost" || variant === "link" ? 
+                  buttonColor : 
+                  textColor, // Use textColor for variants that don't have specific color logic
+            // Para variantes específicas, aplicar estilos específicos
+            ...(variant === "gradient" ? { 
+              background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
+            } : {}),
+            ...(variant === "neon" ? { 
+              backgroundColor: buttonColor,
+              boxShadow: `0 0 10px ${buttonColor}7A` 
+            } : {}),
+            ...(variant === "3d" ? {
+              borderBottomColor: adjustColor(buttonColor, -30),
+              backgroundColor: buttonColor
+            } : {}),
+            "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
+            "--glow-color": buttonColor + "80", // Adicionar variável de cor para a animação glow (com 50% de opacidade)
+          } as React.CSSProperties}
+          onClick={performNavigation}
+        >
+          {buttonText}
+          {navigation.type === "next" && <ArrowRight className="h-4 w-4" />}
+          
+          {/* Indicador de Facebook Pixel (apenas visível quando for o modo editor) */}
+          {!previewMode && facebookEvent && facebookEvent !== "none" && (
+            <span className="ml-1.5 text-xs bg-blue-500 text-white px-1 py-0.5 rounded-sm flex items-center">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 mr-0.5">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="currentColor" />
+              </svg>
+              {facebookEvent === "custom" ? facebookCustomEventName || "Custom" : facebookEvent}
+            </span>
+          )}
+        </Button>
       </div>
     </BaseElementRenderer>
   );

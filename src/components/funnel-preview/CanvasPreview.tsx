@@ -133,14 +133,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
           }
         }
         
-        // Preservar a configuração de margin-top original
-        if (element.content?.marginTop !== undefined) {
-          if (!adjustedElement.content) {
-            adjustedElement.content = {};
-          }
-          adjustedElement.content.marginTop = element.content.marginTop;
-        }
-        
         // Add preview properties to the element for navigation
         const elementWithPreviewProps = {
           ...adjustedElement,
@@ -154,16 +146,17 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         };
         
         // Adicionar classes específicas para telas móveis aos elementos
-        const elementWrapperClass = isMobile ? "w-full mobile-element preserve-exact-spacing" : "w-full";
+        const elementWrapperClass = isMobile ? "w-full mobile-element" : "w-full";
         
-        // Estilos específicos para o wrapper do elemento - NÃO sobrescrever espaçamentos verticais
+        // Estilos específicos para o wrapper do elemento
         const elementWrapperStyle: React.CSSProperties = isMobile ? {
           position: 'relative',
           left: '0',
           right: '0',
           margin: '0 auto',
           width: '100%',
-          boxSizing: 'border-box'
+          padding: '0',
+          transform: 'none'
         } : {};
         
         return (
@@ -171,7 +164,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
             key={element.id} 
             className={elementWrapperClass}
             style={elementWrapperStyle}
-            data-element-type={element.type}
           >
             <ElementFactory 
               element={elementWithPreviewProps}

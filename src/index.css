@@ -222,54 +222,6 @@
     height: auto !important;
     object-fit: contain !important;
   }
-  
-  /* Classe para preservar a margem superior configurada no editor */
-  .preserve-margin-top {
-    margin-top: var(--element-margin-top) !important;
-  }
-  
-  /* Classes para preservar espaçamentos exatos como no editor */
-  .exact-spacing {
-    padding: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-  
-  .exact-formatting {
-    display: block !important;
-    width: 100% !important;
-  }
-  
-  /* Preservar espaçamentos entre elementos de texto */
-  .exact-formatting > * {
-    margin-top: var(--original-margin-top, inherit) !important;
-    margin-bottom: var(--original-margin-bottom, inherit) !important;
-    padding-top: var(--original-padding-top, inherit) !important;
-    padding-bottom: var(--original-padding-bottom, inherit) !important;
-    line-height: var(--original-line-height, normal) !important;
-  }
-  
-  /* Preservar <br> e quebras de linha */
-  .exact-formatting br {
-    display: block !important;
-    content: "" !important;
-  }
-  
-  /* Classe para preservar espaçamentos exatos em visualização móvel */
-  .preserve-exact-spacing {
-    box-sizing: border-box !important;
-    transform: none !important;
-    padding: 0 !important;
-  }
-  
-  /* Desabilitar propriedades que interferem nos espaçamentos verticais em elementos dentro de wrappers com preservação exata */
-  .preserve-exact-spacing [class*="preserve-margin-top"],
-  .preserve-exact-spacing [class*="exact-spacing"] {
-    margin-top: var(--element-margin-top) !important;
-    padding-top: initial !important;
-    padding-bottom: initial !important;
-    line-height: inherit !important;
-  }
 }
 
 /* Desktop Styles - para manter o layout centralizado original em desktop */
@@ -306,7 +258,6 @@
 
 /* Regras específicas para dispositivos móveis para garantir que não haja margens ou paddings */
 @media (max-width: 768px) {
-  /* Regras gerais para o documento */
   #root, 
   body, 
   html {
@@ -317,7 +268,7 @@
     margin: 0 !important;
   }
   
-  /* Remover paddings e margens em componentes do funil, preservando espaçamentos internos */
+  /* Remover paddings e margens em componentes do funil */
   div[class*="FunnelPreview"],
   div[class*="CanvasPreview"],
   div[class*="DomainFunnel"] {
@@ -331,8 +282,37 @@
     position: relative !important;
     box-sizing: border-box !important;
   }
-
-  /* Ajustar elementos de canvas para ocupar toda a largura disponível, mas preservar margens verticais */
+  
+  /* Forçar elementos a terem largura total, mas com pequeno espaçamento lateral */
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+  
+  .mobile-full-width > div,
+  .mobile-full-width > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Ajustar elementos de canvas para ocupar toda a largura disponível */
   div[class*="element-renderer"] {
     width: 100% !important;
     margin-left: 0 !important;
@@ -345,29 +325,17 @@
     box-sizing: border-box !important;
   }
 
-  /* Regra importante: nunca sobrescrever estilos que afetam a formatação vertical nos elementos exatos */
-  .exact-spacing,
-  .exact-formatting,
-  .preserve-margin-top,
-  .preserve-exact-spacing,
-  [data-element-type="text"] > div,
-  [data-element-type="button"] > div {
-    /* Deixar essas propriedades verticais com seus valores originais */
-    margin-top: var(--element-margin-top, initial) !important;
-    margin-bottom: initial !important;
-    padding-top: initial !important;
-    padding-bottom: initial !important;
-    line-height: initial !important;
-  }
-
-  /* Ajustar conteúdo/texto para caber na tela sem afetar margens verticais */
-  .prose,
-  .text-content,
-  .exact-formatting {
+  /* Garantir que conteúdo interno de elementos específicos também seja ajustado */
+  div[class*="element-renderer"] > div {
     width: 100% !important;
     max-width: 100% !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
   }
   
   /* Ajustar botões e elementos interativos */
