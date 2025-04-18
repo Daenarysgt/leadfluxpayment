@@ -277,13 +277,58 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   // Função para aplicar formatação de headings
   const applyHeading = (headingTag: string) => {
     // Capturar o conteúdo atual antes de formatar
-    const content = captureEditorContent();
+    let content = captureEditorContent();
     if (content) {
       contentBufferRef.current = content;
     }
     
-    // Aplicar formatação de heading
-    document.execCommand('formatBlock', false, headingTag);
+    try {
+      // Verificar se há seleção de texto
+      const selection = window.getSelection();
+      const range = selection?.getRangeAt(0);
+      
+      if (selection && !selection.isCollapsed && range) {
+        // Método 1: Usar formatBlock
+        document.execCommand('formatBlock', false, headingTag);
+        
+        // Método 2 (alternativa): Criar um novo elemento e substituir a seleção
+        if (!document.queryCommandState('formatBlock')) {
+          const newElement = document.createElement(headingTag);
+          const fragment = range.extractContents();
+          newElement.appendChild(fragment);
+          range.insertNode(newElement);
+          
+          // Limpar seleção
+          selection.removeAllRanges();
+          selection.addRange(range);
+          
+          // Atualizar o editor diretamente
+          if (editorRef.current) {
+            content = editorRef.current.innerHTML;
+            contentBufferRef.current = content;
+          }
+        }
+      } else {
+        // Se não houver seleção, informar o usuário
+        toast({
+          title: "Nenhum texto selecionado",
+          description: "Selecione algum texto antes de aplicar o estilo",
+          variant: "destructive",
+          duration: 3000
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Erro ao aplicar formatação:", error);
+      // Notificar o usuário do erro
+      toast({
+        title: "Erro ao formatar texto",
+        description: "Tente selecionar o texto novamente",
+        variant: "destructive",
+        duration: 3000
+      });
+      return;
+    }
     
     // Focar o editor novamente
     editorRef.current?.focus();
@@ -622,7 +667,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8 text-lg font-bold"
-              onClick={() => applyHeading('<h1>')}
+              onClick={() => applyHeading('h1')}
               title="Título principal (H1)"
             >
               <Heading1 className="h-4 w-4 mr-1" /> H1
@@ -631,7 +676,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8 text-base font-bold"
-              onClick={() => applyHeading('<h2>')}
+              onClick={() => applyHeading('h2')}
               title="Subtítulo grande (H2)"
             >
               <Heading2 className="h-4 w-4 mr-1" /> H2
@@ -640,7 +685,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8 text-sm font-bold"
-              onClick={() => applyHeading('<h3>')}
+              onClick={() => applyHeading('h3')}
               title="Subtítulo médio (H3)"
             >
               <Heading3 className="h-4 w-4 mr-1" /> H3
@@ -649,7 +694,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8 text-xs font-bold"
-              onClick={() => applyHeading('<h4>')}
+              onClick={() => applyHeading('h4')}
               title="Subtítulo pequeno (H4)"
             >
               H4
@@ -658,7 +703,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8 text-xs font-bold"
-              onClick={() => applyHeading('<h5>')}
+              onClick={() => applyHeading('h5')}
               title="Subtítulo muito pequeno (H5)"
             >
               H5
@@ -667,7 +712,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
               variant="outline" 
               size="sm" 
               className="h-8"
-              onClick={() => applyHeading('<p>')}
+              onClick={() => applyHeading('p')}
               title="Parágrafo normal"
             >
               <Text className="h-4 w-4 mr-1" /> P
