@@ -449,11 +449,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
   // Estilo destacado aprimorado
   const renderFeaturedStyle = () => {
     // Determinar background do botão baseado nas preferências
-    const buttonBg = useGradient && useButtonGradient
-      ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-      : isHighlighted && useButtonGradient
-        ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
-        : buttonColor;
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
         
     return (
       <div className="relative w-full max-w-md mx-auto transition-all">
@@ -569,11 +571,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
         : "justify-start text-left";
         
     // Determinar background do botão baseado nas preferências
-    const buttonBg = useGradient && useButtonGradient
-      ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-      : isHighlighted && useButtonGradient
-        ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
-        : buttonColor;
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
 
     return (
       <div 
