@@ -284,6 +284,26 @@ const BuilderCanvas = ({
   // Determine if the canvas is truly empty
   const isCanvasEmpty = elements.length === 0;
   
+  // Função para validar o formato do logotipo
+  const validateLogo = (logo: string | undefined): string | null => {
+    if (!logo) return null;
+    
+    // Verificar se o logo já é uma string base64 válida com prefixo data:image/
+    if (logo.startsWith('data:image/')) {
+      return logo;
+    }
+    
+    // Tentar corrigir formatos comuns de base64 sem o prefixo
+    if (logo.startsWith('/9j/') || logo.startsWith('iVBOR')) {
+      console.log("BuilderCanvas - Tentando corrigir formato do logo");
+      return `data:image/jpeg;base64,${logo}`;
+    }
+    
+    // Caso não seja possível identificar o formato, retornar null
+    console.error("BuilderCanvas - Logo não é uma string base64 válida");
+    return null;
+  };
+  
   return (
     <CanvasDropZone 
       onDrop={handleDrop}
@@ -314,6 +334,27 @@ const BuilderCanvas = ({
         
         {currentFunnel?.settings.showProgressBar && (
           <div className="mb-6">
+            {currentFunnel.settings.logo && (
+              <>
+                {validateLogo(currentFunnel.settings.logo) && (
+                  <div className="w-full flex justify-center py-4 mb-2">
+                    <img 
+                      src={validateLogo(currentFunnel.settings.logo)} 
+                      alt="Logo" 
+                      className="max-h-14 object-contain"
+                      onError={(e) => {
+                        console.error("BuilderCanvas - Erro ao carregar logo:", e);
+                        // Esconder o elemento em caso de erro
+                        e.currentTarget.style.display = 'none';
+                      }}
+                      onLoad={() => {
+                        console.log("BuilderCanvas - Logo carregado com sucesso");
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
             <ProgressBar 
               currentStep={currentStep}
               totalSteps={currentFunnel.steps.length}
