@@ -66,14 +66,22 @@ const PricingRenderer = (props: ElementRendererProps) => {
   const handleNavigation = async () => {
     console.log("PricingRenderer - handleNavigation called");
     console.log("Navigation config:", navigation);
+    console.log("PreviewMode:", previewMode);
+    console.log("PreviewProps:", previewProps);
+    console.log("Element:", element);
     
-    if (!navigation) return;
+    if (!navigation) {
+      console.error("Navigation object is not defined");
+      return;
+    }
     
     // Verificar o modo de preview
     if (previewMode && previewProps) {
+      console.log("Entrando no modo de preview");
       const { activeStep, onStepChange, funnel } = previewProps;
       console.log("Preview mode navigation with activeStep:", activeStep);
       console.log("Total steps:", funnel?.steps?.length);
+      console.log("Funnel:", funnel);
       
       switch (navigation.type) {
         case "next":
@@ -153,6 +161,9 @@ const PricingRenderer = (props: ElementRendererProps) => {
           break;
       }
     } else {
+      console.log("Usando navegação no modo canvas");
+      console.log("CurrentFunnel:", currentFunnel);
+      console.log("CurrentStep:", currentStep);
       // Handle navigation in canvas mode
       switch (navigation.type) {
         case "next":
@@ -354,7 +365,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 borderRadius: `${borderRadius}px`,
                 border: !useButtonGradient && !isHighlighted ? `1px solid ${buttonColor}` : "none"
               }}
-              onClick={handleNavigation}
+              onClick={(e) => {
+                console.log("Botão do pricing clicado (minimalStyle)");
+                e.stopPropagation();
+                handleNavigation();
+              }}
             >
               {buttonText}
               {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
@@ -456,7 +471,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
                   color: buttonTextColor,
                   borderRadius: `${borderRadius}px`
                 }}
-                onClick={handleNavigation}
+                onClick={(e) => {
+                  console.log("Botão do pricing clicado (featuredStyle)");
+                  e.stopPropagation();
+                  handleNavigation();
+                }}
               >
                 {buttonText}
                 {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
@@ -557,7 +576,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 color: buttonTextColor,
                 borderRadius: `${borderRadius}px`
               }}
-              onClick={handleNavigation}
+              onClick={(e) => {
+                console.log("Botão do pricing clicado (horizontalStyle)");
+                e.stopPropagation();
+                handleNavigation();
+              }}
             >
               {buttonText}
               {navigation.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}

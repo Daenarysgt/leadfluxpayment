@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useStore } from "@/utils/store";
 
 interface PricingConfigProps {
   element: any;
@@ -39,6 +40,14 @@ const gradientPresets = [
 ];
 
 const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
+  const { currentFunnel } = useStore();
+  
+  // Get steps from current funnel for the step selector
+  const steps = currentFunnel?.steps.map(step => ({
+    id: step.id,
+    title: step.title
+  })) || [];
+
   const [content, setContent] = useState<PricingContent>(element.content || {
     title: "Método Beauty",
     subtitle: "Tráfego Pago Estratégico",
@@ -626,15 +635,30 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
             </Select>
           </div>
 
-          {content.navigation?.type === "step" && (
+          {content.navigation?.type === "step" && steps.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="stepId">ID do passo</Label>
-              <Input
-                id="stepId"
+              <Label htmlFor="step-selector">Selecionar Passo</Label>
+              <Select
                 value={content.navigation?.stepId || ""}
-                onChange={(e) => updateNestedContent("navigation", "stepId", e.target.value)}
-                placeholder="ID do passo"
-              />
+                onValueChange={(value) => updateNestedContent("navigation", "stepId", value)}
+              >
+                <SelectTrigger id="step-selector">
+                  <SelectValue placeholder="Escolha um passo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {steps.map((step) => (
+                    <SelectItem key={step.id} value={step.id}>
+                      {step.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {content.navigation?.type === "step" && steps.length === 0 && (
+            <div className="text-sm text-amber-600 mt-2">
+              Nenhum passo disponível. Adicione passos no funil primeiro.
             </div>
           )}
 
