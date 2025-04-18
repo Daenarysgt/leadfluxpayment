@@ -7,8 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, HelpCircle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { useStore } from "@/utils/store";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CaptureConfigProps {
   element: CanvasElement;
@@ -24,6 +27,11 @@ interface CaptureField {
 const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   const content = element.content || {};
   const style = content.style || {};
+  const navigation = content.navigation || { type: "next" };
+  
+  // Obter os passos do funil para a navegação
+  const { currentFunnel } = useStore();
+  const steps = currentFunnel?.steps || [];
   
   // Detectar e migrar de versão antiga para nova
   let captureFields = content.captureFields;
@@ -68,6 +76,19 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
         style: {
           ...style,
           [key]: value
+        }
+      }
+    });
+  };
+
+  const handleNavigationUpdate = (updates: Partial<any>) => {
+    onUpdate({
+      ...element,
+      content: {
+        ...content,
+        navigation: {
+          ...navigation,
+          ...updates
         }
       }
     });
@@ -120,6 +141,7 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
         <TabsList className="w-full mb-4">
           <TabsTrigger value="content" className="flex-1">Conteúdo</TabsTrigger>
           <TabsTrigger value="style" className="flex-1">Estilo</TabsTrigger>
+          <TabsTrigger value="action" className="flex-1">Ação</TabsTrigger>
         </TabsList>
         
         <TabsContent value="content" className="space-y-4">
@@ -245,6 +267,155 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
               ))}
             </div>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="action" className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="navigation-type">Ação ao Enviar</Label>
+            <Select 
+              value={navigation.type} 
+              onValueChange={(value: "next" | "step" | "url") => handleNavigationUpdate({ type: value })}
+            >
+              <SelectTrigger id="navigation-type">
+                <SelectValue placeholder="Selecione a ação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="next">Próximo Passo</SelectItem>
+                <SelectItem value="step">Ir para Passo Específico</SelectItem>
+                <SelectItem value="url">Abrir URL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Facebook Pixel Event */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="facebook-event">Evento do Facebook Pixel</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este evento será enviado para o Facebook Ads quando o formulário for enviado</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Select 
+              value={content.facebookEvent || "none"} 
+              onValueChange={(value) => {
+                const eventValue = value === "none" ? "" : value;
+                handleContentChange('facebookEvent', eventValue);
+              }}
+            >
+              <SelectTrigger id="facebook-event">
+                <SelectValue placeholder="Selecione um evento (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Contact">Contact</SelectItem>
+                <SelectItem value="CompleteRegistration">CompleteRegistration</SelectItem>
+                <SelectItem value="Subscribe">Subscribe</SelectItem>
+                <SelectItem value="custom">Evento Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Este evento será enviado para o Facebook Ads quando o usuário enviar o formulário
+            </p>
+            
+            {/* Input para evento personalizado */}
+            {content.facebookEvent === "custom" && (
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="custom-event">Nome do evento personalizado</Label>
+                <Input 
+                  id="custom-event"
+                  placeholder="Ex: MeuEventoPersonalizado"
+                  value={content.facebookCustomEventName || ""}
+                  onChange={(e) => handleContentChange('facebookCustomEventName', e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use apenas letras, números e sublinhados. Não use espaços.
+                </p>
+              </div>
+            )}
+            
+            {/* Parâmetros avançados para eventos específicos do Facebook Pixel */}
+            {content.facebookEvent && content.facebookEvent !== "none" && content.facebookEvent !== "" && (
+              <div className="mt-4 space-y-4 rounded-md border p-4 bg-gray-50">
+                <h4 className="text-sm font-medium">Parâmetros avançados do evento</h4>
+                
+                <div className="pt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-violet-700"
+                    onClick={() => handleContentChange('facebookEventDebugMode', !content.facebookEventDebugMode)}
+                  >
+                    {content.facebookEventDebugMode ? "Desativar" : "Ativar"} modo de teste
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    O modo de teste mostra no console os eventos enviados
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {navigation.type === "step" && steps.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="step-selector">Selecionar Passo</Label>
+              <Select
+                value={navigation.stepId || ""}
+                onValueChange={(value) => handleNavigationUpdate({ stepId: value })}
+              >
+                <SelectTrigger id="step-selector">
+                  <SelectValue placeholder="Escolha um passo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {steps.map((step) => (
+                    <SelectItem key={step.id} value={step.id}>
+                      {step.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {navigation.type === "step" && steps.length === 0 && (
+            <div className="text-sm text-amber-600 mt-2">
+              Nenhum passo disponível. Adicione passos no funil primeiro.
+            </div>
+          )}
+
+          {navigation.type === "url" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="url-input">URL de destino</Label>
+                <Input
+                  id="url-input"
+                  placeholder="https://exemplo.com.br"
+                  value={navigation.url || ""}
+                  onChange={(e) => handleNavigationUpdate({ url: e.target.value })}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="open-new-tab"
+                  checked={navigation.openInNewTab || false}
+                  onChange={(e) => handleNavigationUpdate({ openInNewTab: e.target.checked })}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <Label htmlFor="open-new-tab" className="text-sm">
+                  Abrir em nova aba
+                </Label>
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

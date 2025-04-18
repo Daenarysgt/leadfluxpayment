@@ -238,6 +238,16 @@ export const getDefaultContent = (componentType: string) => {
         ],
         buttonText: "Inscrever-se",
         successMessage: "Obrigado por se inscrever!",
+        navigation: {
+          type: "next",
+          stepId: "",
+          url: "",
+          openInNewTab: false
+        },
+        facebookEvent: "",
+        facebookCustomEventName: "",
+        facebookEventParams: {},
+        facebookEventDebugMode: false,
         style: {
           primaryColor: "#8B5CF6",
           titleAlignment: "center"
