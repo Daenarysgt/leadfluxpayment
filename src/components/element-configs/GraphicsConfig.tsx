@@ -54,6 +54,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
   const showTooltip = content.showTooltip !== false;
   const showGrid = content.showGrid !== false;
   const showLabels = content.showLabels !== false;
+  const valueLabel = content.valueLabel || "value";
   
   const [editingItem, setEditingItem] = useState<number | null>(null);
   const [tempItem, setTempItem] = useState({ name: "", value: 0, color: "" });
@@ -210,6 +211,17 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
             </Select>
           </div>
           
+          <div className="space-y-2">
+            <Label htmlFor="valueLabel">Texto do Valor (Legenda)</Label>
+            <Input
+              id="valueLabel"
+              value={valueLabel}
+              onChange={(e) => handleUpdate({ valueLabel: e.target.value })}
+              placeholder="value"
+            />
+            <p className="text-xs text-gray-500">Deixe vazio para remover o texto</p>
+          </div>
+          
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="showLegend" className="cursor-pointer">Mostrar Legenda</Label>
@@ -272,33 +284,16 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Dados do Gráfico</h3>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    // Gerar cores aleatórias para todos os itens
-                    const newData = chartData.map(item => ({
-                      ...item,
-                      color: getRandomColor(item.name + Date.now())
-                    }));
-                    handleUpdate({ chartData: newData });
-                  }}
-                  title="Gerar novas cores aleatórias para todos os itens"
-                >
-                  <PieChart className="h-4 w-4 mr-1" /> Gerar Cores
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setEditingItem(null);
-                    setTempItem({ name: "", value: 0, color: "" });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Novo Item
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setEditingItem(null);
+                  setTempItem({ name: "", value: 0, color: "" });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Novo Item
+              </Button>
             </div>
             
             {chartData.length > 0 ? (
@@ -308,7 +303,6 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Valor</TableHead>
-                      <TableHead className="w-12 text-right">Cor</TableHead>
                       <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -317,21 +311,6 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                       <TableRow key={index}>
                         <TableCell className="font-medium truncate max-w-[120px]">{item.name}</TableCell>
                         <TableCell>{item.value}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end">
-                            <Input
-                              type="color"
-                              value={item.color || getRandomColor(item.name)}
-                              onChange={(e) => {
-                                const newData = [...chartData];
-                                newData[index] = { ...item, color: e.target.value };
-                                handleUpdate({ chartData: newData });
-                              }}
-                              className="w-6 h-6 p-0 cursor-pointer rounded-full"
-                              title="Clique para mudar a cor"
-                            />
-                          </div>
-                        </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-2">
                             <Button 

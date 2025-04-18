@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
@@ -31,6 +30,7 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
   const title = content?.title !== undefined ? content.title : "Gráfico";
   const description = content?.description || "";
   const chartType = content?.chartType || "bar";
+  const valueLabel = content?.valueLabel || "value";
   
   // Fix for chartData structure - transform the data if it's in the old format
   let chartData: ChartData = [];
@@ -55,6 +55,12 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
     chartData = getDefaultData();
   }
   
+  // Transforma os dados para usar o rótulo personalizado
+  const processedData = chartData.map(item => ({
+    ...item,
+    [valueLabel]: item.value,
+  }));
+  
   const style = content?.style || {};
   const showLegend = content?.showLegend !== false;
   const showTooltip = content?.showTooltip !== false;
@@ -76,21 +82,22 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
           <ChartContainer 
             className="w-full aspect-video max-h-80"
             config={{
-              primary: { label: "Dados", color: chartColors.bar },
+              [valueLabel]: { label: valueLabel || "Valor", color: chartColors.bar },
             }}
           >
-            <BarChart data={chartData}>
+            <BarChart data={processedData}>
               {showGrid && <CartesianGrid strokeDasharray="3 3" />}
               <XAxis dataKey="name" />
               {showLabels && <YAxis />}
-              {showTooltip && <Tooltip content={<ChartTooltipContent />} />}
+              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
               {showLegend && <Legend />}
               <Bar 
-                dataKey="value" 
+                dataKey={valueLabel || "value"} 
                 fill={chartColors.bar} 
                 radius={[4, 4, 0, 0]} 
                 barSize={30}
                 animationDuration={750}
+                name={valueLabel || "Valor"}
               />
             </BarChart>
           </ChartContainer>
@@ -100,7 +107,7 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
         return (
           <ChartContainer 
             className="w-full aspect-video max-h-80"
-            config={chartData.reduce((acc, item, index) => {
+            config={processedData.reduce((acc, item, index) => {
               acc[item.name] = { 
                 label: item.name, 
                 color: item.color || chartColors.pie[index] 
@@ -110,23 +117,25 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
           >
             <PieChart>
               <Pie
-                data={chartData}
+                data={processedData}
                 cx="50%"
                 cy="50%"
                 labelLine={showLabels}
                 outerRadius={80}
                 innerRadius={style?.donut ? 40 : 0}
-                dataKey="value"
+                dataKey={valueLabel || "value"}
                 animationDuration={750}
+                nameKey="name"
+                name={valueLabel || "Valor"}
               >
-                {chartData.map((entry, index) => (
+                {processedData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={entry.color || chartColors.pie[index]}
                   />
                 ))}
               </Pie>
-              {showTooltip && <Tooltip content={<ChartTooltipContent />} />}
+              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
               {showLegend && <Legend />}
             </PieChart>
           </ChartContainer>
@@ -137,23 +146,24 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
           <ChartContainer 
             className="w-full aspect-video max-h-80"
             config={{
-              primary: { label: "Dados", color: chartColors.line },
+              [valueLabel]: { label: valueLabel || "Valor", color: chartColors.line },
             }}
           >
-            <LineChart data={chartData}>
+            <LineChart data={processedData}>
               {showGrid && <CartesianGrid strokeDasharray="3 3" />}
               <XAxis dataKey="name" />
               {showLabels && <YAxis />}
-              {showTooltip && <Tooltip content={<ChartTooltipContent />} />}
+              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
               {showLegend && <Legend />}
               <Line
                 type="monotone"
-                dataKey="value"
+                dataKey={valueLabel || "value"}
                 stroke={chartColors.line}
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
                 animationDuration={750}
+                name={valueLabel || "Valor"}
               />
             </LineChart>
           </ChartContainer>
