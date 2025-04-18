@@ -20,7 +20,8 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Text
+  Text,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
@@ -276,40 +277,11 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Função para aplicar formatação de headings
   const applyHeading = (headingTag: string) => {
-    // Capturar o conteúdo atual antes de formatar
-    let content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
     try {
       // Verificar se há seleção de texto
       const selection = window.getSelection();
-      const range = selection?.getRangeAt(0);
       
-      if (selection && !selection.isCollapsed && range) {
-        // Método 1: Usar formatBlock
-        document.execCommand('formatBlock', false, headingTag);
-        
-        // Método 2 (alternativa): Criar um novo elemento e substituir a seleção
-        if (!document.queryCommandState('formatBlock')) {
-          const newElement = document.createElement(headingTag);
-          const fragment = range.extractContents();
-          newElement.appendChild(fragment);
-          range.insertNode(newElement);
-          
-          // Limpar seleção
-          selection.removeAllRanges();
-          selection.addRange(range);
-          
-          // Atualizar o editor diretamente
-          if (editorRef.current) {
-            content = editorRef.current.innerHTML;
-            contentBufferRef.current = content;
-          }
-        }
-      } else {
-        // Se não houver seleção, informar o usuário
+      if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
         toast({
           title: "Nenhum texto selecionado",
           description: "Selecione algum texto antes de aplicar o estilo",
@@ -318,32 +290,61 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         });
         return;
       }
+      
+      // Capturar o conteúdo atual antes de formatar
+      let content = captureEditorContent();
+      if (content) {
+        contentBufferRef.current = content;
+      }
+      
+      // Obter o range da seleção
+      const range = selection.getRangeAt(0);
+      
+      // Abordagem direta: Criar um novo elemento e substituir a seleção
+      const newElement = document.createElement(headingTag);
+      
+      // Copiar o conteúdo selecionado para o novo elemento
+      const fragment = range.extractContents();
+      newElement.appendChild(fragment);
+      
+      // Inserir o novo elemento no lugar da seleção
+      range.insertNode(newElement);
+      
+      // Garantir que o editor tenha o foco
+      editorRef.current?.focus();
+      
+      // Selecionar o novo elemento para manter o contexto de edição
+      range.selectNodeContents(newElement);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      
+      // Garantir que o background seja transparente
+      if (newElement instanceof HTMLElement) {
+        newElement.style.backgroundColor = 'transparent';
+      }
+      
+      // Atualizar o conteúdo
+      content = editorRef.current?.innerHTML || '';
+      contentBufferRef.current = content;
+      
+      // Notificar mudança
+      toast({
+        title: "Estilo de texto alterado",
+        description: `Texto formatado como ${headingTag.toUpperCase()}`,
+        duration: 2000
+      });
+      
+      // Enviar atualização imediatamente
+      commitUpdate({ immediate: true });
     } catch (error) {
       console.error("Erro ao aplicar formatação:", error);
-      // Notificar o usuário do erro
       toast({
         title: "Erro ao formatar texto",
         description: "Tente selecionar o texto novamente",
         variant: "destructive",
         duration: 3000
       });
-      return;
     }
-    
-    // Focar o editor novamente
-    editorRef.current?.focus();
-    
-    // Notificar mudança
-    toast({
-      title: "Estilo de texto alterado",
-      description: `Texto formatado como ${headingTag.toUpperCase()}`,
-      duration: 2000
-    });
-    
-    // Enviar atualização após um breve atraso
-    setTimeout(() => {
-      handleEditorInput();
-    }, 50);
   };
 
   // Função para aplicar cor ao texto
@@ -531,6 +532,82 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     });
   };
 
+  // Função para remover formatação
+  const removeFormatting = () => {
+    try {
+      // Verificar se há seleção de texto
+      const selection = window.getSelection();
+      
+      if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+        toast({
+          title: "Nenhum texto selecionado",
+          description: "Selecione algum texto antes de remover formatação",
+          variant: "destructive",
+          duration: 3000
+        });
+        return;
+      }
+      
+      // Capturar o conteúdo atual antes de formatar
+      let content = captureEditorContent();
+      if (content) {
+        contentBufferRef.current = content;
+      }
+      
+      // Remover formatação usando o comando removeFormat
+      document.execCommand('removeFormat', false, undefined);
+      
+      // Para lidar com tags de cabeçalho (que não são removidas pelo removeFormat)
+      const range = selection.getRangeAt(0);
+      const fragment = range.extractContents();
+      
+      // Criar um span temporário para armazenar o conteúdo sem formatação
+      const tempSpan = document.createElement('span');
+      tempSpan.appendChild(fragment);
+      
+      // Obter apenas o texto
+      const textContent = tempSpan.textContent || '';
+      
+      // Criar um parágrafo e inserir o texto puro
+      const paragraph = document.createElement('p');
+      paragraph.textContent = textContent;
+      paragraph.style.backgroundColor = 'transparent';
+      
+      // Inserir o parágrafo no lugar da seleção
+      range.insertNode(paragraph);
+      
+      // Selecionar o novo parágrafo
+      range.selectNodeContents(paragraph);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      
+      // Garantir que o editor tenha o foco
+      editorRef.current?.focus();
+      
+      // Atualizar o conteúdo e enviar para o servidor
+      content = editorRef.current?.innerHTML || '';
+      contentBufferRef.current = content;
+      
+      // Notificar o usuário
+      toast({
+        title: "Formatação removida",
+        description: "Texto retornado ao estilo padrão",
+        duration: 2000
+      });
+      
+      // Enviar atualização imediatamente
+      commitUpdate({ immediate: true });
+    } catch (error) {
+      console.error("Erro ao remover formatação:", error);
+      toast({
+        title: "Erro ao remover formatação",
+        description: "Tente selecionar o texto novamente",
+        variant: "destructive",
+        duration: 3000
+      });
+    }
+  };
+
   const colorOptions = [
     "#000000", "#434343", "#666666", "#999999", "#b7b7b7", "#cccccc", "#d9d9d9", "#efefef", "#f3f3f3", "#ffffff",
     "#980000", "#ff0000", "#ff9900", "#ffff00", "#00ff00", "#00ffff", "#4a86e8", "#0000ff", "#9900ff", "#ff00ff",
@@ -660,63 +737,74 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
           
           {/* Nova barra para formatação de headings */}
           <div className="flex flex-wrap gap-2 mb-3 border-t pt-2">
-            <p className="text-xs text-muted-foreground w-full mb-1">
-              Selecione o texto e escolha o estilo:
+            <p className="text-xs text-muted-foreground w-full mb-2">
+              <strong>Como usar:</strong> Selecione completamente o texto (clique e arraste) e depois escolha um estilo:
             </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 text-lg font-bold"
-              onClick={() => applyHeading('h1')}
-              title="Título principal (H1)"
-            >
-              <Heading1 className="h-4 w-4 mr-1" /> H1
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 text-base font-bold"
-              onClick={() => applyHeading('h2')}
-              title="Subtítulo grande (H2)"
-            >
-              <Heading2 className="h-4 w-4 mr-1" /> H2
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 text-sm font-bold"
-              onClick={() => applyHeading('h3')}
-              title="Subtítulo médio (H3)"
-            >
-              <Heading3 className="h-4 w-4 mr-1" /> H3
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 text-xs font-bold"
-              onClick={() => applyHeading('h4')}
-              title="Subtítulo pequeno (H4)"
-            >
-              H4
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8 text-xs font-bold"
-              onClick={() => applyHeading('h5')}
-              title="Subtítulo muito pequeno (H5)"
-            >
-              H5
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-8"
-              onClick={() => applyHeading('p')}
-              title="Parágrafo normal"
-            >
-              <Text className="h-4 w-4 mr-1" /> P
-            </Button>
+            <div className="flex flex-wrap gap-2 w-full">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-lg font-bold"
+                onClick={() => applyHeading('h1')}
+                title="Título principal (H1)"
+              >
+                <Heading1 className="h-4 w-4 mr-1" /> H1
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-base font-bold"
+                onClick={() => applyHeading('h2')}
+                title="Subtítulo grande (H2)"
+              >
+                <Heading2 className="h-4 w-4 mr-1" /> H2
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-sm font-bold"
+                onClick={() => applyHeading('h3')}
+                title="Subtítulo médio (H3)"
+              >
+                <Heading3 className="h-4 w-4 mr-1" /> H3
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-xs font-bold"
+                onClick={() => applyHeading('h4')}
+                title="Subtítulo pequeno (H4)"
+              >
+                H4
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-xs font-bold"
+                onClick={() => applyHeading('h5')}
+                title="Subtítulo muito pequeno (H5)"
+              >
+                H5
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8"
+                onClick={() => applyHeading('p')}
+                title="Parágrafo normal"
+              >
+                <Text className="h-4 w-4 mr-1" /> P
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 ml-auto text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                onClick={removeFormatting}
+                title="Remover formatação"
+              >
+                <X className="h-4 w-4 mr-1" /> Limpar formato
+              </Button>
+            </div>
           </div>
           
           <div
