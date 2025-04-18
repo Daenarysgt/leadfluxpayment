@@ -78,15 +78,24 @@
 @layer base {
   * {
     @apply border-border;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
 
   html {
     @apply scroll-smooth;
+    width: 100%;
+    height: 100%;
   }
 
   body {
-    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
   
   /* Custom scrollbar */
@@ -187,5 +196,15 @@
   .animate-progress {
     animation: progress 1.5s ease-in-out infinite;
     width: 100%;
+  }
+  
+  /* Adicionando uma classe para preencher toda a largura em dispositivos móveis */
+  .mobile-full-width {
+    width: 100vw;
+    max-width: 100vw;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
   }
 }

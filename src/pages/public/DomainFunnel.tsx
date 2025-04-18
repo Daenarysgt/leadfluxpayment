@@ -159,11 +159,11 @@ const DomainFunnel = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4 md:p-8">
-      <div className="w-full max-w-3xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-0 sm:p-2">
+      <div className="w-full">
         <FunnelPreview 
           funnel={funnel} 
-          isMobile={false} 
+          isMobile={true} 
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
           key={`domain-${funnel.id}-step-${currentStepIndex}`}

@@ -109,10 +109,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      <div className="flex flex-col items-center w-full max-w-xl mx-auto py-8">
+      <div className="flex flex-col items-center w-full max-w-full sm:max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0">
         {/* Logotipo */}
         {validLogo && (
-          <div className="w-full flex justify-center py-4 mb-2">
+          <div className="w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2">
             <img 
               src={validLogo} 
               alt="Logo" 
@@ -130,7 +130,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         {activeFunnel.settings.showProgressBar && (
-          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6">
+          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6">
             <div 
               className="h-full transition-all duration-500 ease-out"
               style={{ 
