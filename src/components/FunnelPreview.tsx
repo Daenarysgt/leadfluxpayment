@@ -10,7 +10,6 @@ import { useState, useEffect } from "react";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
 import FacebookPixel from '@/components/pixel/FacebookPixel';
-import LogoDisplay from '@/components/funnel-preview/LogoDisplay';
 
 interface FunnelPreviewProps {
   isMobile?: boolean;
@@ -45,7 +44,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     return <div className="text-center py-8">No step data available</div>;
   }
   
-  const { primaryColor, backgroundColor } = activeFunnel.settings;
+  const { primaryColor, backgroundColor, logo } = activeFunnel.settings;
   
   // Check if this is the last step of the funnel
   const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
@@ -59,11 +58,24 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     transition: 'background-color 0.3s ease'
   } as React.CSSProperties;
 
+  // Debug log para verificar se o logo está chegando
+  console.log("FunnelPreview - Logo encontrado nas settings:", !!logo, typeof logo);
+  
+  // Verificar se o logo é uma string base64 válida
+  let validLogo = logo;
+  if (typeof logo === 'string' && !logo.startsWith('data:image/')) {
+    console.error("FunnelPreview - Logo não é uma string base64 válida");
+    // Tentar corrigir formatos comuns de base64 sem o prefixo
+    if (logo.startsWith('/9j/') || logo.startsWith('iVBOR')) {
+      console.log("FunnelPreview - Tentando corrigir formato do logo");
+      validLogo = `data:image/jpeg;base64,${logo}`;
+    } else {
+      validLogo = null;
+    }
+  }
+
   // Get the canvas elements from the current step's questions
   const canvasElements = stepData.canvasElements || [];
-  
-  // Verificar se estamos no modo canvas ou tradicional
-  const hasCanvasElements = canvasElements && canvasElements.length > 0;
 
   const handleStepChange = (newStep: number) => {
     console.log("FunnelPreview - Changing step to:", newStep);
@@ -87,8 +99,24 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       )}
       
       <div className="flex flex-col items-center w-full max-w-xl mx-auto py-8">
-        {/* Logotipo usando o componente compartilhado - só exibir se NÃO estiver no modo canvas */}
-        {!hasCanvasElements && <LogoDisplay logo={activeFunnel.settings?.logo} />}
+        {/* Logotipo */}
+        {validLogo && (
+          <div className="w-full flex justify-center py-4 mb-2">
+            <img 
+              src={validLogo} 
+              alt="Logo" 
+              className="max-h-14 object-contain"
+              onError={(e) => {
+                console.error("FunnelPreview - Erro ao carregar logo:", e);
+                // Esconder o elemento em caso de erro
+                e.currentTarget.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log("FunnelPreview - Logo carregado com sucesso");
+              }}
+            />
+          </div>
+        )}
 
         {activeFunnel.settings.showProgressBar && (
           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6">
@@ -103,13 +131,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         <div className="w-full">
-          {hasCanvasElements ? (
+          {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}
               activeStep={safeCurrentStep}
               onStepChange={handleStepChange}
               funnel={activeFunnel}
-              showLogo={true} // Sempre mostrar logo quando estiver no modo canvas
             />
           ) : (
             // Otherwise, fall back to the traditional question rendering
