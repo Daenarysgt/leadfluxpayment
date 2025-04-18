@@ -567,6 +567,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
       : featuresAlignment === "right" 
         ? "justify-end text-right" 
         : "justify-start text-left";
+        
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useGradient && useButtonGradient
+      ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+      : isHighlighted && useButtonGradient
+        ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+        : buttonColor;
 
     return (
       <div 
@@ -623,7 +630,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
             <Button 
               className="px-4 py-4 font-medium text-sm rounded-lg shadow-md transition-all whitespace-nowrap"
               style={{ 
-                backgroundColor: buttonColor, 
+                background: buttonBg,
                 color: buttonTextColor,
                 borderRadius: `${borderRadius}px`
               }}
