@@ -20,8 +20,8 @@ import {
   LoadingRenderer,
   CartesianRenderer,
   VideoRenderer,
-  PricingRenderer,
-  GenericElementRenderer
+  GenericElementRenderer,
+  PricingRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -88,7 +88,7 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Video:
       return <VideoRenderer {...props} />;
-
+      
     case ComponentType.Pricing:
       return <PricingRenderer {...props} />;
       

@@ -1,293 +1,451 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CanvasElement } from '@/types/canvasTypes';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { AdvancedColorPicker } from './common/AdvancedColorPicker';
-import { AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { ComponentType } from "@/utils/types";
+import { PricingContent } from "@/types/canvasTypes";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DollarSign, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { ColorPicker } from "./common/ColorPicker";
 
 interface PricingConfigProps {
-  element: CanvasElement;
-  onUpdate: (updates: Partial<CanvasElement>) => void;
+  element: any;
+  onUpdate: (element: any) => void;
 }
 
-export const PricingConfig: React.FC<PricingConfigProps> = ({ element, onUpdate }) => {
-  const content = element.content || {};
-  const [activeTab, setActiveTab] = useState('conteudo');
+const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
+  const [content, setContent] = useState<PricingContent>(element.content || {
+    title: "Método Beauty",
+    subtitle: "Tráfego Pago Estratégico",
+    price: 127,
+    originalPrice: 254,
+    discount: 50,
+    currency: "R$",
+    discountLabel: "off",
+    paymentType: "single",
+    paymentPeriod: "onetime",
+    paymentLabel: "à vista",
+    buttonText: "Comprar Agora!",
+    features: [
+      "Modelo de Copy para Anúncios",
+      "Aula Exclusiva",
+      "Acesso a um Grupo VIP no WhatsApp",
+      "Acesso a todas atualizações"
+    ],
+    backgroundColor: "#ffffff",
+    textColor: "#333333",
+    accentColor: "#2563eb",
+    buttonColor: "#10b981",
+    buttonTextColor: "#ffffff",
+    borderRadius: 8,
+    boxShadow: true,
+    highlightTag: "",
+    isHighlighted: false,
+    style: "default",
+    alignment: "center",
+    navigation: {
+      type: "next",
+      stepId: "",
+      url: "",
+      openInNewTab: false
+    }
+  });
 
-  // Atualiza uma propriedade específica do conteúdo
-  const handleChange = (field: string, value: any) => {
+  // Atualizar elemento quando o content mudar
+  useEffect(() => {
     onUpdate({
-      content: {
-        ...content,
-        [field]: value
-      }
+      ...element,
+      content
+    });
+  }, [content, element, onUpdate]);
+
+  // Atualizar um valor no content
+  const updateContent = (key: string, value: any) => {
+    setContent(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Atualizar um valor aninhado
+  const updateNestedContent = (parentKey: string, key: string, value: any) => {
+    setContent(prev => {
+      const parentObj = prev[parentKey as keyof PricingContent] as Record<string, any> || {};
+      return {
+        ...prev,
+        [parentKey]: {
+          ...parentObj,
+          [key]: value
+        }
+      };
     });
   };
 
-  // Função para lidar com alterações nos valores de cores
-  const handleColorChange = (field: string, color: string) => {
-    handleChange(field, color);
+  // Adicionar um novo item à lista de features
+  const addFeature = () => {
+    setContent(prev => ({
+      ...prev,
+      features: [...(prev.features || []), "Novo recurso"]
+    }));
   };
 
-  // Função para lidar com o alinhamento
-  const handleAlignmentChange = (alignment: 'left' | 'center' | 'right') => {
-    handleChange('alignment', alignment);
+  // Remover um item da lista de features
+  const removeFeature = (index: number) => {
+    setContent(prev => ({
+      ...prev,
+      features: (prev.features || []).filter((_, i) => i !== index)
+    }));
   };
 
-  // Função para lidar com o raio de borda
-  const handleBorderRadiusChange = (value: number[]) => {
-    handleChange('borderRadius', value[0]);
+  // Atualizar um item da lista de features
+  const updateFeature = (index: number, value: string) => {
+    setContent(prev => {
+      const updatedFeatures = [...(prev.features || [])];
+      updatedFeatures[index] = value;
+      return {
+        ...prev,
+        features: updatedFeatures
+      };
+    });
   };
 
   return (
-    <div className="space-y-4 p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
+    <div className="p-4 space-y-6">
+      <Tabs defaultValue="conteudo">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
           <TabsTrigger value="estilo">Estilo</TabsTrigger>
-          <TabsTrigger value="cores">Cores</TabsTrigger>
+          <TabsTrigger value="precos">Preços</TabsTrigger>
+          <TabsTrigger value="botao">Botão</TabsTrigger>
         </TabsList>
 
-        {/* Tab Conteúdo */}
-        <TabsContent value="conteudo" className="space-y-4">
+        <TabsContent value="conteudo" className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label>Variante</Label>
-            <Select
-              value={content.variant || 'default'}
-              onValueChange={(value) => handleChange('variant', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma variante" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Padrão</SelectItem>
-                <SelectItem value="featured">Destaque</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Layout</Label>
-            <Select
-              value={content.layout || 'vertical'}
-              onValueChange={(value) => handleChange('layout', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um layout" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vertical">Vertical</SelectItem>
-                <SelectItem value="horizontal">Horizontal</SelectItem>
-                <SelectItem value="compact">Compacto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Título</Label>
+            <Label htmlFor="title">Título</Label>
             <Input
-              value={content.title || ''}
-              onChange={(e) => handleChange('title', e.target.value)}
+              id="title"
+              value={content.title || ""}
+              onChange={(e) => updateContent("title", e.target.value)}
               placeholder="Título do plano"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Preço</Label>
+            <Label htmlFor="subtitle">Subtítulo</Label>
             <Input
-              value={content.price || ''}
-              onChange={(e) => handleChange('price', e.target.value)}
-              placeholder="R$ 0,00"
+              id="subtitle"
+              value={content.subtitle || ""}
+              onChange={(e) => updateContent("subtitle", e.target.value)}
+              placeholder="Subtítulo do plano"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Descrição</Label>
-            <Input
-              value={content.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Descrição do plano"
+            <Label>Estilo do Pricing</Label>
+            <Select
+              value={content.style || "default"}
+              onValueChange={(value) => updateContent("style", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o estilo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Padrão</SelectItem>
+                <SelectItem value="minimal">Minimalista</SelectItem>
+                <SelectItem value="featured">Destaque</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Alinhamento</Label>
+            <Select
+              value={content.alignment || "center"}
+              onValueChange={(value) => updateContent("alignment", value as "left" | "center" | "right")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o alinhamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Esquerda</SelectItem>
+                <SelectItem value="center">Centro</SelectItem>
+                <SelectItem value="right">Direita</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="features">Recursos</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addFeature}
+                className="h-8 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {(content.features || []).map((feature, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                  <Input
+                    value={feature}
+                    onChange={(e) => updateFeature(index, e.target.value)}
+                    placeholder="Descrição do recurso"
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFeature(index)}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch
+              id="highlighted"
+              checked={content.isHighlighted || false}
+              onCheckedChange={(checked) => updateContent("isHighlighted", checked)}
+            />
+            <Label htmlFor="highlighted">Destacar este plano</Label>
+          </div>
+
+          {content.isHighlighted && (
+            <div className="space-y-2">
+              <Label htmlFor="highlightTag">Etiqueta de destaque</Label>
+              <Input
+                id="highlightTag"
+                value={content.highlightTag || ""}
+                onChange={(e) => updateContent("highlightTag", e.target.value)}
+                placeholder="Ex: Mais popular"
+              />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="estilo" className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="backgroundColor">Cor de fundo</Label>
+            <ColorPicker 
+              value={content.backgroundColor || "#ffffff"} 
+              onChange={(color) => updateContent("backgroundColor", color)} 
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Texto do Botão</Label>
+            <Label htmlFor="textColor">Cor do texto</Label>
+            <ColorPicker 
+              value={content.textColor || "#333333"} 
+              onChange={(color) => updateContent("textColor", color)} 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="accentColor">Cor de destaque</Label>
+            <ColorPicker 
+              value={content.accentColor || "#2563eb"} 
+              onChange={(color) => updateContent("accentColor", color)} 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="borderRadius">Arredondamento das bordas</Label>
+            <div className="flex items-center space-x-2">
+              <Slider
+                id="borderRadius"
+                min={0}
+                max={24}
+                step={1}
+                value={[content.borderRadius || 8]}
+                onValueChange={(value) => updateContent("borderRadius", value[0])}
+                className="flex-1"
+              />
+              <span className="w-12 text-center">{content.borderRadius || 8}px</span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch
+              id="boxShadow"
+              checked={content.boxShadow !== false}
+              onCheckedChange={(checked) => updateContent("boxShadow", checked)}
+            />
+            <Label htmlFor="boxShadow">Sombra</Label>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="precos" className="space-y-4 mt-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="currency">Moeda</Label>
+              <Input
+                id="currency"
+                value={content.currency || "R$"}
+                onChange={(e) => updateContent("currency", e.target.value)}
+                placeholder="R$"
+              />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="price">Preço</Label>
+              <Input
+                id="price"
+                type="number"
+                value={content.price || 0}
+                onChange={(e) => updateContent("price", parseFloat(e.target.value) || 0)}
+                placeholder="99.90"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="originalPrice">Preço original (para mostrar desconto)</Label>
             <Input
-              value={content.buttonText || ''}
-              onChange={(e) => handleChange('buttonText', e.target.value)}
+              id="originalPrice"
+              type="number"
+              value={content.originalPrice || ""}
+              onChange={(e) => updateContent("originalPrice", e.target.value ? parseFloat(e.target.value) : "")}
+              placeholder="199.90"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="discount">Desconto (%)</Label>
+              <Input
+                id="discount"
+                type="number"
+                min="0"
+                max="100"
+                value={content.discount || ""}
+                onChange={(e) => updateContent("discount", e.target.value ? parseFloat(e.target.value) : "")}
+                placeholder="50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discountLabel">Etiqueta de desconto</Label>
+              <Input
+                id="discountLabel"
+                value={content.discountLabel || "off"}
+                onChange={(e) => updateContent("discountLabel", e.target.value)}
+                placeholder="off"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="paymentLabel">Informação adicional de pagamento</Label>
+            <Input
+              id="paymentLabel"
+              value={content.paymentLabel || ""}
+              onChange={(e) => updateContent("paymentLabel", e.target.value)}
+              placeholder="Ex: à vista, por mês, etc."
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="botao" className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="buttonText">Texto do botão</Label>
+            <Input
+              id="buttonText"
+              value={content.buttonText || "Comprar Agora"}
+              onChange={(e) => updateContent("buttonText", e.target.value)}
               placeholder="Comprar Agora"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Desconto</Label>
-            <Input
-              value={content.discount || ''}
-              onChange={(e) => handleChange('discount', e.target.value)}
-              placeholder="50% OFF"
+            <Label htmlFor="buttonColor">Cor do botão</Label>
+            <ColorPicker 
+              value={content.buttonColor || "#10b981"} 
+              onChange={(color) => updateContent("buttonColor", color)} 
             />
-          </div>
-        </TabsContent>
-
-        {/* Tab Estilo */}
-        <TabsContent value="estilo" className="space-y-4">
-          <div className="space-y-2">
-            <Label>Alinhamento</Label>
-            <div className="flex border rounded-md p-1">
-              <Button
-                type="button"
-                variant={content.alignment === "left" ? "default" : "ghost"}
-                size="sm"
-                className="flex-1"
-                onClick={() => handleAlignmentChange("left")}
-              >
-                <AlignLeft className="h-4 w-4 mr-2" /> Esquerda
-              </Button>
-              <Button
-                type="button"
-                variant={!content.alignment || content.alignment === "center" ? "default" : "ghost"}
-                size="sm"
-                className="flex-1"
-                onClick={() => handleAlignmentChange("center")}
-              >
-                <AlignCenter className="h-4 w-4 mr-2" /> Centro
-              </Button>
-              <Button
-                type="button"
-                variant={content.alignment === "right" ? "default" : "ghost"}
-                size="sm"
-                className="flex-1"
-                onClick={() => handleAlignmentChange("right")}
-              >
-                <AlignRight className="h-4 w-4 mr-2" /> Direita
-              </Button>
-            </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="border-radius">Arredondamento das bordas</Label>
-              <span className="text-xs text-muted-foreground">{content.borderRadius || 8}px</span>
-            </div>
-            <Slider
-              id="border-radius"
-              min={0}
-              max={24}
-              step={1}
-              value={[content.borderRadius || 8]}
-              onValueChange={handleBorderRadiusChange}
+            <Label htmlFor="buttonTextColor">Cor do texto do botão</Label>
+            <ColorPicker 
+              value={content.buttonTextColor || "#ffffff"} 
+              onChange={(color) => updateContent("buttonTextColor", color)} 
             />
           </div>
-        </TabsContent>
 
-        {/* Tab Cores */}
-        <TabsContent value="cores" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Título</Label>
-              <AdvancedColorPicker
-                value={content.titleColor || '#000000'}
-                onChange={(color) => handleColorChange('titleColor', color)}
-                size="sm"
-              />
-            </div>
+          <Separator className="my-4" />
 
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Preço</Label>
-              <AdvancedColorPicker
-                value={content.priceColor || '#000000'}
-                onChange={(color) => handleColorChange('priceColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor da Descrição</Label>
-              <AdvancedColorPicker
-                value={content.descriptionColor || '#6B7280'}
-                onChange={(color) => handleColorChange('descriptionColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Texto das Features</Label>
-              <AdvancedColorPicker
-                value={content.featureTextColor || '#000000'}
-                onChange={(color) => handleColorChange('featureTextColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Ícone das Features</Label>
-              <AdvancedColorPicker
-                value={content.featureIconColor || '#10B981'}
-                onChange={(color) => handleColorChange('featureIconColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor da Borda</Label>
-              <AdvancedColorPicker
-                value={content.borderColor || '#E5E7EB'}
-                onChange={(color) => handleColorChange('borderColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor de Fundo</Label>
-              <AdvancedColorPicker
-                value={content.backgroundColor || '#FFFFFF'}
-                onChange={(color) => handleColorChange('backgroundColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Botão</Label>
-              <AdvancedColorPicker
-                value={content.buttonColor || '#10B981'}
-                onChange={(color) => handleColorChange('buttonColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Texto do Botão</Label>
-              <AdvancedColorPicker
-                value={content.buttonTextColor || '#FFFFFF'}
-                onChange={(color) => handleColorChange('buttonTextColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor de Fundo do Desconto</Label>
-              <AdvancedColorPicker
-                value={content.discountBgColor || '#EF4444'}
-                onChange={(color) => handleColorChange('discountBgColor', color)}
-                size="sm"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-xs">Cor do Texto do Desconto</Label>
-              <AdvancedColorPicker
-                value={content.discountTextColor || '#FFFFFF'}
-                onChange={(color) => handleColorChange('discountTextColor', color)}
-                size="sm"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label>Ação do botão</Label>
+            <Select
+              value={content.navigation?.type || "next"}
+              onValueChange={(value) => updateNestedContent("navigation", "type", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha a ação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="next">Próximo passo</SelectItem>
+                <SelectItem value="step">Ir para um passo específico</SelectItem>
+                <SelectItem value="url">Abrir URL</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {content.navigation?.type === "step" && (
+            <div className="space-y-2">
+              <Label htmlFor="stepId">ID do passo</Label>
+              <Input
+                id="stepId"
+                value={content.navigation?.stepId || ""}
+                onChange={(e) => updateNestedContent("navigation", "stepId", e.target.value)}
+                placeholder="ID do passo"
+              />
+            </div>
+          )}
+
+          {content.navigation?.type === "url" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="url">URL</Label>
+                <Input
+                  id="url"
+                  value={content.navigation?.url || ""}
+                  onChange={(e) => updateNestedContent("navigation", "url", e.target.value)}
+                  placeholder="https://exemplo.com"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="openInNewTab"
+                  checked={content.navigation?.openInNewTab || false}
+                  onCheckedChange={(checked) => updateNestedContent("navigation", "openInNewTab", checked)}
+                />
+                <Label htmlFor="openInNewTab">Abrir em nova aba</Label>
+              </div>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

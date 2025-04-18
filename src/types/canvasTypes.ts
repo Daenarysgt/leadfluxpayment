@@ -96,3 +96,35 @@ export interface ButtonContent {
   // Facebook Pixel event para rastreamento
   facebookEvent?: string;
 }
+
+export interface PricingContent {
+  title?: string;
+  subtitle?: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  currency?: string;
+  discountLabel?: string;
+  paymentType?: 'single' | 'subscription';
+  paymentPeriod?: 'monthly' | 'yearly' | 'onetime';
+  paymentLabel?: string;
+  buttonText?: string;
+  features?: string[];
+  backgroundColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  borderRadius?: number;
+  boxShadow?: boolean;
+  highlightTag?: string;
+  isHighlighted?: boolean;
+  style?: 'default' | 'minimal' | 'featured';
+  alignment?: 'left' | 'center' | 'right';
+  navigation?: {
+    type: 'next' | 'step' | 'url';
+    stepId?: string;
+    url?: string;
+    openInNewTab?: boolean;
+  };
+}

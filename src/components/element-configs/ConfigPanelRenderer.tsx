@@ -201,7 +201,7 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
           onUpdate={onUpdate}
         />
       );
-
+      
     case ComponentType.Pricing:
       return (
         <PricingConfig
