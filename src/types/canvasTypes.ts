@@ -121,6 +121,13 @@ export interface PricingContent {
   isHighlighted?: boolean;
   style?: 'default' | 'minimal' | 'featured' | 'modern' | 'card' | 'horizontal';
   alignment?: 'left' | 'center' | 'right';
+  priceAlignment?: 'left' | 'center' | 'right';
+  featuresAlignment?: 'left' | 'center' | 'right';
+  gradientStart?: string;
+  gradientEnd?: string;
+  useGradient?: boolean;
+  gradientDirection?: 'to right' | 'to bottom' | 'to bottom right' | 'to top right';
+  gradientPreset?: string;
   navigation?: {
     type: 'next' | 'step' | 'url';
     stepId?: string;

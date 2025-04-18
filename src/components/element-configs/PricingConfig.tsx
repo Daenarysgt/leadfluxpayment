@@ -14,16 +14,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { DollarSign, CheckCircle2, Plus, Trash2, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
-import { ColorPicker } from "./common/ColorPicker";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface PricingConfigProps {
   element: any;
   onUpdate: (element: any) => void;
 }
+
+// Gradientes pré-definidos
+const gradientPresets = [
+  { id: 'blue-purple', name: 'Azul para Roxo', start: '#3B82F6', end: '#8B5CF6', direction: 'to right' },
+  { id: 'green-blue', name: 'Verde para Azul', start: '#10B981', end: '#3B82F6', direction: 'to right' },
+  { id: 'pink-orange', name: 'Rosa para Laranja', start: '#EC4899', end: '#F59E0B', direction: 'to right' },
+  { id: 'indigo-cyan', name: 'Índigo para Ciano', start: '#6366F1', end: '#06B6D4', direction: 'to right' },
+  { id: 'red-pink', name: 'Vermelho para Rosa', start: '#EF4444', end: '#EC4899', direction: 'to right' },
+  { id: 'amber-orange', name: 'Âmbar para Laranja', start: '#F59E0B', end: '#F97316', direction: 'to right' },
+  { id: 'lime-emerald', name: 'Lima para Esmeralda', start: '#84CC16', end: '#10B981', direction: 'to right' },
+  { id: 'slate-gray', name: 'Cinza Elegante', start: '#475569', end: '#1E293B', direction: 'to right' },
+];
 
 const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
   const [content, setContent] = useState<PricingContent>(element.content || {
@@ -55,6 +68,12 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
     isHighlighted: false,
     style: "default",
     alignment: "center",
+    priceAlignment: "center",
+    featuresAlignment: "left",
+    useGradient: false,
+    gradientStart: "#3B82F6",
+    gradientEnd: "#8B5CF6",
+    gradientDirection: "to right",
     navigation: {
       type: "next",
       stepId: "",
@@ -162,6 +181,62 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
     });
   };
 
+  // Aplicar um gradiente predefinido
+  const applyGradientPreset = (presetId: string) => {
+    const preset = gradientPresets.find((p) => p.id === presetId);
+    if (preset) {
+      setContent(prev => ({
+        ...prev,
+        gradientStart: preset.start,
+        gradientEnd: preset.end,
+        gradientDirection: preset.direction as "to right" | "to bottom" | "to bottom right" | "to top right",
+        gradientPreset: presetId
+      }));
+    }
+  };
+
+  const renderAlignmentButtons = (
+    currentAlignment: string = "center", 
+    onChange: (value: "left" | "center" | "right") => void,
+    label: string
+  ) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex border rounded-md overflow-hidden">
+        <button
+          type="button"
+          className={cn(
+            "flex-1 p-2 flex justify-center items-center",
+            currentAlignment === "left" ? "bg-blue-100 text-blue-800" : "hover:bg-gray-100"
+          )}
+          onClick={() => onChange("left")}
+        >
+          <AlignLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "flex-1 p-2 flex justify-center items-center border-l border-r",
+            currentAlignment === "center" ? "bg-blue-100 text-blue-800" : "hover:bg-gray-100"
+          )}
+          onClick={() => onChange("center")}
+        >
+          <AlignCenter className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "flex-1 p-2 flex justify-center items-center",
+            currentAlignment === "right" ? "bg-blue-100 text-blue-800" : "hover:bg-gray-100"
+          )}
+          onClick={() => onChange("right")}
+        >
+          <AlignRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-4 space-y-6">
       <Tabs defaultValue="conteudo">
@@ -214,7 +289,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label>Alinhamento</Label>
+            <Label>Alinhamento Geral</Label>
             <Select
               value={content.alignment || "center"}
               onValueChange={(value) => updateContent("alignment", value as "left" | "center" | "right")}
@@ -291,8 +366,26 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
 
         <TabsContent value="estilo" className="space-y-4 mt-4">
           <div className="space-y-2">
+            {renderAlignmentButtons(
+              content.priceAlignment || content.alignment || "center", 
+              (value) => updateContent("priceAlignment", value),
+              "Alinhamento do Preço"
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            {renderAlignmentButtons(
+              content.featuresAlignment || "left", 
+              (value) => updateContent("featuresAlignment", value),
+              "Alinhamento dos Recursos"
+            )}
+          </div>
+          
+          <Separator className="my-4" />
+
+          <div className="space-y-2">
             <Label htmlFor="backgroundColor">Cor de fundo</Label>
-            <ColorPicker 
+            <AdvancedColorPicker 
               value={content.backgroundColor || "#ffffff"} 
               onChange={(color) => updateContent("backgroundColor", color)} 
             />
@@ -300,7 +393,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="textColor">Cor do texto</Label>
-            <ColorPicker 
+            <AdvancedColorPicker 
               value={content.textColor || "#333333"} 
               onChange={(color) => updateContent("textColor", color)} 
             />
@@ -308,11 +401,81 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="accentColor">Cor de destaque</Label>
-            <ColorPicker 
+            <AdvancedColorPicker 
               value={content.accentColor || "#2563eb"} 
               onChange={(color) => updateContent("accentColor", color)} 
             />
           </div>
+
+          <div className="flex items-center space-x-2 pt-2 pb-3">
+            <Switch
+              id="useGradient"
+              checked={content.useGradient || false}
+              onCheckedChange={(checked) => updateContent("useGradient", checked)}
+            />
+            <Label htmlFor="useGradient">Usar gradiente</Label>
+          </div>
+
+          {content.useGradient && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gradientStart">Cor inicial</Label>
+                  <AdvancedColorPicker 
+                    value={content.gradientStart || "#3B82F6"} 
+                    onChange={(color) => updateContent("gradientStart", color)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gradientEnd">Cor final</Label>
+                  <AdvancedColorPicker 
+                    value={content.gradientEnd || "#8B5CF6"} 
+                    onChange={(color) => updateContent("gradientEnd", color)} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Direção do gradiente</Label>
+                <Select
+                  value={content.gradientDirection || "to right"}
+                  onValueChange={(value) => updateContent("gradientDirection", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Escolha a direção" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="to right">Da esquerda para direita</SelectItem>
+                    <SelectItem value="to bottom">De cima para baixo</SelectItem>
+                    <SelectItem value="to bottom right">Diagonal (↘)</SelectItem>
+                    <SelectItem value="to top right">Diagonal (↗)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Presets de gradiente</Label>
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  {gradientPresets.map((preset) => (
+                    <div 
+                      key={preset.id}
+                      className={cn(
+                        "h-10 rounded cursor-pointer border hover:opacity-80 transition-opacity",
+                        content.gradientPreset === preset.id ? "ring-2 ring-blue-500" : ""
+                      )}
+                      style={{ 
+                        background: `linear-gradient(${preset.direction}, ${preset.start}, ${preset.end})` 
+                      }}
+                      onClick={() => applyGradientPreset(preset.id)}
+                      title={preset.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <Separator className="my-4" />
 
           <div className="space-y-2">
             <Label htmlFor="borderRadius">Arredondamento das bordas</Label>
@@ -424,7 +587,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="buttonColor">Cor do botão</Label>
-            <ColorPicker 
+            <AdvancedColorPicker 
               value={content.buttonColor || "#10b981"} 
               onChange={(color) => updateContent("buttonColor", color)} 
             />
@@ -432,7 +595,7 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="buttonTextColor">Cor do texto do botão</Label>
-            <ColorPicker 
+            <AdvancedColorPicker 
               value={content.buttonTextColor || "#ffffff"} 
               onChange={(color) => updateContent("buttonTextColor", color)} 
             />

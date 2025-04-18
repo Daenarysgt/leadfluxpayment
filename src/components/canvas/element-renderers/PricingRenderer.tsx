@@ -33,7 +33,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
     highlightTag = "",
     isHighlighted = false,
     style = "default",
-    alignment = "center"
+    alignment = "center",
+    priceAlignment = "center",
+    featuresAlignment = "left",
+    useGradient = false,
+    gradientStart = "#3B82F6",
+    gradientEnd = "#8B5CF6",
+    gradientDirection = "to right"
   } = content || {};
 
   const handleContentUpdate = useCallback(
@@ -63,8 +69,10 @@ const PricingRenderer = (props: ElementRendererProps) => {
       large: "text-5xl",
     };
     
+    const actualAlignment = priceAlignment || alignment;
+    
     return (
-      <div className={`flex items-end ${alignment === "center" ? "justify-center" : ""}`}>
+      <div className={`flex items-end ${actualAlignment === "center" ? "justify-center" : actualAlignment === "right" ? "justify-end" : "justify-start"}`}>
         <span className="text-lg mr-1 font-medium">{currency}</span>
         <span className={`${sizeClasses[size as keyof typeof sizeClasses]} font-bold`}>
           {formatPrice(price)}
@@ -132,11 +140,12 @@ const PricingRenderer = (props: ElementRendererProps) => {
     };
     
     const selectedVariant = variants[variant as keyof typeof variants] || variants.default;
+    const actualAlignment = featuresAlignment || (variant === "horizontal" ? "left" : alignment);
 
     return (
-      <ul className={selectedVariant.container}>
+      <ul className={`${selectedVariant.container} ${actualAlignment === "center" ? "text-center" : actualAlignment === "right" ? "text-right" : "text-left"}`}>
         {features.map((feature, index) => (
-          <li key={index} className={selectedVariant.item}>
+          <li key={index} className={`${selectedVariant.item} ${actualAlignment === "center" ? "justify-center" : actualAlignment === "right" ? "justify-end" : ""}`}>
             {selectedVariant.icon}
             <span className="text-sm">{feature}</span>
           </li>
@@ -147,6 +156,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Estilo padrão modernizado
   const renderDefaultStyle = () => {
+    // Determinar se deve usar gradiente
+    const bgStyle = useGradient 
+      ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
+      : { backgroundColor };
+
     return (
       <div 
         className={cn(
@@ -162,7 +176,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
           }
         )}
         style={{ 
-          backgroundColor,
+          ...bgStyle,
           color: textColor,
           borderRadius: `${borderRadius}px`
         }}
@@ -209,6 +223,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Novo estilo moderno
   const renderModernStyle = () => {
+    // Determinar se deve usar gradiente
+    const bgStyle = useGradient 
+      ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
+      : { backgroundColor };
+
     return (
       <div 
         className={cn(
@@ -222,7 +241,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
           }
         )}
         style={{ 
-          backgroundColor,
+          ...bgStyle,
           color: textColor,
           borderRadius: `${borderRadius}px`
         }}
@@ -258,7 +277,9 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <Button 
             className="w-full py-6 font-semibold text-base rounded-xl transition-all duration-300 hover:opacity-90"
             style={{ 
-              background: `linear-gradient(90deg, ${accentColor}, ${buttonColor})`,
+              background: useGradient
+                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                : `linear-gradient(90deg, ${accentColor}, ${buttonColor})`,
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
@@ -274,6 +295,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Estilo card
   const renderCardStyle = () => {
+    // Determinar se deve usar gradiente
+    const bgStyle = useGradient 
+      ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
+      : { backgroundColor };
+
     return (
       <div 
         className={cn(
@@ -289,7 +315,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
           }
         )}
         style={{ 
-          backgroundColor,
+          ...bgStyle,
           color: textColor,
           borderRadius: `${borderRadius}px`
         }}
@@ -327,7 +353,9 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <Button 
             className="w-full py-5 mt-2 font-medium text-base rounded-lg shadow-sm transition-transform hover:translate-y-[-2px]"
             style={{ 
-              backgroundColor: buttonColor, 
+              background: useGradient
+                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                : buttonColor, 
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
@@ -343,6 +371,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Estilo minimalista aprimorado
   const renderMinimalStyle = () => {
+    // Determinar se deve usar gradiente no fundo ou manter o degradê do isHighlighted
+    const bgStyle = useGradient
+      ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` }
+      : isHighlighted 
+        ? { background: "linear-gradient(to bottom, #f9fafb, #ffffff)" }
+        : { backgroundColor };
+
     return (
       <div 
         className={cn(
@@ -352,14 +387,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
             "border": true,
             "border-gray-200": !isHighlighted,
             "border-blue-300": isHighlighted,
-            "bg-gradient-to-b from-gray-50 to-white": isHighlighted,
             "text-left": alignment === "left",
             "text-center": alignment === "center",
             "text-right": alignment === "right"
           }
         )}
         style={{ 
-          backgroundColor: isHighlighted ? undefined : backgroundColor,
+          ...bgStyle,
           color: textColor,
           borderRadius: `${borderRadius}px`
         }}
@@ -393,7 +427,9 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 color: buttonColor,
                 borderRadius: `${borderRadius}px`
               } : {
-                backgroundColor: buttonColor,
+                background: useGradient
+                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                  : buttonColor,
                 color: buttonTextColor,
                 borderRadius: `${borderRadius}px`
               }}
@@ -417,7 +453,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
             <div
               className="px-4 py-1 rounded-full text-white text-xs font-bold shadow-lg"
               style={{ 
-                background: `linear-gradient(90deg, ${accentColor}, ${buttonColor})`,
+                background: useGradient 
+                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                  : isHighlighted 
+                    ? `linear-gradient(135deg, ${accentColor}dd, ${accentColor})`
+                    : accentColor
               }}
             >
               {highlightTag}
@@ -444,9 +484,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <div 
             className="p-6"
             style={{ 
-              background: isHighlighted 
-                ? `linear-gradient(135deg, ${accentColor}dd, ${accentColor})`
-                : accentColor
+              background: useGradient 
+                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                : isHighlighted 
+                  ? `linear-gradient(135deg, ${accentColor}dd, ${accentColor})`
+                  : accentColor
             }}
           >
             <h3 className="text-2xl font-bold text-white">{title}</h3>
@@ -479,9 +521,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
               <Button 
                 className="w-full py-6 shadow-lg transition-transform hover:translate-y-[-2px]" 
                 style={{ 
-                  background: isHighlighted 
-                    ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
-                    : buttonColor, 
+                  background: useGradient
+                    ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                    : isHighlighted 
+                      ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+                      : buttonColor, 
                   color: buttonTextColor,
                   borderRadius: `${borderRadius}px`
                 }}
@@ -497,6 +541,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Novo estilo horizontal
   const renderHorizontalStyle = () => {
+    // Determinar se deve usar gradiente no fundo ou manter o degradê do isHighlighted
+    const bgStyle = useGradient
+      ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` }
+      : isHighlighted 
+        ? { background: "linear-gradient(to right, #fff7ed, #ffffff)" }
+        : { backgroundColor };
+
     return (
       <div 
         className={cn(
@@ -506,12 +557,11 @@ const PricingRenderer = (props: ElementRendererProps) => {
             "border": true,
             "border-gray-200": !isHighlighted,
             "border-amber-300": isHighlighted,
-            "bg-gradient-to-r from-amber-50 to-white": isHighlighted,
             "text-left": true
           }
         )}
         style={{ 
-          backgroundColor: isHighlighted ? undefined : backgroundColor,
+          ...bgStyle,
           color: textColor,
           borderRadius: `${borderRadius}px`
         }}
@@ -543,7 +593,9 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <Button 
             className="px-8 py-6 font-medium text-base rounded-lg shadow-md transition-all hover:shadow-lg"
             style={{ 
-              backgroundColor: buttonColor, 
+              background: useGradient
+                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                : buttonColor, 
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
