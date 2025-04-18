@@ -94,7 +94,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
     };
     
     return (
-      <div className="flex items-center gap-2 my-2">
+      <div className="flex items-center gap-2 my-2 flex-wrap">
         {originalPrice && (
           <span className="text-gray-500 line-through text-sm">
             {currency} {formatPrice(originalPrice)}
@@ -214,18 +214,15 @@ const PricingRenderer = (props: ElementRendererProps) => {
           {title && <h3 className="text-2xl font-bold mb-2">{title}</h3>}
           {subtitle && <p className="text-sm opacity-80 mb-4">{subtitle}</p>}
           
-          <div className="mt-4">
-            <div className={priceAlignClass}>
-              {renderPrice("large")}
-            </div>
-            <div className={priceAlignClass}>
-              <div className="flex items-center gap-3">
-                {renderDiscount("default")}
-                
-                {paymentLabel && (
-                  <div className="text-sm text-gray-500">{paymentLabel}</div>
-                )}
-              </div>
+          <div className={`mt-4 flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
+            {renderPrice("large")}
+            
+            <div className="flex items-center gap-3">
+              {renderDiscount("default")}
+              
+              {paymentLabel && (
+                <div className="text-sm text-gray-500">{paymentLabel}</div>
+              )}
             </div>
           </div>
           
@@ -302,21 +299,19 @@ const PricingRenderer = (props: ElementRendererProps) => {
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
           </div>
           
-          <div className={priceAlignClass}>
+          <div className={`flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"} mb-8`}>
             <div className="flex items-center mb-2">
               <span className="text-2xl font-semibold mr-2">{currency}</span>
               <span className="text-5xl font-bold" style={{ color: accentColor }}>
                 {formatPrice(price)}
               </span>
             </div>
-          </div>
-          
-          <div className={priceAlignClass}>
+            
             <div className="flex items-center gap-3">
               {renderDiscount("modern")}
               
               {paymentLabel && (
-                <div className="text-sm text-gray-500 mt-1 mb-8">{paymentLabel}</div>
+                <div className="text-sm text-gray-500">{paymentLabel}</div>
               )}
             </div>
           </div>
@@ -401,18 +396,16 @@ const PricingRenderer = (props: ElementRendererProps) => {
             {isHighlighted && <Award className="h-8 w-8" style={{ color: accentColor }} />}
           </div>
           
-          <div className={`mt-6 mb-4 ${priceAlignClass}`}>
-            <div>
-              <div className="flex items-baseline">
-                <span className="text-4xl font-extrabold">{currency} {formatPrice(price)}</span>
-                {paymentLabel && (
-                  <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-3">
-                {renderDiscount("card")}
-              </div>
+          <div className={`mt-6 mb-4 flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
+            <div className="flex items-baseline">
+              <span className="text-4xl font-extrabold">{currency} {formatPrice(price)}</span>
+              {paymentLabel && (
+                <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {renderDiscount("card")}
             </div>
           </div>
           
@@ -435,7 +428,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Estilo minimalista aprimorado
   const renderMinimalStyle = () => {
-    // Determinar se deve usar gradiente no fundo ou manter o degradê do isHighlighted
+    // Determinar se deve usar gradiente no fundo
     const bgStyle = useGradient
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` }
       : { backgroundColor };
@@ -480,14 +473,15 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <div className={`flex items-center gap-2 ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"}`}>
             {title && <h3 className="text-lg font-medium">{title}</h3>}
             {isHighlighted && highlightTag && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+              <span className="px-2 py-1 text-xs rounded-full"
+                style={{ backgroundColor: accentColor, color: "#ffffff" }}>
                 {highlightTag}
               </span>
             )}
           </div>
           
-          <div className={`flex ${priceAlignClass}`}>
-            <div>
+          <div className={`flex ${priceAlignment === "center" ? "justify-center" : priceAlignment === "right" ? "justify-end" : "justify-start"}`}>
+            <div className={`flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
               <div className="flex items-baseline">
                 <span className="text-lg mr-1">{currency}</span>
                 <span className="text-4xl font-bold">{formatPrice(price)}</span>
@@ -584,17 +578,19 @@ const PricingRenderer = (props: ElementRendererProps) => {
             }}
           >
             <div className="mb-6">
-              <div className={`flex items-center ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"} mb-1`}>
-                <span className="text-xl mr-1">{currency}</span>
-                <span className="text-5xl font-bold">{formatPrice(price)}</span>
-              </div>
-              
-              <div className={`flex items-center ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"} gap-3`}>
-                {renderDiscount("featured")}
+              <div className={`flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
+                <div className="flex items-center mb-1">
+                  <span className="text-xl mr-1">{currency}</span>
+                  <span className="text-5xl font-bold">{formatPrice(price)}</span>
+                </div>
                 
-                {paymentLabel && (
-                  <div className="text-sm text-gray-500">{paymentLabel}</div>
-                )}
+                <div className="flex items-center gap-3">
+                  {renderDiscount("featured")}
+                  
+                  {paymentLabel && (
+                    <div className="text-sm text-gray-500">{paymentLabel}</div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -679,15 +675,15 @@ const PricingRenderer = (props: ElementRendererProps) => {
             </div>
             {subtitle && <p className="text-xs text-gray-600 line-clamp-2">{subtitle}</p>}
             
-            <div className="space-y-1">
-              <div className={`flex items-baseline flex-wrap ${priceAlignment === "center" ? "justify-center" : priceAlignment === "right" ? "justify-end" : "justify-start"}`}>
+            <div className={`flex flex-col ${priceAlignment === "center" ? "items-center" : priceAlignment === "right" ? "items-end" : "items-start"}`}>
+              <div className="flex items-baseline flex-wrap">
                 <span className="text-base font-medium mr-1">{currency}</span>
                 <span className="text-2xl font-bold">{formatPrice(price)}</span>
                 {paymentLabel && (
                   <span className="text-xs text-gray-500 ml-1">/{paymentLabel}</span>
                 )}
               </div>
-              <div className={priceAlignClass}>
+              <div className="flex items-center gap-3">
                 {renderDiscount("horizontal")}
               </div>
             </div>
