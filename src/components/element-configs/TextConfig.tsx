@@ -15,13 +15,34 @@ import {
   Paintbrush,
   ArrowUp,
   ArrowDown,
-  Highlighter
+  Highlighter,
+  Type
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+
+// Lista de fontes disponíveis
+const FONT_OPTIONS = [
+  { value: "Inter", label: "Inter" },
+  { value: "Arial", label: "Arial" },
+  { value: "Poppins", label: "Poppins" },
+  { value: "Helvetica", label: "Helvetica" },
+  { value: "Roboto", label: "Roboto" },
+  { value: "Montserrat", label: "Montserrat" },
+  { value: "Open Sans", label: "Open Sans" },
+  { value: "Lato", label: "Lato" },
+  { value: "Times New Roman", label: "Times New Roman" },
+  { value: "Georgia", label: "Georgia" },
+  { value: "Verdana", label: "Verdana" },
+  { value: "Tahoma", label: "Tahoma" },
+  { value: "Courier New", label: "Courier New" },
+  { value: "Trebuchet MS", label: "Trebuchet MS" },
+  { value: "Segoe UI", label: "Segoe UI" }
+];
 
 interface TextConfigProps {
   element: CanvasElement;
@@ -33,6 +54,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   // Estado para armazenar conteúdo e estilos
   const [fontSize, setFontSize] = useState(element.content?.fontSize || 20);
   const [fontColor, setFontColor] = useState(element.content?.fontColor || "#000000");
+  const [fontFamily, setFontFamily] = useState(element.content?.fontFamily || "Inter");
   const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
   const [currentContent, setCurrentContent] = useState<string>(""); // Controle do conteúdo atual
   const [isInitialized, setIsInitialized] = useState(false);
@@ -79,6 +101,13 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
       forceTransparentBackground();
     }
   }, [element.id, isInitialized, highlightColor]);
+
+  // Aplicar a família de fonte ao editor quando ela mudar
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.style.fontFamily = fontFamily;
+    }
+  }, [fontFamily]);
 
   // Sincronizar o contentBufferRef com qualquer mudança nos dados do elemento
   useEffect(() => {
@@ -141,7 +170,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
   };
 
   // Função para atualizar o elemento com o conteúdo atual e estilos
-  const commitUpdate = (options: { immediate?: boolean, styleOnly?: boolean } = {}) => {
+  const commitUpdate = (options: { immediate?: boolean, styleOnly?: boolean, extraStyles?: Record<string, any> } = {}) => {
     let content: string | null;
     
     if (options.styleOnly) {
@@ -174,7 +203,9 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         formattedText: content,
         fontSize,
         fontColor,
-        marginTop
+        fontFamily,
+        marginTop,
+        ...(options.extraStyles || {})
       }
     };
     
@@ -341,6 +372,37 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     commitUpdate({ styleOnly: true, immediate: true });
   };
 
+  // Manipulador para mudanças na família de fonte
+  const handleFontFamilyChange = (value: string) => {
+    // Capturar o conteúdo atual antes de mudar a fonte
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Atualizar a fonte no estado local
+    setFontFamily(value);
+    
+    // Aplicar a fonte no editor para visualização imediata
+    if (editorRef.current) {
+      editorRef.current.style.fontFamily = value;
+    }
+    
+    // Enviar atualização com o conteúdo preservado
+    commitUpdate({ 
+      styleOnly: true, 
+      immediate: true,
+      extraStyles: { fontFamily: value }
+    });
+    
+    // Adicionar um toast para confirmar a mudança
+    toast({
+      title: "Fonte atualizada",
+      description: `Fonte alterada para ${value}`,
+      duration: 2000
+    });
+  };
+
   const colorOptions = [
     "#000000", "#434343", "#666666", "#999999", "#b7b7b7", "#cccccc", "#d9d9d9", "#efefef", "#f3f3f3", "#ffffff",
     "#980000", "#ff0000", "#ff9900", "#ffff00", "#00ff00", "#00ffff", "#4a86e8", "#0000ff", "#9900ff", "#ff00ff",
@@ -486,6 +548,35 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
         </TabsContent>
         
         <TabsContent value="style" className="space-y-6 pt-4">
+          {/* Seletor de família de fonte */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="font-family">Família de Fonte</Label>
+              <span className="text-sm text-muted-foreground font-medium" style={{ fontFamily }}>
+                {fontFamily}
+              </span>
+            </div>
+            <Select 
+              value={fontFamily}
+              onValueChange={handleFontFamilyChange}
+            >
+              <SelectTrigger id="font-family" className="w-full">
+                <SelectValue placeholder="Selecione uma fonte" />
+              </SelectTrigger>
+              <SelectContent>
+                {FONT_OPTIONS.map((font) => (
+                  <SelectItem 
+                    key={font.value} 
+                    value={font.value}
+                    style={{ fontFamily: font.value }}
+                  >
+                    {font.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label htmlFor="font-size">Tamanho da fonte</Label>

@@ -29,7 +29,8 @@ const TextRenderer = (props: ElementRendererProps) => {
             className="prose max-w-none text-content"
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-              color: element.content?.fontColor
+              color: element.content?.fontColor,
+              fontFamily: element.content?.fontFamily || 'Inter'
             }}
             dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
           />
@@ -44,7 +45,8 @@ const TextRenderer = (props: ElementRendererProps) => {
           className="text-xl font-semibold text-center"
           style={{
             fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-            color: element.content?.fontColor
+            color: element.content?.fontColor,
+            fontFamily: element.content?.fontFamily || 'Inter'
           }}
         >
           {element.content?.title || "Título aqui"}
@@ -54,7 +56,8 @@ const TextRenderer = (props: ElementRendererProps) => {
             className="text-gray-600 text-center mt-2"
             style={{
               fontSize: element.content?.fontSize ? `${element.content.fontSize - 4}px` : undefined,
-              color: element.content?.fontColor
+              color: element.content?.fontColor,
+              fontFamily: element.content?.fontFamily || 'Inter'
             }}
           >
             {element.content.description}
