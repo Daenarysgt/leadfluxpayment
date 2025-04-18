@@ -57,6 +57,9 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   const titleAlignment = content?.style?.titleAlignment || "center";
   const primaryColor = content?.style?.primaryColor || "#8B5CF6";
   const marginTop = content?.style?.marginTop;
+  const borderRadius = content?.style?.borderRadius || 4;
+  const textColor = content?.style?.textColor || "#000000";
+  const placeholderColor = content?.style?.placeholderColor || "#71717A";
   
   const handleChange = (fieldId: string, value: string) => {
     setFormValues(prev => ({
@@ -240,11 +243,18 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
   };
 
+  // Estilo personalizado para os campos de entrada
+  const inputStyle = {
+    borderRadius: `${borderRadius}px`,
+    color: textColor,
+    "--placeholder-color": placeholderColor
+  } as React.CSSProperties;
+
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4 w-full" style={containerStyle}>
         {(title || description) && (
-          <div className={cn("mb-4", `text-${titleAlignment}`)}>
+          <div className={cn("mb-4", `text-${titleAlignment}`)} style={{ color: textColor }}>
             {title && <h3 className="text-lg font-medium">{title}</h3>}
             {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
           </div>
@@ -259,7 +269,8 @@ const CaptureRenderer = (props: ElementRendererProps) => {
                 placeholder={field.placeholder}
                 value={formValues[field.id] || ''}
                 onChange={(e) => handleChange(field.id, e.target.value)}
-                className="w-full"
+                className="w-full [&::placeholder]:text-[var(--placeholder-color)]"
+                style={inputStyle}
                 required
               />
             ))}
@@ -270,6 +281,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
                 style={{ 
                   backgroundColor: primaryColor,
                   borderColor: primaryColor,
+                  borderRadius: `${borderRadius}px`
                 }}
               >
                 {buttonText}
@@ -277,7 +289,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
             )}
           </form>
         ) : (
-          <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="flex flex-col items-center justify-center p-6 text-center" style={{ color: textColor }}>
             <CheckCircle className="text-green-500 h-12 w-12 mb-2" />
             <p className="font-medium">{successMessage}</p>
           </div>

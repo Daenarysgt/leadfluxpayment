@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 
 interface CaptureConfigProps {
   element: CanvasElement;
@@ -361,6 +362,47 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
               value={[marginTop]}
               onValueChange={handleMarginTopChange}
             />
+          </div>
+          
+          {/* Arredondamento dos campos */}
+          <div className="space-y-2">
+            <ConfigLabel htmlFor="border-radius">Arredondamento dos campos</ConfigLabel>
+            <div className="flex items-center justify-between">
+              <Slider
+                id="border-radius"
+                min={0}
+                max={20}
+                step={1}
+                value={[style.borderRadius || 4]}
+                onValueChange={(value) => handleStyleChange('borderRadius', value[0])}
+                className="flex-1 mr-4"
+              />
+              <span className="text-sm text-muted-foreground">{style.borderRadius || 4}px</span>
+            </div>
+          </div>
+          
+          {/* Cor do texto */}
+          <div className="space-y-2">
+            <ConfigLabel>Cor do texto</ConfigLabel>
+            <AdvancedColorPicker 
+              value={style.textColor || '#000000'} 
+              onChange={(color) => handleStyleChange('textColor', color)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Esta cor será aplicada ao texto dos campos e títulos
+            </p>
+          </div>
+          
+          {/* Cor do placeholder */}
+          <div className="space-y-2">
+            <ConfigLabel>Cor do placeholder</ConfigLabel>
+            <AdvancedColorPicker 
+              value={style.placeholderColor || '#71717A'} 
+              onChange={(color) => handleStyleChange('placeholderColor', color)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Esta cor será aplicada ao texto do placeholder nos campos
+            </p>
           </div>
         </TabsContent>
         
