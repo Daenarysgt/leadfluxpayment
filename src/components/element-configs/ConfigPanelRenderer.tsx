@@ -18,6 +18,7 @@ import LoadingConfig from "./LoadingConfig";
 import CartesianConfig from "./CartesianConfig";
 import RatingConfig from "./RatingConfig";
 import VideoConfig from "./VideoConfig";
+import SpacerConfig from "./SpacerConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -185,6 +186,15 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     case ComponentType.Video:
       return (
         <VideoConfig
+          key={stableKey}
+          element={element}
+          onUpdate={onUpdate}
+        />
+      );
+      
+    case ComponentType.Spacer:
+      return (
+        <SpacerConfig
           key={stableKey}
           element={element}
           onUpdate={onUpdate}
