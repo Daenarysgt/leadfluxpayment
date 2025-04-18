@@ -1,7 +1,9 @@
+import * as React from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import * as ProgressPrimitive from "@radix-ui/react-progress";
 
 const LevelRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -34,6 +36,29 @@ const LevelRenderer = (props: ElementRendererProps) => {
   const labelsColor = style.labelsColor || "#6B7280";
   const percentageColor = style.percentageColor || primaryColor;
 
+  // Custom Progress component that accepts color
+  const CustomProgress = React.forwardRef<
+    React.ElementRef<typeof ProgressPrimitive.Root>,
+    React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & { progressColor?: string }
+  >(({ className, value, progressColor, ...props }, ref) => (
+    <ProgressPrimitive.Root
+      ref={ref}
+      className={cn(
+        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+        className
+      )}
+      {...props}
+    >
+      <ProgressPrimitive.Indicator
+        className="h-full w-full flex-1 transition-all"
+        style={{ 
+          transform: `translateX(-${100 - (value || 0)}%)`,
+          backgroundColor: progressColor
+        }}
+      />
+    </ProgressPrimitive.Root>
+  ));
+
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4 w-full">
@@ -46,9 +71,7 @@ const LevelRenderer = (props: ElementRendererProps) => {
         )}
         
         <div className="mt-2 mb-4">
-          <Progress value={percentage} className="h-3" style={{ 
-            "--progress-background": primaryColor 
-          } as React.CSSProperties} />
+          <CustomProgress value={percentage} className="h-3" progressColor={primaryColor} />
         </div>
         
         {showLabels && (
