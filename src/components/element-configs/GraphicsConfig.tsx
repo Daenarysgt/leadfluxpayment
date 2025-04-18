@@ -297,7 +297,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
             </div>
             
             {chartData.length > 0 ? (
-              <ScrollArea className="h-[180px] border rounded-md">
+              <ScrollArea className="h-[350px] border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
