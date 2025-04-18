@@ -19,6 +19,9 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
   // Estado para o carrossel
   const [activeIndex, setActiveIndex] = useState(0);
   
+  // Obter a margem superior definida no estilo
+  const marginTop = content?.style?.marginTop;
+  
   // Efeito para avançar automaticamente o carrossel a cada 5 segundos
   useEffect(() => {
     if (displayStyle === 'carousel' && testimonials.length > 1) {
@@ -131,9 +134,14 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
     );
   };
 
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
+  };
+
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4">
+      <div className="p-4" style={containerStyle}>
         {content?.title && (
           <h2 className={cn(
             "text-xl font-semibold mb-4", 

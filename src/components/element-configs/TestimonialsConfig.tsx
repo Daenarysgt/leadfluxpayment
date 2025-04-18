@@ -3,11 +3,12 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Star, Upload } from "lucide-react";
+import { Plus, Trash2, Star, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
+import { Slider } from "@/components/ui/slider";
 
 interface TestimonialsConfigProps {
   element: any;
@@ -19,6 +20,7 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
   const [activeTestimonial, setActiveTestimonial] = useState(
     element.content?.testimonials?.[0]?.id || ""
   );
+  const [marginTop, setMarginTop] = useState(element.content?.style?.marginTop || 0);
 
   const handleTitleChange = (title: string) => {
     onUpdate({
@@ -178,6 +180,22 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
     };
     
     reader.readAsDataURL(file);
+  };
+
+  const handleMarginTopChange = (value: number[]) => {
+    // Atualizar a margem superior no estado local
+    setMarginTop(value[0]);
+    
+    // Atualizar o elemento
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          marginTop: value[0]
+        }
+      }
+    });
   };
 
   // Initialize testimonials array if it doesn't exist
@@ -579,6 +597,44 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
                 </div>
               </div>
             </div>
+          </div>
+          
+          <Separator className="my-2" />
+          
+          {/* Controle de Margem Superior */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="margin-top">Margem superior</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{marginTop}px</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop - 5])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop + 5])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="margin-top"
+              min={-100}
+              max={100}
+              step={1}
+              value={[marginTop]}
+              onValueChange={handleMarginTopChange}
+            />
           </div>
         </div>
       </div>
