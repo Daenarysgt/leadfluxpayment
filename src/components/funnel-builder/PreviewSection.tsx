@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
-import FunnelPreview from "@/components/funnel-preview";
+import FunnelPreview from "@/components/FunnelPreview";
 import { useStore } from "@/utils/store";
 
 const PreviewSection = () => {

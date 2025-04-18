@@ -1,6 +1,5 @@
-
 import React from 'react';
-import FunnelPreview from "@/components/funnel-preview"; // Updated import path
+import FunnelPreview from "@/components/FunnelPreview"; // Importação direta do componente principal
 import { useStore } from "@/utils/store";
 
 const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
