@@ -78,12 +78,12 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   };
 
   const incrementMarginTop = () => {
-    const newMarginTop = marginTop + 1;
+    const newMarginTop = marginTop + 5;
     handleStyleUpdate({ marginTop: newMarginTop });
   };
 
   const decrementMarginTop = () => {
-    const newMarginTop = Math.max(0, marginTop - 1);
+    const newMarginTop = marginTop - 5;
     handleStyleUpdate({ marginTop: newMarginTop });
   };
 
@@ -133,7 +133,7 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
             </div>
             <Slider
               id="margin-top"
-              min={0}
+              min={-100}
               max={100}
               step={1}
               value={[marginTop]}

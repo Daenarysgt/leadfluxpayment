@@ -48,6 +48,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const animationType = content.animationType || "none"; // Novo campo para tipo de animação
   const delayEnabled = content.delayEnabled || false;
   const delayTime = content.delayTime || 0;
+  const marginTop = content.marginTop || 0;
   const navigation = content.navigation || { type: "next" };
   const facebookEvent = content.facebookEvent || "none"; // Evento do Facebook Pixel
   const facebookCustomEventName = content.facebookCustomEventName || ""; // Nome do evento personalizado
@@ -265,7 +266,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
 
   return (
     <BaseElementRenderer {...props}>
-      <div className={cn("w-full flex", alignmentClass)}>
+      <div className={cn("w-full flex", alignmentClass)} style={{ marginTop: `${marginTop}px` }}>
         <Button
           className={buttonClass}
           style={{
