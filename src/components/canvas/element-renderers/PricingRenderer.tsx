@@ -549,59 +549,73 @@ const PricingRenderer = (props: ElementRendererProps) => {
         : { backgroundColor };
 
     return (
-      <div 
-        className={cn(
-          "rounded-xl p-6 transition-all w-full mx-auto flex flex-col md:flex-row md:items-center gap-6", 
-          {
-            "shadow-lg": boxShadow,
-            "border": true,
-            "border-gray-200": !isHighlighted,
-            "border-amber-300": isHighlighted,
-            "text-left": true
-          }
-        )}
-        style={{ 
-          ...bgStyle,
-          color: textColor,
-          borderRadius: `${borderRadius}px`
-        }}
-      >
-        <div className="md:w-1/3 space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            {isHighlighted && <Shield className="h-5 w-5 text-amber-500" />}
-            <h3 className="text-xl font-bold">{title}</h3>
-          </div>
-          {subtitle && <p className="text-sm text-gray-600 pb-2">{subtitle}</p>}
-          
-          <div className="space-y-1">
-            <div className="flex items-baseline">
-              <span className="text-lg font-medium mr-1">{currency}</span>
-              <span className="text-3xl font-bold">{formatPrice(price)}</span>
-              {paymentLabel && (
-                <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
-              )}
-            </div>
-            {renderDiscount("horizontal")}
-          </div>
-        </div>
-        
-        <div className="md:w-1/3">
-          {renderFeatures("horizontal")}
-        </div>
-        
-        <div className="md:w-1/3 md:text-right flex justify-start md:justify-end">
-          <Button 
-            className="px-8 py-6 font-medium text-base rounded-lg shadow-md transition-all hover:shadow-lg"
+      <div className="w-full overflow-hidden">
+        {/* Container principal com scroll horizontal em telas pequenas */}
+        <div className="overflow-x-auto pb-2">
+          <div 
+            className={cn(
+              "rounded-xl p-4 transition-all w-full mx-auto flex flex-row items-center gap-4 min-w-[600px]", 
+              {
+                "shadow-lg": boxShadow,
+                "border": true,
+                "border-gray-200": !isHighlighted,
+                "border-amber-300": isHighlighted,
+                "text-left": true
+              }
+            )}
             style={{ 
-              background: useGradient
-                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                : buttonColor, 
-              color: buttonTextColor,
+              ...bgStyle,
+              color: textColor,
               borderRadius: `${borderRadius}px`
             }}
           >
-            {buttonText}
-          </Button>
+            <div className="w-1/3 space-y-2 pr-2">
+              <div className="flex items-center gap-2 mb-2">
+                {isHighlighted && <Shield className="h-5 w-5 text-amber-500 flex-shrink-0" />}
+                <h3 className="text-lg sm:text-xl font-bold truncate">{title}</h3>
+              </div>
+              {subtitle && <p className="text-xs sm:text-sm text-gray-600 pb-2 line-clamp-2">{subtitle}</p>}
+              
+              <div className="space-y-1">
+                <div className="flex items-baseline flex-wrap">
+                  <span className="text-base sm:text-lg font-medium mr-1">{currency}</span>
+                  <span className="text-2xl sm:text-3xl font-bold">{formatPrice(price)}</span>
+                  {paymentLabel && (
+                    <span className="text-xs sm:text-sm text-gray-500 ml-2">/{paymentLabel}</span>
+                  )}
+                </div>
+                {renderDiscount("horizontal")}
+              </div>
+            </div>
+            
+            <div className="w-1/3 max-h-[150px] overflow-y-auto px-2">
+              {renderFeatures("horizontal")}
+            </div>
+            
+            <div className="w-1/3 text-right flex justify-end pl-2">
+              <Button 
+                className="px-4 sm:px-8 py-4 sm:py-6 font-medium text-sm sm:text-base rounded-lg shadow-md transition-all hover:shadow-lg whitespace-nowrap"
+                style={{ 
+                  background: useGradient
+                    ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+                    : buttonColor, 
+                  color: buttonTextColor,
+                  borderRadius: `${borderRadius}px`
+                }}
+              >
+                {buttonText}
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Indicador de rolagem para telas pequenas */}
+        <div className="mt-1 hidden sm:hidden mx-auto w-fit">
+          <div className="flex gap-1 items-center justify-center">
+            <div className="w-4 h-1 rounded-full bg-gray-300"></div>
+            <div className="w-5 h-1 rounded-full bg-gray-400"></div>
+            <div className="w-4 h-1 rounded-full bg-gray-300"></div>
+          </div>
         </div>
       </div>
     );
