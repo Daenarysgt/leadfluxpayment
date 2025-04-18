@@ -141,7 +141,8 @@ const PublicFunnel = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4 md:p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8" 
+         style={{ backgroundColor: funnel.settings?.backgroundColor || '#ffffff' }}>
       <div className="w-full max-w-3xl">
         <FunnelPreview 
           funnel={funnel} 

@@ -52,9 +52,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    backgroundColor: backgroundColor || '#ffffff',
-    minHeight: '100vh',
-    width: '100%',
     transition: 'background-color 0.3s ease'
   } as React.CSSProperties;
 
@@ -88,7 +85,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   };
 
   return (
-    <div className="w-full min-h-screen" style={customStyles}>
+    <div className="w-full" style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
