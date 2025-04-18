@@ -159,8 +159,8 @@ const DomainFunnel = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-0 sm:p-2">
-      <div className="w-full">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-0 mobile-full-width">
+      <div className="w-full mobile-full-width">
         <FunnelPreview 
           funnel={funnel} 
           isMobile={true} 

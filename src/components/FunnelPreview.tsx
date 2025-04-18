@@ -94,12 +94,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
-    borderRadius: '0.5rem',
-    padding: '1.5rem',
+    borderRadius: '0',
+    padding: '0.75rem',
   };
 
   return (
-    <div className="w-full" style={customStyles}>
+    <div className="w-full mobile-full-width" style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -109,10 +109,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      <div className="flex flex-col items-center w-full max-w-full sm:max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0">
+      <div className="flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0">
         {/* Logotipo */}
         {validLogo && (
-          <div className="w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2">
+          <div className="w-full flex justify-center py-2 mb-1">
             <img 
               src={validLogo} 
               alt="Logo" 
@@ -130,7 +130,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         {activeFunnel.settings.showProgressBar && (
-          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6">
+          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3">
             <div 
               className="h-full transition-all duration-500 ease-out"
               style={{ 
@@ -141,7 +141,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        <div className="w-full" style={containerStyles}>
+        <div className="w-full mobile-full-width" style={containerStyles}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}

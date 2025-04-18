@@ -72,13 +72,13 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
-    borderRadius: '0.5rem',
-    padding: '1.5rem',
+    borderRadius: '0',
+    padding: '0.25rem',
   };
   
   return (
     <div 
-      className="w-full mx-auto min-h-[300px] rounded-lg"
+      className="w-full mx-auto min-h-[300px] mobile-full-width"
       style={containerStyles}
     >
       {canvasElements.map((element, index) => {
@@ -96,7 +96,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         };
         
         return (
-          <div key={element.id}>
+          <div key={element.id} className="w-full">
             <ElementFactory 
               element={elementWithPreviewProps}
               onSelect={() => {}} 

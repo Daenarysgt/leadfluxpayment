@@ -15,6 +15,41 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <script>
+      // Garantir que o viewport seja configurado corretamente em dispositivos móveis
+      (function() {
+        function fixViewport() {
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile) {
+            document.documentElement.style.width = '100%';
+            document.body.style.width = '100%';
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.overflow = 'visible';
+            
+            // Forçar atualização após carregamento
+            setTimeout(function() {
+              window.scrollTo(0, 0);
+              const viewportWidth = window.innerWidth;
+              if (document.getElementById('root')) {
+                document.getElementById('root').style.width = viewportWidth + 'px';
+              }
+            }, 100);
+          }
+        }
+        
+        // Executar ao carregar
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', fixViewport);
+        } else {
+          fixViewport();
+        }
+        
+        // Executar ao redimensionar
+        window.addEventListener('resize', fixViewport);
+      })();
+    </script>
   </head>
 
   <body>
