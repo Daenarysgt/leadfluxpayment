@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -92,14 +91,34 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
               onValueChange={(values) => handleContentChange('maxValue', values[0])}
             />
           </div>
+          
+          <div className="space-y-2">
+            <ConfigLabel>Texto do nível (ex: "Level 3 of 6")</ConfigLabel>
+            <Input 
+              value={content.levelText || 'Level %value% of %max%'} 
+              onChange={(e) => handleContentChange('levelText', e.target.value)}
+              placeholder="Level %value% of %max%"
+            />
+            <p className="text-xs text-gray-500">
+              Use %value% para o valor atual e %max% para o valor máximo
+            </p>
+          </div>
         </TabsContent>
         
-        <TabsContent value="style" className="space-y-4">
+        <TabsContent value="style" className="space-y-4 pb-16">
           <div className="space-y-2">
-            <ConfigLabel>Cor principal</ConfigLabel>
+            <ConfigLabel>Cor da barra de progresso</ConfigLabel>
             <ColorPicker 
               value={style.primaryColor || '#8B5CF6'} 
               onChange={(color) => handleStyleChange('primaryColor', color)}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <ConfigLabel>Cor do texto do nível</ConfigLabel>
+            <ColorPicker 
+              value={style.levelTextColor || style.primaryColor || '#8B5CF6'} 
+              onChange={(color) => handleStyleChange('levelTextColor', color)}
             />
           </div>
           
@@ -127,6 +146,36 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
             />
           </div>
           
+          {style.showLabels !== false && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <ConfigLabel>Rótulo Inicial</ConfigLabel>
+                <Input 
+                  value={style.beginnerLabel || 'Beginner'} 
+                  onChange={(e) => handleStyleChange('beginnerLabel', e.target.value)}
+                  placeholder="Iniciante"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <ConfigLabel>Rótulo Final</ConfigLabel>
+                <Input 
+                  value={style.expertLabel || 'Expert'} 
+                  onChange={(e) => handleStyleChange('expertLabel', e.target.value)}
+                  placeholder="Especialista"
+                />
+              </div>
+              
+              <div className="space-y-2 col-span-2">
+                <ConfigLabel>Cor dos rótulos</ConfigLabel>
+                <ColorPicker 
+                  value={style.labelsColor || '#6B7280'} 
+                  onChange={(color) => handleStyleChange('labelsColor', color)}
+                />
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
             <ConfigLabel>Mostrar porcentagem</ConfigLabel>
             <Switch 
@@ -134,6 +183,16 @@ const LevelConfig = ({ element, onUpdate }: LevelConfigProps) => {
               onCheckedChange={(checked) => handleStyleChange('showPercentage', checked)}
             />
           </div>
+          
+          {style.showPercentage === true && (
+            <div className="space-y-2">
+              <ConfigLabel>Cor da porcentagem</ConfigLabel>
+              <ColorPicker 
+                value={style.percentageColor || style.primaryColor || '#8B5CF6'} 
+                onChange={(color) => handleStyleChange('percentageColor', color)}
+              />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

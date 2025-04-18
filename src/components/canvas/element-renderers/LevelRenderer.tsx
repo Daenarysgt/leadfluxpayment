@@ -1,4 +1,3 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
@@ -17,11 +16,27 @@ const LevelRenderer = (props: ElementRendererProps) => {
   // Calculate percentage for progress bar
   const percentage = Math.min(100, Math.max(0, (value / maxValue) * 100));
   
-  // Get color settings or use defaults
-  const primaryColor = content?.style?.primaryColor || "#8B5CF6";
-  const titleAlignment = content?.style?.titleAlignment || "center";
-  const showLabels = content?.style?.showLabels !== false;
-  const showPercentage = content?.style?.showPercentage === true;
+  // Get style settings or use defaults
+  const style = content?.style || {};
+  const primaryColor = style.primaryColor || "#8B5CF6";
+  const titleAlignment = style.titleAlignment || "center";
+  const showLabels = style.showLabels !== false;
+  const showPercentage = style.showPercentage === true;
+  
+  // Get custom label texts
+  const beginnerLabel = style.beginnerLabel || "Beginner";
+  const expertLabel = style.expertLabel || "Expert";
+  
+  // Get text colors
+  const labelsColor = style.labelsColor || "#6B7280";
+  const levelTextColor = style.levelTextColor || primaryColor;
+  const percentageColor = style.percentageColor || primaryColor;
+  
+  // Process custom level text if provided
+  const levelTextTemplate = content?.levelText || "Level %value% of %max%";
+  const levelText = levelTextTemplate
+    .replace("%value%", value.toString())
+    .replace("%max%", maxValue.toString());
 
   return (
     <BaseElementRenderer {...props}>
@@ -42,21 +57,21 @@ const LevelRenderer = (props: ElementRendererProps) => {
         
         {showLabels && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Beginner</span>
-            <span className="text-gray-500">Expert</span>
+            <span style={{ color: labelsColor }}>{beginnerLabel}</span>
+            <span style={{ color: labelsColor }}>{expertLabel}</span>
           </div>
         )}
         
         {showPercentage && (
           <div className="text-right mt-1">
-            <span className="text-sm font-medium" style={{ color: primaryColor }}>
+            <span className="text-sm font-medium" style={{ color: percentageColor }}>
               {Math.round(percentage)}%
             </span>
           </div>
         )}
         
-        <div className="mt-4 text-center font-medium" style={{ color: primaryColor }}>
-          Level {value} of {maxValue}
+        <div className="mt-4 text-center font-medium" style={{ color: levelTextColor }}>
+          {levelText}
         </div>
       </div>
     </BaseElementRenderer>
