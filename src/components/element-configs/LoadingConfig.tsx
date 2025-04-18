@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CanvasElement } from "@/types/canvasTypes";
@@ -7,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 
 interface LoadingConfigProps {
   element: CanvasElement;
@@ -16,6 +17,7 @@ interface LoadingConfigProps {
 const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
   const content = element.content || {};
   const style = content.style || {};
+  const navigation = content.navigation || {};
   
   const [activeTab, setActiveTab] = useState("content");
   
@@ -42,12 +44,26 @@ const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
     });
   };
 
+  const handleNavigationChange = (key: string, value: any) => {
+    onUpdate({
+      ...element,
+      content: {
+        ...content,
+        navigation: {
+          ...navigation,
+          [key]: value
+        }
+      }
+    });
+  };
+
   return (
     <div className="space-y-4 p-1">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full mb-4">
           <TabsTrigger value="content" className="flex-1">Conteúdo</TabsTrigger>
           <TabsTrigger value="style" className="flex-1">Estilo</TabsTrigger>
+          <TabsTrigger value="navigation" className="flex-1">Navegação</TabsTrigger>
         </TabsList>
         
         <TabsContent value="content" className="space-y-4">
@@ -129,6 +145,101 @@ const LoadingConfig = ({ element, onUpdate }: LoadingConfigProps) => {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="navigation" className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <ConfigLabel>Redirecionamento automático</ConfigLabel>
+              <Switch 
+                checked={navigation.autoRedirect || false} 
+                onCheckedChange={(checked) => handleNavigationChange('autoRedirect', checked)}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Redireciona automaticamente após o tempo definido
+            </p>
+          </div>
+
+          {navigation.autoRedirect && (
+            <>
+              <div className="space-y-2">
+                <ConfigLabel>Tempo (em segundos)</ConfigLabel>
+                <div className="flex space-x-2 items-center">
+                  <Slider 
+                    value={[navigation.redirectDelay || 3]}
+                    min={1}
+                    max={30}
+                    step={1}
+                    onValueChange={(value) => handleNavigationChange('redirectDelay', value[0])}
+                    className="flex-1"
+                  />
+                  <span className="w-8 text-center">{navigation.redirectDelay || 3}s</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <ConfigLabel>Tipo de redirecionamento</ConfigLabel>
+                <Select 
+                  value={navigation.type || 'next'} 
+                  onValueChange={(value) => handleNavigationChange('type', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo de redirecionamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="next">Próxima etapa</SelectItem>
+                    <SelectItem value="step">Etapa específica</SelectItem>
+                    <SelectItem value="url">URL externa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {navigation.type === 'step' && (
+                <div className="space-y-2">
+                  <ConfigLabel>Etapa de destino</ConfigLabel>
+                  <Select 
+                    value={navigation.stepId || ''} 
+                    onValueChange={(value) => handleNavigationChange('stepId', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma etapa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(element as any).funnel?.steps?.map((step: any) => (
+                        <SelectItem key={step.id} value={step.id}>
+                          {step.name || `Etapa ${step.order}`}
+                        </SelectItem>
+                      )) || <SelectItem value="" disabled>Sem etapas disponíveis</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {navigation.type === 'url' && (
+                <>
+                  <div className="space-y-2">
+                    <ConfigLabel>URL de destino</ConfigLabel>
+                    <Input 
+                      value={navigation.url || ''} 
+                      onChange={(e) => handleNavigationChange('url', e.target.value)}
+                      placeholder="https://exemplo.com"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="newTab"
+                      checked={navigation.openInNewTab || false} 
+                      onCheckedChange={(checked) => handleNavigationChange('openInNewTab', checked)}
+                    />
+                    <label htmlFor="newTab" className="text-sm">
+                      Abrir em nova aba
+                    </label>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>
