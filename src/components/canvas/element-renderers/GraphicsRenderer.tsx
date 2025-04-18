@@ -89,7 +89,16 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
               {showGrid && <CartesianGrid strokeDasharray="3 3" />}
               <XAxis dataKey="name" />
               {showLabels && <YAxis />}
-              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
+              {showTooltip && (
+                <Tooltip 
+                  content={
+                    <ChartTooltipContent 
+                      labelKey="name" 
+                      nameKey={valueLabel !== "" ? valueLabel : undefined}
+                    />
+                  } 
+                />
+              )}
               {showLegend && <Legend />}
               <Bar 
                 dataKey={valueLabel || "value"} 
@@ -107,13 +116,16 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
         return (
           <ChartContainer 
             className="w-full aspect-video max-h-80"
-            config={processedData.reduce((acc, item, index) => {
-              acc[item.name] = { 
-                label: item.name, 
-                color: item.color || chartColors.pie[index] 
-              };
-              return acc;
-            }, {} as any)}
+            config={{
+              [valueLabel]: { label: valueLabel || "Valor", color: chartColors.line },
+              ...processedData.reduce((acc, item, index) => {
+                acc[item.name] = { 
+                  label: item.name, 
+                  color: item.color || chartColors.pie[index] 
+                };
+                return acc;
+              }, {} as any)
+            }}
           >
             <PieChart>
               <Pie
@@ -135,7 +147,16 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
                   />
                 ))}
               </Pie>
-              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
+              {showTooltip && (
+                <Tooltip 
+                  content={
+                    <ChartTooltipContent 
+                      labelKey="name" 
+                      nameKey={valueLabel !== "" ? valueLabel : undefined}
+                    />
+                  } 
+                />
+              )}
               {showLegend && <Legend />}
             </PieChart>
           </ChartContainer>
@@ -153,7 +174,16 @@ const GraphicsRenderer = (props: ElementRendererProps) => {
               {showGrid && <CartesianGrid strokeDasharray="3 3" />}
               <XAxis dataKey="name" />
               {showLabels && <YAxis />}
-              {showTooltip && <Tooltip content={<ChartTooltipContent labelKey="name" />} />}
+              {showTooltip && (
+                <Tooltip 
+                  content={
+                    <ChartTooltipContent 
+                      labelKey="name" 
+                      nameKey={valueLabel !== "" ? valueLabel : undefined}
+                    />
+                  } 
+                />
+              )}
               {showLegend && <Legend />}
               <Line
                 type="monotone"
