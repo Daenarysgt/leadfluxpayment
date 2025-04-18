@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ComponentType } from "@/utils/types";
 import { PricingContent } from "@/types/canvasTypes";
 import { Button } from "@/components/ui/button";
@@ -63,13 +63,54 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
     }
   });
 
+  // Referência para controlar o debounce das atualizações
+  const updateTimeoutRef = useRef<number | null>(null);
+  // Referência para evitar atualizações iniciais
+  const initialRenderRef = useRef(true);
+  // Referência para o conteúdo anterior
+  const prevContentRef = useRef(element.content);
+
+  // Função de atualização com debounce
+  const debouncedUpdate = useCallback((newContent: PricingContent) => {
+    // Limpar o timeout anterior se existir
+    if (updateTimeoutRef.current) {
+      window.clearTimeout(updateTimeoutRef.current);
+    }
+
+    // Verificar se houve mudança real no conteúdo
+    if (JSON.stringify(newContent) === JSON.stringify(prevContentRef.current)) {
+      return;
+    }
+
+    // Configurar um novo timeout para atualização
+    updateTimeoutRef.current = window.setTimeout(() => {
+      console.log("Aplicando atualização do Pricing após debounce");
+      prevContentRef.current = newContent;
+      onUpdate({
+        ...element,
+        content: newContent
+      });
+      updateTimeoutRef.current = null;
+    }, 300); // 300ms de delay para debounce
+  }, [element, onUpdate]);
+
   // Atualizar elemento quando o content mudar
   useEffect(() => {
-    onUpdate({
-      ...element,
-      content
-    });
-  }, [content, element, onUpdate]);
+    // Pular a primeira renderização
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      return;
+    }
+    
+    debouncedUpdate(content);
+    
+    // Cleanup ao desmontar o componente
+    return () => {
+      if (updateTimeoutRef.current) {
+        window.clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [content, debouncedUpdate]);
 
   // Atualizar um valor no content
   const updateContent = (key: string, value: any) => {

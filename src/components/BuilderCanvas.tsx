@@ -47,6 +47,13 @@ const BuilderCanvas = ({
   
   const handleElementSelect = useCallback((id: string) => {
     console.log("BuilderCanvas - Selecting element with ID:", id);
+    
+    // Verificar se o elemento já está selecionado - evitar re-seleção
+    if (id === selectedElementId) {
+      console.log("BuilderCanvas - Element already selected:", id);
+      return;
+    }
+    
     const selectedElement = elements.find(el => el.id === id);
     if (selectedElement && onElementSelect) {
       console.log("BuilderCanvas - Found element:", selectedElement);
@@ -57,7 +64,7 @@ const BuilderCanvas = ({
         onElementSelect(null);
       }
     }
-  }, [elements, onElementSelect]);
+  }, [elements, onElementSelect, selectedElementId]);
   
   const handleElementRemove = useCallback((id: string) => {
     console.log("BuilderCanvas - Removing element with ID:", id);

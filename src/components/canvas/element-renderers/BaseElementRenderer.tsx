@@ -89,6 +89,22 @@ const BaseElementRenderer = ({
     !isPreviewMode && "transition-all duration-200" // Apenas aplicar transição no modo construtor
   );
 
+  // Adicionar handler de clique com prevenção de re-seleção
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Verificar se o componente já está selecionado
+    if (isSelected) {
+      console.log("Element already selected, ignoring click");
+      return;
+    }
+    
+    // Se não está selecionado, chamar onSelect
+    if (onSelect) {
+      onSelect(element.id);
+    }
+  };
+
   const handleMoveUp = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onMoveUp) onMoveUp(element.id);
@@ -260,10 +276,10 @@ const BaseElementRenderer = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <div 
+        <div
           ref={elementRef}
           className={baseElementClasses}
-          onClick={() => onSelect(element.id)}
+          onClick={handleClick}
           onMouseEnter={() => {
             if (!isPreviewMode) {
               setIsHovering(true);
@@ -275,11 +291,15 @@ const BaseElementRenderer = ({
               setIsHovering(false);
             }
           }}
+          onDragStart={!isPreviewMode ? handleDragStart : undefined}
+          onDragEnd={!isPreviewMode ? handleDragEnd : undefined}
           onDragOver={!isPreviewMode && !isDragging ? handleDragOver : undefined}
           onDragLeave={!isPreviewMode && !isDragging ? handleDragLeave : undefined}
           onDrop={!isPreviewMode && !isDragging ? handleDrop : undefined}
+          draggable={!isPreviewMode}
           data-element-id={element.id}
           data-element-index={index}
+          data-element-type={element.type}
         >
           {/* Conteúdo real do elemento */}
           <div className={cn(
