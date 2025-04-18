@@ -472,13 +472,14 @@ const PricingRenderer = (props: ElementRendererProps) => {
             {
               "shadow-2xl": boxShadow,
               "border-2": true,
+              "border-gray-200": isHighlighted,
+              "border-transparent": !isHighlighted,
               "text-left": alignment === "left",
               "text-center": alignment === "center",
               "text-right": alignment === "right"
             }
           )}
           style={{ 
-            borderColor: isHighlighted ? accentColor : 'transparent',
             borderRadius: `${borderRadius}px`
           }}
         >
