@@ -50,6 +50,8 @@ const CartesianRenderer = (props: ElementRendererProps) => {
       leftValue: 50,
       rightLabel: "Alto",
       rightValue: 90,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     },
     {
       title: "Nível de Lucro",
@@ -57,6 +59,8 @@ const CartesianRenderer = (props: ElementRendererProps) => {
       leftValue: 25,
       rightLabel: "Alto", 
       rightValue: 70,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     },
     {
       title: "Taxa de conversão",
@@ -64,6 +68,8 @@ const CartesianRenderer = (props: ElementRendererProps) => {
       leftValue: 31,
       rightLabel: "Alta",
       rightValue: 76,
+      leftColor: "#FF6B6B",
+      rightColor: "#67E8C3",
     }
   ];
 

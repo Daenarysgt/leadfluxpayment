@@ -9,7 +9,7 @@ import { PlusCircle, Trash2, MoveHorizontal, MoveVertical, Sliders } from "lucid
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ColorPicker } from "./common/ColorPicker";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 
 interface CartesianConfigProps {
   element: CanvasElement;
@@ -245,32 +245,22 @@ const CartesianConfig = ({ element, onUpdate }: CartesianConfigProps) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <div className="text-xs text-muted-foreground">Cor Esquerda</div>
-                        <div className="flex">
-                          <Input
-                            type="text"
-                            value={item.leftColor || "#FF6B6B"}
-                            onChange={(e) => updateComparisonItem(index, 'leftColor', e.target.value)}
-                            className="h-8 w-full"
-                          />
-                          <ColorPicker
+                        <div className="flex items-center">
+                          <AdvancedColorPicker
                             value={item.leftColor || "#FF6B6B"}
                             onChange={(color) => updateComparisonItem(index, 'leftColor', color)}
+                            size="lg"
                           />
                         </div>
                       </div>
                       
                       <div className="space-y-2">
                         <div className="text-xs text-muted-foreground">Cor Direita</div>
-                        <div className="flex">
-                          <Input
-                            type="text"
-                            value={item.rightColor || "#67E8C3"}
-                            onChange={(e) => updateComparisonItem(index, 'rightColor', e.target.value)}
-                            className="h-8 w-full"
-                          />
-                          <ColorPicker
+                        <div className="flex items-center">
+                          <AdvancedColorPicker
                             value={item.rightColor || "#67E8C3"}
                             onChange={(color) => updateComparisonItem(index, 'rightColor', color)}
+                            size="lg"
                           />
                         </div>
                       </div>
