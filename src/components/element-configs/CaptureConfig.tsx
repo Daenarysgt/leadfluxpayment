@@ -35,47 +35,32 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   const { currentFunnel } = useStore();
   const steps = currentFunnel?.steps || [];
   
-  // Ref para controlar se a migração já foi feita
-  const migrationDoneRef = useRef(false);
+  // Detectar e migrar de versão antiga para nova
+  let captureFields = content.captureFields;
   
-  // Estado local para campos de captura
-  const [captureFields, setCaptureFields] = useState<CaptureField[]>(() => {
-    const fields = content.captureFields;
-    if (!fields || !Array.isArray(fields) || fields.length === 0) {
-      // Compatibilidade com versão anterior - migrar campo único para array
-      return [{
-        id: uuidv4(),
-        type: content.captureType || 'email',
-        placeholder: content.placeholder || 'Seu endereço de email'
-      }];
-    }
-    return fields;
-  });
+  if (!captureFields || !Array.isArray(captureFields) || captureFields.length === 0) {
+    // Compatibilidade com versão anterior - migrar campo único para array
+    captureFields = [{
+      id: uuidv4(),
+      type: content.captureType || 'email',
+      placeholder: content.placeholder || 'Seu endereço de email'
+    }];
+    
+    // Atualiza o elemento para o novo formato imediatamente sem setTimeout
+    // Isso evita problemas de re-seleção causados por atualizações assíncronas
+    onUpdate({
+      ...element,
+      content: {
+        ...content,
+        captureFields: captureFields
+      }
+    });
+  }
 
   const [activeTab, setActiveTab] = useState("content");
   const [marginTop, setMarginTop] = useState(style.marginTop || 0);
   const [showButton, setShowButton] = useState(content.showButton !== false);
   
-  // Efeito para migração de versão antiga para nova, executado apenas uma vez
-  useEffect(() => {
-    // Verificar se a migração é necessária e se ainda não foi feita
-    if (!migrationDoneRef.current && 
-        (!content.captureFields || !Array.isArray(content.captureFields) || content.captureFields.length === 0)) {
-      
-      // Marcar que a migração foi feita
-      migrationDoneRef.current = true;
-      
-      // Atualizar o elemento com os novos campos
-      onUpdate({
-        ...element,
-        content: {
-          ...content,
-          captureFields: captureFields
-        }
-      });
-    }
-  }, [element.id]); // Dependência apenas do ID do elemento para garantir execução única
-
   const handleContentChange = (key: string, value: any) => {
     onUpdate({
       ...element,
@@ -119,9 +104,10 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
       placeholder: 'Novo campo'
     };
 
+    // Cria uma nova referência para o array de campos
     const updatedFields = [...captureFields, newField];
-    setCaptureFields(updatedFields);
 
+    // Atualiza em uma única operação síncorna
     onUpdate({
       ...element,
       content: {
@@ -135,9 +121,10 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
     // Não permitir remover se só tiver um campo
     if (captureFields.length <= 1) return;
 
+    // Cria uma nova referência para o array filtrado
     const updatedFields = captureFields.filter(field => field.id !== id);
-    setCaptureFields(updatedFields);
 
+    // Atualiza em uma única operação síncorna
     onUpdate({
       ...element,
       content: {
@@ -148,11 +135,12 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
   };
 
   const updateCaptureField = (id: string, key: string, value: string) => {
+    // Cria uma nova referência para o array mapeado
     const updatedFields = captureFields.map(field => 
       field.id === id ? { ...field, [key]: value } : field
     );
-    setCaptureFields(updatedFields);
 
+    // Atualiza em uma única operação síncorna
     onUpdate({
       ...element,
       content: {
@@ -167,23 +155,9 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
     // Atualizar a margem superior no estado local
     setMarginTop(value[0]);
     
-    // Atualizar o elemento
+    // Atualizar o elemento imediatamente
     handleStyleChange('marginTop', value[0]);
   };
-
-  // Update element when debounced values change
-  useEffect(() => {
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
-        style: {
-          ...style,
-          marginTop: marginTop
-        }
-      }
-    });
-  }, [marginTop, style, onUpdate, content]);
 
   return (
     <div className="space-y-4 p-1 pb-24">
