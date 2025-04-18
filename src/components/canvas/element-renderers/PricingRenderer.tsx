@@ -163,6 +163,22 @@ const PricingRenderer = (props: ElementRendererProps) => {
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
       : { backgroundColor };
 
+    // Determinar o alinhamento do preço
+    const priceAlignClass = priceAlignment === "center" 
+      ? "justify-center text-center" 
+      : priceAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
+        
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
+
     return (
       <div 
         className={cn(
@@ -199,11 +215,18 @@ const PricingRenderer = (props: ElementRendererProps) => {
           {subtitle && <p className="text-sm opacity-80 mb-4">{subtitle}</p>}
           
           <div className="mt-4">
-            {renderPrice("large")}
-            {renderDiscount("default")}
-            {paymentLabel && (
-              <div className="text-sm text-gray-500 mt-1">{paymentLabel}</div>
-            )}
+            <div className={priceAlignClass}>
+              {renderPrice("large")}
+            </div>
+            <div className={priceAlignClass}>
+              <div className="flex items-center gap-3">
+                {renderDiscount("default")}
+                
+                {paymentLabel && (
+                  <div className="text-sm text-gray-500">{paymentLabel}</div>
+                )}
+              </div>
+            </div>
           </div>
           
           {renderFeatures("default")}
@@ -211,7 +234,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <Button 
             className="w-full mt-6 py-6 font-medium text-base shadow-md transition-all duration-300 hover:shadow-lg"
             style={{ 
-              backgroundColor: buttonColor, 
+              background: buttonBg,
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
@@ -229,6 +252,22 @@ const PricingRenderer = (props: ElementRendererProps) => {
     const bgStyle = useGradient 
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
       : { backgroundColor };
+
+    // Determinar o alinhamento do preço
+    const priceAlignClass = priceAlignment === "center" 
+      ? "justify-center text-center" 
+      : priceAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
+        
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
 
     return (
       <div 
@@ -258,30 +297,34 @@ const PricingRenderer = (props: ElementRendererProps) => {
         )}
         
         <div className="p-8">
-          <div className="mb-6">
+          <div className={`mb-6 ${alignment === "center" ? "text-center" : alignment === "right" ? "text-right" : "text-left"}`}>
             {title && <h3 className="text-xl font-bold mb-1">{title}</h3>}
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
           </div>
           
-          <div className="flex items-center mb-2">
-            <span className="text-2xl font-semibold mr-2">{currency}</span>
-            <span className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-              {formatPrice(price)}
-            </span>
+          <div className={priceAlignClass}>
+            <div className="flex items-center mb-2">
+              <span className="text-2xl font-semibold mr-2">{currency}</span>
+              <span className="text-5xl font-bold" style={{ color: accentColor }}>
+                {formatPrice(price)}
+              </span>
+            </div>
           </div>
           
-          {renderDiscount("modern")}
-          
-          {paymentLabel && (
-            <div className="text-sm text-gray-500 mt-1 mb-8">{paymentLabel}</div>
-          )}
+          <div className={priceAlignClass}>
+            <div className="flex items-center gap-3">
+              {renderDiscount("modern")}
+              
+              {paymentLabel && (
+                <div className="text-sm text-gray-500 mt-1 mb-8">{paymentLabel}</div>
+              )}
+            </div>
+          </div>
           
           <Button 
             className="w-full py-6 font-semibold text-base rounded-xl transition-all duration-300 hover:opacity-90"
             style={{ 
-              background: useGradient
-                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                : `linear-gradient(90deg, ${accentColor}, ${buttonColor})`,
+              background: buttonBg,
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
@@ -301,6 +344,22 @@ const PricingRenderer = (props: ElementRendererProps) => {
     const bgStyle = useGradient 
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` } 
       : { backgroundColor };
+
+    // Determinar o alinhamento do preço
+    const priceAlignClass = priceAlignment === "center" 
+      ? "justify-center text-center" 
+      : priceAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
+        
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
 
     return (
       <div 
@@ -324,40 +383,43 @@ const PricingRenderer = (props: ElementRendererProps) => {
       >
         <div className="p-8">
           {isHighlighted && (
-            <div className="mb-4 flex items-center justify-center">
+            <div className={`mb-4 flex items-center ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"}`}>
               <span 
-                className="px-4 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 flex items-center"
+                className="px-4 py-1 rounded-full text-xs font-semibold flex items-center"
+                style={{ backgroundColor: accentColor, color: "#ffffff" }}
               >
                 <Star className="h-3 w-3 mr-1 text-yellow-500" /> {highlightTag || "Recomendado"}
               </span>
             </div>
           )}
         
-          <div className="flex items-center justify-between mb-4">
+          <div className={`flex items-center justify-between mb-4 ${alignment === "right" ? "flex-row-reverse" : ""}`}>
             <div>
               {title && <h3 className="text-2xl font-bold">{title}</h3>}
               {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
             </div>
-            {isHighlighted && <Award className="h-8 w-8 text-purple-500" />}
+            {isHighlighted && <Award className="h-8 w-8" style={{ color: accentColor }} />}
           </div>
           
-          <div className="mt-6 mb-4">
-            <div className="flex items-baseline">
-              <span className="text-4xl font-extrabold">{currency} {formatPrice(price)}</span>
-              {paymentLabel && (
-                <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
-              )}
+          <div className={`mt-6 mb-4 ${priceAlignClass}`}>
+            <div>
+              <div className="flex items-baseline">
+                <span className="text-4xl font-extrabold">{currency} {formatPrice(price)}</span>
+                {paymentLabel && (
+                  <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {renderDiscount("card")}
+              </div>
             </div>
-            
-            {renderDiscount("card")}
           </div>
           
           <Button 
             className="w-full py-5 mt-2 font-medium text-base rounded-lg shadow-sm transition-transform hover:translate-y-[-2px]"
             style={{ 
-              background: useGradient
-                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                : buttonColor, 
+              background: buttonBg,
               color: buttonTextColor,
               borderRadius: `${borderRadius}px`
             }}
@@ -376,9 +438,23 @@ const PricingRenderer = (props: ElementRendererProps) => {
     // Determinar se deve usar gradiente no fundo ou manter o degradê do isHighlighted
     const bgStyle = useGradient
       ? { background: `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})` }
-      : isHighlighted 
-        ? { background: "linear-gradient(to bottom, #f9fafb, #ffffff)" }
-        : { backgroundColor };
+      : { backgroundColor };
+
+    // Determinar o alinhamento do preço
+    const priceAlignClass = priceAlignment === "center" 
+      ? "justify-center text-center" 
+      : priceAlignment === "right" 
+        ? "justify-end text-right" 
+        : "justify-start text-left";
+    
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useButtonGradient
+      ? useGradient
+        ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+        : isHighlighted 
+          ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+          : buttonColor
+      : buttonColor;
 
     return (
       <div 
@@ -401,7 +477,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
         }}
       >
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${alignment === "center" ? "justify-center" : alignment === "right" ? "justify-end" : "justify-start"}`}>
             {title && <h3 className="text-lg font-medium">{title}</h3>}
             {isHighlighted && highlightTag && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
@@ -410,30 +486,30 @@ const PricingRenderer = (props: ElementRendererProps) => {
             )}
           </div>
           
-          <div className="flex items-baseline">
-            <span className="text-lg mr-1">{currency}</span>
-            <span className="text-4xl font-bold">{formatPrice(price)}</span>
-            {paymentLabel && (
-              <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
-            )}
+          <div className={`flex ${priceAlignClass}`}>
+            <div>
+              <div className="flex items-baseline">
+                <span className="text-lg mr-1">{currency}</span>
+                <span className="text-4xl font-bold">{formatPrice(price)}</span>
+                {paymentLabel && (
+                  <span className="text-sm text-gray-500 ml-2">/{paymentLabel}</span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {renderDiscount("minimal")}
+              </div>
+            </div>
           </div>
-          
-          {renderDiscount("minimal")}
           
           <div className="pt-4">
             <Button 
-              className={`w-full transition-colors ${isHighlighted ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}`}
-              variant={isHighlighted ? "default" : "outline"}
-              style={!isHighlighted ? { 
-                borderColor: buttonColor, 
-                color: buttonColor,
-                borderRadius: `${borderRadius}px`
-              } : {
-                background: useGradient
-                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                  : buttonColor,
-                color: buttonTextColor,
-                borderRadius: `${borderRadius}px`
+              className="w-full transition-colors"
+              style={{ 
+                background: buttonBg,
+                color: useButtonGradient || !isHighlighted ? buttonTextColor : "#ffffff",
+                borderRadius: `${borderRadius}px`,
+                border: !useButtonGradient && !isHighlighted ? `1px solid ${buttonColor}` : "none"
               }}
             >
               {buttonText}
@@ -464,11 +540,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
             <div
               className="px-4 py-1 rounded-full text-white text-xs font-bold shadow-lg"
               style={{ 
-                background: useGradient 
-                  ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                  : isHighlighted 
-                    ? `linear-gradient(135deg, ${accentColor}dd, ${accentColor})`
-                    : accentColor
+                backgroundColor: accentColor
               }}
             >
               {highlightTag}
@@ -496,11 +568,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
           <div 
             className="p-6"
             style={{ 
-              background: useGradient 
-                ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                : isHighlighted 
-                  ? `linear-gradient(135deg, ${accentColor}dd, ${accentColor})`
-                  : accentColor
+              backgroundColor: accentColor,
+              color: "#ffffff"
             }}
           >
             <h3 className="text-2xl font-bold text-white">{title}</h3>
