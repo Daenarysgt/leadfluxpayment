@@ -1,4 +1,3 @@
-
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { ImageIcon } from "lucide-react";
@@ -34,9 +33,14 @@ const ImageRenderer = (props: ElementRendererProps) => {
     return getAspectRatioValue(content?.aspectRatio);
   }, [content?.aspectRatio]);
   
+  // Calcular o estilo para margem superior
+  const containerStyle = {
+    marginTop: content?.marginTop ? `${content.marginTop}px` : undefined
+  };
+  
   return (
     <BaseElementRenderer {...props}>
-      <div className={cn("relative w-full flex items-center", alignmentClass)}>
+      <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
         {content?.imageUrl ? (
           content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
             <div className="w-full max-w-full">

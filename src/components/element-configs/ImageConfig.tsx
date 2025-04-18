@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Upload, Link as LinkIcon, ImageIcon, ZoomIn, ZoomOut, Maximize, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Upload, Link as LinkIcon, ImageIcon, ZoomIn, ZoomOut, Maximize, AlignLeft, AlignCenter, AlignRight, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -27,6 +27,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
   });
   const [sizePercentage, setSizePercentage] = useState(100);
   const [alignment, setAlignment] = useState(element.content?.alignment || "center");
+  const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
   
   // Função para converter arquivo em base64
   const convertToBase64 = (file: File): Promise<string> => {
@@ -268,6 +269,20 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     }
   };
 
+  // Manipulador para mudanças na margem superior
+  const handleMarginTopChange = (value: number[]) => {
+    // Atualizar a margem superior no estado local
+    setMarginTop(value[0]);
+    
+    // Atualizar o elemento
+    onUpdate({
+      content: {
+        ...element.content,
+        marginTop: value[0]
+      }
+    });
+  };
+
   return (
     <div className="p-4 space-y-6">
       <div>
@@ -472,6 +487,42 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
                 <AlignRight className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
+          </div>
+
+          {/* Controle de Margem Superior */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label htmlFor="margin-top">Margem superior</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">{marginTop}px</span>
+                <div className="flex flex-col">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop - 5])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-5 w-5"
+                    onClick={() => handleMarginTopChange([marginTop + 5])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <Slider
+              id="margin-top"
+              min={-100}
+              max={100}
+              step={1}
+              value={[marginTop]}
+              onValueChange={handleMarginTopChange}
+            />
           </div>
         </div>
       )}
