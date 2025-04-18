@@ -126,6 +126,7 @@ export interface PricingContent {
   gradientStart?: string;
   gradientEnd?: string;
   useGradient?: boolean;
+  useButtonGradient?: boolean;
   gradientDirection?: 'to right' | 'to bottom' | 'to bottom right' | 'to top right';
   gradientPreset?: string;
   navigation?: {

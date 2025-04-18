@@ -37,6 +37,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
     priceAlignment = "center",
     featuresAlignment = "left",
     useGradient = false,
+    useButtonGradient = true,
     gradientStart = "#3B82F6",
     gradientEnd = "#8B5CF6",
     gradientDirection = "to right"
@@ -447,6 +448,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
 
   // Estilo destacado aprimorado
   const renderFeaturedStyle = () => {
+    // Determinar background do botão baseado nas preferências
+    const buttonBg = useGradient && useButtonGradient
+      ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
+      : isHighlighted && useButtonGradient
+        ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
+        : buttonColor;
+        
     return (
       <div className="relative w-full max-w-md mx-auto transition-all">
         {highlightTag && isHighlighted && (
@@ -525,11 +533,7 @@ const PricingRenderer = (props: ElementRendererProps) => {
               <Button 
                 className="w-full py-6 shadow-lg transition-transform hover:translate-y-[-2px]" 
                 style={{ 
-                  background: useGradient
-                    ? `linear-gradient(${gradientDirection}, ${gradientStart}, ${gradientEnd})`
-                    : isHighlighted 
-                      ? `linear-gradient(90deg, ${buttonColor}, ${accentColor})`
-                      : buttonColor, 
+                  background: buttonBg,
                   color: buttonTextColor,
                   borderRadius: `${borderRadius}px`
                 }}

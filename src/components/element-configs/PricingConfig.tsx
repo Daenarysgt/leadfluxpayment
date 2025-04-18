@@ -453,6 +453,15 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
                 </Select>
               </div>
 
+              <div className="flex items-center space-x-2 pt-2 pb-3">
+                <Switch
+                  id="useButtonGradient"
+                  checked={content.useButtonGradient !== false}
+                  onCheckedChange={(checked) => updateContent("useButtonGradient", checked)}
+                />
+                <Label htmlFor="useButtonGradient">Aplicar gradiente ao botão</Label>
+              </div>
+
               <div className="space-y-2">
                 <Label>Presets de gradiente</Label>
                 <div className="grid grid-cols-4 gap-2 mt-2">
