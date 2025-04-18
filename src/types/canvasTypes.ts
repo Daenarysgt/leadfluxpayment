@@ -45,6 +45,11 @@ export interface ElementRendererProps {
   index: number;
   totalElements: number;
   previewMode?: boolean;
+  previewProps?: {
+    activeStep: number;
+    onStepChange: (newStep: number) => void;
+    funnel?: any;
+  };
 }
 
 export interface ComparisonItem {

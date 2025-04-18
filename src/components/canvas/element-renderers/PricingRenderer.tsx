@@ -4,10 +4,11 @@ import { PricingContent } from "@/types/canvasTypes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import BaseElementRenderer from "./BaseElementRenderer";
-import { CheckCircle2, DollarSign, Tag, Check, Star, Shield, Award } from "lucide-react";
+import { CheckCircle2, DollarSign, Tag, Check, Star, Shield, Award, ArrowRight } from "lucide-react";
+import { accessService } from "@/services/accessService";
 
 const PricingRenderer = (props: ElementRendererProps) => {
-  const { element, onUpdate, isSelected, onSelect, previewMode } = props;
+  const { element, onUpdate, isSelected, onSelect, previewMode, previewProps } = props;
   const content = element.content as PricingContent;
 
   const {
@@ -156,6 +157,85 @@ const PricingRenderer = (props: ElementRendererProps) => {
     );
   };
 
+  // Função para lidar com a navegação quando o botão é clicado
+  const handleNavigation = async () => {
+    if (!content.navigation) return;
+    
+    const { navigation } = content;
+    
+    // Handle navigation differently based on preview mode
+    if (previewMode && previewProps) {
+      const { activeStep, onStepChange, funnel } = previewProps;
+      
+      switch (navigation.type) {
+        case "next":
+          if (funnel && funnel.steps.length > 0) {
+            const isLastStep = activeStep === funnel.steps.length - 1;
+            
+            if (isLastStep) {
+              // Se for o último step, registrar o clique e marcar como conversão
+              try {
+                // Registrar o clique do botão
+                await accessService.registerStepInteraction(
+                  funnel.id,
+                  Number(activeStep + 1),
+                  null,
+                  'click'
+                );
+                // Marcar como conversão
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+              } catch (error) {
+                console.error("Erro ao registrar conversão:", error);
+              }
+            } else if (activeStep < funnel.steps.length - 1) {
+              onStepChange(activeStep + 1);
+            }
+          }
+          break;
+        case "step":
+          if (navigation.stepId && funnel) {
+            const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
+            if (stepIndex !== -1) {
+              const isLastStep = stepIndex === funnel.steps.length - 1;
+              
+              if (isLastStep) {
+                // Se for o último step, registrar o clique e marcar como conversão
+                try {
+                  // Registrar o clique do botão
+                  await accessService.registerStepInteraction(
+                    funnel.id,
+                    Number(stepIndex + 1),
+                    null,
+                    'click'
+                  );
+                  // Marcar como conversão
+                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
+                } catch (error) {
+                  console.error("Erro ao registrar conversão:", error);
+                }
+              } else {
+                onStepChange(stepIndex);
+              }
+            }
+          }
+          break;
+        case "url":
+          if (navigation.url) {
+            if (funnel) {
+              // Marcar como conversão antes de redirecionar
+              try {
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+              } catch (error) {
+                console.error("Erro ao registrar conversão (URL):", error);
+              }
+            }
+            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          }
+          break;
+      }
+    }
+  };
+
   // Estilo minimalista aprimorado
   const renderMinimalStyle = () => {
     // Determinar se deve usar gradiente no fundo
@@ -196,7 +276,8 @@ const PricingRenderer = (props: ElementRendererProps) => {
         style={{ 
           ...bgStyle,
           color: textColor,
-          borderRadius: `${borderRadius}px`
+          borderRadius: `${borderRadius}px`,
+          ...(isHighlighted && { borderColor: accentColor })
         }}
       >
         <div className="space-y-4">
@@ -235,8 +316,10 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 borderRadius: `${borderRadius}px`,
                 border: !useButtonGradient && !isHighlighted ? `1px solid ${buttonColor}` : "none"
               }}
+              onClick={handleNavigation}
             >
               {buttonText}
+              {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
             </Button>
           </div>
           
@@ -278,15 +361,16 @@ const PricingRenderer = (props: ElementRendererProps) => {
             {
               "shadow-2xl": boxShadow,
               "border-2": true,
-              "border-gray-200": isHighlighted,
-              "border-transparent": !isHighlighted,
+              "border-gray-200": !isHighlighted,
+              "border-transparent": isHighlighted,
               "text-left": alignment === "left",
               "text-center": alignment === "center",
               "text-right": alignment === "right"
             }
           )}
           style={{ 
-            borderRadius: `${borderRadius}px`
+            borderRadius: `${borderRadius}px`,
+            ...(isHighlighted && { borderColor: accentColor })
           }}
         >
           <div 
@@ -334,8 +418,10 @@ const PricingRenderer = (props: ElementRendererProps) => {
                   color: buttonTextColor,
                   borderRadius: `${borderRadius}px`
                 }}
+                onClick={handleNavigation}
               >
                 {buttonText}
+                {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
               </Button>
             </div>
           </div>
@@ -382,13 +468,13 @@ const PricingRenderer = (props: ElementRendererProps) => {
             "shadow-lg": boxShadow,
             "border": true,
             "border-gray-200": !isHighlighted,
-            "border-amber-300": isHighlighted,
           }
         )}
         style={{ 
           ...bgStyle,
           color: textColor,
-          borderRadius: `${borderRadius}px`
+          borderRadius: `${borderRadius}px`,
+          ...(isHighlighted && { borderColor: accentColor })
         }}
       >
         {/* Layout sempre em grid com 3 colunas fixas */}
@@ -433,8 +519,10 @@ const PricingRenderer = (props: ElementRendererProps) => {
                 color: buttonTextColor,
                 borderRadius: `${borderRadius}px`
               }}
+              onClick={handleNavigation}
             >
               {buttonText}
+              {content.navigation?.type === "next" && <ArrowRight className="h-4 w-4 ml-1" />}
             </Button>
           </div>
         </div>
