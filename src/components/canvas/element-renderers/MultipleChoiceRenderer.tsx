@@ -148,27 +148,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           // Executar navegação imediatamente para single selection
           setTimeout(() => executeNavigation(option.id), 100);
         }
-        
-        // Salvar a seleção do usuário no banco de dados quando estiver no modo preview
-        if (previewMode && previewProps?.funnel) {
-          try {
-            // Chama o método para salvar a seleção do usuário
-            accessService.saveMultipleChoiceSelection(
-              previewProps.funnel.id,
-              null, // sessionId será preenchido pelo serviço
-              option.text // Salvamos o texto da opção selecionada
-            );
-            
-            console.log('Seleção do Multiple Choice enviada:', option.text);
-          } catch (error) {
-            console.error("Erro ao salvar seleção do Multiple Choice:", error);
-          }
-        }
-        
         return [option.id];
       }
     });
-  }, [allowMultipleSelection, executeNavigation, previewMode, previewProps]);
+  }, [allowMultipleSelection, executeNavigation]);
   
   const handleContinue = useCallback(async () => {
     // Exit if no options selected
@@ -183,29 +166,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     
     if (!navigationOption) return;
     
-    // No caso de múltipla seleção, salvar todas as opções selecionadas no banco de dados
-    if (previewMode && previewProps?.funnel && allowMultipleSelection) {
-      try {
-        // Salvar os textos de todas as opções selecionadas, separados por vírgula
-        const optionsText = selectedOptionsData
-          .map(opt => opt.text)
-          .join(", ");
-          
-        accessService.saveMultipleChoiceSelection(
-          previewProps.funnel.id,
-          null, // sessionId será preenchido pelo serviço
-          optionsText // Salvamos os textos das opções selecionadas
-        );
-        
-        console.log('Seleções múltiplas enviadas:', optionsText);
-      } catch (error) {
-        console.error("Erro ao salvar seleções múltiplas:", error);
-      }
-    }
-    
     // Executar a navegação padrão para múltipla seleção (botão continuar)
     executeNavigation(navigationOption.id);
-  }, [selectedOptions, content?.options, executeNavigation, previewMode, previewProps, allowMultipleSelection]);
+  }, [selectedOptions, content?.options, executeNavigation]);
 
   // Calcular o estilo para margem superior
   const containerStyle = {

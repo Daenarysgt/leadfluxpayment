@@ -526,56 +526,6 @@ export const accessService = {
   },
 
   /**
-   * Salva a seleção do usuário no componente Multiple Choice
-   */
-  async saveMultipleChoiceSelection(
-    funnelId: string,
-    sessionId: string | null = null,
-    optionText: string
-  ): Promise<void> {
-    try {
-      // Usar sessionId fornecido ou o currentSessionId
-      const activeSessionId = sessionId || currentSessionId;
-      
-      if (!activeSessionId) {
-        throw new Error('No active session found');
-      }
-
-      console.log('Salvando seleção do Multiple Choice:', {
-        funnelId, 
-        sessionId: activeSessionId,
-        optionText
-      });
-
-      // Inserir na tabela funnel_responses, usando o mesmo formato do formulário
-      // mas colocando o texto da opção selecionada no campo "text"
-      const { data, error } = await supabase
-        .from('funnel_responses')
-        .insert({
-          funnel_id: funnelId,
-          session_id: activeSessionId,
-          lead_info: { 
-            text: optionText 
-          },
-          answers: {},
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString()
-        })
-        .select();
-
-      if (error) {
-        console.error('Error saving multiple choice selection:', error);
-        throw error;
-      }
-
-      console.log('Seleção do Multiple Choice salva com sucesso:', data);
-    } catch (error) {
-      console.error('Error saving multiple choice selection:', error);
-      throw error;
-    }
-  },
-
-  /**
    * Busca os dados de formulários do funil
    */
   async getFunnelFormData(funnelId: string, period: 'all' | 'today' | '7days' | '30days' = 'all'): Promise<Array<{
