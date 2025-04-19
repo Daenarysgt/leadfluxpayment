@@ -321,7 +321,7 @@ const Leads = () => {
       console.log('Getting form data for funnel:', currentFunnel.id);
       const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
       
-      console.log('Form data:', formData);
+      console.log('Form data found:', formData);
       setFormDataLeads(formData);
     } catch (error) {
       console.error('Error loading form data:', error);
@@ -619,13 +619,18 @@ const Leads = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.map((lead) => {
+                {leads.map((lead, leadIndex) => {
                   // Buscar os dados de formulário correspondentes para esta sessão específica
-                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
+                  // E como fallback, usar o formulário com o mesmo índice na lista
+                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId) || 
+                                          (formDataLeads.length > leadIndex ? formDataLeads[leadIndex] : null);
                   
-                  // Log para depuração
-                  console.log('Lead sessionId:', lead.sessionId);
-                  console.log('Formulário correspondente:', formDataForLead);
+                  // Log detalhado para depuração
+                  console.log(`Lead #${leadIndex}:`, {
+                    sessionId: lead.sessionId,
+                    matchingFormData: !!formDataForLead,
+                    formData: formDataForLead
+                  });
                   
                   return (
                     <TableRow key={lead.sessionId}>
@@ -635,48 +640,55 @@ const Leads = () => {
                       <TableCell className="border-r">
                         {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
                       </TableCell>
-                      {stepMetrics.map((step) => (
-                        <TableCell key={step.step_number} className="border-r">
-                          {lead.interactions[step.step_number] ? (
-                            <div className="text-sm">
-                              {lead.interactions[step.step_number].status === 'clicked' ? (
-                                <div>
-                                  <div>Clicou</div>
-                                  {/* Exibir dados do formulário APENAS se houver uma correspondência exata para esta sessão */}
-                                  {formDataForLead && (
-                                    <div className="mt-2 text-xs text-gray-500 space-y-1">
-                                      {formDataForLead.leadInfo.email && (
-                                        <div className="flex items-center gap-1">
-                                          <Mail className="h-3 w-3" />
-                                          <span>{formDataForLead.leadInfo.email}</span>
-                                        </div>
-                                      )}
-                                      {formDataForLead.leadInfo.phone && (
-                                        <div className="flex items-center gap-1">
-                                          <Phone className="h-3 w-3" />
-                                          <span>{formDataForLead.leadInfo.phone}</span>
-                                        </div>
-                                      )}
-                                      {formDataForLead.leadInfo.text && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs">{formDataForLead.leadInfo.text}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div>
-                                  <div>Escolheu</div>
-                                  <div className="text-muted-foreground">
-                                    {lead.interactions[step.step_number].status}
+                      {stepMetrics.map((step, stepIndex) => {
+                        // Exibir informações do formulário na primeira etapa com interação
+                        const isFirstInteractionStep = stepIndex === 0;
+                        const hasInteraction = !!lead.interactions[step.step_number];
+                        
+                        return (
+                          <TableCell key={step.step_number} className="border-r">
+                            {hasInteraction ? (
+                              <div className="text-sm">
+                                {lead.interactions[step.step_number].status === 'clicked' ? (
+                                  <div>
+                                    <div>Clicou</div>
+                                    
+                                    {/* Exibir dados do formulário na primeira etapa para cada lead */}
+                                    {isFirstInteractionStep && formDataForLead && (
+                                      <div className="mt-2 text-xs text-gray-500 space-y-1">
+                                        {formDataForLead.leadInfo?.email && (
+                                          <div className="flex items-center gap-1">
+                                            <Mail className="h-3 w-3" />
+                                            <span>{formDataForLead.leadInfo.email}</span>
+                                          </div>
+                                        )}
+                                        {formDataForLead.leadInfo?.phone && (
+                                          <div className="flex items-center gap-1">
+                                            <Phone className="h-3 w-3" />
+                                            <span>{formDataForLead.leadInfo.phone}</span>
+                                          </div>
+                                        )}
+                                        {formDataForLead.leadInfo?.text && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : ''}
-                        </TableCell>
-                      ))}
+                                ) : (
+                                  <div>
+                                    <div>Escolheu</div>
+                                    <div className="text-muted-foreground">
+                                      {lead.interactions[step.step_number].status}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : ''}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   );
                 })}
