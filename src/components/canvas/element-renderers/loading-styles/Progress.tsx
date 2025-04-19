@@ -8,7 +8,7 @@ interface ProgressProps {
 
 export const Progress: React.FC<ProgressProps> = ({ color, size, progress }) => {
   const heightClasses = {
-    small: "h-4",
+    small: "h-5",
     medium: "h-6",
     large: "h-8",
   };

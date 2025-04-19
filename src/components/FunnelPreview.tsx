@@ -96,15 +96,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   const contentWrapperClass = isMobile 
     ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
-    : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
+    : "flex flex-col items-center w-full max-w-2xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
   
   const logoWrapperClass = isMobile
     ? "w-full flex justify-center py-2 mb-1" 
     : "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
   
   const progressBarClass = isMobile
-    ? "w-full h-2 rounded-full overflow-hidden mb-3"
-    : "w-full h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
+    ? "w-full h-3 rounded-full overflow-hidden mb-3"
+    : "w-full h-3 rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
     ? "w-full mobile-full-width"

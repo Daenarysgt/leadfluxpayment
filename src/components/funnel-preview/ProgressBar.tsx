@@ -8,7 +8,7 @@ interface ProgressBarProps {
 
 const ProgressBar = ({ currentStep, totalSteps, primaryColor }: ProgressBarProps) => {
   return (
-    <div className="w-full h-2 rounded-full overflow-hidden mb-6"
+    <div className="w-full h-3 rounded-full overflow-hidden mb-6"
          style={{ 
            backgroundColor: `${primaryColor}30` /* Usando a mesma cor do progresso com 30% de opacidade */
          }}>

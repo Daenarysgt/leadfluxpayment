@@ -142,7 +142,7 @@
         const primaryColor = funnelData.settings?.primaryColor || '#0066ff';
         
         // Usando a mesma cor com opacidade de 30%
-        progressContainer.className = 'w-full h-2 rounded-full overflow-hidden mb-6';
+        progressContainer.className = 'w-full h-3 rounded-full overflow-hidden mb-6';
         progressContainer.style.backgroundColor = `${primaryColor}30`;
         
         const progressBar = document.createElement('div');
