@@ -40,6 +40,8 @@ export function getElementTitle(type: string): string {
       return "Cartesiano";
     case ComponentType.Video:
       return "Vídeo";
+    case ComponentType.Price:
+      return "Preço";
     default:
       return type;
   }

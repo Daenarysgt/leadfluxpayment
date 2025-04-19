@@ -20,7 +20,8 @@ import {
   LoadingRenderer,
   CartesianRenderer,
   VideoRenderer,
-  GenericElementRenderer
+  GenericElementRenderer,
+  PriceRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -87,6 +88,9 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Video:
       return <VideoRenderer {...props} />;
+      
+    case ComponentType.Price:
+      return <PriceRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

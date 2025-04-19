@@ -320,6 +320,41 @@ export const getDefaultContent = (componentType: string) => {
         loop: false,
         alignment: "center"
       };
+    case ComponentType.Price:
+      return {
+        title: "Planos de Preço",
+        displayStyle: "horizontal", // horizontal ou cards
+        alignment: "center", // left, center, right
+        backgroundColor: "#151515",
+        boxShadow: "lg", // lg, md, sm, none
+        plans: [
+          {
+            id: crypto.randomUUID(),
+            title: "Plano Pro",
+            description: "Supercharger sua experiência com recursos avançados",
+            price: "197,00",
+            oldPrice: "240,00",
+            discount: "50% off",
+            buttonText: "Comprar Agora!",
+            features: [
+              { id: crypto.randomUUID(), text: "Novo recurso" },
+              { id: crypto.randomUUID(), text: "Novo recurso" },
+              { id: crypto.randomUUID(), text: "Novo recurso" }
+            ],
+            isHighlighted: false,
+            style: {
+              backgroundColor: "#000000",
+              textColor: "#ffffff",
+              buttonColor: "#8B5CF6",
+              buttonTextColor: "#ffffff",
+              featureColor: "#ffffff",
+              circleColor: "#32CD32",
+              borderRadius: 8,
+              borderColor: "#333333"
+            }
+          }
+        ]
+      };
     default:
       return {};
   }

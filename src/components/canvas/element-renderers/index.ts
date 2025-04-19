@@ -19,6 +19,7 @@ import CartesianRenderer from './CartesianRenderer';
 import SpacerRenderer from './SpacerRenderer';
 import RatingRenderer from './RatingRenderer';
 import VideoRenderer from './VideoRenderer';
+import PriceRenderer from './PriceRenderer';
 import GenericElementRenderer from './GenericElementRenderer';
 
 // Export all renderers
@@ -42,6 +43,7 @@ export {
   SpacerRenderer,
   RatingRenderer,
   VideoRenderer,
+  PriceRenderer,
   GenericElementRenderer
 };
 
