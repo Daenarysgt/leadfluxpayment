@@ -119,31 +119,6 @@ const TRAFFIC_SOURCES = [
   { id: 'youtube', name: 'YouTube Ads', icon: <YouTubeAdsLogo />, color: 'text-[#FF0000]' }
 ];
 
-const mockTrackingData = [
-  {
-    id: '1',
-    date: '05/02/2025',
-    steps: [
-      { name: 'Etapa 1', status: 'clicked', buttonId: 'TweiSl', interactionRate: 85 },
-      { name: 'Etapa 2', status: 'clicked', buttonId: 'TtZkLl', interactionRate: 65 },
-      { name: 'Etapa 3', status: 'clicked', buttonId: 'grsb3N', interactionRate: 45 },
-      { name: 'Etapa 4', status: 'clicked', buttonId: 'U6jsoo', interactionRate: 25 },
-      { name: 'Etapa 5', status: '', buttonId: 'TVMJsB', interactionRate: 0 }
-    ]
-  },
-  {
-    id: '2',
-    date: '05/02/2025',
-    steps: [
-      { name: 'Etapa 1', status: 'clicked', buttonId: 'TweiSl', interactionRate: 90 },
-      { name: 'Etapa 2', status: 'clicked', buttonId: 'TtZkLl', interactionRate: 50 },
-      { name: 'Etapa 3', status: '', buttonId: 'grsb3N', interactionRate: 15 },
-      { name: 'Etapa 4', status: '', buttonId: 'U6jsoo', interactionRate: 0 },
-      { name: 'Etapa 5', status: '', buttonId: 'TVMJsB', interactionRate: 0 }
-    ]
-  }
-];
-
 const Leads = () => {
   const { currentFunnel, setCurrentFunnel } = useStore();
   const { funnelId } = useParams<{ funnelId: string }>();
@@ -678,114 +653,77 @@ const Leads = () => {
         </div>
 
         <div className="mt-6">
-          <Tabs defaultValue="interactions" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="interactions">Interações</TabsTrigger>
-              <TabsTrigger value="form-data">Dados de Formulários</TabsTrigger>
-            </TabsList>
-            <TabsContent value="interactions" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Rastreamento de Interações</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Visualize como os usuários estão interagindo com cada etapa do seu funil
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[calc(100vh-340px)]">
-                    {leads.length > 0 ? (
-                      <TrackingTable 
-                        data={mockTrackingData}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                          <MousePointerClick className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <h3 className="font-medium text-lg mb-1">Nenhuma interação registrada</h3>
-                        <p className="text-center text-muted-foreground max-w-sm">
-                          As interações serão registradas quando os usuários começarem a navegar pelo seu funil
-                        </p>
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="form-data" className="mt-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Dados de Formulários</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Visualize os dados capturados nos formulários do seu funil
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[calc(100vh-340px)]">
-                    {formDataLeads.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Telefone</TableHead>
-                            <TableHead>Texto</TableHead>
-                            <TableHead>Detalhes</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {formDataLeads.map((formData) => (
-                            <TableRow key={formData.sessionId}>
-                              <TableCell>
-                                {new Date(formData.submissionTime).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </TableCell>
-                              <TableCell>{formData.leadInfo.email || '-'}</TableCell>
-                              <TableCell>{formData.leadInfo.phone || '-'}</TableCell>
-                              <TableCell>{formData.leadInfo.text || '-'}</TableCell>
-                              <TableCell>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => {
-                                      // Exibir detalhes completos
-                                      console.log('Detalhes do lead:', formData);
-                                      alert(JSON.stringify(formData.leadInfo, null, 2));
-                                    }}>
-                                      Ver detalhes completos
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                          <ClipboardList className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <h3 className="font-medium text-lg mb-1">Nenhum dado de formulário</h3>
-                        <p className="text-center text-muted-foreground max-w-sm">
-                          Os dados serão registrados quando os usuários preencherem os formulários do seu funil
-                        </p>
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Dados de Formulários</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Visualize os dados capturados nos formulários do seu funil
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[calc(100vh-340px)]">
+                {formDataLeads.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Telefone</TableHead>
+                        <TableHead>Texto</TableHead>
+                        <TableHead>Detalhes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {formDataLeads.map((formData) => (
+                        <TableRow key={formData.sessionId}>
+                          <TableCell>
+                            {new Date(formData.submissionTime).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </TableCell>
+                          <TableCell>{formData.leadInfo.email || '-'}</TableCell>
+                          <TableCell>{formData.leadInfo.phone || '-'}</TableCell>
+                          <TableCell>{formData.leadInfo.text || '-'}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                  // Exibir detalhes completos
+                                  console.log('Detalhes do lead:', formData);
+                                  alert(JSON.stringify(formData.leadInfo, null, 2));
+                                }}>
+                                  Ver detalhes completos
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                      <ClipboardList className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h3 className="font-medium text-lg mb-1">Nenhum dado de formulário</h3>
+                    <p className="text-center text-muted-foreground max-w-sm">
+                      Os dados serão registrados quando os usuários preencherem os formulários do seu funil
+                    </p>
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
