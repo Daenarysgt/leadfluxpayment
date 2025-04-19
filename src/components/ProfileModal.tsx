@@ -6,7 +6,8 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogClose,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { X, CreditCard, CheckCircle } from "lucide-react";
+import { X, CreditCard, CheckCircle, LockKeyhole } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProfileModalProps {
   open: boolean;
@@ -27,177 +29,182 @@ interface ProfileModalProps {
   };
 }
 
-const ProfileModal = ({ open, onOpenChange, user, planInfo }: ProfileModalProps) => {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+export function ProfileModal({ open, onOpenChange, user, planInfo }: ProfileModalProps) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Get user initials for avatar fallback
-  const getUserInitials = () => {
-    if (!user || !user.email) return "?";
-    return user.email.charAt(0).toUpperCase();
+  // Obter iniciais para o avatar como fallback
+  const getUserInitials = (email: string) => {
+    return email.slice(0, 2).toUpperCase();
   };
 
-  // Handle password update
+  // Função para determinar o nome de exibição do plano
+  const getPlanDisplayName = (planId: string) => {
+    if (planId === 'free') return 'Gratuito';
+    if (planId === 'pro') return 'Profissional';
+    if (planId === 'business') return 'Empresarial';
+    return planId.charAt(0).toUpperCase() + planId.slice(1);
+  };
+
   const handleUpdatePassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      toast.error("Por favor, preencha todos os campos");
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Por favor, preencha todos os campos.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("As senhas não coincidem");
+      toast.error("As senhas não coincidem.");
       return;
     }
 
     try {
       setIsUpdating(true);
-      
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
+      const { error } = await supabase.auth.updateUser({ 
+        password: newPassword 
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      toast.success("Senha atualizada com sucesso");
-      
-      // Reset form fields
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      
+      toast.success("Sua senha foi atualizada com sucesso.");
+
+      // Limpar os campos
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar senha");
+      toast.error(error.message || "Ocorreu um erro ao atualizar a senha.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Function to format plan name for display
-  const getPlanDisplayName = () => {
-    if (!planInfo || !planInfo.id) return "Gratuito";
-    
-    const planId = planInfo.id.toLowerCase();
-    if (planId === "free") return "Gratuito";
-    if (planId === "basic") return "Básico";
-    if (planId === "pro") return "Profissional";
-    if (planId === "premium") return "Premium";
-    
-    return planInfo.name || planInfo.id.toUpperCase();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Perfil do Usuário</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <X className="h-4 w-4" />
-          </DialogClose>
+      <DialogContent className="sm:max-w-[425px] rounded-xl border-blue-100 shadow-xl bg-gradient-to-br from-white to-blue-50/30">
+        <DialogHeader className="pb-2 border-b border-blue-100/40">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Perfil do Usuário</DialogTitle>
+            <DialogClose className="rounded-full h-8 w-8 flex items-center justify-center hover:bg-blue-100/40 transition-colors">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
+            </DialogClose>
+          </div>
+          <DialogDescription className="text-muted-foreground">
+            Visualize informações da sua conta e altere sua senha.
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex flex-col space-y-6 py-4">
-          {/* User information section */}
-          <div className="flex flex-col items-center space-y-4">
-            <Avatar className="h-20 w-20">
-              <AvatarFallback className="text-xl">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="text-center">
-              <h3 className="text-lg font-medium">{user?.email}</h3>
-              <p className="text-sm text-muted-foreground">
-                Membro desde {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"}
-              </p>
-            </div>
-          </div>
-
-          {/* Plan information section */}
-          <div className="space-y-2">
-            <div className="border rounded-lg p-4 bg-muted/10">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  <h4 className="font-medium">Plano Atual</h4>
-                </div>
-                
-                {planInfo?.isActive && (
-                  <div className="flex items-center gap-1 text-green-600 text-xs">
-                    <CheckCircle className="h-3 w-3" />
-                    <span>Ativo</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{getPlanDisplayName()}</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 text-xs"
-                    onClick={() => window.location.href = '/pricing'}
-                  >
-                    Alterar plano
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Change password section */}
+        <div className="space-y-6 py-4">
+          {/* Informações do usuário */}
           <div className="space-y-4">
-            <h4 className="font-medium">Alterar Senha</h4>
-            
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-purple-100 shadow-sm">
+                <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || ''} />
+                <AvatarFallback className="text-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                  {getUserInitials(user.email || '')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h4 className="font-medium text-lg">{user.email}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Conta criada em {new Date(user.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Informações do plano */}
+          {planInfo && (
+            <div className="p-4 rounded-xl bg-white border border-blue-100 shadow-sm">
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-blue-600" />
+                Plano Atual
+              </h4>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{getPlanDisplayName(planInfo.id)}</span>
+                  {planInfo.isActive && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-2 rounded-full text-xs font-medium">
+                      <CheckCircle className="h-3 w-3 mr-1" /> Ativo
+                    </Badge>
+                  )}
+                </div>
+                <Button variant="outline" size="sm" className="rounded-full text-sm hover:bg-blue-50 border-blue-100 shadow-sm hover:shadow transition-all">
+                  Alterar Plano
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Alteração de senha */}
+          <div>
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <LockKeyhole className="h-4 w-4 text-blue-600" />
+              Alterar Senha
+            </h4>
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="new-password">Nova Senha</Label>
+                <Label htmlFor="currentPassword" className="text-sm">Senha Atual</Label>
                 <Input
-                  id="new-password"
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="border-blue-100 focus-visible:ring-blue-400/30 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword" className="text-sm">Nova Senha</Label>
+                <Input
+                  id="newPassword"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Digite sua nova senha"
+                  className="border-blue-100 focus-visible:ring-blue-400/30 rounded-lg"
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                <Label htmlFor="confirmPassword" className="text-sm">Confirmar Nova Senha</Label>
                 <Input
-                  id="confirm-password"
+                  id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme sua nova senha"
+                  className="border-blue-100 focus-visible:ring-blue-400/30 rounded-lg"
                 />
               </div>
             </div>
           </div>
         </div>
-        
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
+
+        <DialogFooter className="border-t border-blue-100/40 pt-4">
+          <Button 
+            variant="outline" 
             onClick={() => onOpenChange(false)}
+            className="rounded-full hover:bg-slate-50 border-slate-200"
           >
             Cancelar
           </Button>
           <Button 
-            type="button"
-            onClick={handleUpdatePassword}
-            disabled={isUpdating}
+            onClick={handleUpdatePassword} 
+            disabled={isUpdating || !currentPassword || !newPassword || !confirmPassword}
+            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 shadow-sm"
           >
-            {isUpdating ? "Atualizando..." : "Atualizar Senha"}
+            {isUpdating ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Atualizando...</span>
+              </div>
+            ) : (
+              "Atualizar Senha"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 export default ProfileModal; 

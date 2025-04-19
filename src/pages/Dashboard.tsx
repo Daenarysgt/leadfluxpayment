@@ -371,9 +371,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-background via-blue-50/30 to-purple-50/30">
       {/* Header com navegação */}
-      <div className="border-b bg-background/80 backdrop-blur-lg sticky top-0 z-50">
+      <div className="border-b bg-background/95 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
@@ -387,13 +387,13 @@ const Dashboard = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Pesquisar..."
-                    className="pl-9 w-[300px] bg-muted/50 border-none focus-visible:ring-1"
+                    className="pl-9 w-[300px] bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-full"
                   />
                 </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="relative p-2"
+                  className="relative p-2 rounded-full hover:bg-muted/80 transition-colors"
                   onClick={() => navigate('/diagnostic')}
                 >
                   <span className="sr-only">Diagnóstico</span>
@@ -410,12 +410,16 @@ const Dashboard = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsProfileModalOpen(true)}
-                className="rounded-full h-9 w-9 p-0"
+                className="rounded-full h-9 w-9 p-0 hover:bg-primary/10 transition-colors"
               >
-                <User className="h-5 w-5" />
+                <User className="h-5 w-5 text-primary" />
               </Button>
-              <Button variant="outline" onClick={() => navigate('/settings')}>
-                <Settings className="h-4 w-4 mr-2" />
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/settings')}
+                className="rounded-full shadow-sm hover:shadow-md transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-blue-100"
+              >
+                <Settings className="h-4 w-4 mr-2 text-primary" />
                 Configurações
               </Button>
             </div>
@@ -426,83 +430,91 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Cards de Estatísticas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+          <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 border-blue-100/50 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Funis</CardTitle>
-              <LayoutGrid className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+              <div className="p-2 rounded-full bg-blue-100/30 group-hover:bg-blue-100 transition-colors">
+                <LayoutGrid className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{metrics.totalFunnels}</div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                 <ArrowUpRight className="h-3 w-3 text-green-500" />
-                <span className="text-green-500">Atualizado</span>
+                <span className="text-green-500 font-medium">Atualizado</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+          <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/50 border-indigo-100/50 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Sessões</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+              <div className="p-2 rounded-full bg-indigo-100/30 group-hover:bg-indigo-100 transition-colors">
+                <Users className="h-4 w-4 text-indigo-600 group-hover:text-indigo-700 transition-colors" />
+              </div>
             </CardHeader>
             <CardContent>
               {loadingMetrics ? (
                 <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                  <div className="h-8 w-16 bg-indigo-100 rounded"></div>
+                  <div className="h-4 w-24 bg-indigo-50 rounded mt-1"></div>
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{metrics.totalSessions}</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{metrics.totalSessions}</div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
+                    <span className="text-green-500 font-medium">Atualizado</span>
                   </div>
                 </>
               )}
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+          <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-green-50/50 border-green-100/50 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
-              <CheckCircleIcon className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+              <div className="p-2 rounded-full bg-green-100/30 group-hover:bg-green-100 transition-colors">
+                <CheckCircleIcon className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors" />
+              </div>
             </CardHeader>
             <CardContent>
               {loadingMetrics ? (
                 <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                  <div className="h-8 w-16 bg-green-100 rounded"></div>
+                  <div className="h-4 w-24 bg-green-50 rounded mt-1"></div>
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{metrics.completionRate.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">{metrics.completionRate.toFixed(1)}%</div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
+                    <span className="text-green-500 font-medium">Atualizado</span>
                   </div>
                 </>
               )}
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+          <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-purple-50/50 border-purple-100/50 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taxa de Interação</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors" />
+              <div className="p-2 rounded-full bg-purple-100/30 group-hover:bg-purple-100 transition-colors">
+                <TrendingUp className="h-4 w-4 text-purple-600 group-hover:text-purple-700 transition-colors" />
+              </div>
             </CardHeader>
             <CardContent>
               {loadingMetrics ? (
                 <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                  <div className="h-8 w-16 bg-purple-100 rounded"></div>
+                  <div className="h-4 w-24 bg-purple-50 rounded mt-1"></div>
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{metrics.interactionRate.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{metrics.interactionRate.toFixed(1)}%</div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
+                    <span className="text-green-500 font-medium">Atualizado</span>
                   </div>
                 </>
               )}
@@ -514,26 +526,31 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Coluna da Esquerda - Ações Rápidas */}
           <div className="lg:col-span-1">
-            <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+            <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-slate-50/50 border-slate-100/50 rounded-xl">
               <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  Ações Rápidas
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <Button
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 group-hover:border-blue-600 transition-colors bg-white/50"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary/60 transition-colors bg-white/80 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50/50 rounded-xl shadow-sm hover:shadow-md"
                     onClick={handleOpenNewFunnelDialog}
                     disabled={!canCreateFunnel()}
                   >
-                    <Plus className="h-6 w-6 text-blue-600" />
+                    <div className="p-2 rounded-full bg-blue-100/50">
+                      <Plus className="h-6 w-6 text-blue-600" />
+                    </div>
                     <span>Novo Funil</span>
                     {!limitsLoading && (
                       <div className="text-xs text-muted-foreground">
                         {remaining && remaining.funnels > 0 ? (
-                          <span>{usage?.funnels || 0}/{limits?.maxFunnels || 0} funis</span>
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{usage?.funnels || 0}/{limits?.maxFunnels || 0} funis</span>
                         ) : (
-                          <span className="text-red-500">Limite atingido</span>
+                          <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-500">Limite atingido</span>
                         )}
                       </div>
                     )}
@@ -541,10 +558,12 @@ const Dashboard = () => {
 
                   <Button
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 group-hover:border-blue-600 transition-colors bg-white/50"
+                    className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary/60 transition-colors bg-white/80 hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50/50 rounded-xl shadow-sm hover:shadow-md"
                     onClick={() => navigate('/design')}
                   >
-                    <Palette className="h-6 w-6 text-blue-600" />
+                    <div className="p-2 rounded-full bg-purple-100/50">
+                      <Palette className="h-6 w-6 text-purple-600" />
+                    </div>
                     <span>Design</span>
                   </Button>
                 </div>
@@ -554,9 +573,12 @@ const Dashboard = () => {
 
           {/* Coluna do Meio e Direita */}
           <div className="lg:col-span-2">
-            <Card className="group hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-muted/50">
+            <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-slate-50/50 border-slate-100/50 rounded-xl">
               <CardHeader>
-                <CardTitle>Atividade Recente</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  Atividade Recente
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[400px] pr-4">
@@ -567,14 +589,18 @@ const Dashboard = () => {
                   ) : error ? (
                     <div className="text-center text-red-500 py-4">
                       Erro ao carregar funis: {error}
-                      <Button onClick={refreshFunnels} variant="outline" className="ml-2">
+                      <Button onClick={refreshFunnels} variant="outline" className="ml-2 rounded-full">
                         Tentar Novamente
                       </Button>
                     </div>
                   ) : funnels.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-4">
-                      Nenhum funil criado ainda.
-                      <Button onClick={handleOpenNewFunnelDialog} variant="link" className="ml-2">
+                    <div className="text-center text-muted-foreground py-6 px-4 border border-dashed rounded-xl bg-slate-50/50">
+                      <div className="p-3 rounded-full bg-blue-50 w-fit mx-auto mb-4">
+                        <LayoutGrid className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <p className="mb-3">Nenhum funil criado ainda.</p>
+                      <Button onClick={handleOpenNewFunnelDialog} variant="outline" className="rounded-full hover:bg-white shadow-sm">
+                        <Plus className="mr-2 h-4 w-4" />
                         Criar seu primeiro funil
                       </Button>
                     </div>
@@ -585,40 +611,40 @@ const Dashboard = () => {
                         .map((funnel) => (
                           <div
                             key={funnel.id}
-                            className="flex items-center justify-between p-4 rounded-lg border bg-white/50 hover:shadow-sm transition-all"
+                            className="flex items-center justify-between p-4 rounded-xl border bg-white/80 hover:bg-gradient-to-r hover:from-white hover:to-blue-50/20 hover:shadow-md transition-all"
                           >
                             {/* Se estiver editando este funil, mostrar campo de edição */}
                             {editingFunnelId === funnel.id ? (
                               <div className="flex flex-1 items-center gap-2">
-                                <div className="p-2 rounded-full bg-primary/10">
-                                  <LayoutGrid className="h-4 w-4 text-primary" />
+                                <div className="p-2 rounded-full bg-blue-100/50">
+                                  <LayoutGrid className="h-4 w-4 text-blue-600" />
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <Input
                                       value={newFunnelName}
                                       onChange={(e) => setNewFunnelName(e.target.value)}
-                                      className="h-8 text-sm font-medium"
+                                      className="h-8 text-sm font-medium rounded-lg border-blue-100 focus-visible:ring-blue-400/30"
                                       disabled={actionLoading}
                                       autoFocus
                                     />
                                     <Button 
                                       size="sm" 
                                       variant="ghost" 
-                                      className="h-8 w-8" 
+                                      className="h-8 w-8 rounded-full hover:bg-green-50" 
                                       onClick={() => handleSaveRename(funnel.id)}
                                       disabled={actionLoading}
                                     >
-                                      <Check className="h-4 w-4 text-green-500" />
+                                      <Check className="h-4 w-4 text-green-600" />
                                     </Button>
                                     <Button 
                                       size="sm" 
                                       variant="ghost" 
-                                      className="h-8 w-8" 
+                                      className="h-8 w-8 rounded-full hover:bg-red-50" 
                                       onClick={handleCancelEdit}
                                       disabled={actionLoading}
                                     >
-                                      <X className="h-4 w-4 text-red-500" />
+                                      <X className="h-4 w-4 text-red-600" />
                                     </Button>
                                   </div>
                                   <p className="text-sm text-muted-foreground">
@@ -632,7 +658,7 @@ const Dashboard = () => {
                                 className="flex flex-1 items-center gap-4 cursor-pointer"
                                 onClick={() => navigate(`/builder/${funnel.id}`)}
                               >
-                                <div className="p-2 rounded-full bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+                                <div className="p-2 rounded-full bg-gradient-to-br from-blue-100/50 to-indigo-100/50">
                                   <LayoutGrid className="h-4 w-4 text-blue-600" />
                                 </div>
                                 <div>
@@ -646,9 +672,9 @@ const Dashboard = () => {
 
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className={cn(
-                                "capitalize",
+                                "capitalize px-3 py-1 rounded-full text-xs font-medium",
                                 funnel.status === "active" && "bg-green-50 text-green-700 border-green-200",
-                                funnel.status === "draft" && "bg-gray-50 text-gray-700 border-gray-200"
+                                funnel.status === "draft" && "bg-slate-50 text-slate-700 border-slate-200"
                               )}>
                                 {funnel.status === "active" ? "Ativo" : "Rascunho"}
                               </Badge>
@@ -657,25 +683,25 @@ const Dashboard = () => {
                               {editingFunnelId !== funnel.id && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8">
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full hover:bg-slate-100 hover:text-slate-900">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
+                                  <DropdownMenuContent align="end" className="rounded-xl shadow-lg border-slate-200">
                                     <DropdownMenuItem onClick={(e) => {
                                       e.stopPropagation();
                                       handleStartEditing(funnel.id, funnel.name);
-                                    }}>
-                                      <Pencil className="mr-2 h-4 w-4" />
+                                    }} className="rounded-lg cursor-pointer hover:bg-blue-50">
+                                      <Pencil className="mr-2 h-4 w-4 text-blue-600" />
                                       Editar nome
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator className="bg-slate-100" />
                                     <DropdownMenuItem 
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleStartDelete(funnel.id);
                                       }}
-                                      className="text-red-600 focus:text-red-600"
+                                      className="text-red-600 hover:text-red-700 focus:text-red-700 rounded-lg cursor-pointer hover:bg-red-50"
                                     >
                                       <Trash className="mr-2 h-4 w-4" />
                                       Excluir
@@ -697,20 +723,20 @@ const Dashboard = () => {
 
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog open={funnelToDelete !== null} onOpenChange={(open) => !open && handleCancelDelete()}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl bg-white border-red-100 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl">Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Esta ação não pode ser desfeita. O funil será permanentemente excluído
               do nosso servidor.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={actionLoading} className="rounded-full">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={actionLoading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 rounded-full"
             >
               {actionLoading ? (
                 <div className="flex items-center gap-2">
@@ -727,10 +753,10 @@ const Dashboard = () => {
 
       {/* Diálogo de novo funil */}
       <AlertDialog open={isNewFunnelDialogOpen} onOpenChange={setIsNewFunnelDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xl bg-white border-blue-100 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Criar novo funil</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl">Criar novo funil</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Digite um nome para seu novo funil. Este nome será usado para gerar o slug.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -740,33 +766,33 @@ const Dashboard = () => {
                 value={newFunnelNameInput}
                 onChange={(e) => setNewFunnelNameInput(e.target.value)}
                 placeholder="Nome do funil"
-                className="mb-2 pr-10"
+                className="mb-2 pr-10 rounded-lg border-blue-100 focus-visible:ring-blue-400/30"
                 autoFocus
               />
               <div className="absolute right-3 top-2">
                 {slugCheck.checking ? (
-                  <LoaderIcon className="h-5 w-5 text-muted-foreground animate-spin" />
+                  <LoaderIcon className="h-5 w-5 text-blue-500 animate-spin" />
                 ) : slugCheck.available === true ? (
                   <CheckCircleIcon className="h-5 w-5 text-green-500" />
                 ) : slugCheck.available === false ? (
                   <XCircleIcon className="h-5 w-5 text-red-500" />
                 ) : (
-                  <AlertCircleIcon className="h-5 w-5 text-muted-foreground" />
+                  <AlertCircleIcon className="h-5 w-5 text-blue-500" />
                 )}
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-              <InfoIcon className="h-4 w-4" />
+              <InfoIcon className="h-4 w-4 text-blue-500" />
               <div>
                 {slugCheck.checking ? (
                   <span>Verificando disponibilidade do slug...</span>
                 ) : slugCheck.available === true ? (
-                  <span>O slug <code className="bg-muted px-1 rounded">{slugCheck.slug}</code> está disponível</span>
+                  <span>O slug <code className="bg-blue-50 px-1 rounded">{slugCheck.slug}</code> está disponível</span>
                 ) : slugCheck.available === false ? (
                   <span>
-                    O slug <code className="bg-muted px-1 rounded">{slugCheck.slug}</code> já está em uso.
+                    O slug <code className="bg-red-50 px-1 rounded">{slugCheck.slug}</code> já está em uso.
                     {slugCheck.suggestedSlug && (
-                      <> Sugestão: <code className="bg-muted px-1 rounded">{slugCheck.suggestedSlug}</code></>
+                      <> Sugestão: <code className="bg-blue-50 px-1 rounded">{slugCheck.suggestedSlug}</code></>
                     )}
                   </span>
                 ) : (
@@ -776,10 +802,11 @@ const Dashboard = () => {
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCreatingFunnel}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCreatingFunnel} className="rounded-full">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCreateFunnelWithName}
               disabled={isCreatingFunnel || !newFunnelNameInput.trim() || slugCheck.available === false || slugCheck.checking}
+              className="bg-blue-600 hover:bg-blue-700 rounded-full"
             >
               {isCreatingFunnel ? (
                 <div className="flex items-center gap-2">
