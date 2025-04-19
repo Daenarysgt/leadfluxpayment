@@ -7,6 +7,25 @@ import { useStore } from "@/utils/store";
 import { accessService } from "@/services/accessService";
 import { safelyTrackEvent } from "@/utils/pixelUtils";
 
+// Função para ajustar uma cor hex, tornando-a mais clara ou escura
+const adjustColor = (color: string, amount: number): string => {
+  // Remover o # se presente
+  color = color.replace('#', '');
+  
+  // Converter para números
+  let r = parseInt(color.substring(0, 2), 16);
+  let g = parseInt(color.substring(2, 4), 16);
+  let b = parseInt(color.substring(4, 6), 16);
+  
+  // Ajustar os valores (positivo = mais claro, negativo = mais escuro)
+  r = Math.min(255, Math.max(0, r + amount));
+  g = Math.min(255, Math.max(0, g + amount));
+  b = Math.min(255, Math.max(0, b + amount));
+  
+  // Converter de volta para hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 const PriceRenderer = (props: ElementRendererProps) => {
   const { element, isSelected, onSelect, onUpdate } = props;
   const { content = {}, previewMode, previewProps } = element;
@@ -247,7 +266,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                           boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
                           boxShadow === "none" ? "none" : undefined,
                 maxWidth: "100%",
-                backgroundColor: "#000000",
+                backgroundColor: plan.style?.backgroundColor || "#000000",
               }}
             >
               <div className="flex flex-row" style={{ maxHeight: "180px" }}>
@@ -373,7 +392,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 "shadow-lg relative"
               )}
               style={{ 
-                backgroundColor: "#000000",
+                backgroundColor: plan.style?.backgroundColor || "#000000",
                 borderRadius: `${plan.style?.borderRadius || 12}px`,
                 border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
                 boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
@@ -409,7 +428,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
               {/* Preço */}
               <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
                 style={{ 
-                  background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
+                  background: `linear-gradient(180deg, ${plan.style?.backgroundColor || "#000000"}, ${plan.style?.backgroundColor ? adjustColor(plan.style.backgroundColor, -15) : "#111111"})` 
                 }}
               >
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -451,7 +470,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
               {/* Recursos */}
               <div className="flex flex-col space-y-3 px-5 py-5 flex-grow"
                 style={{ 
-                  background: "linear-gradient(180deg, #111111 0%, #000000 100%)" 
+                  background: `linear-gradient(180deg, ${plan.style?.backgroundColor ? adjustColor(plan.style.backgroundColor, -15) : "#111111"}, ${plan.style?.backgroundColor || "#000000"})` 
                 }}
               >
                 {plan.features.slice(0, 8).map((feature) => (
@@ -477,7 +496,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
               {/* Garantia (sem botão interno) */}
               <div className="px-5 pb-5 pt-2 text-center"
                 style={{ 
-                  background: "linear-gradient(180deg, #000000 0%, #000000 100%)" 
+                  background: `linear-gradient(180deg, ${plan.style?.backgroundColor || "#000000"}, ${plan.style?.backgroundColor || "#000000"})` 
                 }}
               >
                 {!plan.showButton && (
