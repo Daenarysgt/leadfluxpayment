@@ -504,15 +504,40 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 ))}
               </div>
 
-              {/* Garantia (sem botão interno) */}
+              {/* Garantia ou botão interno */}
               <div className="px-5 pb-5 pt-2 text-center"
                 style={{ 
                   background: `linear-gradient(180deg, ${plan.style?.backgroundColor || "#000000"}, ${plan.style?.backgroundColor || "#000000"})` 
                 }}
               >
-                {!plan.showButton && (
+                {plan.showButton ? (
+                  // Botão interno do card
+                  <button 
+                    className="w-full py-2.5 px-3 rounded-md text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center mt-2"
+                    style={{ 
+                      backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                      color: plan.style?.buttonTextColor || "#ffffff",
+                      borderRadius: `${plan.style?.borderRadius || 8}px`,
+                    }}
+                    onClick={() => performNavigation(plan)}
+                  >
+                    {plan.buttonText || "Comprar Agora"}
+                    {plan.navigation?.type === "next" && <ArrowRight className="ml-2 h-4 w-4" />}
+                    
+                    {/* Indicador de Facebook Pixel (apenas visível quando for o modo editor) */}
+                    {!previewMode && plan.facebookEvent && plan.facebookEvent !== "none" && (
+                      <span className="ml-1.5 text-xs bg-blue-500 text-white px-1 py-0.5 rounded-sm flex items-center">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 mr-0.5">
+                          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="currentColor" />
+                        </svg>
+                        {plan.facebookEvent === "custom" ? plan.facebookCustomEventName || "Custom" : plan.facebookEvent}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  // Texto de garantia quando não tem botão
                   <div className="flex justify-center items-center gap-1.5 mt-3">
-                    <span className="text-xs opacity-70 text-white">
+                    <span className="text-xs opacity-70" style={{ color: plan.style?.textColor || "#ffffff" }}>
                       {plan.warrantyText || "7 dias de garantia incondicional"}
                     </span>
                   </div>
@@ -522,10 +547,8 @@ const PriceRenderer = (props: ElementRendererProps) => {
           );
           
           return (
-            <div key={plan.id} className="flex flex-col w-full">
+            <div key={plan.id} className="flex justify-center w-full md:w-auto">
               {cardContent}
-              {/* Botão externo (abaixo do card) */}
-              {plan.showButton && renderButton(plan)}
             </div>
           );
         })}
