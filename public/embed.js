@@ -139,12 +139,16 @@
       // Adicionar barra de progresso se configurado
       if (funnelData.settings?.showProgressBar) {
         const progressContainer = document.createElement('div');
-        progressContainer.className = 'w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6';
+        const primaryColor = funnelData.settings?.primaryColor || '#0066ff';
+        
+        // Usando a mesma cor com opacidade de 30%
+        progressContainer.className = 'w-full h-2 rounded-full overflow-hidden mb-6';
+        progressContainer.style.backgroundColor = `${primaryColor}30`;
         
         const progressBar = document.createElement('div');
         progressBar.className = 'h-full transition-all duration-500 ease-out';
         progressBar.style.width = `${((stepIndex + 1) / steps.length) * 100}%`;
-        progressBar.style.backgroundColor = funnelData.settings?.primaryColor || '#0066ff';
+        progressBar.style.backgroundColor = primaryColor;
         
         progressContainer.appendChild(progressBar);
         stepContainer.appendChild(progressContainer);

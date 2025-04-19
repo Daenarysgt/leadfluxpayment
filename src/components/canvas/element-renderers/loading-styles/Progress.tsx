@@ -17,7 +17,12 @@ export const Progress: React.FC<ProgressProps> = ({ color, size, progress }) => 
   
   return (
     <div className="w-full max-w-lg">
-      <div className={`w-full ${barHeight} bg-gray-200 rounded-full overflow-hidden`}>
+      <div 
+        className={`w-full ${barHeight} rounded-full overflow-hidden`}
+        style={{
+          backgroundColor: `${color}30`
+        }}
+      >
         <div
           className="h-full rounded-full transition-all duration-300 ease-in-out"
           style={{ 
