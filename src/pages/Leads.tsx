@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
-  ArrowUpRight, MousePointerClick, ClipboardList
+  ArrowUpRight, MousePointerClick, ClipboardList, TextQuote
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -335,6 +335,10 @@ const Leads = () => {
         };
       });
       
+      // Adicionar mais logs para depuração
+      console.log('Todos os sessionIds de formulários:', processedData.map(d => d.sessionId));
+      console.log('Todos os textos de escolhas:', processedData.map(d => d.leadInfo.text));
+      
       setFormDataLeads(processedData);
       console.log('Processed form data:', processedData);
       
@@ -346,6 +350,7 @@ const Leads = () => {
         leadsSessionIds.includes(form.sessionId)
       );
       console.log('Matching forms found:', matchingForms.length);
+      console.log('Matching forms data:', matchingForms);
       
     } catch (error) {
       console.error('Error loading form data:', error);
@@ -707,6 +712,7 @@ const Leads = () => {
                                       )}
                                       {formDataForLead.leadInfo.text && (
                                         <div className="flex items-center gap-1">
+                                          <TextQuote className="h-3 w-3" />
                                           <span className="text-xs">{formDataForLead.leadInfo.text}</span>
                                         </div>
                                       )}
@@ -719,6 +725,27 @@ const Leads = () => {
                                   <div className="text-muted-foreground">
                                     {lead.interactions[step.step_number].status}
                                   </div>
+                                  
+                                  {/* Exibir dados do Multiple Choice também aqui */}
+                                  {/* Primeiro tenta encontrar pelo formDataForLead */}
+                                  {formDataForLead && formDataForLead.leadInfo.text && (
+                                    <div className="mt-2 text-xs text-gray-500 space-y-1 border-t pt-1">
+                                      <div className="flex items-center gap-1">
+                                        <TextQuote className="h-3 w-3" />
+                                        <span className="text-xs font-medium">{formDataForLead.leadInfo.text}</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Tenta também exibir o valor da interação diretamente, se estiver disponível */}
+                                  {!formDataForLead && lead.interactions[step.step_number].value && (
+                                    <div className="mt-2 text-xs text-blue-500 space-y-1 border-t pt-1">
+                                      <div className="flex items-center gap-1">
+                                        <TextQuote className="h-3 w-3" />
+                                        <span className="text-xs">{lead.interactions[step.step_number].value}</span>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
