@@ -629,7 +629,8 @@ const Leads = () => {
                   console.log(`Lead #${leadIndex}:`, {
                     sessionId: lead.sessionId,
                     matchingFormData: !!formDataForLead,
-                    formData: formDataForLead
+                    formData: formDataForLead,
+                    interactions: lead.interactions
                   });
                   
                   return (
@@ -644,12 +645,13 @@ const Leads = () => {
                         // Exibir informações do formulário na primeira etapa com interação
                         const isFirstInteractionStep = stepIndex === 0;
                         const hasInteraction = !!lead.interactions[step.step_number];
+                        const interaction = lead.interactions[step.step_number];
                         
                         return (
                           <TableCell key={step.step_number} className="border-r">
                             {hasInteraction ? (
                               <div className="text-sm">
-                                {lead.interactions[step.step_number].status === 'clicked' ? (
+                                {interaction.status === 'clicked' ? (
                                   <div>
                                     <div>Clicou</div>
                                     
@@ -679,9 +681,15 @@ const Leads = () => {
                                 ) : (
                                   <div>
                                     <div>Escolheu</div>
-                                    <div className="text-muted-foreground">
-                                      {lead.interactions[step.step_number].status}
-                                    </div>
+                                    {interaction.type === 'choice' && (
+                                      <div className="text-muted-foreground">
+                                        {/* Exibir o valor completo da opção escolhida */}
+                                        <div className="mt-1 text-xs flex items-center gap-1">
+                                          <ClipboardList className="h-3 w-3" />
+                                          <span>{interaction.value || interaction.status}</span>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

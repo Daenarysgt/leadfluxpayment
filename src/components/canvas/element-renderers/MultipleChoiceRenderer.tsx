@@ -36,21 +36,23 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Função para executar a navegação com base na opção selecionada
   const executeNavigation = useCallback(async (optionId: string) => {
     const option = content.options.find((opt: any) => opt.id === optionId);
-    if (!option || !option.navigation) return;
-    
-    const navigationType = option.navigation.type;
-    
-    // Se o tipo de navegação for "none", não faz nada
+    if (!option) return;
+
+    const navigationType = option.navigation?.type || "next";
+    console.log("MultipleChoiceRenderer - executeNavigation with option:", option.text);
+    console.log("Navigation type:", navigationType);
+
+    // Se for tipo "none", não realiza navegação
     if (navigationType === "none") {
       console.log("Navegação do tipo 'none' - nenhuma ação será executada");
       return;
     }
-    
+
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {
       const { activeStep, onStepChange, funnel } = previewProps;
-      console.log("MultipleChoiceRenderer - Executing immediate navigation for option:", option);
       
+      // Registrar a interação de clique no botão juntamente com o valor selecionado
       if (funnel) {
         // Register selected choice
         const selection = option.text || option.value;
@@ -60,8 +62,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             activeStep + 1,
             null, // usar sessionId atual
             'choice',
-            selection
+            selection // Usar o texto completo da opção
           );
+          
+          console.log(`Interação registrada para opção: "${selection}" na etapa ${activeStep + 1}`);
         } catch (error) {
           console.error("Error registering step interaction:", error);
         }

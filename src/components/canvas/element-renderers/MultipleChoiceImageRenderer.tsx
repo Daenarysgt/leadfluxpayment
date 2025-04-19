@@ -18,6 +18,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     
     const navigationType = option.navigation.type;
     
+    console.log("MultipleChoiceImageRenderer - Option clicked:", option);
+    console.log("Option text:", option.text);
+    
     // Se for tipo "none", não realiza navegação
     if (navigationType === "none") {
       console.log("Navegação do tipo 'none' - nenhuma ação será executada");
@@ -27,9 +30,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {
       const { activeStep, onStepChange, funnel } = previewProps;
-      
-      console.log("MultipleChoiceImageRenderer - Option clicked:", option);
-      console.log("Option text:", option.text);
       
       // Registrar a interação com o valor selecionado
       if (funnel) {
@@ -43,6 +43,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           'choice',
           interactionValue
         );
+        
+        console.log(`Interação da imagem registrada para opção: "${interactionValue}" na etapa ${activeStep + 1}`);
       }
       
       if (navigationType === "next") {
