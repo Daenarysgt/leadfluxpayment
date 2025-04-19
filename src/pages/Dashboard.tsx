@@ -25,7 +25,8 @@ import {
   PlusIcon,
   XCircleIcon,
   AlertCircleIcon,
-  LoaderIcon
+  LoaderIcon,
+  User
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -54,6 +55,7 @@ import { toast } from "sonner";
 import { accessService } from '@/services/accessService';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { funnelService } from '@/services/funnelService';
+import ProfileModal from '@/components/ProfileModal';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -109,6 +111,8 @@ const Dashboard = () => {
     available: null,
     slug: ''
   });
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -402,6 +406,14 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">Bem-vindo de volta,</p>
                 <p className="font-medium">{user.email}</p>
               </div>
+              <Button 
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="rounded-full h-9 w-9 p-0"
+              >
+                <User className="h-5 w-5" />
+              </Button>
               <Button variant="outline" onClick={() => navigate('/settings')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
@@ -779,6 +791,13 @@ const Dashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        open={isProfileModalOpen} 
+        onOpenChange={setIsProfileModalOpen} 
+        user={user} 
+      />
     </div>
   );
 };
