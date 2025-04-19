@@ -214,132 +214,141 @@ const PriceRenderer = (props: ElementRendererProps) => {
   const renderCardsPrice = () => {
     return (
       <div className={`flex flex-wrap ${alignmentClass} gap-4 w-full`}>
-        {plans.map((plan, index) => (
-          <div 
-            key={plan.id} 
-            className={cn(
-              "rounded-xl overflow-hidden flex flex-col",
-              "w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
-              "shadow-lg relative"
-            )}
-            style={{ 
-              backgroundColor: "#000000",
-              borderRadius: `${plan.style?.borderRadius || 12}px`,
-              border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
-              boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
-                        boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
-                        boxShadow === "none" ? "none" : undefined,
-              minWidth: "250px",
-              maxWidth: "100%"
-            }}
-          >
-            {/* Tag de destaque */}
-            {plan.isHighlighted && (
-              <div className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10">
-                Recomendado
-              </div>
-            )}
-
-            {/* Cabeçalho do card */}
-            <div className="px-5 pt-4 pb-3 text-center">
-              <h3 
-                className="text-xl font-bold" 
-                style={{ color: plan.style?.textColor || "#ffffff" }}
-              >
-                {plan.title}
-              </h3>
-              <p 
-                className="text-sm opacity-80 mt-1"
-                style={{ color: plan.style?.textColor || "#ffffff" }}
-              >
-                {plan.description}
-              </p>
-            </div>
-
-            {/* Preço */}
-            <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
+        {plans.map((plan, index) => {
+          const cardContent = (
+            <div 
+              className={cn(
+                "rounded-xl overflow-hidden flex flex-col",
+                "w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
+                "shadow-lg relative"
+              )}
               style={{ 
-                background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
+                backgroundColor: "#000000",
+                borderRadius: `${plan.style?.borderRadius || 12}px`,
+                border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
+                boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
+                          boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
+                          boxShadow === "none" ? "none" : undefined,
+                minWidth: "250px",
+                maxWidth: "100%"
               }}
             >
-              <div className="flex items-center justify-center gap-2 mb-2">
-                {plan.discount && (
-                  <span 
-                    className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
-                    style={{ 
-                      backgroundColor: "#8B5CF6",
-                      color: "#ffffff"
-                    }}
-                  >
-                    {plan.discount}
-                  </span>
-                )}
-                {plan.oldPrice && (
-                  <span 
-                    className="line-through text-sm opacity-70"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    R${plan.oldPrice}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex items-baseline justify-center">
-                <span className="text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                  <span className="text-lg mr-1">R$</span>
-                  {plan.price}
-                </span>
-                <span 
-                  className="text-sm opacity-70 ml-2"
-                  style={{ color: plan.style?.textColor || "#ffffff" }}
-                >
-                  à vista
-                </span>
-              </div>
-            </div>
-
-            {/* Recursos */}
-            <div className="flex flex-col space-y-3 px-5 py-5 flex-grow"
-              style={{ 
-                background: "linear-gradient(180deg, #111111 0%, #000000 100%)" 
-              }}
-            >
-              {plan.features.slice(0, 8).map((feature) => (
-                <div key={feature.id} className="flex items-center gap-2">
-                  <div 
-                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
-                    style={{ 
-                      backgroundColor: plan.style?.circleColor || "#32CD32",
-                    }}
-                  >
-                    <Check className="h-3 w-3 text-white" />
-                  </div>
-                  <span 
-                    className="text-sm"
-                    style={{ color: plan.style?.featureColor || "#ffffff" }}
-                  >
-                    {feature.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Garantia (sem botão interno) */}
-            <div className="px-5 pb-5 pt-2 text-center"
-              style={{ 
-                background: "linear-gradient(180deg, #000000 0%, #000000 100%)" 
-              }}
-            >
-              {!plan.showButton && (
-                <div className="flex justify-center items-center gap-1.5 mt-3">
-                  <span className="text-xs opacity-70 text-white">
-                    7 dias de garantia incondicional
-                  </span>
+              {/* Tag de destaque */}
+              {plan.isHighlighted && (
+                <div className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10">
+                  Recomendado
                 </div>
               )}
+
+              {/* Cabeçalho do card */}
+              <div className="px-5 pt-4 pb-3 text-center">
+                <h3 
+                  className="text-xl font-bold" 
+                  style={{ color: plan.style?.textColor || "#ffffff" }}
+                >
+                  {plan.title}
+                </h3>
+                <p 
+                  className="text-sm opacity-80 mt-1"
+                  style={{ color: plan.style?.textColor || "#ffffff" }}
+                >
+                  {plan.description}
+                </p>
+              </div>
+
+              {/* Preço */}
+              <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
+                style={{ 
+                  background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
+                }}
+              >
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  {plan.discount && (
+                    <span 
+                      className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
+                      style={{ 
+                        backgroundColor: "#8B5CF6",
+                        color: "#ffffff"
+                      }}
+                    >
+                      {plan.discount}
+                    </span>
+                  )}
+                  {plan.oldPrice && (
+                    <span 
+                      className="line-through text-sm opacity-70"
+                      style={{ color: plan.style?.textColor || "#ffffff" }}
+                    >
+                      R${plan.oldPrice}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-baseline justify-center">
+                  <span className="text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                    <span className="text-lg mr-1">R$</span>
+                    {plan.price}
+                  </span>
+                  <span 
+                    className="text-sm opacity-70 ml-2"
+                    style={{ color: plan.style?.textColor || "#ffffff" }}
+                  >
+                    à vista
+                  </span>
+                </div>
+              </div>
+
+              {/* Recursos */}
+              <div className="flex flex-col space-y-3 px-5 py-5 flex-grow"
+                style={{ 
+                  background: "linear-gradient(180deg, #111111 0%, #000000 100%)" 
+                }}
+              >
+                {plan.features.slice(0, 8).map((feature) => (
+                  <div key={feature.id} className="flex items-center gap-2">
+                    <div 
+                      className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
+                      style={{ 
+                        backgroundColor: plan.style?.circleColor || "#32CD32",
+                      }}
+                    >
+                      <Check className="h-3 w-3 text-white" />
+                    </div>
+                    <span 
+                      className="text-sm"
+                      style={{ color: plan.style?.featureColor || "#ffffff" }}
+                    >
+                      {feature.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Garantia (sem botão interno) */}
+              <div className="px-5 pb-5 pt-2 text-center"
+                style={{ 
+                  background: "linear-gradient(180deg, #000000 0%, #000000 100%)" 
+                }}
+              >
+                {!plan.showButton && (
+                  <div className="flex justify-center items-center gap-1.5 mt-3">
+                    <span className="text-xs opacity-70 text-white">
+                      7 dias de garantia incondicional
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+          
+          return (
+            <div key={plan.id} className="flex flex-col w-full">
+              {cardContent}
+              {/* Botão externo (abaixo do card) */}
+              {plan.showButton && renderButton(plan)}
+            </div>
+          );
+        })}
       </div>
     );
   };

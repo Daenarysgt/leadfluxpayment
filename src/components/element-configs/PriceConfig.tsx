@@ -44,6 +44,7 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       oldPrice: "",
       discount: "",
       buttonText: "Escolher este plano",
+      showButton: true,
       features: [
         { id: uuidv4(), text: "Recurso 1" },
         { id: uuidv4(), text: "Recurso 2" },
@@ -422,15 +423,28 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2 pt-1">
-                    <Switch
-                      id={`plan-highlight-${plan.id}`}
-                      checked={!!plan.isHighlighted}
-                      onCheckedChange={() => toggleHighlight(plan.id)}
-                    />
-                    <Label htmlFor={`plan-highlight-${plan.id}`} className="text-xs flex items-center">
-                      <Star className="h-3 w-3 mr-1" /> Destacar este plano
-                    </Label>
+                  <div className="flex items-center justify-between space-x-2 pt-1">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id={`plan-highlight-${plan.id}`}
+                        checked={!!plan.isHighlighted}
+                        onCheckedChange={() => toggleHighlight(plan.id)}
+                      />
+                      <Label htmlFor={`plan-highlight-${plan.id}`} className="text-xs flex items-center">
+                        <Star className="h-3 w-3 mr-1" /> Destacar este plano
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id={`plan-show-button-${plan.id}`}
+                        checked={plan.showButton !== false}
+                        onCheckedChange={(checked) => updatePlan(plan.id, { showButton: checked })}
+                      />
+                      <Label htmlFor={`plan-show-button-${plan.id}`} className="text-xs">
+                        Mostrar botão
+                      </Label>
+                    </div>
                   </div>
                 </TabsContent>
                 
