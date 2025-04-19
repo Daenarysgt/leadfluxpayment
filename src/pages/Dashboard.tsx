@@ -797,6 +797,11 @@ const Dashboard = () => {
         open={isProfileModalOpen} 
         onOpenChange={setIsProfileModalOpen} 
         user={user} 
+        planInfo={{
+          id: planId || 'free',
+          name: planId ? planId.toUpperCase() : 'Gratuito',
+          isActive: true
+        }}
       />
     </div>
   );

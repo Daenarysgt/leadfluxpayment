@@ -14,15 +14,20 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, CreditCard, CheckCircle } from "lucide-react";
 
 interface ProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
+  planInfo?: {
+    id: string;
+    name: string;
+    isActive: boolean;
+  };
 }
 
-const ProfileModal = ({ open, onOpenChange, user }: ProfileModalProps) => {
+const ProfileModal = ({ open, onOpenChange, user, planInfo }: ProfileModalProps) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -71,6 +76,19 @@ const ProfileModal = ({ open, onOpenChange, user }: ProfileModalProps) => {
     }
   };
 
+  // Function to format plan name for display
+  const getPlanDisplayName = () => {
+    if (!planInfo || !planInfo.id) return "Gratuito";
+    
+    const planId = planInfo.id.toLowerCase();
+    if (planId === "free") return "Gratuito";
+    if (planId === "basic") return "Básico";
+    if (planId === "pro") return "Profissional";
+    if (planId === "premium") return "Premium";
+    
+    return planInfo.name || planInfo.id.toUpperCase();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -95,6 +113,39 @@ const ProfileModal = ({ open, onOpenChange, user }: ProfileModalProps) => {
               <p className="text-sm text-muted-foreground">
                 Membro desde {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A"}
               </p>
+            </div>
+          </div>
+
+          {/* Plan information section */}
+          <div className="space-y-2">
+            <div className="border rounded-lg p-4 bg-muted/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <h4 className="font-medium">Plano Atual</h4>
+                </div>
+                
+                {planInfo?.isActive && (
+                  <div className="flex items-center gap-1 text-green-600 text-xs">
+                    <CheckCircle className="h-3 w-3" />
+                    <span>Ativo</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">{getPlanDisplayName()}</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => window.location.href = '/pricing'}
+                  >
+                    Alterar plano
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
 
