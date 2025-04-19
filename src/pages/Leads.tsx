@@ -620,17 +620,12 @@ const Leads = () => {
               </TableHeader>
               <TableBody>
                 {leads.map((lead) => {
-                  // Buscar os dados de formulário correspondentes para esta sessão
+                  // Buscar os dados de formulário correspondentes para esta sessão específica
                   const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
                   
                   // Log para depuração
                   console.log('Lead sessionId:', lead.sessionId);
-                  console.log('Dados de formulário disponíveis:', formDataLeads.map(f => f.sessionId));
-                  console.log('Match encontrado:', formDataForLead);
-                  
-                  // Exibir todos os dados de formulário disponíveis na tabela
-                  // independentemente da correspondência exata de IDs
-                  const formDataToShow = formDataForLead || (formDataLeads.length > 0 ? formDataLeads[0] : null);
+                  console.log('Formulário correspondente:', formDataForLead);
                   
                   return (
                     <TableRow key={lead.sessionId}>
@@ -647,29 +642,25 @@ const Leads = () => {
                               {lead.interactions[step.step_number].status === 'clicked' ? (
                                 <div>
                                   <div>Clicou</div>
-                                  {/* Exibir dados do formulário quando disponíveis */}
-                                  {formDataLeads.length > 0 && (
+                                  {/* Exibir dados do formulário APENAS se houver uma correspondência exata para esta sessão */}
+                                  {formDataForLead && (
                                     <div className="mt-2 text-xs text-gray-500 space-y-1">
-                                      {formDataToShow?.leadInfo?.email && (
+                                      {formDataForLead.leadInfo.email && (
                                         <div className="flex items-center gap-1">
                                           <Mail className="h-3 w-3" />
-                                          <span>{formDataToShow.leadInfo.email}</span>
+                                          <span>{formDataForLead.leadInfo.email}</span>
                                         </div>
                                       )}
-                                      {formDataToShow?.leadInfo?.phone && (
+                                      {formDataForLead.leadInfo.phone && (
                                         <div className="flex items-center gap-1">
                                           <Phone className="h-3 w-3" />
-                                          <span>{formDataToShow.leadInfo.phone}</span>
+                                          <span>{formDataForLead.leadInfo.phone}</span>
                                         </div>
                                       )}
-                                      {formDataToShow?.leadInfo?.text && (
+                                      {formDataForLead.leadInfo.text && (
                                         <div className="flex items-center gap-1">
-                                          <span className="text-xs">{formDataToShow.leadInfo.text}</span>
+                                          <span className="text-xs">{formDataForLead.leadInfo.text}</span>
                                         </div>
-                                      )}
-                                      {/* Exibir mensagem se não houver dados */}
-                                      {!formDataToShow?.leadInfo?.email && !formDataToShow?.leadInfo?.phone && !formDataToShow?.leadInfo?.text && (
-                                        <div className="text-xs italic">Dados do formulário indisponíveis</div>
                                       )}
                                     </div>
                                   )}
