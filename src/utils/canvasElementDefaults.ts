@@ -114,7 +114,11 @@ export const getDefaultContent = (componentType: string) => {
     case ComponentType.Button:
       return { buttonText: "Continuar" };
     case ComponentType.Image:
-      return { imageUrl: "/placeholder.svg" };
+      return { 
+        imageUrl: "/placeholder.svg",
+        borderRadius: 0,
+        alignment: "center"  
+      };
     case ComponentType.Carousel:
       return { 
         options: [

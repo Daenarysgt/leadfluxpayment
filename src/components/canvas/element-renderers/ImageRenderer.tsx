@@ -33,9 +33,16 @@ const ImageRenderer = (props: ElementRendererProps) => {
     return getAspectRatioValue(content?.aspectRatio);
   }, [content?.aspectRatio]);
   
-  // Calcular o estilo para margem superior
+  // Calcular o estilo para margem superior e bordas arredondadas
   const containerStyle = {
     marginTop: content?.marginTop ? `${content.marginTop}px` : undefined
+  };
+  
+  // Estilo para bordas arredondadas
+  const imageStyle = {
+    borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
+    maxHeight: content?.height ? `${content.height}px` : 'auto',
+    width: content?.width ? `${content.width}px` : 'auto'
   };
   
   return (
@@ -43,12 +50,13 @@ const ImageRenderer = (props: ElementRendererProps) => {
       <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
         {content?.imageUrl ? (
           content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
-            <div className="w-full max-w-full">
+            <div className="w-full max-w-full" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
               <AspectRatio ratio={aspectRatio}>
                 <img 
                   src={content.imageUrl} 
                   alt={content.altText || "Imagem"} 
                   className="w-full h-full object-cover"
+                  style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}
                 />
               </AspectRatio>
             </div>
@@ -57,14 +65,11 @@ const ImageRenderer = (props: ElementRendererProps) => {
               src={content.imageUrl} 
               alt={content.altText || "Imagem"} 
               className="max-w-full object-contain"
-              style={{
-                maxHeight: content.height ? `${content.height}px` : 'auto',
-                width: content.width ? `${content.width}px` : 'auto'
-              }}
+              style={imageStyle}
             />
           )
         ) : (
-          <div className="h-40 w-full flex items-center justify-center bg-gray-100">
+          <div className="h-40 w-full flex items-center justify-center bg-gray-100" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
             <ImageIcon className="h-12 w-12 text-gray-400" />
           </div>
         )}

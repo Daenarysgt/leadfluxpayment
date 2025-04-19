@@ -28,6 +28,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
   const [sizePercentage, setSizePercentage] = useState(100);
   const [alignment, setAlignment] = useState(element.content?.alignment || "center");
   const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
+  const [borderRadius, setBorderRadius] = useState(element.content?.borderRadius || 0);
   
   // Função para converter arquivo em base64
   const convertToBase64 = (file: File): Promise<string> => {
@@ -271,14 +272,23 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
 
   // Manipulador para mudanças na margem superior
   const handleMarginTopChange = (value: number[]) => {
-    // Atualizar a margem superior no estado local
-    setMarginTop(value[0]);
-    
-    // Atualizar o elemento
+    const margin = value[0];
+    setMarginTop(margin);
     onUpdate({
       content: {
         ...element.content,
-        marginTop: value[0]
+        marginTop: margin
+      }
+    });
+  };
+
+  const handleBorderRadiusChange = (value: number[]) => {
+    const radius = value[0];
+    setBorderRadius(radius);
+    onUpdate({
+      content: {
+        ...element.content,
+        borderRadius: radius
       }
     });
   };
@@ -523,6 +533,20 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
               value={[marginTop]}
               onValueChange={handleMarginTopChange}
             />
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">Bordas Arredondadas (em pixels)</h4>
+            <div className="flex items-center gap-3">
+              <Slider
+                defaultValue={[borderRadius]}
+                max={50}
+                step={1}
+                onValueChange={handleBorderRadiusChange}
+                className="flex-1"
+              />
+              <span className="text-sm text-gray-600 min-w-[30px]">{borderRadius}</span>
+            </div>
           </div>
         </div>
       )}
