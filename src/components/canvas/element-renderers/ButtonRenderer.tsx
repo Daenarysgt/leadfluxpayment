@@ -54,6 +54,8 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const facebookCustomEventName = content.facebookCustomEventName || ""; // Nome do evento personalizado
   const facebookEventParams = content.facebookEventParams || {}; // Parâmetros do evento
   const facebookEventDebugMode = content.facebookEventDebugMode || false; // Modo de debug
+  const borderRadius = content.borderRadius || 4; // Novo campo para arredondamento de cantos
+  const fullWidth = content.fullWidth !== false; // Novo campo para definir se o botão ocupa largura total
   
   // Effect to handle the appearance delay
   useEffect(() => {
@@ -80,7 +82,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   }, [alignment]);
 
   const buttonClass = useMemo(() => {
-    const baseClasses = "w-full transition-all duration-300";
+    const baseClasses = fullWidth ? "w-full transition-all duration-500" : "transition-all duration-500";
     const sizeClasses = {
       sm: "h-8 text-sm",
       default: "h-10",
@@ -101,14 +103,14 @@ const ButtonRenderer = (props: ElementRendererProps) => {
       rounded: "rounded-full hover:opacity-90"
     };
     
-    // Animações
+    // Animações com duração mais suave
     const animationClasses = {
       none: "",
-      pulse: "animate-pulse",
-      bounce: "animate-bounce",
-      shake: "animate-[wiggle_1s_ease-in-out_infinite]",
-      glow: "animate-[glow_1.5s_ease-in-out_infinite]",
-      scale: "animate-[scale_1.5s_ease-in-out_infinite]"
+      pulse: "animate-slow-pulse", // Animação mais suave
+      bounce: "animate-slow-bounce", // Animação mais suave
+      shake: "animate-[wiggle_2s_ease-in-out_infinite]", // Duração mais longa
+      glow: "animate-[glow_2.5s_ease-in-out_infinite]", // Duração mais longa
+      scale: "animate-[scale_2.5s_ease-in-out_infinite]" // Duração mais longa
     };
     
     return cn(
@@ -118,7 +120,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
       animationEnabled && animationType !== "none" && animationClasses[animationType as keyof typeof animationClasses],
       "flex items-center justify-center gap-2"
     );
-  }, [size, variant, animationEnabled, animationType]);
+  }, [size, variant, animationEnabled, animationType, fullWidth]);
 
   const performNavigation = async () => {
     console.log("ButtonRenderer - performNavigation called");
@@ -271,13 +273,14 @@ const ButtonRenderer = (props: ElementRendererProps) => {
           className={buttonClass}
           style={{
             backgroundColor: 
-              variant === "default" || variant === "secondary" || variant === "rounded" || variant === "3d" ? buttonColor : 
+              variant === "default" || variant === "secondary" || variant === "3d" ? buttonColor : 
               variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
               undefined,
             borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
             color: variant === "outline" || variant === "ghost" || variant === "link" ? 
                   buttonColor : 
-                  textColor, // Use textColor for variants that don't have specific color logic
+                  textColor,
+            borderRadius: variant === "rounded" ? "9999px" : `${borderRadius}px`, // Arredondamento personalizado
             // Para variantes específicas, aplicar estilos específicos
             ...(variant === "gradient" ? { 
               background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 

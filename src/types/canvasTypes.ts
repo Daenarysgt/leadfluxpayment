@@ -89,9 +89,14 @@ export interface ButtonContent {
   size?: 'default' | 'sm' | 'lg';
   variant?: 'default' | 'outline' | 'ghost' | 'link';
   buttonColor?: string;
+  textColor?: string;
   animationEnabled?: boolean;
+  animationType?: 'none' | 'pulse' | 'bounce' | 'shake' | 'glow' | 'scale';
   delayEnabled?: boolean;
   delayTime?: number;
+  marginTop?: number;
+  borderRadius?: number;
+  fullWidth?: boolean;
   navigation?: {
     type: 'next' | 'step' | 'url';
     stepId?: string;
@@ -100,4 +105,7 @@ export interface ButtonContent {
   };
   // Facebook Pixel event para rastreamento
   facebookEvent?: string;
+  facebookCustomEventName?: string;
+  facebookEventParams?: Record<string, any>;
+  facebookEventDebugMode?: boolean;
 }
