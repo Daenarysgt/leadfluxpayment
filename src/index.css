@@ -198,6 +198,21 @@
     width: 100%;
   }
   
+  /* Nova classe para o progress bar fixo */
+  .progress-bar-fixed {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    width: 100%;
+  }
+  
+  /* Classe para aumentar o espaçamento vertical entre elementos no funnel */
+  .funnel-content-spacing > * {
+    margin-bottom: 1.25rem;
+  }
+  
   /* Classe específica para elementos de canvas em dispositivos móveis */
   .mobile-element {
     width: 100% !important;
@@ -207,6 +222,7 @@
     margin-left: 0 !important;
     margin-right: 0 !important;
     position: relative !important;
+    margin-bottom: 1rem !important;
   }
   
   /* Assegurar que elementos de texto e imagem se ajustem corretamente */
@@ -253,6 +269,17 @@
     padding-right: initial !important;
     margin-left: initial !important;
     margin-right: initial !important;
+  }
+  
+  /* Fixar a barra de progresso no topo mesmo em desktop */
+  div[class*="progressBarContainerClass"] {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
+    width: 100% !important;
+    background-color: white !important;
   }
 }
 
@@ -342,5 +369,16 @@
   button {
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
+  }
+  
+  /* Fixar a barra de progresso no topo em mobile */
+  div[class*="progressBarContainerClass"] {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
+    width: 100% !important;
+    background-color: white !important;
   }
 }
