@@ -619,111 +619,66 @@ const Leads = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead.sessionId}>
-                    <TableCell>
-                      <Checkbox />
-                    </TableCell>
-                    <TableCell className="border-r">
-                      {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    {stepMetrics.map((step) => (
-                      <TableCell key={step.step_number} className="border-r">
-                        {lead.interactions[step.step_number] ? (
-                          <div className="text-sm">
-                            {lead.interactions[step.step_number].status === 'clicked' ? (
-                              <div>Clicou</div>
-                            ) : (
-                              <div>
-                                <div>Escolheu</div>
-                                <div className="text-muted-foreground">
-                                  {lead.interactions[step.step_number].status}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ) : ''}
+                {leads.map((lead) => {
+                  // Buscar os dados de formulário correspondentes para esta sessão
+                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
+                  
+                  return (
+                    <TableRow key={lead.sessionId}>
+                      <TableCell>
+                        <Checkbox />
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
+                      <TableCell className="border-r">
+                        {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      {stepMetrics.map((step) => (
+                        <TableCell key={step.step_number} className="border-r">
+                          {lead.interactions[step.step_number] ? (
+                            <div className="text-sm">
+                              {lead.interactions[step.step_number].status === 'clicked' ? (
+                                <div>
+                                  <div>Clicou</div>
+                                  {/* Exibir dados do formulário se esta for a etapa onde o formulário foi preenchido */}
+                                  {formDataForLead && (
+                                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                                      {formDataForLead.leadInfo.email && (
+                                        <div className="flex items-center gap-1">
+                                          <Mail className="h-3 w-3" />
+                                          <span>{formDataForLead.leadInfo.email}</span>
+                                        </div>
+                                      )}
+                                      {formDataForLead.leadInfo.phone && (
+                                        <div className="flex items-center gap-1">
+                                          <Phone className="h-3 w-3" />
+                                          <span>{formDataForLead.leadInfo.phone}</span>
+                                        </div>
+                                      )}
+                                      {formDataForLead.leadInfo.text && (
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <div>Escolheu</div>
+                                  <div className="text-muted-foreground">
+                                    {lead.interactions[step.step_number].status}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : ''}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
-        </div>
-
-        <div className="mt-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Dados de Formulários</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Visualize os dados capturados nos formulários do seu funil
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[calc(100vh-340px)]">
-                {formDataLeads.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead>Texto</TableHead>
-                        <TableHead>Detalhes</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {formDataLeads.map((formData) => (
-                        <TableRow key={formData.sessionId}>
-                          <TableCell>
-                            {new Date(formData.submissionTime).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </TableCell>
-                          <TableCell>{formData.leadInfo.email || '-'}</TableCell>
-                          <TableCell>{formData.leadInfo.phone || '-'}</TableCell>
-                          <TableCell>{formData.leadInfo.text || '-'}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
-                                  // Exibir detalhes completos
-                                  console.log('Detalhes do lead:', formData);
-                                  alert(JSON.stringify(formData.leadInfo, null, 2));
-                                }}>
-                                  Ver detalhes completos
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                      <ClipboardList className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <h3 className="font-medium text-lg mb-1">Nenhum dado de formulário</h3>
-                    <p className="text-center text-muted-foreground max-w-sm">
-                      Os dados serão registrados quando os usuários preencherem os formulários do seu funil
-                    </p>
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
