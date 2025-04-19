@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/utils/store";
+import { accessService } from "@/services/accessService";
+import { safelyTrackEvent } from "@/utils/pixelUtils";
 
 const PriceRenderer = (props: ElementRendererProps) => {
   const { element, isSelected, onSelect, onUpdate } = props;
-  const { content = {}, previewMode } = element;
+  const { content = {}, previewMode, previewProps } = element;
+  const { setCurrentStep, currentFunnel, currentStep } = useStore();
   
   // Extraindo os dados do content ou usando valores padrão
   const [title, setTitle] = useState(content?.title || "Planos de Preço");
@@ -63,9 +67,144 @@ const PriceRenderer = (props: ElementRendererProps) => {
     right: "justify-end"
   }[alignment] || "justify-center";
 
+  // Função para gerenciar a navegação e evento do Facebook Pixel
+  const performNavigation = useCallback(async (plan) => {
+    if (!plan) return;
+    
+    const navigation = plan.navigation || { type: "next" };
+    const facebookEvent = plan.facebookEvent || "";
+    const facebookCustomEventName = plan.facebookCustomEventName || "";
+    const facebookEventParams = plan.facebookEventParams || {};
+    const facebookEventDebugMode = plan.facebookEventDebugMode || false;
+    
+    // Rastrear evento do Facebook Pixel se configurado
+    if (previewMode && facebookEvent && facebookEvent !== "none") {
+      // Determinar qual nome de evento usar
+      const eventName = facebookEvent === "custom" 
+        ? facebookCustomEventName 
+        : facebookEvent;
+      
+      // Não enviar evento personalizado se o nome estiver vazio
+      if (facebookEvent === "custom" && !facebookCustomEventName) {
+        if (facebookEventDebugMode) {
+          console.warn("Facebook Pixel: Nome de evento personalizado não definido");
+        }
+        return;
+      }
+      
+      // Adicionar feedback visual/log quando estiver em modo de debug
+      if (facebookEventDebugMode) {
+        console.group("🔍 Facebook Pixel - Evento Disparado");
+        console.log("Evento:", eventName);
+        console.log("Parâmetros:", facebookEventParams);
+        console.groupEnd();
+      }
+
+      safelyTrackEvent(eventName, facebookEventParams);
+    }
+    
+    // Handle navigation differently based on preview mode
+    if (previewMode && previewProps) {
+      const { activeStep, onStepChange, funnel } = previewProps;
+      
+      switch (navigation.type) {
+        case "next":
+          if (funnel && funnel.steps.length > 0) {
+            const isLastStep = activeStep === funnel.steps.length - 1;
+            
+            if (isLastStep) {
+              // Se for o último step, registrar o clique e marcar como conversão
+              try {
+                // Registrar o clique do botão
+                await accessService.registerStepInteraction(
+                  funnel.id,
+                  Number(activeStep + 1),
+                  null,
+                  'click'
+                );
+                // Marcar como conversão
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+              } catch (error) {
+                console.error("Erro ao registrar conversão:", error);
+              }
+            } else if (activeStep < funnel.steps.length - 1) {
+              onStepChange(activeStep + 1);
+            }
+          }
+          break;
+        case "step":
+          if (navigation.stepId && funnel) {
+            const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
+            if (stepIndex !== -1) {
+              const isLastStep = stepIndex === funnel.steps.length - 1;
+              
+              if (isLastStep) {
+                // Se for o último step, registrar o clique e marcar como conversão
+                try {
+                  // Registrar o clique do botão
+                  await accessService.registerStepInteraction(
+                    funnel.id,
+                    Number(stepIndex + 1),
+                    null,
+                    'click'
+                  );
+                  // Marcar como conversão
+                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
+                } catch (error) {
+                  console.error("Erro ao registrar conversão:", error);
+                }
+              } else {
+                onStepChange(stepIndex);
+              }
+            }
+          }
+          break;
+        case "url":
+          if (navigation.url) {
+            if (funnel) {
+              // Marcar como conversão antes de redirecionar
+              try {
+                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
+              } catch (error) {
+                console.error("Erro ao registrar conversão:", error);
+              }
+            }
+            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          }
+          break;
+      }
+    } else {
+      // Handle navigation in canvas mode
+      switch (navigation.type) {
+        case "next":
+          if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+          }
+          break;
+        case "step":
+          if (navigation.stepId && currentFunnel) {
+            const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
+            if (stepIndex !== -1) {
+              setCurrentStep(stepIndex);
+            }
+          }
+          break;
+        case "url":
+          if (navigation.url) {
+            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+          }
+          break;
+      }
+    }
+  }, [previewMode, previewProps, currentFunnel, currentStep, setCurrentStep]);
+
   // Função para renderizar o botão
   const renderButton = (plan) => {
     if (!plan.showButton) return null;
+    
+    const navigation = plan.navigation || { type: "next" };
+    const facebookEvent = plan.facebookEvent || "";
+    const facebookCustomEventName = plan.facebookCustomEventName || "";
     
     return (
       <button 
@@ -75,9 +214,20 @@ const PriceRenderer = (props: ElementRendererProps) => {
           color: plan.style?.buttonTextColor || "#ffffff",
           borderRadius: `${plan.style?.borderRadius || 8}px`,
         }}
+        onClick={() => performNavigation(plan)}
       >
         {plan.buttonText || "Comprar Agora"}
-        <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+        {navigation.type === "next" && <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />}
+        
+        {/* Indicador de Facebook Pixel (apenas visível quando for o modo editor) */}
+        {!previewMode && facebookEvent && facebookEvent !== "none" && (
+          <span className="ml-1.5 text-xs bg-blue-500 text-white px-1 py-0.5 rounded-sm flex items-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 mr-0.5">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="currentColor" />
+            </svg>
+            {facebookEvent === "custom" ? facebookCustomEventName || "Custom" : facebookEvent}
+          </span>
+        )}
       </button>
     );
   };

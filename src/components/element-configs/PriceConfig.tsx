@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { ColorPicker } from "./common/ColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, PlusCircle, ArrowUp, ArrowDown, Star, PanelLeft, LayoutGrid, AlignCenter, AlignLeft, AlignRight } from "lucide-react";
+import { Trash2, PlusCircle, ArrowUp, ArrowDown, Star, PanelLeft, LayoutGrid, AlignCenter, AlignLeft, AlignRight, HelpCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/utils/store";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PriceConfigProps {
   element: CanvasElement;
@@ -21,7 +23,14 @@ interface PriceConfigProps {
 
 const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
   const content = element.content || {};
+  const { currentFunnel } = useStore();
   
+  // Get steps from current funnel for the step selector
+  const steps = currentFunnel?.steps.map(step => ({
+    id: step.id,
+    title: step.title
+  })) || [];
+
   const updateContent = (newContentProps: any) => {
     onUpdate({
       content: {
@@ -45,6 +54,11 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       discount: "",
       buttonText: "Escolher este plano",
       showButton: true,
+      navigation: { type: "next" },
+      facebookEvent: "",
+      facebookCustomEventName: "",
+      facebookEventParams: {},
+      facebookEventDebugMode: false,
       features: [
         { id: uuidv4(), text: "Recurso 1" },
         { id: uuidv4(), text: "Recurso 2" },
@@ -139,6 +153,21 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
         ...updates
       };
       
+      updateContent({ plans });
+    }
+  };
+
+  // Atualizar configurações de navegação de um plano
+  const updatePlanNavigation = (planId: string, navigationUpdates: any) => {
+    const plans = [...(content.plans || [])];
+    const planIndex = plans.findIndex(plan => plan.id === planId);
+    
+    if (planIndex !== -1) {
+      const plan = { ...plans[planIndex] };
+      const navigation = { ...(plan.navigation || { type: "next" }), ...navigationUpdates };
+      
+      plan.navigation = navigation;
+      plans[planIndex] = plan;
       updateContent({ plans });
     }
   };
@@ -352,6 +381,7 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                   <TabsTrigger value="info" className="flex-1 text-xs">Informações</TabsTrigger>
                   <TabsTrigger value="features" className="flex-1 text-xs">Recursos</TabsTrigger>
                   <TabsTrigger value="style" className="flex-1 text-xs">Estilo</TabsTrigger>
+                  <TabsTrigger value="action" className="flex-1 text-xs">Ação</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="info" className="space-y-3">
@@ -540,6 +570,222 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                       onChange={color => updatePlanStyle(plan.id, { borderColor: color })}
                     />
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="action" className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor={`navigation-type-${plan.id}`}>Ação ao Clicar</Label>
+                    <Select 
+                      value={(plan.navigation?.type || "next")} 
+                      onValueChange={(value: "next" | "step" | "url") => updatePlanNavigation(plan.id, { type: value })}
+                    >
+                      <SelectTrigger id={`navigation-type-${plan.id}`}>
+                        <SelectValue placeholder="Selecione a ação" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="next">Próximo Passo</SelectItem>
+                        <SelectItem value="step">Ir para Passo Específico</SelectItem>
+                        <SelectItem value="url">Abrir URL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Facebook Pixel Event */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`facebook-event-${plan.id}`}>Evento do Facebook Pixel</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Este evento será enviado para o Facebook Ads quando o botão for clicado</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <Select 
+                      value={plan.facebookEvent || "none"} 
+                      onValueChange={(value) => {
+                        // Se o valor for "none", salve como null ou vazio na configuração
+                        const eventValue = value === "none" ? "" : value;
+                        updatePlan(plan.id, { facebookEvent: eventValue });
+                      }}
+                    >
+                      <SelectTrigger id={`facebook-event-${plan.id}`}>
+                        <SelectValue placeholder="Selecione um evento (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        <SelectItem value="InitiateCheckout">InitiateCheckout</SelectItem>
+                        <SelectItem value="Lead">Lead</SelectItem>
+                        <SelectItem value="Contact">Contact</SelectItem>
+                        <SelectItem value="AddToCart">AddToCart</SelectItem>
+                        <SelectItem value="Purchase">Purchase</SelectItem>
+                        <SelectItem value="Subscribe">Subscribe</SelectItem>
+                        <SelectItem value="custom">Evento Personalizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Este evento será enviado para o Facebook Ads quando o usuário clicar neste botão
+                    </p>
+                    
+                    {/* Input para evento personalizado */}
+                    {plan.facebookEvent === "custom" && (
+                      <div className="mt-2 space-y-2">
+                        <Label htmlFor={`custom-event-${plan.id}`}>Nome do evento personalizado</Label>
+                        <Input 
+                          id={`custom-event-${plan.id}`}
+                          placeholder="Ex: MeuEventoPersonalizado"
+                          value={plan.facebookCustomEventName || ""}
+                          onChange={(e) => updatePlan(plan.id, { facebookCustomEventName: e.target.value })}
+                          className="h-8 text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Use apenas letras, números e sublinhados. Não use espaços.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Parâmetros avançados para eventos específicos do Facebook Pixel */}
+                    {plan.facebookEvent && plan.facebookEvent !== "none" && plan.facebookEvent !== "" && (
+                      <div className="mt-3 space-y-3 rounded-md border p-3 bg-gray-50">
+                        <h4 className="text-xs font-medium">Parâmetros avançados do evento</h4>
+                        
+                        {(plan.facebookEvent === "Purchase" || plan.facebookEvent === "InitiateCheckout") && (
+                          <>
+                            <div className="space-y-1">
+                              <Label htmlFor={`event-value-${plan.id}`} className="text-xs">Valor monetário</Label>
+                              <Input 
+                                id={`event-value-${plan.id}`}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={plan.facebookEventParams?.value || ""}
+                                onChange={(e) => updatePlan(plan.id, { 
+                                  facebookEventParams: {
+                                    ...(plan.facebookEventParams || {}),
+                                    value: e.target.value
+                                  }
+                                })}
+                                className="h-8 text-sm"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Valor associado à transação (ex: 29.90)
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label htmlFor={`event-currency-${plan.id}`} className="text-xs">Moeda</Label>
+                              <Select
+                                value={plan.facebookEventParams?.currency || "BRL"}
+                                onValueChange={(value) => updatePlan(plan.id, { 
+                                  facebookEventParams: {
+                                    ...(plan.facebookEventParams || {}),
+                                    currency: value
+                                  }
+                                })}
+                              >
+                                <SelectTrigger id={`event-currency-${plan.id}`} className="h-8 text-sm">
+                                  <SelectValue placeholder="Selecione a moeda" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="BRL">Real (BRL)</SelectItem>
+                                  <SelectItem value="USD">Dólar (USD)</SelectItem>
+                                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+                        
+                        {plan.facebookEvent === "Lead" && (
+                          <div className="space-y-1">
+                            <Label htmlFor={`lead-type-${plan.id}`} className="text-xs">Tipo de lead</Label>
+                            <Input 
+                              id={`lead-type-${plan.id}`}
+                              placeholder="Ex: quente, frio, newsletter"
+                              value={plan.facebookEventParams?.lead_type || ""}
+                              onChange={(e) => updatePlan(plan.id, { 
+                                facebookEventParams: {
+                                  ...(plan.facebookEventParams || {}),
+                                  lead_type: e.target.value
+                                }
+                              })}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        )}
+
+                        <div className="pt-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-violet-700 h-7 text-xs"
+                            onClick={() => updatePlan(plan.id, { 
+                              facebookEventDebugMode: !plan.facebookEventDebugMode 
+                            })}
+                          >
+                            {plan.facebookEventDebugMode ? "Desativar" : "Ativar"} modo de teste
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            O modo de teste mostra no console os eventos enviados
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {plan.navigation?.type === "step" && steps.length > 0 && (
+                    <div className="space-y-1">
+                      <Label htmlFor={`step-selector-${plan.id}`} className="text-xs">Selecionar Passo</Label>
+                      <Select
+                        value={plan.navigation?.stepId || ""}
+                        onValueChange={(value) => updatePlanNavigation(plan.id, { stepId: value })}
+                      >
+                        <SelectTrigger id={`step-selector-${plan.id}`} className="h-8 text-sm">
+                          <SelectValue placeholder="Escolha um passo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {steps.map((step) => (
+                            <SelectItem key={step.id} value={step.id}>
+                              {step.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {plan.navigation?.type === "step" && steps.length === 0 && (
+                    <div className="text-xs text-amber-600 mt-2">
+                      Nenhum passo disponível. Adicione passos no funil primeiro.
+                    </div>
+                  )}
+
+                  {plan.navigation?.type === "url" && (
+                    <div className="space-y-1">
+                      <Label htmlFor={`url-${plan.id}`} className="text-xs">URL</Label>
+                      <Input
+                        id={`url-${plan.id}`}
+                        value={plan.navigation?.url || ""}
+                        onChange={(e) => updatePlanNavigation(plan.id, { url: e.target.value })}
+                        placeholder="https://exemplo.com"
+                        className="h-8 text-sm"
+                      />
+                      
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Switch
+                          id={`new-tab-${plan.id}`}
+                          checked={plan.navigation?.openInNewTab || false}
+                          onCheckedChange={(checked) => updatePlanNavigation(plan.id, { openInNewTab: checked })}
+                        />
+                        <Label htmlFor={`new-tab-${plan.id}`} className="text-xs">Abrir em nova aba</Label>
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
