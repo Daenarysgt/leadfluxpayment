@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
-  ArrowUpRight, MousePointerClick, ClipboardList
+  ArrowUpRight, MousePointerClick, ClipboardList,
+  Info, Eye
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -25,6 +26,20 @@ import { accessService } from "@/services/accessService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TrackingTable } from "@/components/tracking-table";
 import { createClient } from '@supabase/supabase-js';
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  TooltipProps
+} from 'recharts';
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 // Criar cliente Supabase
 const supabase = createClient(
@@ -148,6 +163,11 @@ const Leads = () => {
     submissionTime: Date;
     leadInfo: Record<string, string>;
   }>>([]);
+  // Novo estado para dados do gráfico
+  const [visitsByDate, setVisitsByDate] = useState<Array<{
+    date: string;
+    visits: number;
+  }>>([]);
 
   useEffect(() => {
     if (funnelId && (!currentFunnel || currentFunnel.id !== funnelId)) {
@@ -160,7 +180,8 @@ const Leads = () => {
       loadMetrics();
       loadLeads();
       loadStepMetrics();
-      loadFormData(); // Nova chamada
+      loadFormData();
+      loadVisitsByDate(); // Nova chamada
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -326,6 +347,22 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading form data:', error);
       setFormDataLeads([]);
+    }
+  };
+
+  // Nova função para carregar dados do gráfico
+  const loadVisitsByDate = async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Getting visits by date for funnel:', currentFunnel.id);
+      const visitsData = await accessService.getFunnelVisitsByDate(currentFunnel.id, selectedPeriod);
+      
+      console.log('Visits by date:', visitsData);
+      setVisitsByDate(visitsData);
+    } catch (error) {
+      console.error('Error loading visits by date:', error);
+      setVisitsByDate([]);
     }
   };
 
@@ -536,6 +573,73 @@ const Leads = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* NOVO: Gráfico de Visitas */}
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-700" />
+              <span>Visitas por Data</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Total de visitantes únicos do funil por dia
+            </p>
+          </div>
+          
+          {visitsByDate.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Info className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">Não há dados de visitas para o período selecionado</p>
+            </div>
+          ) : (
+            <div className="h-64">
+              <ChartContainer 
+                className="w-full h-full"
+                config={{
+                  visits: { 
+                    label: "Visitantes", 
+                    color: "#8B5CF6"
+                  }
+                }}
+              >
+                <BarChart data={visitsByDate}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }} 
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    tickLine={false}
+                    tick={{ fontSize: 12 }}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border shadow-md rounded-md p-2 text-sm">
+                            <p className="font-medium">{payload[0].payload.date}</p>
+                            <p className="text-blue-700">{payload[0].value} visitantes</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="visits" 
+                    fill="#8B5CF6" 
+                    radius={[4, 4, 0, 0]} 
+                    name="Visitantes"
+                    barSize={35}
+                    animationDuration={500}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
+          )}
         </div>
 
         {/* Tracking Table Section */}

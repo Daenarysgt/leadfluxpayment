@@ -552,5 +552,83 @@ export const accessService = {
       console.error('Error fetching funnel form data:', error);
       return [];
     }
+  },
+
+  /**
+   * Busca as visitas diárias do funil para o gráfico
+   */
+  async getFunnelVisitsByDate(funnelId: string, period: 'all' | 'today' | '7days' | '30days' = 'all'): Promise<Array<{
+    date: string;
+    visits: number;
+  }>> {
+    try {
+      // Determinar faixa de datas com base no período
+      let startDate = null;
+      const endDate = new Date();
+      const today = new Date();
+      
+      if (period === 'today') {
+        startDate = new Date(today.setHours(0, 0, 0, 0));
+      } else if (period === '7days') {
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 7);
+      } else if (period === '30days') {
+        startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 30);
+      }
+      
+      let query = supabase
+        .from('funnel_access_logs')
+        .select('created_at, is_first_access')
+        .eq('funnel_id', funnelId)
+        .eq('is_first_access', true); // Contar apenas acessos únicos
+      
+      // Aplicar filtro de período se especificado
+      if (startDate && period !== 'all') {
+        query = query.gte('created_at', startDate.toISOString());
+        query = query.lte('created_at', endDate.toISOString());
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching funnel visits by date:', error);
+        return [];
+      }
+      
+      // Agrupar por data
+      const visitsByDate = data.reduce((acc: {[date: string]: number}, log) => {
+        // Formatar data como DD/MM/YYYY
+        const date = new Date(log.created_at);
+        const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        
+        if (!acc[formattedDate]) {
+          acc[formattedDate] = 0;
+        }
+        
+        acc[formattedDate]++;
+        return acc;
+      }, {});
+      
+      // Transformar em array para o gráfico
+      const result = Object.entries(visitsByDate).map(([date, visits]) => ({
+        date,
+        visits
+      }));
+      
+      // Ordenar por data
+      return result.sort((a, b) => {
+        const [dayA, monthA, yearA] = a.date.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.date.split('/').map(Number);
+        
+        const dateA = new Date(yearA, monthA - 1, dayA);
+        const dateB = new Date(yearB, monthB - 1, dayB);
+        
+        return dateA.getTime() - dateB.getTime();
+      });
+    } catch (error) {
+      console.error('Error fetching funnel visits by date:', error);
+      return [];
+    }
   }
 }; 
