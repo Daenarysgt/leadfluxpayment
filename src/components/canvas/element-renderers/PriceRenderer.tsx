@@ -272,6 +272,14 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 backgroundColor: plan.style?.backgroundColor || "#000000",
               }}
             >
+              {/* Tag de destaque se o plano for destacado */}
+              {plan.isHighlighted && (
+                <div className="absolute top-0 right-0 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10"
+                     style={{ backgroundColor: plan.style?.highlightColor || "#8B5CF6" }}>
+                  Recomendado
+                </div>
+              )}
+              
               <div className="flex flex-row" style={{ maxHeight: "180px" }}>
                 {/* Lado esquerdo - Informações e recursos */}
                 <div className="p-2 sm:p-5 flex-1 flex flex-col justify-center">
@@ -407,7 +415,8 @@ const PriceRenderer = (props: ElementRendererProps) => {
             >
               {/* Tag de destaque */}
               {plan.isHighlighted && (
-                <div className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10">
+                <div className="absolute top-0 right-0 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10"
+                     style={{ backgroundColor: plan.style?.highlightColor || "#8B5CF6" }}>
                   Recomendado
                 </div>
               )}

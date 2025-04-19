@@ -77,7 +77,8 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
         circleColor: "#32CD32",
         borderRadius: 8,
         borderColor: "#333333",
-        dividerColor: "#333333"
+        dividerColor: "#333333",
+        highlightColor: "#8B5CF6"
       }
     };
     
@@ -578,6 +579,15 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                     <AdvancedColorPicker
                       value={plan.style?.buttonColor || "#8B5CF6"}
                       onChange={color => updatePlanStyle(plan.id, { buttonColor: color })}
+                      size="sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs">Cor de destaque</Label>
+                    <AdvancedColorPicker
+                      value={plan.style?.highlightColor || "#8B5CF6"}
+                      onChange={color => updatePlanStyle(plan.id, { highlightColor: color })}
                       size="sm"
                     />
                   </div>
