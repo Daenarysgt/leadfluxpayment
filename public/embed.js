@@ -142,8 +142,9 @@
         const primaryColor = funnelData.settings?.primaryColor || '#0066ff';
         
         // Usando a mesma cor com opacidade de 30%
-        progressContainer.className = 'w-full h-3 rounded-full overflow-hidden mb-6';
+        progressContainer.className = 'w-full rounded-full overflow-hidden mb-6';
         progressContainer.style.backgroundColor = `${primaryColor}30`;
+        progressContainer.style.height = '10px'; // Valor intermediário entre h-2 (8px) e h-3 (12px)
         
         const progressBar = document.createElement('div');
         progressBar.className = 'h-full transition-all duration-500 ease-out';

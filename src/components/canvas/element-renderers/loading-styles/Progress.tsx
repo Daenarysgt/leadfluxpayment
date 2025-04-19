@@ -7,20 +7,22 @@ interface ProgressProps {
 }
 
 export const Progress: React.FC<ProgressProps> = ({ color, size, progress }) => {
-  const heightClasses = {
-    small: "h-5",
+  const heightClasses: Record<string, string> = {
+    small: "", // Vamos usar um valor personalizado para o small
     medium: "h-6",
     large: "h-8",
   };
   
   const barHeight = heightClasses[size as keyof typeof heightClasses] || heightClasses.medium;
+  const customHeight = size === 'small' ? '18px' : undefined; // Valor intermediário entre h-4 (16px) e h-5 (20px)
   
   return (
     <div className="w-full max-w-lg">
       <div 
         className={`w-full ${barHeight} rounded-full overflow-hidden`}
         style={{
-          backgroundColor: `${color}30`
+          backgroundColor: `${color}30`,
+          ...(customHeight ? { height: customHeight } : {})
         }}
       >
         <div

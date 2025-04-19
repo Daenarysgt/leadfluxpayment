@@ -103,8 +103,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     : "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
   
   const progressBarClass = isMobile
-    ? "w-full h-3 rounded-full overflow-hidden mb-3"
-    : "w-full h-3 rounded-full overflow-hidden mb-4 sm:mb-6";
+    ? "w-full rounded-full overflow-hidden mb-3"
+    : "w-full rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
     ? "w-full mobile-full-width"
@@ -154,7 +154,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           <div 
             className={progressBarClass}
             style={{
-              backgroundColor: `${primaryColor}30` // Usando a mesma cor com 30% de opacidade
+              backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
+              height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
             }}
           >
             <div 
