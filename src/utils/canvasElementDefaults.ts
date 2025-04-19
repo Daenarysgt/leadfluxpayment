@@ -323,32 +323,85 @@ export const getDefaultContent = (componentType: string) => {
     case ComponentType.Price:
       return {
         title: "Planos de Preço",
-        displayStyle: "horizontal", // horizontal ou cards
+        displayStyle: "cards", // alterado para cards por padrão
         alignment: "center", // left, center, right
         backgroundColor: "#151515",
         boxShadow: "lg", // lg, md, sm, none
         plans: [
           {
             id: crypto.randomUUID(),
-            title: "Plano Pro",
-            description: "Supercharger sua experiência com recursos avançados",
+            title: "Básico",
+            description: "Para quem está começando",
+            price: "99,00",
+            oldPrice: "149,00",
+            discount: "33% off",
+            buttonText: "Escolher plano",
+            features: [
+              { id: crypto.randomUUID(), text: "Acesso a recursos básicos" },
+              { id: crypto.randomUUID(), text: "Suporte por email" },
+              { id: crypto.randomUUID(), text: "Até 5 projetos" }
+            ],
+            isHighlighted: false,
+            style: {
+              backgroundColor: "#000000",
+              textColor: "#ffffff",
+              buttonColor: "#6B7280",
+              buttonTextColor: "#ffffff",
+              featureColor: "#ffffff",
+              circleColor: "#22c55e",
+              borderRadius: 8,
+              borderColor: "#333333"
+            }
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Pro",
+            description: "Recursos avançados para profissionais",
             price: "197,00",
             oldPrice: "240,00",
             discount: "50% off",
-            buttonText: "Comprar Agora!",
+            buttonText: "Escolher plano",
             features: [
-              { id: crypto.randomUUID(), text: "Novo recurso" },
-              { id: crypto.randomUUID(), text: "Novo recurso" },
-              { id: crypto.randomUUID(), text: "Novo recurso" }
+              { id: crypto.randomUUID(), text: "Todos os recursos básicos" },
+              { id: crypto.randomUUID(), text: "Suporte prioritário" },
+              { id: crypto.randomUUID(), text: "Projetos ilimitados" },
+              { id: crypto.randomUUID(), text: "Acesso a recursos premium" }
             ],
-            isHighlighted: false,
+            isHighlighted: true,
             style: {
               backgroundColor: "#000000",
               textColor: "#ffffff",
               buttonColor: "#8B5CF6",
               buttonTextColor: "#ffffff",
               featureColor: "#ffffff",
-              circleColor: "#32CD32",
+              circleColor: "#22c55e",
+              borderRadius: 8,
+              borderColor: "#333333"
+            }
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Enterprise",
+            description: "Para grandes empresas",
+            price: "497,00",
+            oldPrice: "",
+            discount: "",
+            buttonText: "Falar com vendas",
+            features: [
+              { id: crypto.randomUUID(), text: "Tudo no plano Pro" },
+              { id: crypto.randomUUID(), text: "Suporte 24/7" },
+              { id: crypto.randomUUID(), text: "Equipe dedicada" },
+              { id: crypto.randomUUID(), text: "Recursos exclusivos" },
+              { id: crypto.randomUUID(), text: "SLA garantido" }
+            ],
+            isHighlighted: false,
+            style: {
+              backgroundColor: "#000000",
+              textColor: "#ffffff",
+              buttonColor: "#0EA5E9",
+              buttonTextColor: "#ffffff",
+              featureColor: "#ffffff",
+              circleColor: "#22c55e",
               borderRadius: 8,
               borderColor: "#333333"
             }

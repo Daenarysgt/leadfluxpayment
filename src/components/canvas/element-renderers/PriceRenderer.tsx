@@ -70,9 +70,9 @@ const PriceRenderer = (props: ElementRendererProps) => {
           <div 
             key={plan.id} 
             className={cn(
-              "rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 w-full max-w-4xl transition-all duration-300",
+              "rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 w-full max-w-4xl transition-all duration-300",
               plan.isHighlighted ? "ring-2 ring-violet-500 scale-[1.02]" : "",
-              "bg-opacity-90 backdrop-blur-sm"
+              "bg-opacity-90 backdrop-blur-sm overflow-hidden"
             )}
             style={{ 
               backgroundColor: plan.style?.backgroundColor || backgroundColor,
@@ -84,9 +84,9 @@ const PriceRenderer = (props: ElementRendererProps) => {
             }}
           >
             {/* Informações do plano */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2">
+            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2 w-full md:w-auto">
               {plan.isHighlighted && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 md:left-6 md:translate-x-0 bg-violet-500 text-white text-xs font-medium py-1 px-3 rounded-full flex items-center gap-1">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 md:left-6 md:translate-x-0 bg-violet-500 text-white text-xs font-medium py-1 px-3 rounded-full flex items-center gap-1 whitespace-nowrap">
                   <Star className="h-3 w-3" /> Recomendado
                 </div>
               )}
@@ -106,7 +106,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
 
             {/* Preço */}
             <div className="flex flex-col items-center md:items-center">
-              <div className="flex items-center">
+              <div className="flex items-center flex-wrap justify-center">
                 <span 
                   className="text-3xl font-bold" 
                   style={{ color: plan.style?.textColor || "#ffffff" }}
@@ -136,11 +136,11 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </div>
 
             {/* Recursos */}
-            <div className="flex flex-col items-center md:items-start space-y-2">
+            <div className="flex flex-col items-center md:items-start space-y-2 w-full md:w-auto">
               {plan.features.map((feature) => (
-                <div key={feature.id} className="flex items-center gap-2">
+                <div key={feature.id} className="flex items-center gap-2 max-w-full overflow-hidden">
                   <div 
-                    className="h-5 w-5 rounded-full flex items-center justify-center" 
+                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
                     style={{ 
                       backgroundColor: plan.style?.circleColor || "#32CD32",
                     }}
@@ -148,7 +148,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <span 
-                    className="text-sm"
+                    className="text-sm truncate"
                     style={{ color: plan.style?.featureColor || "#ffffff" }}
                   >
                     {feature.text}
@@ -159,7 +159,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
 
             {/* Botão */}
             <button 
-              className="mt-4 md:mt-0 py-2 px-6 rounded-lg font-medium transition-all duration-200 hover:opacity-90 active:scale-95"
+              className="mt-4 md:mt-0 py-2 px-6 rounded-lg font-medium transition-all duration-200 hover:opacity-90 active:scale-95 w-full md:w-auto whitespace-nowrap"
               style={{ 
                 backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                 color: plan.style?.buttonTextColor || "#ffffff",
@@ -177,13 +177,13 @@ const PriceRenderer = (props: ElementRendererProps) => {
   // Renderização para o estilo de cards
   const renderCardsPrice = () => {
     return (
-      <div className={`flex flex-wrap ${alignmentClass} gap-6 w-full`}>
+      <div className={`flex flex-wrap ${alignmentClass} gap-4 w-full`}>
         {plans.map((plan, index) => (
           <div 
             key={plan.id} 
             className={cn(
               "rounded-xl p-6 flex flex-col gap-4 transition-all duration-300",
-              "w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)]",
+              "w-full sm:w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
               plan.isHighlighted ? "ring-2 ring-violet-500 relative" : "",
               "backdrop-blur-sm"
             )}
@@ -193,12 +193,14 @@ const PriceRenderer = (props: ElementRendererProps) => {
               border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
               boxShadow: boxShadow === "lg" ? "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "md" ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)" : 
-                        boxShadow === "none" ? "none" : undefined
+                        boxShadow === "none" ? "none" : undefined,
+              minWidth: "280px",
+              maxWidth: "100%"
             }}
           >
             {/* Tag de destaque */}
             {plan.isHighlighted && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-violet-500 text-white text-xs font-medium py-1 px-3 rounded-full flex items-center gap-1">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-violet-500 text-white text-xs font-medium py-1 px-3 rounded-full flex items-center gap-1 whitespace-nowrap">
                 <Star className="h-3 w-3" /> Recomendado
               </div>
             )}
@@ -221,7 +223,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
 
             {/* Preço */}
             <div className="flex flex-col items-center my-4">
-              <div className="flex items-baseline">
+              <div className="flex items-baseline flex-wrap justify-center">
                 <span 
                   className="text-4xl font-bold" 
                   style={{ color: plan.style?.textColor || "#ffffff" }}
@@ -269,9 +271,9 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </button>
 
             {/* Recursos */}
-            <div className="flex flex-col space-y-3 mt-2">
+            <div className="flex flex-col space-y-3 mt-2 w-full">
               {plan.features.map((feature) => (
-                <div key={feature.id} className="flex items-center gap-2">
+                <div key={feature.id} className="flex items-center gap-2 w-full overflow-hidden">
                   <div 
                     className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
                     style={{ 
@@ -281,7 +283,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     <Check className="h-3 w-3 text-white" />
                   </div>
                   <span 
-                    className="text-sm"
+                    className="text-sm truncate"
                     style={{ color: plan.style?.featureColor || "#ffffff" }}
                   >
                     {feature.text}
@@ -297,7 +299,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
 
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4 w-full">
+      <div className="p-4 w-full overflow-hidden">
         {/* Título global */}
         {title && (
           <h2 className="text-2xl font-bold text-center mb-8">{title}</h2>
