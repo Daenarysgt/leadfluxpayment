@@ -16,9 +16,10 @@ interface FunnelPreviewProps {
   funnel?: Funnel;
   stepIndex?: number;
   onNextStep?: (index: number) => void;
+  isEditorMode?: boolean;
 }
 
-const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
+const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, isEditorMode = false }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   
@@ -120,8 +121,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     borderRadius: 0
   } : {};
 
+  // Classe adicional se estiver no modo editor
+  const editorModeClass = isEditorMode ? "editor-mode" : "";
+
   return (
-    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
+    <div className={`${wrapperClass} ${editorModeClass}`} style={{...customStyles, ...mainContainerStyle}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -145,8 +149,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         </div>
       )}
       
-      {/* Add a spacer to account for the fixed progress bar */}
-      <div className="h-4"></div>
+      {/* Só adiciona o espaçador se não estiver no modo editor */}
+      {!isEditorMode && <div className="h-4"></div>}
       
       <div className={contentWrapperClass}>
         {/* Logotipo */}

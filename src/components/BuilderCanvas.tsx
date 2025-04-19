@@ -372,6 +372,7 @@ const BuilderCanvas = ({
               currentStep={currentStep}
               totalSteps={currentFunnel.steps.length}
               primaryColor={currentFunnel.settings.primaryColor}
+              isEditorMode={true}
             />
           </div>
         )}
