@@ -33,6 +33,8 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const delayTime = content.delayTime || 0;
   const navigation = content.navigation || { type: "next" };
   const marginTop = content.marginTop !== undefined ? content.marginTop : 0;
+  const borderRadius = content.borderRadius !== undefined ? content.borderRadius : 4; // Arredondamento de bordas
+  const fullWidth = content.fullWidth !== false; // Largura total (padrão: true)
   
   const [activeTab, setActiveTab] = useState("style");
   
@@ -222,15 +224,78 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 className={`${variant === "gradient" ? "bg-gradient-to-r from-purple-500 to-blue-500" : ""} 
                            ${variant === "3d" ? "shadow-lg transform active:translate-y-1" : ""}
                            ${variant === "neon" ? "shadow-[0_0_10px_rgba(124,58,237,0.7)]" : ""}
-                           ${variant === "rounded" ? "rounded-full" : ""}`}
+                           ${variant === "rounded" ? "rounded-full" : ""}
+                           ${fullWidth ? "w-full" : ""}`}
                 style={{ 
                   backgroundColor: variant === "default" ? buttonColor : undefined,
                   borderColor: variant === "outline" ? buttonColor : undefined,
-                  color: variant === "outline" || variant === "ghost" ? buttonColor : textColor
+                  color: variant === "outline" || variant === "ghost" ? buttonColor : textColor,
+                  borderRadius: variant === "rounded" ? "9999px" : `${borderRadius}px`
                 }}
               >
                 {buttonText || "Continuar"}
               </Button>
+            </div>
+          </div>
+
+          {/* Arredondamento das Bordas */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="border-radius-slider">Arredondamento: {borderRadius}px</Label>
+              <div className="flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 rounded-full p-0"
+                  onClick={() => handleStyleUpdate({ borderRadius: Math.max(0, borderRadius - 2) })}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <span className="w-10 text-center">{borderRadius}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 rounded-full p-0"
+                  onClick={() => handleStyleUpdate({ borderRadius: borderRadius + 2 })}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <Slider
+              id="border-radius-slider"
+              min={0}
+              max={30}
+              step={1}
+              value={[borderRadius]}
+              onValueChange={(value) => handleStyleUpdate({ borderRadius: value[0] })}
+            />
+          </div>
+
+          {/* Largura do Botão */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="full-width-toggle">Largura Total</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Se ativado, o botão ocupará toda a largura disponível</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-sm text-muted-foreground">Define se o botão ocupará toda a largura disponível</p>
+              </div>
+              <Switch
+                id="full-width-toggle"
+                checked={fullWidth}
+                onCheckedChange={(checked) => handleStyleUpdate({ fullWidth: checked })}
+              />
             </div>
           </div>
 
@@ -302,20 +367,22 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                   variant={variant as any}
                   size={size === "full" ? "default" : size as any}
                   className={`
-                    ${animationType === "pulse" ? "animate-pulse" : ""}
-                    ${animationType === "bounce" ? "animate-bounce" : ""}
-                    ${animationType === "shake" ? "animate-[wiggle_1s_ease-in-out_infinite]" : ""}
-                    ${animationType === "glow" ? "animate-[glow_1.5s_ease-in-out_infinite]" : ""}
-                    ${animationType === "scale" ? "animate-[scale_1.5s_ease-in-out_infinite]" : ""}
+                    ${animationType === "pulse" ? "animate-slow-pulse" : ""}
+                    ${animationType === "bounce" ? "animate-slow-bounce" : ""}
+                    ${animationType === "shake" ? "animate-[wiggle_2s_ease-in-out_infinite]" : ""}
+                    ${animationType === "glow" ? "animate-[glow_2.5s_ease-in-out_infinite]" : ""}
+                    ${animationType === "scale" ? "animate-[scale_2.5s_ease-in-out_infinite]" : ""}
                     ${variant === "gradient" ? "bg-gradient-to-r from-purple-500 to-blue-500" : ""} 
                     ${variant === "3d" ? "shadow-lg transform active:translate-y-1" : ""}
                     ${variant === "neon" ? "shadow-[0_0_10px_rgba(124,58,237,0.7)]" : ""}
                     ${variant === "rounded" ? "rounded-full" : ""}
+                    ${fullWidth ? "w-full" : ""}
                   `}
                   style={{ 
                     backgroundColor: variant === "default" ? buttonColor : undefined,
                     borderColor: variant === "outline" ? buttonColor : undefined,
-                    color: variant === "outline" || variant === "ghost" ? buttonColor : textColor
+                    color: variant === "outline" || variant === "ghost" ? buttonColor : textColor,
+                    borderRadius: variant === "rounded" ? "9999px" : `${borderRadius}px`
                   }}
                 >
                   {buttonText || "Continuar"}
