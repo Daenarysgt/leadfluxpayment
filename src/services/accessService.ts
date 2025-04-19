@@ -476,5 +476,81 @@ export const accessService = {
       console.error('Error fetching funnel leads with interactions:', error);
       return [];
     }
+  },
+
+  /**
+   * Salva os dados do formulário de captura
+   */
+  async saveCaptureFormData(
+    funnelId: string,
+    sessionId: string | null = null,
+    formData: Record<string, string>
+  ): Promise<void> {
+    try {
+      // Usar sessionId fornecido ou o currentSessionId
+      const activeSessionId = sessionId || currentSessionId;
+      
+      if (!activeSessionId) {
+        throw new Error('No active session found');
+      }
+
+      console.log('Salvando dados do formulário:', {
+        funnelId, 
+        sessionId: activeSessionId,
+        formData
+      });
+
+      // Inserir na tabela funnel_responses
+      const { error } = await supabase
+        .from('funnel_responses')
+        .insert({
+          funnel_id: funnelId,
+          lead_info: formData,
+          answers: {},
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error saving form data:', error);
+        throw error;
+      }
+
+      console.log('Dados do formulário salvos com sucesso');
+    } catch (error) {
+      console.error('Error saving form data:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Busca os dados de formulários do funil
+   */
+  async getFunnelFormData(funnelId: string, period: 'all' | 'today' | '7days' | '30days' = 'all'): Promise<Array<{
+    sessionId: string;
+    submissionTime: Date;
+    leadInfo: Record<string, string>;
+  }>> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_funnel_form_data', {
+          p_funnel_id: funnelId,
+          p_period: period
+        });
+
+      if (error) {
+        console.error('Error fetching funnel form data:', error);
+        return [];
+      }
+
+      return data.map((item: any) => ({
+        sessionId: item.session_id,
+        submissionTime: new Date(item.submission_time),
+        leadInfo: item.lead_info
+      }));
+    } catch (error) {
+      console.error('Error fetching funnel form data:', error);
+      return [];
+    }
   }
 }; 

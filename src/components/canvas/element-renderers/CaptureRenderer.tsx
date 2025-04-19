@@ -216,6 +216,30 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     
     if (allFieldsFilled) {
       setSubmitted(true);
+      
+      // Novo: Salvar os dados do formulário
+      if (previewMode && previewProps?.funnel) {
+        try {
+          // Monta o objeto com os dados dos campos
+          const formData: Record<string, string> = {};
+          captureFields.forEach(field => {
+            // Usar o tipo do campo como chave (email, nome, telefone, etc)
+            formData[field.type] = formValues[field.id];
+          });
+          
+          // Enviar dados para o serviço
+          await accessService.saveCaptureFormData(
+            previewProps.funnel.id,
+            null, // sessionId será preenchido pelo serviço
+            formData
+          );
+          
+          console.log('Dados do formulário enviados:', formData);
+        } catch (error) {
+          console.error("Erro ao salvar dados do formulário:", error);
+        }
+      }
+      
       setFormValues({});
       
       // Executar a navegação e rastreamento de eventos

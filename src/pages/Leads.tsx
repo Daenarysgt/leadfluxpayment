@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
-  ArrowUpRight
+  ArrowUpRight, MousePointerClick, ClipboardList
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -167,6 +167,12 @@ const Leads = () => {
     interaction_rate: number;
     button_id: string;
   }>>([]);
+  // Novo estado para dados de formulários
+  const [formDataLeads, setFormDataLeads] = useState<Array<{
+    sessionId: string;
+    submissionTime: Date;
+    leadInfo: Record<string, string>;
+  }>>([]);
 
   useEffect(() => {
     if (funnelId && (!currentFunnel || currentFunnel.id !== funnelId)) {
@@ -179,6 +185,7 @@ const Leads = () => {
       loadMetrics();
       loadLeads();
       loadStepMetrics();
+      loadFormData(); // Nova chamada
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -196,14 +203,34 @@ const Leads = () => {
             await Promise.all([
               loadLeads(),
               loadMetrics(),
-              loadStepMetrics()
+              loadStepMetrics(),
+              loadFormData() // Adiciona o carregamento dos dados de formulário
             ]);
+          }
+        )
+        .subscribe();
+
+      // Subscription para atualizações em tempo real na tabela funnel_responses
+      const formSubscription = supabase
+        .channel(`funnel-forms-${currentFunnel.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'funnel_responses',
+            filter: `funnel_id=eq.${currentFunnel.id}`
+          },
+          async (payload) => {
+            console.log('Novos dados de formulário detectados:', payload);
+            await loadFormData();
           }
         )
         .subscribe();
 
       return () => {
         subscription.unsubscribe();
+        formSubscription.unsubscribe();
       };
     }
   }, [currentFunnel?.id, selectedPeriod]);
@@ -308,6 +335,22 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading step metrics:', error);
       setStepMetrics([]);
+    }
+  };
+
+  // Nova função para carregar dados de formulários
+  const loadFormData = async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Getting form data for funnel:', currentFunnel.id);
+      const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
+      
+      console.log('Form data:', formData);
+      setFormDataLeads(formData);
+    } catch (error) {
+      console.error('Error loading form data:', error);
+      setFormDataLeads([]);
     }
   };
 
@@ -632,6 +675,117 @@ const Leads = () => {
               </TableBody>
             </Table>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <Tabs defaultValue="interactions" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="interactions">Interações</TabsTrigger>
+              <TabsTrigger value="form-data">Dados de Formulários</TabsTrigger>
+            </TabsList>
+            <TabsContent value="interactions" className="mt-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Rastreamento de Interações</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Visualize como os usuários estão interagindo com cada etapa do seu funil
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[calc(100vh-340px)]">
+                    {leads.length > 0 ? (
+                      <TrackingTable 
+                        data={mockTrackingData}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                          <MousePointerClick className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <h3 className="font-medium text-lg mb-1">Nenhuma interação registrada</h3>
+                        <p className="text-center text-muted-foreground max-w-sm">
+                          As interações serão registradas quando os usuários começarem a navegar pelo seu funil
+                        </p>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="form-data" className="mt-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Dados de Formulários</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Visualize os dados capturados nos formulários do seu funil
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[calc(100vh-340px)]">
+                    {formDataLeads.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Telefone</TableHead>
+                            <TableHead>Texto</TableHead>
+                            <TableHead>Detalhes</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formDataLeads.map((formData) => (
+                            <TableRow key={formData.sessionId}>
+                              <TableCell>
+                                {new Date(formData.submissionTime).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </TableCell>
+                              <TableCell>{formData.leadInfo.email || '-'}</TableCell>
+                              <TableCell>{formData.leadInfo.phone || '-'}</TableCell>
+                              <TableCell>{formData.leadInfo.text || '-'}</TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => {
+                                      // Exibir detalhes completos
+                                      console.log('Detalhes do lead:', formData);
+                                      alert(JSON.stringify(formData.leadInfo, null, 2));
+                                    }}>
+                                      Ver detalhes completos
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                          <ClipboardList className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <h3 className="font-medium text-lg mb-1">Nenhum dado de formulário</h3>
+                        <p className="text-center text-muted-foreground max-w-sm">
+                          Os dados serão registrados quando os usuários preencherem os formulários do seu funil
+                        </p>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
