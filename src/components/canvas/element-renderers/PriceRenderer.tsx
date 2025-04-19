@@ -64,21 +64,31 @@ const PriceRenderer = (props: ElementRendererProps) => {
   }[alignment] || "justify-center";
 
   // Função para renderizar o botão
-  const renderButton = (plan) => {
+  const renderButton = (plan, isHorizontal = false) => {
     if (!plan.showButton) return null;
     
     return (
-      <button 
-        className="w-full py-2 sm:py-2.5 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center mt-2"
+      <a
+        href={plan.buttonUrl || "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`
+          ${isHorizontal ? 'w-auto text-[10px] sm:text-xs py-1 sm:py-1.5 px-2 sm:px-3 whitespace-nowrap' : 'w-full text-xs sm:text-sm py-2 sm:py-2.5 px-3 sm:px-4 mt-2 sm:mt-3'}
+          rounded-md font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center
+        `}
         style={{ 
           backgroundColor: plan.style?.buttonColor || "#8B5CF6",
           color: plan.style?.buttonTextColor || "#ffffff",
           borderRadius: `${plan.style?.borderRadius || 8}px`,
         }}
+        onClick={e => {
+          e.preventDefault();
+          if (plan.buttonUrl) window.open(plan.buttonUrl, "_blank");
+        }}
       >
-        {plan.buttonText || "Comprar Agora"}
-        <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
-      </button>
+        {isHorizontal ? (plan.buttonText || "Comprar") : (plan.buttonText || "Comprar Agora")}
+        <ArrowRight className={`${isHorizontal ? 'ml-1 h-2.5 w-2.5 sm:h-3 sm:w-3' : 'ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4'}`} />
+      </a>
     );
   };
 
@@ -100,110 +110,100 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 backgroundColor: "#000000",
               }}
             >
-              <div className="flex flex-row" style={{ maxHeight: "180px" }}>
+              <div className="flex flex-row" style={{ height: "80px" }}>
                 {/* Lado esquerdo - Informações e recursos */}
-                <div className="p-2 sm:p-5 flex-1 flex flex-col justify-center">
-                  <h3 
-                    className="text-sm sm:text-lg font-bold truncate" 
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    {plan.title}
-                  </h3>
-                  <p 
-                    className="text-[10px] sm:text-sm opacity-80 mt-0.5 sm:mt-1 truncate"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    {plan.description}
-                  </p>
-                  
-                  {/* Separador "O que está incluído" com texto menor no mobile */}
-                  <div className="mt-1 sm:mt-2 flex items-center gap-x-1">
-                    <h4 
-                      className="text-[10px] sm:text-xs font-semibold whitespace-nowrap"
-                      style={{ color: plan.style?.buttonColor || "#8B5CF6" }}
+                <div className="p-2 sm:p-4 flex-1 flex flex-col justify-center mr-auto overflow-hidden">
+                  <div className="flex items-center gap-1.5">
+                    <h3 
+                      className="text-sm sm:text-lg font-bold truncate max-w-[30%] flex-shrink-0" 
+                      style={{ color: plan.style?.textColor || "#ffffff" }}
                     >
-                      <span className="sm:inline hidden">O que está incluído</span>
-                      <span className="sm:hidden">Incluído</span>
-                    </h4>
-                    <div className="h-px flex-auto opacity-20" style={{ backgroundColor: plan.style?.textColor || "#ffffff" }}></div>
-                  </div>
-                  
-                  {/* Lista de recursos - grid com largura controlada para mobile */}
-                  <div className="mt-1 sm:mt-2 grid grid-cols-2 gap-1 sm:gap-1.5 w-[90%] sm:w-full">
-                    {plan.features.slice(0, 8).map((feature) => (
-                      <div key={feature.id} className="flex items-center gap-1">
-                        <div 
-                          className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex items-center justify-center flex-shrink-0" 
-                          style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
-                        >
-                          <Check className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-white" />
-                        </div>
-                        <span 
-                          className="text-[9px] sm:text-xs truncate"
-                          style={{ color: plan.style?.featureColor || "#ffffff" }}
-                        >
-                          {feature.text}
-                        </span>
+                      {plan.title}
+                    </h3>
+                    <p 
+                      className="text-[10px] sm:text-sm opacity-80 truncate max-w-[30%] flex-shrink-0"
+                      style={{ color: plan.style?.textColor || "#ffffff" }}
+                    >
+                      {plan.description}
+                    </p>
+                    
+                    {/* Somente o primeiro recurso visível + contador */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <div 
+                        className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex items-center justify-center flex-shrink-0" 
+                        style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
+                      >
+                        <Check className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-white" />
                       </div>
-                    ))}
+                      <span 
+                        className="text-[9px] sm:text-xs truncate"
+                        style={{ color: plan.style?.featureColor || "#ffffff" }}
+                      >
+                        {plan.features[0]?.text}
+                      </span>
+                      
+                      {plan.features.length > 1 && (
+                        <span 
+                          className="text-[8px] sm:text-[10px] ml-1 px-1 py-0.5 rounded bg-opacity-20 hidden sm:inline-block"
+                          style={{ 
+                            backgroundColor: "rgba(255, 255, 255, 0.1)",
+                            color: plan.style?.textColor || "#ffffff" 
+                          }}
+                        >
+                          +{plan.features.length - 1}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Tag de Recomendado - Versão menor para mobile */}
+                    {plan.isHighlighted && (
+                      <div className="text-[7px] sm:text-[9px] font-medium py-0.5 px-1.5 rounded-sm flex-shrink-0 sm:ml-1"
+                        style={{ 
+                          backgroundColor: "#8B5CF6",
+                          color: "#ffffff"
+                        }}
+                      >
+                        Recomendado
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 {/* Lado direito - Apenas o preço (sem botão) */}
-                <div className="p-2 sm:p-5 w-[100px] sm:w-[160px] flex flex-col justify-center items-center border-l border-opacity-20" 
+                <div className="p-2 sm:p-4 w-[80px] sm:w-[120px] flex flex-col justify-center items-center border-l border-opacity-20 flex-shrink-0" 
                   style={{ 
                     borderColor: plan.style?.borderColor || "#333333",
                     backgroundColor: "rgba(255, 255, 255, 0.03)"
                   }}
                 >
-                  <p 
-                    className="text-[9px] sm:text-xs font-semibold text-center"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    Mensal
-                  </p>
-                  
-                  <div className="mt-0.5 sm:mt-1 mb-1 sm:mb-3 flex flex-col items-center">
-                    <div className="flex flex-col items-center">
-                      {plan.oldPrice && (
-                        <span 
-                          className="line-through text-[8px] sm:text-xs opacity-70"
-                          style={{ color: plan.style?.textColor || "#ffffff" }}
-                        >
-                          R${plan.oldPrice}
-                        </span>
-                      )}
-                      
-                      <div className="flex items-baseline">
-                        <span className="text-base sm:text-2xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                          <span className="text-[10px] sm:text-sm">R$</span>
-                          {plan.price}
-                        </span>
-                      </div>
-                      
-                      {plan.discount && (
-                        <span 
-                          className="mt-0.5 text-[8px] sm:text-[10px] font-semibold py-px px-1 rounded-sm"
-                          style={{ 
-                            backgroundColor: plan.style?.buttonColor || "#8B5CF6",
-                            color: "#ffffff"
-                          }}
-                        >
-                          {plan.discount}
-                        </span>
-                      )}
-                    </div>
+                  <div className="flex items-baseline">
+                    <span className="text-sm sm:text-xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                      <span className="text-[10px] sm:text-sm">R$</span>
+                      {plan.price}
+                    </span>
                   </div>
                   
-                  <p className="mt-1 sm:mt-1.5 text-[7px] sm:text-[9px] opacity-70 text-center" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                    7 dias de garantia
-                  </p>
+                  {plan.discount && (
+                    <span 
+                      className="mt-0.5 text-[8px] sm:text-[10px] font-semibold py-px px-1 rounded-sm"
+                      style={{ 
+                        backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                        color: "#ffffff"
+                      }}
+                    >
+                      {plan.discount}
+                    </span>
+                  )}
                 </div>
+                
+                {/* Botão incorporado no layout horizontal */}
+                {plan.showButton && (
+                  <div className="p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
+                    {renderButton(plan, true)}
+                  </div>
+                )}
               </div>
             </div>
-            
-            {/* Botão externo (abaixo do card) */}
-            {plan.showButton && renderButton(plan)}
           </div>
         ))}
       </div>
@@ -219,7 +219,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
             key={plan.id} 
             className={cn(
               "rounded-xl overflow-hidden flex flex-col",
-              "w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
+              "w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
               "shadow-lg relative"
             )}
             style={{ 
@@ -229,27 +229,27 @@ const PriceRenderer = (props: ElementRendererProps) => {
               boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
                         boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "none" ? "none" : undefined,
-              minWidth: "250px",
+              minWidth: "200px",
               maxWidth: "100%"
             }}
           >
             {/* Tag de destaque */}
             {plan.isHighlighted && (
-              <div className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10">
+              <div className="absolute top-0 right-0 bg-violet-600 text-white text-[9px] sm:text-xs font-medium py-0.5 px-2 rounded-bl-lg z-10">
                 Recomendado
               </div>
             )}
 
             {/* Cabeçalho do card */}
-            <div className="px-5 pt-4 pb-3 text-center">
+            <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2 sm:pb-3 text-center">
               <h3 
-                className="text-xl font-bold" 
+                className="text-lg sm:text-xl font-bold truncate" 
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.title}
               </h3>
               <p 
-                className="text-sm opacity-80 mt-1"
+                className="text-xs sm:text-sm opacity-80 mt-0.5 sm:mt-1 truncate"
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.description}
@@ -257,15 +257,15 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </div>
 
             {/* Preço */}
-            <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
+            <div className="px-3 sm:px-5 py-3 sm:py-4 border-t border-b border-gray-800 text-center"
               style={{ 
                 background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
               }}
             >
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
                 {plan.discount && (
                   <span 
-                    className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
+                    className="text-[9px] sm:text-xs font-semibold py-0.5 px-1.5 rounded-sm" 
                     style={{ 
                       backgroundColor: "#8B5CF6",
                       color: "#ffffff"
@@ -276,7 +276,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 )}
                 {plan.oldPrice && (
                   <span 
-                    className="line-through text-sm opacity-70"
+                    className="line-through text-xs sm:text-sm opacity-70"
                     style={{ color: plan.style?.textColor || "#ffffff" }}
                   >
                     R${plan.oldPrice}
@@ -285,12 +285,12 @@ const PriceRenderer = (props: ElementRendererProps) => {
               </div>
               
               <div className="flex items-baseline justify-center">
-                <span className="text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                  <span className="text-lg mr-1">R$</span>
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                  <span className="text-sm sm:text-lg mr-1">R$</span>
                   {plan.price}
                 </span>
                 <span 
-                  className="text-sm opacity-70 ml-2"
+                  className="text-xs sm:text-sm opacity-70 ml-1 sm:ml-2"
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
                   à vista
@@ -299,44 +299,55 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </div>
 
             {/* Recursos */}
-            <div className="flex flex-col space-y-3 px-5 py-5 flex-grow"
+            <div className="flex flex-col space-y-2 sm:space-y-3 px-3 sm:px-5 py-3 sm:py-5 flex-grow"
               style={{ 
                 background: "linear-gradient(180deg, #111111 0%, #000000 100%)" 
               }}
             >
-              {plan.features.slice(0, 8).map((feature) => (
-                <div key={feature.id} className="flex items-center gap-2">
+              {plan.features.slice(0, 5).map((feature) => (
+                <div key={feature.id} className="flex items-center gap-1.5 sm:gap-2">
                   <div 
-                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
+                    className="h-4 w-4 sm:h-5 sm:w-5 rounded-full flex items-center justify-center flex-shrink-0" 
                     style={{ 
                       backgroundColor: plan.style?.circleColor || "#32CD32",
                     }}
                   >
-                    <Check className="h-3 w-3 text-white" />
+                    <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                   </div>
                   <span 
-                    className="text-sm"
+                    className="text-xs sm:text-sm"
                     style={{ color: plan.style?.featureColor || "#ffffff" }}
                   >
                     {feature.text}
                   </span>
                 </div>
               ))}
+              
+              {plan.features.length > 5 && (
+                <div className="flex items-center justify-center mt-1">
+                  <span 
+                    className="text-[9px] sm:text-xs opacity-70"
+                    style={{ color: plan.style?.textColor || "#ffffff" }}
+                  >
+                    +{plan.features.length - 5} recursos
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Garantia (sem botão interno) */}
-            <div className="px-5 pb-5 pt-2 text-center"
+            {/* Garantia e Botão */}
+            <div className="px-3 sm:px-5 pb-3 sm:pb-5 pt-1 sm:pt-2 text-center"
               style={{ 
                 background: "linear-gradient(180deg, #000000 0%, #000000 100%)" 
               }}
             >
-              {!plan.showButton && (
-                <div className="flex justify-center items-center gap-1.5 mt-3">
-                  <span className="text-xs opacity-70 text-white">
-                    7 dias de garantia incondicional
-                  </span>
-                </div>
-              )}
+              {plan.showButton && renderButton(plan)}
+              
+              <div className="flex justify-center items-center gap-1.5 mt-2 sm:mt-3">
+                <span className="text-[9px] sm:text-xs opacity-70 text-white">
+                  7 dias de garantia
+                </span>
+              </div>
             </div>
           </div>
         ))}

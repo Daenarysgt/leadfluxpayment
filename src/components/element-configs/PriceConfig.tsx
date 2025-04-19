@@ -44,6 +44,7 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       oldPrice: "",
       discount: "",
       buttonText: "Escolher este plano",
+      showButton: true,
       features: [
         { id: uuidv4(), text: "Recurso 1" },
         { id: uuidv4(), text: "Recurso 2" },
@@ -411,15 +412,25 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                     </div>
                     
                     <div>
-                      <Label className="text-xs" htmlFor={`plan-button-text-${plan.id}`}>Texto do botão</Label>
+                      <ConfigLabel htmlFor={`plan-${plan.id}-button-text`}>Texto do botão</ConfigLabel>
                       <Input
-                        id={`plan-button-text-${plan.id}`}
+                        id={`plan-${plan.id}-button-text`}
                         value={plan.buttonText || ""}
                         onChange={e => updatePlan(plan.id, { buttonText: e.target.value })}
-                        className="h-8 text-sm"
-                        placeholder="Escolher plano"
+                        placeholder="Escolher este plano"
                       />
                     </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id={`plan-${plan.id}-show-button`}
+                      checked={plan.showButton !== false}
+                      onCheckedChange={checked => updatePlan(plan.id, { showButton: checked })}
+                    />
+                    <Label htmlFor={`plan-${plan.id}-show-button`} className="text-sm">
+                      Exibir botão
+                    </Label>
                   </div>
                   
                   <div className="flex items-center space-x-2 pt-1">
