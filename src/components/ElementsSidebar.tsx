@@ -25,8 +25,7 @@ import {
   Weight,
   SlidersHorizontal,
   Star,
-  Video as VideoIcon,
-  DollarSign
+  Video as VideoIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -60,7 +59,6 @@ const ElementsSidebar = () => {
     { id: ComponentType.Cartesian, name: "Cartesiano", icon: Box, color: "bg-sky-100 text-sky-600" },
     { id: ComponentType.Spacer, name: "Espaço", icon: GripVertical, color: "bg-yellow-100 text-yellow-600" },
     { id: ComponentType.Rating, name: "Avaliação", icon: Star, color: "bg-amber-100 text-amber-600" },
-    { id: ComponentType.Pricing, name: "Preços", icon: DollarSign, color: "bg-green-100 text-green-600" },
   ];
   
   const filteredBasic = basicComponents.filter(comp => 

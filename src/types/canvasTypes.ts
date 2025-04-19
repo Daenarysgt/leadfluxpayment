@@ -101,8 +101,3 @@ export interface ButtonContent {
   // Facebook Pixel event para rastreamento
   facebookEvent?: string;
 }
-
-export interface ElementConfigProps {
-  element: any;
-  onUpdate: (updates: any) => void;
-}
