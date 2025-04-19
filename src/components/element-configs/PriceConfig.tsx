@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ColorPicker } from "./common/ColorPicker";
+import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 import { ConfigLabel } from "./common/ConfigLabel";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, PlusCircle, ArrowUp, ArrowDown, Star, PanelLeft, LayoutGrid, AlignCenter, AlignLeft, AlignRight, HelpCircle } from "lucide-react";
@@ -304,9 +304,13 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       <TabsContent value="estilo" className="space-y-4">
         <div>
           <ConfigLabel>Cor de fundo (padrão)</ConfigLabel>
-          <ColorPicker
+          <p className="text-xs text-muted-foreground mb-2">
+            Esta cor será aplicada ao fundo do elemento completo. Cores individuais podem ser configuradas em cada plano.
+          </p>
+          <AdvancedColorPicker
             value={content.backgroundColor || "#151515"}
             onChange={color => updateContent({ backgroundColor: color })}
+            size="md"
           />
         </div>
         
@@ -511,43 +515,51 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                 </TabsContent>
                 
                 <TabsContent value="style" className="space-y-3">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Personalize as cores deste plano específico para destacá-lo dos demais.
+                  </p>
                   <div>
                     <Label className="text-xs">Cor de fundo</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.backgroundColor || "#000000"}
                       onChange={color => updatePlanStyle(plan.id, { backgroundColor: color })}
+                      size="sm"
                     />
                   </div>
                   
                   <div>
                     <Label className="text-xs">Cor do texto</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.textColor || "#ffffff"}
                       onChange={color => updatePlanStyle(plan.id, { textColor: color })}
+                      size="sm"
                     />
                   </div>
                   
                   <div>
                     <Label className="text-xs">Cor do botão</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.buttonColor || "#8B5CF6"}
                       onChange={color => updatePlanStyle(plan.id, { buttonColor: color })}
+                      size="sm"
                     />
                   </div>
                   
                   <div>
                     <Label className="text-xs">Cor do texto do botão</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.buttonTextColor || "#ffffff"}
                       onChange={color => updatePlanStyle(plan.id, { buttonTextColor: color })}
+                      size="sm"
                     />
                   </div>
                   
                   <div>
                     <Label className="text-xs">Cor do indicador</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.circleColor || "#32CD32"}
                       onChange={color => updatePlanStyle(plan.id, { circleColor: color })}
+                      size="sm"
                     />
                   </div>
                   
@@ -565,9 +577,10 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                   
                   <div>
                     <Label className="text-xs">Cor da borda</Label>
-                    <ColorPicker
+                    <AdvancedColorPicker
                       value={plan.style?.borderColor || "#333333"}
                       onChange={color => updatePlanStyle(plan.id, { borderColor: color })}
+                      size="sm"
                     />
                   </div>
                 </TabsContent>
