@@ -270,6 +270,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                           boxShadow === "none" ? "none" : undefined,
                 maxWidth: "100%",
                 backgroundColor: plan.style?.backgroundColor || "#000000",
+                position: "relative"
               }}
             >
               {/* Tag de destaque se o plano for destacado */}

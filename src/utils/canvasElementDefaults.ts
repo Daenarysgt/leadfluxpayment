@@ -367,7 +367,7 @@ export const getDefaultContent = (componentType: string) => {
               { id: crypto.randomUUID(), text: "Projetos ilimitados" },
               { id: crypto.randomUUID(), text: "Recursos premium" }
             ],
-            isHighlighted: true,
+            isHighlighted: false,
             style: {
               backgroundColor: "#000000",
               textColor: "#ffffff",
