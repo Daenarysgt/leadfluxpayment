@@ -365,7 +365,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                         <span 
                           className="mt-0.5 text-[8px] sm:text-[10px] font-semibold py-px px-1 rounded-sm"
                           style={{ 
-                            backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                            backgroundColor: plan.style?.highlightColor || "#8B5CF6",
                             color: "#ffffff"
                           }}
                         >
@@ -456,7 +456,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     <span 
                       className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
                       style={{ 
-                        backgroundColor: "#8B5CF6",
+                        backgroundColor: plan.style?.highlightColor || "#8B5CF6",
                         color: "#ffffff"
                       }}
                     >
