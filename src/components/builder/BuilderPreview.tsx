@@ -36,8 +36,7 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
           funnel={JSON.parse(JSON.stringify(currentFunnel))} 
           isMobile={isMobile} 
           stepIndex={currentStep}
-          key={`preview-${currentFunnel.id}-step-${currentStep}`}
-          isEditorMode={true}
+          key={`preview-${currentFunnel.id}-step-${currentStep}`} 
         />
       </div>
     </div>

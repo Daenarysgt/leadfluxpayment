@@ -1,28 +1,17 @@
+
 import React from 'react';
 
 interface ProgressBarProps {
   currentStep: number;
   totalSteps: number;
   primaryColor: string;
-  isEditorMode?: boolean;
 }
 
-const ProgressBar = ({ 
-  currentStep, 
-  totalSteps, 
-  primaryColor,
-  isEditorMode = false
-}: ProgressBarProps) => {
-  // Definir classe com base no modo (editor ou preview)
-  const containerClass = isEditorMode 
-    ? "w-full overflow-hidden relative h-3" 
-    : "funnel-progress-bar";
-
+const ProgressBar = ({ currentStep, totalSteps, primaryColor }: ProgressBarProps) => {
   return (
-    <div className={containerClass}>
-      <div className="track"></div>
+    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6">
       <div 
-        className="progress"
+        className="h-full transition-all duration-500 ease-out"
         style={{ 
           width: `${((currentStep + 1) / totalSteps) * 100}%`,
           backgroundColor: primaryColor 

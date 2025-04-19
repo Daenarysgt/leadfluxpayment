@@ -11,10 +11,9 @@ interface FunnelPreviewProps {
   funnel?: Funnel; // Funnel can be passed as prop
   stepIndex?: number; // Added stepIndex prop
   onNextStep?: (index: number) => void; // Added callback for step navigation
-  isEditorMode?: boolean;
 }
 
-const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, isEditorMode = false }: FunnelPreviewProps) => {
+const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   
@@ -120,7 +119,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             currentStep={safeCurrentStep} 
             totalSteps={activeFunnel.steps.length} 
             primaryColor={primaryColor}
-            isEditorMode={isEditorMode}
           />
         )}
 

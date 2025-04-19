@@ -90,7 +90,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.5rem' : '1rem',
+    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
     margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
     left: isMobile ? '0' : 'auto',
@@ -128,18 +128,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
           if (adjustedElement.dimensions) {
             adjustedElement.dimensions = {
               ...adjustedElement.dimensions,
-              width: window.innerWidth - 24 // Usar a largura total menos um pequeno espaçamento
+              width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
             };
           }
-        }
-        
-        // Aplicar espaçamento adicional entre elementos para ficar mais arejado
-        if (adjustedElement.position && index > 0) {
-          // Adicionar um pequeno espaçamento adicional entre elementos
-          adjustedElement.position = {
-            ...adjustedElement.position,
-            y: adjustedElement.position.y + 8 // Adicionar um pouco mais de espaço vertical
-          };
         }
         
         // Add preview properties to the element for navigation
@@ -155,21 +146,18 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         };
         
         // Adicionar classes específicas para telas móveis aos elementos
-        const elementWrapperClass = isMobile ? "w-full mobile-element mb-5" : "w-full mb-6";
+        const elementWrapperClass = isMobile ? "w-full mobile-element" : "w-full";
         
         // Estilos específicos para o wrapper do elemento
         const elementWrapperStyle: React.CSSProperties = isMobile ? {
           position: 'relative',
           left: '0',
           right: '0',
-          margin: '0 auto 1rem auto', // Adicionar margem inferior para separar os elementos
+          margin: '0 auto',
           width: '100%',
           padding: '0',
           transform: 'none'
-        } : {
-          position: 'relative',
-          margin: '0 auto 1.5rem auto', // Adicionar margem inferior para separar os elementos
-        };
+        } : {};
         
         return (
           <div 

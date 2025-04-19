@@ -16,10 +16,9 @@ interface FunnelPreviewProps {
   funnel?: Funnel;
   stepIndex?: number;
   onNextStep?: (index: number) => void;
-  isEditorMode?: boolean;
 }
 
-const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, isEditorMode = false }: FunnelPreviewProps) => {
+const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   
@@ -92,25 +91,24 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   
   // Classes condicionais baseadas no tipo de dispositivo
   const wrapperClass = isMobile 
-    ? "w-full mobile-full-width relative" 
-    : "w-full relative";
+    ? "w-full mobile-full-width" 
+    : "w-full";
   
   const contentWrapperClass = isMobile 
-    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-4 px-4 mt-6 content-with-fixed-progress-bar" 
-    : "flex flex-col items-center w-full max-w-lg mx-auto py-6 px-4 sm:py-10 sm:px-6 mt-8 content-with-fixed-progress-bar";
+    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
+    : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
   
   const logoWrapperClass = isMobile
-    ? "w-full flex justify-center py-4 mb-2" 
-    : "w-full flex justify-center py-6 mb-4";
+    ? "w-full flex justify-center py-2 mb-1" 
+    : "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
   
-  // Progress bar classes (estilo da concorrência)
-  const progressBarContainerClass = "funnel-progress-bar";
-  
-  const progressBarClass = "w-full h-0.5 bg-transparent";
+  const progressBarClass = isMobile
+    ? "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3"
+    : "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
-    ? "w-full mobile-full-width mt-2"
-    : "w-full mt-3";
+    ? "w-full mobile-full-width"
+    : "w-full";
 
   // Estilo do container principal específico para mobile
   const mainContainerStyle = isMobile ? {
@@ -121,11 +119,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
     borderRadius: 0
   } : {};
 
-  // Classe adicional se estiver no modo editor
-  const editorModeClass = isEditorMode ? "editor-mode" : "";
-
   return (
-    <div className={`${wrapperClass} ${editorModeClass}`} style={{...customStyles, ...mainContainerStyle}}>
+    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -134,23 +129,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
           trackRegistrationComplete={isLastStep && activeFunnel.settings.pixelTracking?.completeRegistration !== false}
         />
       )}
-      
-      {/* Progress Bar - com estilo da concorrência */}
-      {activeFunnel.settings.showProgressBar && (
-        <div className={progressBarContainerClass}>
-          <div className="track"></div>
-          <div 
-            className="progress"
-            style={{ 
-              width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
-              backgroundColor: primaryColor 
-            }}
-          ></div>
-        </div>
-      )}
-      
-      {/* Só adiciona o espaçador se não estiver no modo editor */}
-      {!isEditorMode && <div className="h-4"></div>}
       
       <div className={contentWrapperClass}>
         {/* Logotipo */}
@@ -172,6 +150,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
           </div>
         )}
 
+        {activeFunnel.settings.showProgressBar && (
+          <div className={progressBarClass}>
+            <div 
+              className="h-full transition-all duration-500 ease-out"
+              style={{ 
+                width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
+                backgroundColor: primaryColor 
+              }}
+            ></div>
+          </div>
+        )}
+
         <div className={contentClass} style={mainContainerStyle}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
@@ -182,11 +172,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             />
           ) : (
             // Otherwise, fall back to the traditional question rendering
-            <div className="space-y-8">
+            <div className="space-y-6">
               <h2 className="text-xl font-semibold text-center">{stepData.title}</h2>
               
               {stepData.questions.map((question) => (
-                <div key={question.id} className="space-y-4">
+                <div key={question.id} className="space-y-3">
                   <h3 className="font-medium">{question.title}</h3>
                   {question.description && (
                     <p className="text-sm text-muted-foreground">{question.description}</p>
@@ -211,11 +201,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                   {(question.type === QuestionType.SingleChoice || 
                     question.type === QuestionType.MultipleChoice) && 
                     question.options && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {question.options.map((option) => (
                         <div 
                           key={option.id} 
-                          className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
                         >
                           <input 
                             type={question.type === QuestionType.SingleChoice ? "radio" : "checkbox"} 
@@ -233,20 +223,20 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                   )}
                   
                   {question.type === QuestionType.ImageChoice && question.options && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       {question.options.map((option) => (
                         <div 
                           key={option.id} 
-                          className="border rounded-md p-4 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors"
                         >
                           {option.emoji && (
-                            <span className="text-2xl mb-3">{option.emoji}</span>
+                            <span className="text-2xl mb-2">{option.emoji}</span>
                           )}
                           {option.image && (
                             <img 
                               src={option.image} 
                               alt={option.text} 
-                              className="w-full h-24 object-cover mb-3 rounded-md" 
+                              className="w-full h-20 object-cover mb-2 rounded-md" 
                             />
                           )}
                           <div className="flex items-center gap-2">
@@ -262,36 +252,91 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                       ))}
                     </div>
                   )}
+                  
+                  {question.type === QuestionType.Gender && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
+                        <span className="text-2xl mb-2">👨</span>
+                        <Label>Masculino</Label>
+                      </div>
+                      <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
+                        <span className="text-2xl mb-2">👩</span>
+                        <Label>Feminino</Label>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {question.type === QuestionType.Rating && (
+                    <div className="flex justify-between items-center">
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <div 
+                          key={rating} 
+                          className="w-10 h-10 flex items-center justify-center border rounded-full hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+                        >
+                          {rating}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {question.type === QuestionType.Height && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Metros</Label>
+                          <Input type="number" min="0" max="3" step="1" placeholder="1" />
+                        </div>
+                        <div>
+                          <Label>Centímetros</Label>
+                          <Input type="number" min="0" max="99" step="1" placeholder="75" />
+                        </div>
+                      </div>
+                      <div className="flex justify-center">
+                        <div className="h-40 w-8 bg-gray-100 rounded-full relative flex items-center justify-center">
+                          <div className="absolute text-xs">175 cm</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {question.type === QuestionType.Weight && (
+                    <div className="space-y-4">
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <Label>Peso (kg)</Label>
+                          <Input type="number" min="1" step="1" placeholder="70" />
+                        </div>
+                      </div>
+                      <div className="flex justify-center">
+                        <div className="h-8 w-40 bg-gray-100 rounded-full relative flex items-center justify-center">
+                          <div className="absolute text-xs">70 kg</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               
-              <div className="pt-4 flex justify-center">
-                {!isLastStep ? (
+              <div className="flex justify-between pt-4">
+                {safeCurrentStep > 0 && (
                   <Button 
-                    type="button"
-                    style={{
-                      backgroundColor: primaryColor,
-                      color: "white",
-                      padding: "0.75rem 1.5rem"
-                    }}
-                    className="flex items-center gap-2"
-                    onClick={() => handleStepChange(safeCurrentStep + 1)}
+                    variant="outline"
+                    onClick={() => handleStepChange(Math.max(0, safeCurrentStep - 1))}
                   >
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    type="button"
-                    style={{
-                      backgroundColor: primaryColor,
-                      color: "white",
-                      padding: "0.75rem 1.5rem"
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    Submit
+                    Voltar
                   </Button>
                 )}
+                <Button 
+                  className="ml-auto" 
+                  style={{ backgroundColor: primaryColor }}
+                  onClick={() => {
+                    if (safeCurrentStep < activeFunnel.steps.length - 1) {
+                      handleStepChange(safeCurrentStep + 1);
+                    }
+                  }}
+                >
+                  {stepData.buttonText || 'Continuar'} <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
