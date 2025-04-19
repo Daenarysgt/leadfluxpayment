@@ -70,8 +70,8 @@ const PriceRenderer = (props: ElementRendererProps) => {
           <div 
             key={plan.id} 
             className={cn(
-              "rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 w-full max-w-4xl transition-all duration-300",
-              plan.isHighlighted ? "ring-2 ring-violet-500 scale-[1.02]" : "",
+              "rounded-xl py-4 px-4 flex flex-row items-center justify-between gap-3 w-full transition-all duration-300",
+              plan.isHighlighted ? "ring-2 ring-violet-500" : "",
               "bg-opacity-90 backdrop-blur-sm overflow-hidden"
             )}
             style={{ 
@@ -80,24 +80,25 @@ const PriceRenderer = (props: ElementRendererProps) => {
               border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
               boxShadow: boxShadow === "lg" ? "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "md" ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)" : 
-                        boxShadow === "none" ? "none" : undefined
+                        boxShadow === "none" ? "none" : undefined,
+              minHeight: "80px"
             }}
           >
             {/* Informações do plano */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2 w-full md:w-auto">
+            <div className="flex flex-col items-start justify-center mr-auto flex-shrink-0 min-w-0 max-w-[30%]">
               {plan.isHighlighted && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 md:left-6 md:translate-x-0 bg-violet-500 text-white text-xs font-medium py-1 px-3 rounded-full flex items-center gap-1 whitespace-nowrap">
+                <div className="absolute -top-2 left-3 bg-violet-500 text-white text-xs font-medium py-0.5 px-2 rounded-full flex items-center gap-1 whitespace-nowrap">
                   <Star className="h-3 w-3" /> Recomendado
                 </div>
               )}
               <h3 
-                className="text-xl font-bold" 
+                className="text-base font-bold truncate w-full" 
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.title}
               </h3>
               <p 
-                className="text-sm opacity-80"
+                className="text-xs opacity-80 truncate w-full"
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.description}
@@ -105,17 +106,17 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </div>
 
             {/* Preço */}
-            <div className="flex flex-col items-center md:items-center">
-              <div className="flex items-center flex-wrap justify-center">
+            <div className="flex flex-row items-center gap-2 flex-shrink-0">
+              <div className="flex items-baseline">
                 <span 
-                  className="text-3xl font-bold" 
+                  className="text-xl font-bold" 
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
-                  <span className="text-lg mr-1">R$</span>{plan.price}
+                  <span className="text-sm mr-1">R$</span>{plan.price}
                 </span>
                 {plan.oldPrice && (
                   <span 
-                    className="ml-2 line-through text-sm opacity-70"
+                    className="ml-1 line-through text-xs opacity-70"
                     style={{ color: plan.style?.textColor || "#ffffff" }}
                   >
                     R${plan.oldPrice}
@@ -124,7 +125,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
               </div>
               {plan.discount && (
                 <span 
-                  className="mt-1 text-xs font-semibold py-1 px-2 rounded-full" 
+                  className="text-xs font-semibold py-0.5 px-1.5 rounded-full" 
                   style={{ 
                     backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                     color: plan.style?.buttonTextColor || "#ffffff" 
@@ -135,31 +136,37 @@ const PriceRenderer = (props: ElementRendererProps) => {
               )}
             </div>
 
-            {/* Recursos */}
-            <div className="flex flex-col items-center md:items-start space-y-2 w-full md:w-auto">
-              {plan.features.map((feature) => (
-                <div key={feature.id} className="flex items-center gap-2 max-w-full overflow-hidden">
-                  <div 
-                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
-                    style={{ 
-                      backgroundColor: plan.style?.circleColor || "#32CD32",
-                    }}
-                  >
-                    <Check className="h-3 w-3 text-white" />
-                  </div>
+            {/* Recursos - Exibir apenas 1 como amostra no modo horizontal */}
+            {plan.features.length > 0 && (
+              <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                <div 
+                  className="h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0" 
+                  style={{ 
+                    backgroundColor: plan.style?.circleColor || "#32CD32",
+                  }}
+                >
+                  <Check className="h-2 w-2 text-white" />
+                </div>
+                <span 
+                  className="text-xs truncate max-w-[100px]"
+                  style={{ color: plan.style?.featureColor || "#ffffff" }}
+                >
+                  {plan.features[0].text}
+                </span>
+                {plan.features.length > 1 && (
                   <span 
-                    className="text-sm truncate"
+                    className="text-xs opacity-70"
                     style={{ color: plan.style?.featureColor || "#ffffff" }}
                   >
-                    {feature.text}
+                    +{plan.features.length - 1}
                   </span>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Botão */}
             <button 
-              className="mt-4 md:mt-0 py-2 px-6 rounded-lg font-medium transition-all duration-200 hover:opacity-90 active:scale-95 w-full md:w-auto whitespace-nowrap"
+              className="py-1.5 px-3 rounded-lg font-medium text-sm transition-all duration-200 hover:opacity-90 active:scale-95 whitespace-nowrap flex-shrink-0"
               style={{ 
                 backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                 color: plan.style?.buttonTextColor || "#ffffff",

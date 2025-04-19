@@ -356,16 +356,16 @@ export const getDefaultContent = (componentType: string) => {
           {
             id: crypto.randomUUID(),
             title: "Pro",
-            description: "Recursos avançados para profissionais",
+            description: "Recursos avançados",
             price: "197,00",
             oldPrice: "240,00",
             discount: "50% off",
             buttonText: "Escolher plano",
             features: [
-              { id: crypto.randomUUID(), text: "Todos os recursos básicos" },
+              { id: crypto.randomUUID(), text: "Recursos básicos" },
               { id: crypto.randomUUID(), text: "Suporte prioritário" },
               { id: crypto.randomUUID(), text: "Projetos ilimitados" },
-              { id: crypto.randomUUID(), text: "Acesso a recursos premium" }
+              { id: crypto.randomUUID(), text: "Recursos premium" }
             ],
             isHighlighted: true,
             style: {
