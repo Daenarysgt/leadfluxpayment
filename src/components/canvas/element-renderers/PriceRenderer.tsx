@@ -426,9 +426,10 @@ const PriceRenderer = (props: ElementRendererProps) => {
               </div>
 
               {/* Preço */}
-              <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
+              <div className="px-5 py-4 border-t border-b text-center"
                 style={{ 
-                  background: `linear-gradient(180deg, ${plan.style?.backgroundColor || "#000000"}, ${plan.style?.backgroundColor ? adjustColor(plan.style.backgroundColor, -15) : "#111111"})` 
+                  background: `linear-gradient(180deg, ${plan.style?.backgroundColor || "#000000"}, ${plan.style?.backgroundColor ? adjustColor(plan.style.backgroundColor, -15) : "#111111"})`,
+                  borderColor: plan.style?.dividerColor || "#333333"
                 }}
               >
                 <div className="flex items-center justify-center gap-2 mb-2">
