@@ -534,7 +534,7 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <Button
                     variant="outline"
                     className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary/60 transition-colors bg-white/80 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50/50 rounded-xl shadow-sm hover:shadow-md"
@@ -554,17 +554,6 @@ const Dashboard = () => {
                         )}
                       </div>
                     )}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary/60 transition-colors bg-white/80 hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50/50 rounded-xl shadow-sm hover:shadow-md"
-                    onClick={() => navigate('/design')}
-                  >
-                    <div className="p-2 rounded-full bg-purple-100/50">
-                      <Palette className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <span>Design</span>
                   </Button>
                 </div>
               </CardContent>
