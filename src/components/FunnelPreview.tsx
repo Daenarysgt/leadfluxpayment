@@ -95,25 +95,21 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     : "w-full relative";
   
   const contentWrapperClass = isMobile 
-    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-4 px-4" 
-    : "flex flex-col items-center w-full max-w-lg mx-auto py-6 px-4 sm:py-10 sm:px-6";
+    ? "flex flex-col items-center w-full mobile-full-width mx-auto py-4 px-4 mt-6 content-with-fixed-progress-bar" 
+    : "flex flex-col items-center w-full max-w-lg mx-auto py-6 px-4 sm:py-10 sm:px-6 mt-8 content-with-fixed-progress-bar";
   
   const logoWrapperClass = isMobile
     ? "w-full flex justify-center py-4 mb-2" 
     : "w-full flex justify-center py-6 mb-4";
   
-  // Nova classe para a barra de progresso com position: sticky
-  const progressBarContainerClass = isMobile
-    ? "w-full sticky top-0 left-0 z-10 px-0 bg-white"
-    : "w-full sticky top-0 left-0 z-10 px-0 bg-white";
+  // Progress bar classes (estilo da concorrência)
+  const progressBarContainerClass = "funnel-progress-bar";
   
-  const progressBarClass = isMobile
-    ? "w-full bg-gray-200 h-2.5 rounded-none overflow-hidden"
-    : "w-full bg-gray-200 h-2.5 rounded-none overflow-hidden";
+  const progressBarClass = "w-full h-0.5 bg-transparent";
   
   const contentClass = isMobile
-    ? "w-full mobile-full-width mt-6"
-    : "w-full mt-8";
+    ? "w-full mobile-full-width mt-2"
+    : "w-full mt-3";
 
   // Estilo do container principal específico para mobile
   const mainContainerStyle = isMobile ? {
@@ -135,25 +131,22 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      {/* Progress Bar - Now sticky at the top */}
+      {/* Progress Bar - com estilo da concorrência */}
       {activeFunnel.settings.showProgressBar && (
         <div className={progressBarContainerClass}>
+          <div className="track"></div>
           <div 
-            className={progressBarClass}
-            style={{
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            className="progress"
+            style={{ 
+              width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
+              backgroundColor: primaryColor 
             }}
-          >
-            <div 
-              className="h-full transition-all duration-500 ease-out"
-              style={{ 
-                width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
-                backgroundColor: primaryColor 
-              }}
-            ></div>
-          </div>
+          ></div>
         </div>
       )}
+      
+      {/* Add a spacer to account for the fixed progress bar */}
+      <div className="h-4"></div>
       
       <div className={contentWrapperClass}>
         {/* Logotipo */}

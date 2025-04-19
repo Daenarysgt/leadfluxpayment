@@ -8,9 +8,10 @@ interface ProgressBarProps {
 
 const ProgressBar = ({ currentStep, totalSteps, primaryColor }: ProgressBarProps) => {
   return (
-    <div className="w-full bg-gray-200 h-2.5 rounded-none overflow-hidden progress-bar-fixed">
+    <div className="funnel-progress-bar">
+      <div className="track"></div>
       <div 
-        className="h-full transition-all duration-500 ease-out"
+        className="progress"
         style={{ 
           width: `${((currentStep + 1) / totalSteps) * 100}%`,
           backgroundColor: primaryColor 
