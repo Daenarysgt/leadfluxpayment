@@ -191,15 +191,18 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
       // Para atualizações de conteúdo, capturar o conteúdo atual do editor
       content = captureEditorContent();
       console.log("TextConfig - Captured new content from editor:", content);
+      
+      // Armazenar o conteúdo atual no buffer de referência apenas quando mudar o conteúdo
+      // não quando estiver apenas atualizando estilos
+      if (content) {
+        contentBufferRef.current = content;
+      }
     }
     
     if (!content) {
       console.warn("TextConfig - No content to update");
       return;
     }
-    
-    // Armazenar o conteúdo atual no buffer de referência
-    contentBufferRef.current = content;
     
     // Atualizar o estado local do conteúdo se não for apenas estilo
     if (!options.styleOnly) {
@@ -328,14 +331,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças no tamanho da fonte
   const handleFontSizeChange = (value: number[]) => {
-    // Primeiro capturar o conteúdo atual
-    const currentContent = captureEditorContent();
-    if (currentContent) {
-      contentBufferRef.current = currentContent;
-      console.log("TextConfig - Saved content before font size change:", contentBufferRef.current);
-    }
-    
-    // Atualizar o tamanho da fonte no estado local
+    // Atualizar o tamanho da fonte no estado local sem capturar o conteúdo atual
     setFontSize(value[0]);
     
     // Aplicar ao editor para visualização imediata
@@ -356,13 +352,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças na margem superior
   const handleMarginTopChange = (value: number[]) => {
-    // Capturar o conteúdo atual antes de mudar margem
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
-    // Atualizar a margem superior no estado local
+    // Atualizar a margem superior no estado local sem capturar o conteúdo atual
     setMarginTop(value[0]);
     
     // Enviar atualização com o conteúdo preservado
@@ -371,13 +361,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças no espaçamento entre linhas
   const handleLineHeightChange = (value: number[]) => {
-    // Capturar o conteúdo atual antes de mudar o espaçamento
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
-    // Atualizar o espaçamento entre linhas no estado local
+    // Atualizar o espaçamento entre linhas no estado local sem capturar o conteúdo atual
     setLineHeight(value[0]);
     
     // Aplicar ao editor para visualização imediata
@@ -391,13 +375,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças no espaçamento entre letras
   const handleLetterSpacingChange = (value: number[]) => {
-    // Capturar o conteúdo atual antes de mudar o espaçamento
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
-    // Atualizar o espaçamento entre letras no estado local
+    // Atualizar o espaçamento entre letras no estado local sem capturar o conteúdo atual
     setLetterSpacing(value[0]);
     
     // Aplicar ao editor para visualização imediata
@@ -411,13 +389,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças na cor do texto
   const handleDefaultColorChange = (color: string) => {
-    // Capturar o conteúdo atual antes de mudar cor
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
-    // Atualizar a cor no estado local
+    // Atualizar a cor no estado local sem capturar o conteúdo atual
     setFontColor(color);
     
     // Enviar atualização com o conteúdo preservado
@@ -426,13 +398,7 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
 
   // Manipulador para mudanças na família de fonte
   const handleFontFamilyChange = (value: string) => {
-    // Capturar o conteúdo atual antes de mudar a fonte
-    const content = captureEditorContent();
-    if (content) {
-      contentBufferRef.current = content;
-    }
-    
-    // Atualizar a fonte no estado local
+    // Atualizar a fonte no estado local sem capturar o conteúdo atual
     setFontFamily(value);
     
     // Aplicar a fonte no editor para visualização imediata
