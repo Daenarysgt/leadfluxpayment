@@ -20,6 +20,7 @@ import SpacerRenderer from './SpacerRenderer';
 import RatingRenderer from './RatingRenderer';
 import VideoRenderer from './VideoRenderer';
 import GenericElementRenderer from './GenericElementRenderer';
+import PricingRenderer from './PricingRenderer';
 
 // Export all renderers
 export {
@@ -42,7 +43,8 @@ export {
   SpacerRenderer,
   RatingRenderer,
   VideoRenderer,
-  GenericElementRenderer
+  GenericElementRenderer,
+  PricingRenderer
 };
 
 // Export ElementFactory as default
