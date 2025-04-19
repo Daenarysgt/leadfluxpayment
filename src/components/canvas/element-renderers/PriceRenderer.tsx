@@ -283,7 +283,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                   </h3>
                   <p 
                     className="text-[10px] sm:text-sm opacity-80 mt-0.5 sm:mt-1 truncate"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
+                    style={{ color: plan.style?.descriptionColor || plan.style?.textColor || "#ffffff" }}
                   >
                     {plan.description}
                   </p>
@@ -422,7 +422,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 </h3>
                 <p 
                   className="text-sm opacity-80 mt-1"
-                  style={{ color: plan.style?.textColor || "#ffffff" }}
+                  style={{ color: plan.style?.descriptionColor || plan.style?.textColor || "#ffffff" }}
                 >
                   {plan.description}
                 </p>

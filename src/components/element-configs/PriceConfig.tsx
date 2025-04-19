@@ -70,6 +70,7 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       style: {
         backgroundColor: "#000000",
         textColor: "#ffffff",
+        descriptionColor: "#cccccc",
         buttonColor: "#8B5CF6",
         buttonTextColor: "#ffffff",
         featureColor: "#ffffff",
@@ -559,6 +560,15 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                     <AdvancedColorPicker
                       value={plan.style?.textColor || "#ffffff"}
                       onChange={color => updatePlanStyle(plan.id, { textColor: color })}
+                      size="sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs">Cor da descrição</Label>
+                    <AdvancedColorPicker
+                      value={plan.style?.descriptionColor || "#cccccc"}
+                      onChange={color => updatePlanStyle(plan.id, { descriptionColor: color })}
                       size="sm"
                     />
                   </div>
