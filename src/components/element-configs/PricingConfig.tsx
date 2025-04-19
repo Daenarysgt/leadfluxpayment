@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ComponentType } from "@/utils/types";
 import { PricingContent } from "@/types/canvasTypes";
+import { Navigation } from "@/utils/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,14 @@ interface PricingConfigProps {
   element: any;
   onUpdate: (element: any) => void;
 }
+
+// Definir um tipo específico para navegação do PricingContent
+type PricingNavigation = {
+  type: "next" | "step" | "url";
+  stepId?: string;
+  url?: string;
+  openInNewTab?: boolean;
+};
 
 // Gradientes pré-definidos
 const gradientPresets = [
@@ -90,6 +99,54 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
       openInNewTab: false
     }
   });
+
+  // Limpar navegação conflitante na inicialização
+  useEffect(() => {
+    // Remover para evitar ciclos e problemas de tipo
+    initialRenderRef.current = false;
+  }, []);
+
+  // Desabilitar temporariamente o sistema de limpeza automática devido a problemas de tipagem
+  /*
+  useEffect(() => {
+    const cleanNavigation = () => {
+      const navType = content.navigation?.type || 'next';
+      let cleanNav: Navigation = { type: navType };
+      
+      // Adicionar apenas os campos relevantes
+      if (navType === 'step' && content.navigation?.stepId) {
+        cleanNav = { 
+          type: navType, 
+          stepId: content.navigation.stepId 
+        };
+      } else if (navType === 'url' && content.navigation?.url) {
+        cleanNav = { 
+          type: navType, 
+          url: content.navigation.url,
+          openInNewTab: content.navigation?.openInNewTab || false 
+        };
+      }
+      
+      // Atualizar se for diferente
+      if (JSON.stringify(cleanNav) !== JSON.stringify(content.navigation)) {
+        console.log('Limpando configuração de navegação conflitante:', content.navigation);
+        console.log('Nova configuração:', cleanNav);
+        
+        // Usar callback para evitar ciclo infinito
+        setContent(prev => ({
+          ...prev,
+          navigation: cleanNav
+        }));
+      }
+    };
+    
+    // Limpar apenas na primeira renderização
+    if (initialRenderRef.current) {
+      cleanNavigation();
+      initialRenderRef.current = false;
+    }
+  }, [content.navigation]);
+  */
 
   console.log("PricingConfig - Etapas disponíveis:", steps);
   console.log("PricingConfig - Navegação atual:", content.navigation);
@@ -622,10 +679,32 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
           <Separator className="my-4" />
 
           <div className="space-y-2">
-            <Label>Ação do botão</Label>
+            <Label className="font-bold">Ação do botão</Label>
+            <div className="bg-blue-50 p-3 rounded-md mb-3 text-sm text-blue-700 border border-blue-200">
+              Escolha apenas uma opção de navegação. A seleção de um tipo limpa as outras configurações.
+            </div>
             <Select
               value={content.navigation?.type || "next"}
-              onValueChange={(value) => updateNestedContent("navigation", "type", value)}
+              onValueChange={(value: "next" | "step" | "url") => {
+                // Limpar as outras configurações ao mudar o tipo
+                let newNavigation: PricingNavigation = { type: value };
+                
+                // Manter apenas os campos relevantes para o tipo
+                if (value === 'step' && content.navigation?.stepId) {
+                  newNavigation = { type: value, stepId: content.navigation.stepId };
+                } else if (value === 'url' && content.navigation?.url) {
+                  newNavigation = { 
+                    type: value, 
+                    url: content.navigation.url,
+                    openInNewTab: content.navigation?.openInNewTab || false
+                  };
+                }
+                
+                setContent(prev => ({
+                  ...prev,
+                  navigation: newNavigation
+                }));
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Escolha a ação" />
@@ -646,7 +725,14 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
                   value={content.navigation?.stepId || ""}
                   onValueChange={(value) => {
                     console.log("Etapa selecionada:", value);
-                    updateNestedContent("navigation", "stepId", value);
+                    // Garantir que apenas os campos relevantes estejam presentes
+                    setContent(prev => ({
+                      ...prev,
+                      navigation: {
+                        type: 'step',
+                        stepId: value
+                      } as PricingNavigation
+                    }));
                   }}
                 >
                   <SelectTrigger id="step-selector">
@@ -675,7 +761,17 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
                 <Input
                   id="url"
                   value={content.navigation?.url || ""}
-                  onChange={(e) => updateNestedContent("navigation", "url", e.target.value)}
+                  onChange={(e) => {
+                    // Garantir que apenas os campos relevantes estejam presentes
+                    setContent(prev => ({
+                      ...prev,
+                      navigation: {
+                        type: 'url',
+                        url: e.target.value,
+                        openInNewTab: prev.navigation?.openInNewTab || false
+                      } as PricingNavigation
+                    }));
+                  }}
                   placeholder="https://exemplo.com"
                 />
               </div>
@@ -683,12 +779,91 @@ const PricingConfig = ({ element, onUpdate }: PricingConfigProps) => {
                 <Switch
                   id="openInNewTab"
                   checked={content.navigation?.openInNewTab || false}
-                  onCheckedChange={(checked) => updateNestedContent("navigation", "openInNewTab", checked)}
+                  onCheckedChange={(checked) => {
+                    // Garantir que apenas os campos relevantes estejam presentes
+                    setContent(prev => ({
+                      ...prev,
+                      navigation: {
+                        type: 'url',
+                        url: prev.navigation?.url || "",
+                        openInNewTab: checked
+                      } as PricingNavigation
+                    }));
+                  }}
                 />
                 <Label htmlFor="openInNewTab">Abrir em nova aba</Label>
               </div>
             </>
           )}
+          
+          {content.navigation?.type === "next" && (
+            <div className="text-sm text-green-600 mt-2 p-2 bg-green-50 rounded-md border border-green-200">
+              O botão levará o usuário para a próxima etapa do funil automaticamente.
+            </div>
+          )}
+          
+          <Separator className="my-4" />
+          
+          <div className="flex flex-col gap-2">
+            <div className="bg-orange-50 p-3 rounded-md text-sm text-orange-700 border border-orange-200">
+              <span className="font-bold">Problemas de navegação?</span> Se a navegação não estiver funcionando corretamente, 
+              pode haver configurações conflitantes. Use os botões abaixo para resolver.
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border-blue-200"
+                onClick={() => {
+                  setContent(prev => ({
+                    ...prev,
+                    navigation: {
+                      type: "next"
+                    } as PricingNavigation
+                  }));
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 5h8"></path>
+                  <path d="M21 12h-8"></path>
+                  <path d="M21 19h-8"></path>
+                  <path d="M1 5h8"></path>
+                  <path d="M9 19H1"></path>
+                  <path d="M9 12H1"></path>
+                  <path d="m17 9 4 3-4 3"></path>
+                  <path d="m5 15-4-3 4-3"></path>
+                </svg>
+                Usar "Próxima Etapa"
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-red-200"
+                onClick={() => {
+                  // Confirmar reset
+                  if(confirm("Tem certeza que deseja limpar a URL de navegação? Isso não pode ser desfeito.")) {
+                    setContent(prev => {
+                      const newNav = { ...prev.navigation } as any;
+                      // Remover URL se existir
+                      if (newNav.url) delete newNav.url;
+                      if (newNav.openInNewTab) delete newNav.openInNewTab;
+                      
+                      return {
+                        ...prev,
+                        navigation: newNav as PricingNavigation
+                      };
+                    });
+                  }
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+                Limpar URL
+              </Button>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

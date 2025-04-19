@@ -68,8 +68,32 @@ const PricingRenderer = (props: ElementRendererProps) => {
     console.log("Navigation config:", JSON.stringify(navigation));
     console.log("PreviewMode:", previewMode);
     
-    if (!navigation) {
-      console.error("Navigation object is not defined");
+    // CORRIGIDO: Verificar se temos um objeto de navegação válido
+    if (!navigation || typeof navigation !== 'object') {
+      console.error("Navigation object is invalid or undefined:", navigation);
+      return;
+    }
+    
+    // Verificar se a navegação tem um tipo válido
+    if (!['next', 'step', 'url'].includes(navigation.type)) {
+      console.error("Tipo de navegação inválido:", navigation.type);
+      return;
+    }
+    
+    // CORRIGIDO: Limpar verificação para navegação tipo URL - garantir que não há conflito
+    if (navigation.type === 'url') {
+      if (!navigation.url || typeof navigation.url !== 'string' || !navigation.url.trim()) {
+        console.error("URL não definida para navegação tipo 'url'");
+        return;
+      }
+      
+      // Navegação simples por URL
+      console.log(`Navegando para URL: ${navigation.url}`);
+      try {
+        window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
+      } catch (error) {
+        console.error("Erro ao abrir URL:", error);
+      }
       return;
     }
     
@@ -97,149 +121,69 @@ const PricingRenderer = (props: ElementRendererProps) => {
       console.log("Preview mode com dados válidos:");
       console.log("- activeStep:", activeStep);
       console.log("- Total steps:", funnel.steps.length);
-      console.log("- Etapas disponíveis:", funnel.steps.map(s => ({ id: s.id, title: s.title })));
       
-      switch (navigation.type) {
-        case "next":
-          console.log("Preview mode: Navigate to next step");
-          // CORREÇÃO: Chamar onStepChange sem condições adicionais para garantir que sempre navegue
-          try {
-            console.log("Tentando navegar para a próxima etapa:", activeStep + 1);
-            onStepChange(activeStep + 1);
-            console.log("Navegação executada com sucesso");
-            
-            // Somente registrar conversão se for a última etapa
-            if (activeStep === funnel.steps.length - 1) {
-              console.log("Registrando conversão para o funil:", funnel.id);
-              try {
-                await accessService.registerStepInteraction(
-                  funnel.id,
-                  Number(activeStep + 1),
-                  null,
-                  'click'
-                );
-                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-                console.log("Conversão registrada com sucesso!");
-              } catch (error) {
-                console.error("Erro ao registrar conversão:", error);
-              }
-            }
-          } catch (error) {
-            console.error("Erro ao navegar para a próxima etapa:", error);
-          }
-          break;
-        case "step":
-          if (navigation.stepId && funnel) {
-            console.log("Preview mode: Navigate to specific step:", navigation.stepId);
-            // Encontre o índice correspondente à etapa (usando findIndex)
-            const stepIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
-            
-            if (stepIndex !== -1) {
-              console.log("Navegando para o stepIndex:", stepIndex);
-              // CORREÇÃO: Chamar onStepChange sem condições adicionais
-              try {
-                onStepChange(stepIndex);
-                console.log("Navegação para etapa específica executada com sucesso");
-                
-                // Somente registrar conversão se for a última etapa
-                if (stepIndex === funnel.steps.length - 1) {
-                  console.log("Registrando conversão para o funil (specific):", funnel.id);
-                  try {
-                    await accessService.registerStepInteraction(
-                      funnel.id,
-                      Number(stepIndex + 1),
-                      null,
-                      'click'
-                    );
-                    await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
-                    console.log("Conversão registrada com sucesso (specific)!");
-                  } catch (error) {
-                    console.error("Erro ao registrar conversão (specific):", error);
-                  }
-                }
-              } catch (error) {
-                console.error("Erro ao navegar para etapa específica:", error);
-              }
-            } else {
-              console.error("Step ID não encontrado:", navigation.stepId);
-            }
-          } else {
-            console.error("Navigation.stepId não definido ou funnel não disponível");
-          }
-          break;
-        case "url":
-          if (navigation.url) {
-            console.log("Preview mode: Navigate to URL:", navigation.url);
-            if (funnel) {
-              // Marcar como conversão antes de redirecionar
-              console.log("Registrando conversão antes de redirecionar:", funnel.id);
-              try {
-                await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-                console.log("Conversão registrada com sucesso (URL)!");
-              } catch (error) {
-                console.error("Erro ao registrar conversão (URL):", error);
-              }
-            }
-            window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
-          }
-          break;
+      // CORRIGIDO: Simplificar lógica de navegação em modo preview
+      if (navigation.type === "next") {
+        // Verificar se a próxima etapa existe
+        if (activeStep + 1 >= funnel.steps.length) {
+          console.warn("Tentativa de navegação para além da última etapa!");
+          return;
+        }
+        
+        console.log("Navegando para próxima etapa:", activeStep + 1);
+        onStepChange(activeStep + 1);
+        return;
+      }
+      
+      if (navigation.type === "step" && navigation.stepId) {
+        // Verificar se a etapa existe
+        const targetIndex = funnel.steps.findIndex(step => step.id === navigation.stepId);
+        if (targetIndex === -1) {
+          console.error("Etapa não encontrada:", navigation.stepId);
+          return;
+        }
+        
+        console.log("Navegando para etapa específica:", targetIndex);
+        onStepChange(targetIndex);
+        return;
       }
     } else {
-      console.log("Usando navegação no modo canvas");
+      console.log("Modo canvas: Navegação local");
       console.log("CurrentFunnel:", currentFunnel);
       console.log("CurrentStep:", currentStep);
       
-      // Handle navigation in canvas mode
-      switch (navigation.type) {
-        case "next":
-          try {
-            console.log("Canvas mode: Tentando navegar para a próxima etapa:", currentStep + 1);
-            if (currentFunnel && currentFunnel.steps && currentFunnel.steps.length > 0) {
-              setCurrentStep(currentStep + 1);
-              console.log("Canvas mode: Navegação executada com sucesso");
-            } else {
-              console.error("Canvas mode: Funil inválido ou sem etapas");
-            }
-          } catch (error) {
-            console.error("Canvas mode: Erro ao navegar para a próxima etapa:", error);
-          }
-          break;
-          
-        case "step":
-          try {
-            console.log("Canvas mode: Tentando navegar para etapa específica:", navigation.stepId);
-            if (navigation.stepId && currentFunnel && currentFunnel.steps) {
-              const stepIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
-              if (stepIndex !== -1) {
-                setCurrentStep(stepIndex);
-                console.log("Canvas mode: Navegação para etapa específica executada com sucesso");
-              } else {
-                console.error("Canvas mode: Step ID não encontrado:", navigation.stepId);
-              }
-            } else {
-              console.error("Canvas mode: Navigation.stepId não definido ou currentFunnel inválido");
-            }
-          } catch (error) {
-            console.error("Canvas mode: Erro ao navegar para etapa específica:", error);
-          }
-          break;
-          
-        case "url":
-          try {
-            if (navigation.url) {
-              console.log("Canvas mode: Abrindo URL:", navigation.url);
-              window.open(navigation.url, navigation.openInNewTab ? "_blank" : "_self");
-            } else {
-              console.error("Canvas mode: URL não definida");
-            }
-          } catch (error) {
-            console.error("Canvas mode: Erro ao abrir URL:", error);
-          }
-          break;
-          
-        default:
-          console.error("Canvas mode: Tipo de navegação desconhecido:", navigation.type);
-          break;
+      // CORRIGIDO: Simplificar navegação em modo canvas
+      if (navigation.type === "next") {
+        if (!currentFunnel || !currentFunnel.steps || !Array.isArray(currentFunnel.steps)) {
+          console.error("Funil inválido no modo canvas");
+          return;
+        }
+        
+        if (currentStep + 1 >= currentFunnel.steps.length) {
+          console.warn("Tentativa de navegação para além da última etapa no modo canvas!");
+          return;
+        }
+        
+        console.log("Canvas: navegando para próxima etapa:", currentStep + 1);
+        setCurrentStep(currentStep + 1);
+        return;
+      }
+      
+      if (navigation.type === "step" && navigation.stepId) {
+        if (!currentFunnel || !currentFunnel.steps || !Array.isArray(currentFunnel.steps)) {
+          console.error("Funil inválido no modo canvas");
+          return;
+        }
+        
+        const targetIndex = currentFunnel.steps.findIndex(step => step.id === navigation.stepId);
+        if (targetIndex === -1) {
+          console.error("Etapa não encontrada no modo canvas:", navigation.stepId);
+          return;
+        }
+        
+        console.log("Canvas: navegando para etapa específica:", targetIndex);
+        setCurrentStep(targetIndex);
+        return;
       }
     }
   };
