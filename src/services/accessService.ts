@@ -577,11 +577,11 @@ export const accessService = {
         startDate.setDate(startDate.getDate() - 30);
       }
       
+      // Alterando a consulta para recuperar todas as interações, não apenas primeiros acessos
       let query = supabase
-        .from('funnel_access_logs')
-        .select('created_at, is_first_access')
-        .eq('funnel_id', funnelId)
-        .eq('is_first_access', true); // Contar apenas acessos únicos
+        .from('funnel_step_interactions')
+        .select('created_at, session_id')
+        .eq('funnel_id', funnelId);
       
       // Aplicar filtro de período se especificado
       if (startDate && period !== 'all') {
@@ -596,25 +596,28 @@ export const accessService = {
         return [];
       }
       
-      // Agrupar por data
-      const visitsByDate = data.reduce((acc: {[date: string]: number}, log) => {
+      // Agrupar por data e por sessão para contar leads únicos por dia
+      const sessionsByDate = data.reduce((acc: {[date: string]: Set<string>}, log) => {
         // Formatar data como DD/MM/YYYY
         const date = new Date(log.created_at);
         const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
         
         if (!acc[formattedDate]) {
-          acc[formattedDate] = 0;
+          acc[formattedDate] = new Set();
         }
         
-        acc[formattedDate]++;
+        // Adiciona o session_id ao conjunto para esta data
+        acc[formattedDate].add(log.session_id);
         return acc;
       }, {});
       
-      // Transformar em array para o gráfico
-      const result = Object.entries(visitsByDate).map(([date, visits]) => ({
+      // Transformar em array para o gráfico, contando o número de sessões únicas por dia
+      const result = Object.entries(sessionsByDate).map(([date, sessions]) => ({
         date,
-        visits
+        visits: sessions.size
       }));
+      
+      console.log('Resultado de visitas por data:', result);
       
       // Ordenar por data
       return result.sort((a, b) => {

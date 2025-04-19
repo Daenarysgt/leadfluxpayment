@@ -179,11 +179,12 @@ const Leads = () => {
 
   useEffect(() => {
     if (currentFunnel?.id) {
+      console.log('Loading all data for period:', selectedPeriod);
       loadMetrics();
       loadLeads();
       loadStepMetrics();
       loadFormData();
-      loadVisitsByDate(); // Nova chamada
+      loadVisitsByDate();
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -357,10 +358,11 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return;
       
-      console.log('Getting visits by date for funnel:', currentFunnel.id);
+      console.log('Getting visits by date for funnel:', currentFunnel.id, 'period:', selectedPeriod);
+      setVisitsByDate([]); // Limpar dados anteriores enquanto carrega
       const visitsData = await accessService.getFunnelVisitsByDate(currentFunnel.id, selectedPeriod);
       
-      console.log('Visits by date:', visitsData);
+      console.log('Visits by date loaded:', visitsData);
       setVisitsByDate(visitsData);
     } catch (error) {
       console.error('Error loading visits by date:', error);
@@ -585,7 +587,7 @@ const Leads = () => {
               <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">Visitas por Data</span>
             </h3>
             <p className="text-sm text-muted-foreground">
-              Total de visitantes únicos do funil por dia
+              Total de leads que interagiram com o funil por dia
             </p>
           </div>
           
@@ -601,7 +603,7 @@ const Leads = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart 
                   data={visitsByDate}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
                 >
                   <defs>
                     <linearGradient id="visitColorGradient" x1="0" y1="0" x2="0" y2="1">
@@ -624,6 +626,7 @@ const Leads = () => {
                     tickLine={false}
                     tick={{ fontSize: 12, fill: '#6B7280' }}
                     axisLine={false}
+                    domain={[0, dataMax => Math.max(Math.ceil(dataMax * 1.2), 1)]}
                   />
                   <Tooltip 
                     content={({ active, payload }) => {
@@ -634,7 +637,7 @@ const Leads = () => {
                             <div className="flex items-center gap-2 mt-1">
                               <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"></div>
                               <p className="font-semibold text-gray-700">
-                                {payload[0].value} <span className="text-gray-500 font-normal">visitantes</span>
+                                {payload[0].value} <span className="text-gray-500 font-normal">leads</span>
                               </p>
                             </div>
                           </div>
@@ -655,6 +658,13 @@ const Leads = () => {
                       strokeWidth: 2,
                       stroke: "#fff",
                       fill: "#8B5CF6"
+                    }}
+                    label={{
+                      position: 'top',
+                      fill: '#8B5CF6',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      formatter: (value) => `${value} ${value === 1 ? 'lead' : 'leads'}`
                     }}
                     animationDuration={1500}
                     animationEasing="ease-in-out"
