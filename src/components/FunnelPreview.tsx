@@ -103,8 +103,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     : "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
   
   const progressBarClass = isMobile
-    ? "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-3"
-    : "w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
+    ? "w-full h-2 rounded-full overflow-hidden mb-3"
+    : "w-full h-2 rounded-full overflow-hidden mb-4 sm:mb-6";
   
   const contentClass = isMobile
     ? "w-full mobile-full-width"
@@ -151,7 +151,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         {activeFunnel.settings.showProgressBar && (
-          <div className={progressBarClass}>
+          <div 
+            className={progressBarClass}
+            style={{
+              backgroundColor: `${primaryColor}30` // Usando a mesma cor com 30% de opacidade
+            }}
+          >
             <div 
               className="h-full transition-all duration-500 ease-out"
               style={{ 
