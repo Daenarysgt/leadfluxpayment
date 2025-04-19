@@ -43,6 +43,8 @@ const PriceRenderer = (props: ElementRendererProps) => {
       oldPrice: "240,00",
       discount: "50% off",
       buttonText: "Comprar Agora!",
+      periodText: "Mensal",
+      warrantyText: "7 dias de garantia",
       features: [
         { id: crypto.randomUUID(), text: "Novo recurso" },
         { id: crypto.randomUUID(), text: "Novo recurso" },
@@ -58,7 +60,8 @@ const PriceRenderer = (props: ElementRendererProps) => {
         featureColor: "#ffffff",
         circleColor: "#32CD32",
         borderRadius: 8,
-        borderColor: "#333333"
+        borderColor: "#333333",
+        dividerColor: "#333333"
       }
     }
   ]);
@@ -294,7 +297,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                       <span className="sm:inline hidden">O que está incluído</span>
                       <span className="sm:hidden">Incluído</span>
                     </h4>
-                    <div className="h-px flex-auto opacity-20" style={{ backgroundColor: plan.style?.textColor || "#ffffff" }}></div>
+                    <div className="h-px flex-auto opacity-20" style={{ backgroundColor: plan.style?.dividerColor || plan.style?.textColor || "#ffffff" }}></div>
                   </div>
                   
                   {/* Lista de recursos - grid com largura controlada para mobile */}
@@ -321,7 +324,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 {/* Lado direito - Apenas o preço (sem botão) */}
                 <div className="p-2 sm:p-5 w-[100px] sm:w-[160px] flex flex-col justify-center items-center border-l border-opacity-20" 
                   style={{ 
-                    borderColor: plan.style?.borderColor || "#333333",
+                    borderColor: plan.style?.dividerColor || plan.style?.borderColor || "#333333",
                     backgroundColor: "rgba(255, 255, 255, 0.03)"
                   }}
                 >
@@ -329,7 +332,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     className="text-[9px] sm:text-xs font-semibold text-center"
                     style={{ color: plan.style?.textColor || "#ffffff" }}
                   >
-                    Mensal
+                    {plan.periodText || "Mensal"}
                   </p>
                   
                   <div className="mt-0.5 sm:mt-1 mb-1 sm:mb-3 flex flex-col items-center">
@@ -365,7 +368,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                   </div>
                   
                   <p className="mt-1 sm:mt-1.5 text-[7px] sm:text-[9px] opacity-70 text-center" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                    7 dias de garantia
+                    {plan.warrantyText || "7 dias de garantia"}
                   </p>
                 </div>
               </div>
@@ -433,6 +436,13 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 }}
               >
                 <div className="flex items-center justify-center gap-2 mb-2">
+                  <p 
+                    className="text-xs font-semibold text-center"
+                    style={{ color: plan.style?.textColor || "#ffffff" }}
+                  >
+                    {plan.periodText || "Mensal"}
+                  </p>
+                  
                   {plan.discount && (
                     <span 
                       className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
@@ -503,7 +513,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 {!plan.showButton && (
                   <div className="flex justify-center items-center gap-1.5 mt-3">
                     <span className="text-xs opacity-70 text-white">
-                      7 dias de garantia incondicional
+                      {plan.warrantyText || "7 dias de garantia incondicional"}
                     </span>
                   </div>
                 )}

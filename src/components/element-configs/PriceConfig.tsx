@@ -53,6 +53,8 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       oldPrice: "",
       discount: "",
       buttonText: "Escolher este plano",
+      periodText: "Mensal",
+      warrantyText: "7 dias de garantia",
       showButton: true,
       navigation: { type: "next" },
       facebookEvent: "",
@@ -454,6 +456,30 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                         onChange={e => updatePlan(plan.id, { buttonText: e.target.value })}
                         className="h-8 text-sm"
                         placeholder="Escolher plano"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs" htmlFor={`plan-period-text-${plan.id}`}>Texto de período</Label>
+                      <Input
+                        id={`plan-period-text-${plan.id}`}
+                        value={plan.periodText || "Mensal"}
+                        onChange={e => updatePlan(plan.id, { periodText: e.target.value })}
+                        className="h-8 text-sm"
+                        placeholder="Mensal"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs" htmlFor={`plan-warranty-text-${plan.id}`}>Texto de garantia</Label>
+                      <Input
+                        id={`plan-warranty-text-${plan.id}`}
+                        value={plan.warrantyText || "7 dias de garantia"}
+                        onChange={e => updatePlan(plan.id, { warrantyText: e.target.value })}
+                        className="h-8 text-sm"
+                        placeholder="7 dias de garantia"
                       />
                     </div>
                   </div>
