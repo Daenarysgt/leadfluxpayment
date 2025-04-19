@@ -37,7 +37,9 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  TooltipProps
+  TooltipProps,
+  AreaChart,
+  Area
 } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -576,11 +578,11 @@ const Leads = () => {
         </div>
 
         {/* NOVO: Gráfico de Visitas */}
-        <div className="bg-white p-6 rounded-lg border shadow-sm">
+        <div className="bg-white p-6 rounded-lg border shadow-sm transition-all hover:shadow-md">
           <div className="mb-4">
             <h3 className="text-lg font-medium flex items-center gap-2">
-              <Eye className="h-5 w-5 text-blue-700" />
-              <span>Visitas por Data</span>
+              <Eye className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+              <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">Visitas por Data</span>
             </h3>
             <p className="text-sm text-muted-foreground">
               Total de visitantes únicos do funil por dia
@@ -589,55 +591,76 @@ const Leads = () => {
           
           {visitsByDate.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Info className="h-10 w-10 text-muted-foreground mb-3" />
+              <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                <Info className="h-8 w-8 text-gray-300" />
+              </div>
               <p className="text-muted-foreground">Não há dados de visitas para o período selecionado</p>
             </div>
           ) : (
-            <div className="h-64">
-              <ChartContainer 
-                className="w-full h-full"
-                config={{
-                  visits: { 
-                    label: "Visitantes", 
-                    color: "#8B5CF6"
-                  }
-                }}
-              >
-                <BarChart data={visitsByDate}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart 
+                  data={visitsByDate}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                >
+                  <defs>
+                    <linearGradient id="visitColorGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#3B82F6" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#8B5CF6" stopOpacity={1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f5" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 12 }} 
+                    tick={{ fontSize: 12, fill: '#6B7280' }} 
                     tickLine={false}
+                    axisLine={{ stroke: '#E5E7EB' }}
                   />
                   <YAxis 
                     tickLine={false}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
                     axisLine={false}
                   />
                   <Tooltip 
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white border shadow-md rounded-md p-2 text-sm">
-                            <p className="font-medium">{payload[0].payload.date}</p>
-                            <p className="text-blue-700">{payload[0].value} visitantes</p>
+                          <div className="bg-white border shadow-lg rounded-lg p-3 text-sm backdrop-blur-sm bg-white/90">
+                            <p className="font-medium text-gray-800">{payload[0].payload.date}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"></div>
+                              <p className="font-semibold text-gray-700">
+                                {payload[0].value} <span className="text-gray-500 font-normal">visitantes</span>
+                              </p>
+                            </div>
                           </div>
                         );
                       }
                       return null;
                     }}
+                    cursor={{ stroke: '#8B5CF6', strokeWidth: 1, strokeDasharray: '4 4' }}
                   />
-                  <Bar 
+                  <Area 
+                    type="monotone" 
                     dataKey="visits" 
-                    fill="#8B5CF6" 
-                    radius={[4, 4, 0, 0]} 
-                    name="Visitantes"
-                    barSize={35}
-                    animationDuration={500}
+                    stroke="url(#lineGradient)" 
+                    strokeWidth={3}
+                    fill="url(#visitColorGradient)" 
+                    activeDot={{ 
+                      r: 6, 
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                      fill: "#8B5CF6"
+                    }}
+                    animationDuration={1500}
+                    animationEasing="ease-in-out"
                   />
-                </BarChart>
-              </ChartContainer>
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>
