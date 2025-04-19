@@ -131,8 +131,12 @@ const DomainFunnel = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
         <div className="flex flex-col items-center">
-          {/* Spinner simples e elegante */}
-          <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin mb-4"></div>
+          {/* Spinner com gradiente personalizado */}
+          <div className="relative h-16 w-16">
+            <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full border-4 border-transparent border-t-blue-600 border-r-purple-600 animate-spin"></div>
+            <div className="absolute top-1 left-1 right-1 bottom-1 rounded-full border-4 border-transparent border-t-blue-400 border-r-purple-400 animate-spin" style={{ animationDuration: '1.5s' }}></div>
+            <div className="absolute top-2 left-2 right-2 bottom-2 rounded-full border-4 border-transparent border-t-blue-300 border-r-purple-300 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+          </div>
         </div>
       </div>
     );
