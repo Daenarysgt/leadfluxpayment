@@ -88,7 +88,7 @@ const Preview = () => {
       </header>
       
       <main className="flex-1 flex items-center justify-center p-6 bg-white">
-        <div className={`${isMobile ? 'max-w-sm' : 'w-full max-w-3xl'}`}>
+        <div className={`${isMobile ? 'max-w-sm' : 'w-full max-w-2xl'}`}>
           <FunnelPreview 
             funnel={loadedFunnel} 
             isMobile={isMobile} 

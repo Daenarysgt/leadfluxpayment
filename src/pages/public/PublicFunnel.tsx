@@ -164,7 +164,7 @@ const PublicFunnel = () => {
   
   const innerClass = isMobile 
     ? "w-full mobile-full-width" 
-    : "w-full max-w-3xl";
+    : "w-full max-w-2xl mx-auto";
     
   // Estilos específicos para mobile
   const containerStyle = isMobile ? {

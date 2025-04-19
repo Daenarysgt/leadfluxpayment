@@ -96,7 +96,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   const contentWrapperClass = isMobile 
     ? "flex flex-col items-center w-full mobile-full-width mx-auto py-2 px-0" 
-    : "flex flex-col items-center w-full max-w-2xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
+    : "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
   
   const logoWrapperClass = isMobile
     ? "w-full flex justify-center py-2 mb-1" 

@@ -285,7 +285,7 @@
 @media (min-width: 769px) {
   .mobile-full-width {
     width: auto !important;
-    max-width: 3xl !important;
+    max-width: 2xl !important;
     margin-left: auto !important;
     margin-right: auto !important;
     padding-left: 1rem !important;
