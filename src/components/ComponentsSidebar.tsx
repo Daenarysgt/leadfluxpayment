@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ComponentType } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ import {
   MessageSquareQuote, 
   Sliders, 
   StickyNote, 
-  Type
+  Type,
+  DollarSign,
 } from "lucide-react";
 
 const ComponentsSidebar = () => {
@@ -34,6 +34,7 @@ const ComponentsSidebar = () => {
     { id: ComponentType.Loading, name: "Loading", icon: Loader2 },
     { id: ComponentType.Cartesian, name: "Cartesiano", icon: Box },
     { id: ComponentType.Spacer, name: "Espaço", icon: AlignCenter },
+    { id: ComponentType.Pricing, name: "Preços", icon: DollarSign },
   ];
   
   const handleDragStart = (e: React.DragEvent, componentType: string) => {
