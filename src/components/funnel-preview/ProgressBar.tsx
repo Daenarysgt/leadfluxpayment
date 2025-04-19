@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface ProgressBarProps {
@@ -9,7 +8,7 @@ interface ProgressBarProps {
 
 const ProgressBar = ({ currentStep, totalSteps, primaryColor }: ProgressBarProps) => {
   return (
-    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-6">
+    <div className="w-full h-2 rounded-full overflow-hidden mb-6" style={{ backgroundColor: 'rgba(229, 231, 235, 0.3)' }}>
       <div 
         className="h-full transition-all duration-500 ease-out"
         style={{ 
