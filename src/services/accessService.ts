@@ -501,24 +501,22 @@ export const accessService = {
       });
 
       // Inserir na tabela funnel_responses
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('funnel_responses')
         .insert({
           funnel_id: funnelId,
-          session_id: activeSessionId,
           lead_info: formData,
           answers: {},
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString()
-        })
-        .select();
+        });
 
       if (error) {
         console.error('Error saving form data:', error);
         throw error;
       }
 
-      console.log('Dados do formulário salvos com sucesso:', data);
+      console.log('Dados do formulário salvos com sucesso');
     } catch (error) {
       console.error('Error saving form data:', error);
       throw error;
