@@ -129,32 +129,10 @@ const DomainFunnel = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="w-full max-w-2xl mx-auto px-4 py-8">
-          {/* Logo skeleton */}
-          <div className="w-full flex justify-center py-4 mb-8">
-            <div className="h-12 w-40 bg-gray-200 animate-pulse rounded-md"></div>
-          </div>
-          
-          {/* Progress bar skeleton */}
-          <div className="w-full h-2 bg-gray-200 animate-pulse rounded-full mb-10"></div>
-          
-          {/* Título skeleton */}
-          <div className="h-9 bg-gray-200 animate-pulse rounded-md w-3/4 mx-auto mb-6"></div>
-          
-          {/* Parágrafos skeleton */}
-          <div className="space-y-4 mb-8">
-            <div className="h-4 bg-gray-200 animate-pulse rounded-md w-full"></div>
-            <div className="h-4 bg-gray-200 animate-pulse rounded-md w-11/12"></div>
-            <div className="h-4 bg-gray-200 animate-pulse rounded-md w-10/12"></div>
-            <div className="h-4 bg-gray-200 animate-pulse rounded-md w-full"></div>
-          </div>
-          
-          {/* Input field skeleton */}
-          <div className="h-12 bg-gray-200 animate-pulse rounded-md w-full mb-5"></div>
-          
-          {/* Button skeleton */}
-          <div className="h-12 bg-blue-200 animate-pulse rounded-md w-2/3 mx-auto mt-8"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          {/* Spinner simples e elegante */}
+          <div className="h-12 w-12 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin mb-4"></div>
         </div>
       </div>
     );
