@@ -80,45 +80,46 @@ const PriceRenderer = (props: ElementRendererProps) => {
               backgroundColor: "#000000",
             }}
           >
-            <div className="flex flex-row" style={{ maxHeight: "200px" }}>
+            <div className="flex flex-row" style={{ maxHeight: "180px" }}>
               {/* Lado esquerdo - Informações e recursos */}
-              <div className="p-3 sm:p-5 flex-1 flex flex-col justify-center">
+              <div className="p-2 sm:p-5 flex-1 flex flex-col justify-center">
                 <h3 
-                  className="text-base sm:text-lg font-bold truncate" 
+                  className="text-sm sm:text-lg font-bold truncate" 
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
                   {plan.title}
                 </h3>
                 <p 
-                  className="text-xs sm:text-sm opacity-80 mt-1 truncate"
+                  className="text-[10px] sm:text-sm opacity-80 mt-0.5 sm:mt-1 truncate"
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
                   {plan.description}
                 </p>
                 
-                {/* Separador "O que está incluído" */}
-                <div className="mt-2 flex items-center gap-x-2">
+                {/* Separador "O que está incluído" com texto menor no mobile */}
+                <div className="mt-1 sm:mt-2 flex items-center gap-x-1">
                   <h4 
-                    className="text-xs font-semibold"
+                    className="text-[10px] sm:text-xs font-semibold whitespace-nowrap"
                     style={{ color: plan.style?.buttonColor || "#8B5CF6" }}
                   >
-                    O que está incluído
+                    <span className="sm:inline hidden">O que está incluído</span>
+                    <span className="sm:hidden">Incluído</span>
                   </h4>
                   <div className="h-px flex-auto opacity-20" style={{ backgroundColor: plan.style?.textColor || "#ffffff" }}></div>
                 </div>
                 
-                {/* Lista de recursos - grid adaptável a qualquer tamanho */}
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                {/* Lista de recursos - grid com largura controlada para mobile */}
+                <div className="mt-1 sm:mt-2 grid grid-cols-2 gap-1 sm:gap-1.5 w-[90%] sm:w-full">
                   {plan.features.slice(0, 4).map((feature) => (
                     <div key={feature.id} className="flex items-center gap-1">
                       <div 
-                        className="h-3 w-3 rounded-full flex items-center justify-center flex-shrink-0" 
+                        className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex items-center justify-center flex-shrink-0" 
                         style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
                       >
-                        <Check className="h-2 w-2 text-white" />
+                        <Check className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-white" />
                       </div>
                       <span 
-                        className="text-xs truncate"
+                        className="text-[9px] sm:text-xs truncate"
                         style={{ color: plan.style?.featureColor || "#ffffff" }}
                       >
                         {feature.text}
@@ -128,25 +129,25 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 </div>
               </div>
               
-              {/* Lado direito - Preço e CTA */}
-              <div className="p-3 sm:p-5 w-[120px] sm:w-[160px] flex flex-col justify-center text-center border-l border-opacity-20" 
+              {/* Lado direito - Preço e CTA com largura menor para mobile */}
+              <div className="p-2 sm:p-5 w-[100px] sm:w-[160px] flex flex-col justify-center text-center border-l border-opacity-20" 
                 style={{ 
                   borderColor: plan.style?.borderColor || "#333333",
                   backgroundColor: "rgba(255, 255, 255, 0.03)"
                 }}
               >
                 <p 
-                  className="text-xs font-semibold"
+                  className="text-[9px] sm:text-xs font-semibold"
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
                   Mensal
                 </p>
                 
-                <div className="mt-1 mb-2 sm:mb-3 flex flex-col items-center">
+                <div className="mt-0.5 sm:mt-1 mb-1 sm:mb-3 flex flex-col items-center">
                   <div className="flex flex-col items-center">
                     {plan.oldPrice && (
                       <span 
-                        className="line-through text-xs opacity-70"
+                        className="line-through text-[8px] sm:text-xs opacity-70"
                         style={{ color: plan.style?.textColor || "#ffffff" }}
                       >
                         R${plan.oldPrice}
@@ -154,15 +155,15 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     )}
                     
                     <div className="flex items-baseline">
-                      <span className="text-lg sm:text-2xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                        <span className="text-xs sm:text-sm">R$</span>
+                      <span className="text-base sm:text-2xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                        <span className="text-[10px] sm:text-sm">R$</span>
                         {plan.price}
                       </span>
                     </div>
                     
                     {plan.discount && (
                       <span 
-                        className="mt-1 text-[10px] font-semibold py-0.5 px-1 rounded-sm"
+                        className="mt-0.5 text-[8px] sm:text-[10px] font-semibold py-px px-1 rounded-sm"
                         style={{ 
                           backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                           color: "#ffffff"
@@ -175,18 +176,18 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 </div>
                 
                 <button 
-                  className="w-full py-1.5 px-2 rounded-md text-xs font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
+                  className="w-full py-1 sm:py-1.5 px-1 sm:px-2 rounded-md text-[9px] sm:text-xs font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
                   style={{ 
                     backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                     color: plan.style?.buttonTextColor || "#ffffff",
                     borderRadius: `${plan.style?.borderRadius || 8}px`,
                   }}
                 >
-                  Comprar Agora
-                  <ArrowRight className="ml-1 h-3 w-3" />
+                  Comprar
+                  <ArrowRight className="ml-0.5 sm:ml-1 h-2 w-2 sm:h-3 sm:w-3" />
                 </button>
                 
-                <p className="mt-1.5 text-[9px] opacity-70" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                <p className="mt-1 sm:mt-1.5 text-[7px] sm:text-[9px] opacity-70" style={{ color: plan.style?.textColor || "#ffffff" }}>
                   7 dias de garantia
                 </p>
               </div>
