@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
-import { Check, Star, Clock, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { Check, Star, ArrowRight, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const PriceRenderer = (props: ElementRendererProps) => {
@@ -62,75 +62,64 @@ const PriceRenderer = (props: ElementRendererProps) => {
     right: "justify-end"
   }[alignment] || "justify-center";
 
-  // Renderização para o estilo horizontal (estilo moderno)
+  // Renderização para o estilo horizontal (estilo idêntico ao editor)
   const renderHorizontalPrice = () => {
     return (
-      <div className={`flex flex-col ${alignmentClass} gap-4 w-full max-w-3xl mx-auto`}>
+      <div className={`flex flex-wrap ${alignmentClass} gap-4 w-full`}>
         {plans.map((plan, index) => (
           <div 
             key={plan.id} 
-            className={cn(
-              "rounded-xl overflow-hidden flex flex-col w-full transition-all duration-300",
-              "shadow-lg hover:shadow-xl border border-opacity-10",
-              plan.isHighlighted ? "ring-2 ring-violet-500" : ""
-            )}
+            className="w-full rounded-xl overflow-hidden relative flex flex-col"
             style={{ 
               borderRadius: `${plan.style?.borderRadius || 10}px`,
               border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
-              boxShadow: boxShadow === "lg" ? "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" : 
-                        boxShadow === "md" ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)" : 
+              boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
+                        boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "none" ? "none" : undefined,
+              maxWidth: "100%",
+              minHeight: "200px", // Altura fixa para corresponder ao editor
+              backgroundColor: "#000000"
             }}
           >
-            {/* Cabeçalho - Título e descrição */}
-            <div 
-              className="px-5 py-4 w-full flex flex-col space-y-1"
-              style={{ 
-                backgroundColor: plan.style?.backgroundColor || backgroundColor,
-              }}
-            >
-              <div className="flex justify-between items-center w-full">
-                <h3 
-                  className="text-lg sm:text-xl font-bold" 
-                  style={{ color: plan.style?.textColor || "#ffffff" }}
-                >
-                  {plan.title}
-                </h3>
-                
-                {plan.isHighlighted && (
-                  <div 
-                    className="bg-gradient-to-r from-violet-600 to-violet-700 text-white text-xs font-medium py-1 px-2.5 rounded-full flex items-center gap-1"
-                    style={{ boxShadow: "0 2px 4px rgba(139, 92, 246, 0.25)" }}
-                  >
-                    <Sparkles className="h-3 w-3" /> Recomendado
-                  </div>
-                )}
+            {plan.isHighlighted && (
+              <div 
+                className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10"
+              >
+                <Star className="h-3 w-3 inline mr-1" /> Recomendado
               </div>
-              
+            )}
+            
+            {/* Cabeçalho */}
+            <div className="px-5 pt-4 pb-2">
+              <h3 
+                className="text-lg font-bold" 
+                style={{ color: plan.style?.textColor || "#ffffff" }}
+              >
+                {plan.title}
+              </h3>
               <p 
-                className="text-sm opacity-80 max-w-[95%]"
+                className="text-sm opacity-80"
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.description}
               </p>
             </div>
             
-            {/* Corpo - Preço e features */}
-            <div className="px-5 py-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-opacity-98 relative" 
+            {/* Conteúdo Principal */}
+            <div className="px-5 py-3 flex-grow"
               style={{ 
-                backgroundColor: plan.style?.backgroundColor || backgroundColor,
-                background: `linear-gradient(180deg, ${plan.style?.backgroundColor || backgroundColor} 0%, rgba(${parseInt(plan.style?.backgroundColor?.slice(1, 3) || "0", 16)}, ${parseInt(plan.style?.backgroundColor?.slice(3, 5) || "0", 16)}, ${parseInt(plan.style?.backgroundColor?.slice(5, 7) || "0", 16)}, 0.95) 100%)`,
+                background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
               }}
             >
-              {/* Preço */}
-              <div className="flex flex-col items-center sm:items-start sm:min-w-[180px] sm:mr-auto">
-                <div className="flex items-center gap-2">
+              {/* Área de Preço */}
+              <div className="flex items-center mb-3">
+                <div>
                   {plan.discount && (
                     <span 
-                      className="text-xs font-semibold py-0.5 px-2 rounded-md"
+                      className="text-xs font-semibold inline-block mb-1 py-0.5 px-2 rounded-sm mr-2"
                       style={{ 
-                        backgroundColor: `${plan.style?.buttonColor}33` || "#8B5CF633",
-                        color: plan.style?.buttonColor || "#8B5CF6" 
+                        backgroundColor: "#8B5CF6",
+                        color: "#ffffff"
                       }}
                     >
                       {plan.discount}
@@ -139,97 +128,71 @@ const PriceRenderer = (props: ElementRendererProps) => {
                   
                   {plan.oldPrice && (
                     <span 
-                      className="line-through text-xs opacity-70"
+                      className="line-through text-sm opacity-70 inline-block ml-2"
                       style={{ color: plan.style?.textColor || "#ffffff" }}
                     >
                       R${plan.oldPrice}
                     </span>
                   )}
                 </div>
-                
-                <div className="flex items-baseline mt-1">
-                  <span 
-                    className="text-sm opacity-70"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    R$
-                  </span>
-                  <span 
-                    className="text-3xl sm:text-4xl font-extrabold mx-1" 
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    {plan.price}
-                  </span>
-                  <span 
-                    className="text-sm opacity-70"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    à vista
-                  </span>
-                </div>
               </div>
               
-              {/* Recursos - Visíveis em telas maiores */}
-              <div className="hidden sm:flex flex-col space-y-2.5 flex-1 max-w-[300px]">
-                {plan.features.slice(0, 3).map((feature) => (
-                  <div key={feature.id} className="flex items-center gap-2">
+              <div className="flex items-baseline">
+                <span className="text-2xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                  <span className="text-sm mr-1">R$</span>
+                  {plan.price}
+                </span>
+                <span 
+                  className="text-sm opacity-70 ml-2"
+                  style={{ color: plan.style?.textColor || "#ffffff" }}
+                >
+                  à vista
+                </span>
+              </div>
+              
+              {/* Recursos */}
+              <div className="flex flex-wrap mt-4 gap-2">
+                {plan.features.slice(0, 2).map((feature) => (
+                  <div 
+                    key={feature.id} 
+                    className="flex items-center gap-1.5 bg-opacity-10 bg-white rounded-full py-1 px-2"
+                  >
                     <div 
-                      className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
-                      style={{ 
-                        backgroundColor: plan.style?.circleColor || "#32CD32",
-                      }}
+                      className="h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0" 
+                      style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
                     >
-                      <Check className="h-3 w-3 text-white" />
+                      <Check className="h-2.5 w-2.5 text-white" />
                     </div>
                     <span 
-                      className="text-sm"
+                      className="text-xs"
                       style={{ color: plan.style?.featureColor || "#ffffff" }}
                     >
                       {feature.text}
                     </span>
                   </div>
                 ))}
-                {plan.features.length > 3 && (
-                  <span 
-                    className="text-xs opacity-70 mt-1"
-                    style={{ color: plan.style?.featureColor || "#ffffff" }}
-                  >
-                    +{plan.features.length - 3} recursos incluídos
-                  </span>
-                )}
               </div>
               
               {/* Botão */}
-              <button 
-                className="w-full sm:w-auto py-3 px-5 sm:min-w-[150px] rounded-lg font-medium text-sm transition-all duration-200 hover:opacity-90 active:scale-98 whitespace-nowrap flex items-center justify-center gap-2"
-                style={{ 
-                  backgroundColor: plan.style?.buttonColor || "#8B5CF6",
-                  color: plan.style?.buttonTextColor || "#ffffff",
-                  borderRadius: `${plan.style?.borderRadius || 8}px`,
-                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
-                }}
-              >
-                {plan.buttonText || "Comprar Agora"}
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="mt-4">
+                <button 
+                  className="w-full py-3 rounded-lg font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                    color: plan.style?.buttonTextColor || "#ffffff",
+                    borderRadius: `${plan.style?.borderRadius || 8}px`,
+                  }}
+                >
+                  {plan.buttonText || "Comprar Agora!"} 
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </div>
             </div>
             
-            {/* Rodapé - Informações adicionais */}
-            <div 
-              className="px-5 py-3 flex justify-center items-center gap-2 border-t border-opacity-10 bg-opacity-80"
-              style={{ 
-                backgroundColor: plan.style?.backgroundColor || backgroundColor,
-                borderColor: plan.style?.borderColor || "#333333" 
-              }}
-            >
-              <ShieldCheck 
-                className="h-4 w-4 opacity-60"
-                style={{ color: plan.style?.textColor || "#ffffff" }}
-              />
-              <span 
-                className="text-xs opacity-70"
-                style={{ color: plan.style?.textColor || "#ffffff" }}
-              >
+            {/* Rodapé */}
+            <div className="px-5 py-2 flex items-center justify-center text-center border-t border-gray-800">
+              <ShieldCheck className="h-4 w-4 mr-1 opacity-60" style={{ color: "#ffffff" }} />
+              <span className="text-xs opacity-70 text-white">
                 7 dias de garantia incondicional
               </span>
             </div>
@@ -239,7 +202,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
     );
   };
 
-  // Renderização para o estilo de cards (estilo moderno)
+  // Renderização para o estilo de cards
   const renderCardsPrice = () => {
     return (
       <div className={`flex flex-wrap ${alignmentClass} gap-4 w-full`}>
@@ -247,32 +210,30 @@ const PriceRenderer = (props: ElementRendererProps) => {
           <div 
             key={plan.id} 
             className={cn(
-              "rounded-xl flex flex-col transition-all duration-300",
+              "rounded-xl overflow-hidden flex flex-col",
               "w-full md:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]",
-              plan.isHighlighted ? "relative" : "",
-              "hover:translate-y-[-5px] shadow-lg hover:shadow-xl border border-opacity-10"
+              "shadow-lg relative"
             )}
             style={{ 
-              backgroundColor: plan.style?.backgroundColor || "#000000",
+              backgroundColor: "#000000",
               borderRadius: `${plan.style?.borderRadius || 12}px`,
               border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
-              boxShadow: boxShadow === "lg" ? "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" : 
-                        boxShadow === "md" ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)" : 
+              boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
+                        boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "none" ? "none" : undefined,
               minWidth: "250px",
-              maxWidth: "100%",
-              overflow: "hidden"
+              maxWidth: "100%"
             }}
           >
             {/* Tag de destaque */}
             {plan.isHighlighted && (
-              <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-violet-600 to-violet-700 text-white text-xs font-bold py-1.5 text-center">
-                Mais Vantajoso
+              <div className="absolute top-0 right-0 bg-violet-600 text-white text-xs font-medium py-1 px-3 rounded-bl-lg z-10">
+                <Star className="h-3 w-3 inline mr-1" /> Recomendado
               </div>
             )}
 
             {/* Cabeçalho do card */}
-            <div className={`${plan.isHighlighted ? 'pt-8' : 'pt-4'} px-5 pb-3 text-center`}>
+            <div className="px-5 pt-4 pb-3 text-center">
               <h3 
                 className="text-xl font-bold" 
                 style={{ color: plan.style?.textColor || "#ffffff" }}
@@ -280,7 +241,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 {plan.title}
               </h3>
               <p 
-                className="text-sm opacity-80 mt-1 px-3"
+                className="text-sm opacity-80 mt-1"
                 style={{ color: plan.style?.textColor || "#ffffff" }}
               >
                 {plan.description}
@@ -288,16 +249,18 @@ const PriceRenderer = (props: ElementRendererProps) => {
             </div>
 
             {/* Preço */}
-            <div className="flex flex-col items-center px-5 py-4 border-t border-b border-opacity-10"
-              style={{ borderColor: plan.style?.borderColor || "#333333" }}
+            <div className="px-5 py-4 border-t border-b border-gray-800 text-center"
+              style={{ 
+                background: "linear-gradient(180deg, #000000 0%, #111111 100%)" 
+              }}
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center gap-2 mb-2">
                 {plan.discount && (
                   <span 
-                    className="text-xs font-semibold py-0.5 px-2 rounded-full" 
+                    className="text-xs font-semibold py-0.5 px-2 rounded-sm" 
                     style={{ 
-                      backgroundColor: `${plan.style?.buttonColor}33` || "#8B5CF633",
-                      color: plan.style?.buttonColor || "#8B5CF6",
+                      backgroundColor: "#8B5CF6",
+                      color: "#ffffff"
                     }}
                   >
                     {plan.discount}
@@ -314,41 +277,29 @@ const PriceRenderer = (props: ElementRendererProps) => {
               </div>
               
               <div className="flex items-baseline justify-center">
-                <span 
-                  className="text-sm opacity-70 mr-1"
-                  style={{ color: plan.style?.textColor || "#ffffff" }}
-                >
-                  R$
-                </span>
-                <span 
-                  className="text-4xl font-extrabold" 
-                  style={{ color: plan.style?.textColor || "#ffffff" }}
-                >
+                <span className="text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                  <span className="text-lg mr-1">R$</span>
                   {plan.price}
                 </span>
                 <span 
-                  className="text-sm opacity-70 ml-1"
+                  className="text-sm opacity-70 ml-2"
                   style={{ color: plan.style?.textColor || "#ffffff" }}
                 >
                   à vista
                 </span>
               </div>
-              
-              {/* Informação de parcelamento */}
-              <span 
-                className="text-xs opacity-70 mt-1"
-                style={{ color: plan.style?.textColor || "#ffffff" }}
-              >
-                ou 12x de R${(parseFloat(plan.price.replace(',', '.')) / 12).toFixed(2).replace('.', ',')}
-              </span>
             </div>
 
             {/* Recursos */}
-            <div className="flex flex-col space-y-3 px-5 py-5 flex-grow">
+            <div className="flex flex-col space-y-3 px-5 py-5 flex-grow"
+              style={{ 
+                background: "linear-gradient(180deg, #111111 0%, #000000 100%)" 
+              }}
+            >
               {plan.features.map((feature) => (
-                <div key={feature.id} className="flex items-start gap-2">
+                <div key={feature.id} className="flex items-center gap-2">
                   <div 
-                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" 
+                    className="h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0" 
                     style={{ 
                       backgroundColor: plan.style?.circleColor || "#32CD32",
                     }}
@@ -365,38 +316,29 @@ const PriceRenderer = (props: ElementRendererProps) => {
               ))}
             </div>
 
-            {/* Contador (opcional) */}
-            {plan.isHighlighted && (
-              <div 
-                className="flex items-center justify-center gap-2 py-2 px-4 bg-opacity-20 text-center"
-                style={{ 
-                  backgroundColor: `${plan.style?.buttonColor}20` || "#8B5CF620",
-                  color: plan.style?.textColor || "#ffffff" 
-                }}
-              >
-                <Clock className="h-3.5 w-3.5 opacity-80" />
-                <span className="text-xs font-medium">Oferta por tempo limitado</span>
-              </div>
-            )}
-
             {/* Botão */}
-            <div className="px-5 pb-5 pt-2">
+            <div className="px-5 pb-5 pt-2"
+              style={{ 
+                background: "linear-gradient(180deg, #000000 0%, #000000 100%)" 
+              }}
+            >
               <button 
-                className="w-full py-3 rounded-lg font-medium text-sm transition-all duration-200 hover:brightness-110 active:scale-98 shadow-md"
+                className="w-full py-3 rounded-lg font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
                 style={{ 
                   backgroundColor: plan.style?.buttonColor || "#8B5CF6",
                   color: plan.style?.buttonTextColor || "#ffffff",
                   borderRadius: `${plan.style?.borderRadius || 8}px`,
                 }}
               >
-                {plan.buttonText || "GARANTIR MINHA VAGA AGORA"}
+                {plan.buttonText || "Comprar Agora!"}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </button>
               
               {/* Garantia */}
               <div className="flex justify-center items-center gap-1.5 mt-3">
-                <ShieldCheck className="h-3.5 w-3.5 opacity-60" style={{ color: plan.style?.textColor || "#ffffff" }} />
-                <span className="text-xs opacity-70" style={{ color: plan.style?.textColor || "#ffffff" }}>
-                  7 dias de garantia
+                <ShieldCheck className="h-4 w-4 opacity-60" style={{ color: "#ffffff" }} />
+                <span className="text-xs opacity-70 text-white">
+                  7 dias de garantia incondicional
                 </span>
               </div>
             </div>
