@@ -25,8 +25,7 @@ import {
   Weight,
   SlidersHorizontal,
   Star,
-  Video as VideoIcon,
-  DollarSign
+  Video as VideoIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +47,6 @@ const ElementsSidebar = () => {
     { id: ComponentType.Height, name: "Altura", icon: Ruler, color: "bg-amber-100 text-amber-600" },
     { id: ComponentType.Weight, name: "Peso", icon: Weight, color: "bg-orange-100 text-orange-600" },
     { id: ComponentType.Comparison, name: "Comparação de Itens", icon: SlidersHorizontal, color: "bg-teal-100 text-teal-600" },
-    { id: ComponentType.Pricing, name: "Preços", icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
   ];
   
   const advancedComponents = [
