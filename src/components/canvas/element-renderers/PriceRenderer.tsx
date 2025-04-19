@@ -62,17 +62,17 @@ const PriceRenderer = (props: ElementRendererProps) => {
     right: "justify-end"
   }[alignment] || "justify-center";
 
-  // Renderização para o estilo horizontal (estilo TailwindFlex)
+  // Renderização para o estilo horizontal (estilo TailwindFlex exato)
   const renderHorizontalPrice = () => {
     return (
       <div className={`flex flex-wrap ${alignmentClass} gap-4 w-full`}>
         {plans.map((plan, index) => (
           <div 
             key={plan.id} 
-            className="w-full rounded-lg overflow-hidden"
+            className="w-full rounded-xl overflow-hidden flex flex-row"
             style={{ 
               borderRadius: `${plan.style?.borderRadius || 10}px`,
-              border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : undefined,
+              border: plan.style?.borderColor ? `1px solid ${plan.style.borderColor}` : `1px solid rgba(255, 255, 255, 0.1)`,
               boxShadow: boxShadow === "lg" ? "0 4px 12px rgba(0, 0, 0, 0.15)" : 
                         boxShadow === "md" ? "0 2px 6px rgba(0, 0, 0, 0.1)" : 
                         boxShadow === "none" ? "none" : undefined,
@@ -80,120 +80,112 @@ const PriceRenderer = (props: ElementRendererProps) => {
               backgroundColor: "#000000",
             }}
           >
-            {/* Container principal com padding interno consistente */}
-            <div className="p-6 sm:p-8">
-              {/* Cabeçalho - Layout em flex para desktop e block para mobile */}
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-                {/* Informações à esquerda */}
-                <div className="flex-1">
-                  <h3 
-                    className="text-xl font-bold" 
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    {plan.title}
-                  </h3>
-                  <p 
-                    className="text-sm opacity-80 mt-2 max-w-md"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    {plan.description}
-                  </p>
-                </div>
-
-                {/* Preço e CTA à direita */}
-                <div className="flex flex-col items-start md:items-end gap-3">
-                  {/* Área de preço */}
-                  <div className="flex flex-col md:items-end">
-                    {plan.discount && (
-                      <span 
-                        className="text-xs font-semibold py-0.5 px-2 rounded-md inline-block mb-1"
-                        style={{ 
-                          backgroundColor: "#8B5CF6",
-                          color: "#ffffff"
-                        }}
-                      >
-                        {plan.discount}
-                      </span>
-                    )}
-                    
-                    <div className="flex items-baseline flex-wrap gap-2">
-                      {plan.oldPrice && (
-                        <span 
-                          className="line-through text-sm opacity-70"
-                          style={{ color: plan.style?.textColor || "#ffffff" }}
-                        >
-                          R${plan.oldPrice}
-                        </span>
-                      )}
-                      
-                      <div className="flex items-baseline">
-                        <span 
-                          className="text-sm opacity-70 mr-1"
-                          style={{ color: plan.style?.textColor || "#ffffff" }}
-                        >
-                          R$
-                        </span>
-                        <span 
-                          className="text-3xl font-extrabold" 
-                          style={{ color: plan.style?.textColor || "#ffffff" }}
-                        >
-                          {plan.price}
-                        </span>
-                      </div>
+            {/* Lado esquerdo - Informações e recursos */}
+            <div className="p-6 flex-1">
+              <h3 
+                className="text-xl font-bold" 
+                style={{ color: plan.style?.textColor || "#ffffff" }}
+              >
+                {plan.title}
+              </h3>
+              <p 
+                className="text-sm opacity-80 mt-2"
+                style={{ color: plan.style?.textColor || "#ffffff" }}
+              >
+                {plan.description}
+              </p>
+              
+              {/* Separador "O que está incluído" */}
+              <div className="mt-5 flex items-center gap-x-2">
+                <h4 
+                  className="text-sm font-semibold"
+                  style={{ color: plan.style?.buttonColor || "#8B5CF6" }}
+                >
+                  O que está incluído
+                </h4>
+                <div className="h-px flex-auto opacity-20" style={{ backgroundColor: plan.style?.textColor || "#ffffff" }}></div>
+              </div>
+              
+              {/* Lista de recursos */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {plan.features.map((feature) => (
+                  <div key={feature.id} className="flex items-center gap-2">
+                    <div 
+                      className="h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0" 
+                      style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
+                    >
+                      <Check className="h-2.5 w-2.5 text-white" />
                     </div>
+                    <span 
+                      className="text-sm"
+                      style={{ color: plan.style?.featureColor || "#ffffff" }}
+                    >
+                      {feature.text}
+                    </span>
                   </div>
-
-                  {/* Botão */}
-                  <button 
-                    className="py-2.5 px-5 rounded-lg font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
-                    style={{ 
-                      backgroundColor: plan.style?.buttonColor || "#8B5CF6",
-                      color: plan.style?.buttonTextColor || "#ffffff",
-                      borderRadius: `${plan.style?.borderRadius || 8}px`,
-                    }}
-                  >
-                    {plan.buttonText || "Comprar Agora"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Lado direito - Preço e CTA */}
+            <div className="p-6 w-full max-w-[180px] md:max-w-[250px] flex flex-col justify-center text-center border-l border-opacity-20" 
+                 style={{ 
+                   borderColor: plan.style?.borderColor || "#333333",
+                   backgroundColor: "rgba(255, 255, 255, 0.03)"
+                 }}
+            >
+              <p 
+                className="text-sm font-semibold"
+                style={{ color: plan.style?.textColor || "#ffffff" }}
+              >
+                Mensal
+              </p>
+              
+              <div className="mt-4 mb-6 flex flex-col items-center">
+                <div className="flex items-baseline justify-center flex-wrap">
+                  {plan.oldPrice && (
+                    <span 
+                      className="line-through text-xl opacity-70 mr-2"
+                      style={{ color: plan.style?.textColor || "#ffffff" }}
+                    >
+                      R${plan.oldPrice}
+                    </span>
+                  )}
+                  
+                  <span className="text-3xl font-bold" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                    <span className="text-xl">R$</span>
+                    {plan.price}
+                  </span>
+                  
+                  {plan.discount && (
+                    <span 
+                      className="ml-2 text-xs font-semibold py-0.5 px-2 rounded-md"
+                      style={{ 
+                        backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                        color: "#ffffff"
+                      }}
+                    >
+                      {plan.discount}
+                    </span>
+                  )}
                 </div>
               </div>
-
-              {/* Separador */}
-              <div 
-                className="my-5 border-t border-opacity-20" 
-                style={{ borderColor: plan.style?.borderColor || "#333333" }}
-              ></div>
-
-              {/* Recursos */}
-              {plan.features.length > 0 && (
-                <div>
-                  <h4 
-                    className="text-sm font-semibold mb-3"
-                    style={{ color: plan.style?.textColor || "#ffffff" }}
-                  >
-                    O que está incluído:
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                    {plan.features.map((feature) => (
-                      <div key={feature.id} className="flex items-center gap-2">
-                        <div 
-                          className="h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0" 
-                          style={{ backgroundColor: plan.style?.circleColor || "#32CD32" }}
-                        >
-                          <Check className="h-2.5 w-2.5 text-white" />
-                        </div>
-                        <span 
-                          className="text-sm"
-                          style={{ color: plan.style?.featureColor || "#ffffff" }}
-                        >
-                          {feature.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              
+              <button 
+                className="w-full py-2 px-4 rounded-md font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
+                style={{ 
+                  backgroundColor: plan.style?.buttonColor || "#8B5CF6",
+                  color: plan.style?.buttonTextColor || "#ffffff",
+                  borderRadius: `${plan.style?.borderRadius || 8}px`,
+                }}
+              >
+                {plan.buttonText || "Comprar Agora"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </button>
+              
+              <p className="mt-4 text-xs opacity-70" style={{ color: plan.style?.textColor || "#ffffff" }}>
+                7 dias de garantia incondicional
+              </p>
             </div>
           </div>
         ))}
