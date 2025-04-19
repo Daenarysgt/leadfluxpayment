@@ -26,8 +26,8 @@ export const PLANS: Plan[] = [
       'Pixel e Scripts de trackeamento',
       'Gestão e downloads dos leads'
     ],
-    monthlyPriceId: 'price_1R9TiMDhXX7mjDi1oB9L85fO',
-    annualPriceId: 'price_1R9TxVDhXX7mjDi1Bqqo2c7N',
+    monthlyPriceId: 'price_1RFgPbDhXX7mjDi1zJdKZw8E',
+    annualPriceId: 'price_1RFgPbDhXX7mjDi11kJr6MNN',
     popular: false
   },
   {
@@ -43,8 +43,8 @@ export const PLANS: Plan[] = [
       'Pixel e Scripts de trackeamento',
       'Gestão e downloads dos leads'
     ],
-    monthlyPriceId: 'price_1R9TlvDhXX7mjDi1B0P8TotW',
-    annualPriceId: 'price_1R9TxxDhXX7mjDi1Srfwxp9C',
+    monthlyPriceId: 'price_1RFgRrDhXX7mjDi1adMfarMo',
+    annualPriceId: 'price_1RFgRrDhXX7mjDi1WJWWSY61',
     popular: true
   },
   {
@@ -62,8 +62,8 @@ export const PLANS: Plan[] = [
       'Compartilhamento de funis',
       'Edição compartilhada'
     ],
-    monthlyPriceId: 'price_1R9ToiDhXX7mjDi1uPJA0ae8',
-    annualPriceId: 'price_1R9TyIDhXX7mjDi1LZXwlLcm',
+    monthlyPriceId: 'price_1RFgRuDhXX7mjDi13Yhtoyhd',
+    annualPriceId: 'price_1RFgRuDhXX7mjDi1fvbcV1B3',
     popular: false
   },
   {
@@ -82,8 +82,8 @@ export const PLANS: Plan[] = [
       'Compartilhamento de funis',
       'Edição compartilhada'
     ],
-    monthlyPriceId: 'price_1R9TsCDhXX7mjDi1ceAdxFyj',
-    annualPriceId: 'price_1R9TypDhXX7mjDi1Mylgmedw',
+    monthlyPriceId: 'price_1RFgRvDhXX7mjDi1gGwRS62H',
+    annualPriceId: 'price_1RFgRvDhXX7mjDi1Q5FkvC4n',
     popular: false
   }
 ];
