@@ -1,69 +1,118 @@
-# Welcome to your Lovable project
+# LEADFLUX Payment
 
-## Project info
+This project is a payment processing application built with modern web technologies.
 
-**URL**: https://lovable.dev/projects/5ff09a9e-b011-46bf-b876-3d47ad10e4df
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/5ff09a9e-b011-46bf-b876-3d47ad10e4df) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
+## Tech Stack
 
 - Vite
 - TypeScript
 - React
-- shadcn-ui
+- Shadcn-ui
 - Tailwind CSS
+- Supabase
 
-## How can I deploy this project?
+## Getting Started
 
-Simply open [Lovable](https://lovable.dev/projects/5ff09a9e-b011-46bf-b876-3d47ad10e4df) and click on Share -> Publish.
+### Prerequisites
 
-## I want to use a custom domain - is that possible?
+- Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### Installation
+
+```sh
+# Clone the repository
+git clone <YOUR_GIT_URL>
+
+# Navigate to the project directory
+cd LEADFLUX-PAYMENT
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+## Deploying to Vercel
+
+### Setup
+
+1. Create a Vercel account at [vercel.com](https://vercel.com) if you don't have one
+2. Install Vercel CLI (optional but recommended):
+   ```sh
+   npm install -g vercel
+   ```
+3. Login to Vercel:
+   ```sh
+   vercel login
+   ```
+
+### Deployment Options
+
+#### Option 1: Deploy from GitHub
+
+1. Push your code to GitHub
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "Add New" > "Project"
+4. Import your GitHub repository
+5. Configure project settings:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+6. Set up environment variables from your `.env` file
+7. Click "Deploy"
+
+#### Option 2: Deploy using CLI
+
+1. Navigate to your project directory
+2. Run:
+   ```sh
+   vercel
+   ```
+3. Follow the prompts to configure your project
+
+#### Option 3: Manual Deployment
+
+1. Build your project:
+   ```sh
+   npm run build
+   ```
+2. Deploy the `dist` directory to Vercel:
+   ```sh
+   vercel --prod
+   ```
+
+### Troubleshooting Vercel Deployment
+
+If you're experiencing issues with Vercel deployment, check the following:
+
+1. **Build Command**: Ensure your build command is `npm run build`
+2. **Node.js Version**: Make sure you're using a compatible Node.js version in Vercel settings
+3. **Environment Variables**: Verify all required environment variables are set in the Vercel dashboard
+4. **Routing**: Your `vercel.json` file should handle SPA routing correctly:
+   ```json
+   {
+     "rewrites": [
+       { 
+         "source": "/:path*",
+         "has": [
+           {
+             "type": "host",
+             "value": "leadflux.digital"
+           }
+         ],
+         "destination": "/index.html"
+       },
+       {
+         "source": "/(.*)",
+         "destination": "/index.html"
+       }
+     ]
+   }
+   ```
+5. **Deployment Logs**: Check the deployment logs in the Vercel dashboard for specific errors
+
+## Contact
+
+For more information about this project, contact the project maintainers.
