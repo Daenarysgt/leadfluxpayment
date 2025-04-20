@@ -73,6 +73,7 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
   const [lineHeight, setLineHeight] = useState(element.content?.lineHeight || 1.5);
   const [letterSpacing, setLetterSpacing] = useState(element.content?.letterSpacing || 0);
   const [backgroundColor, setBackgroundColor] = useState(element.content?.backgroundColor || "#F9F5FF");
+  const [backgroundOpacity, setBackgroundOpacity] = useState(element.content?.backgroundOpacity || 1);
   const [borderRadius, setBorderRadius] = useState(element.content?.borderRadius || 8);
   const [currentContent, setCurrentContent] = useState<string>(""); // Controle do conteúdo atual
   const [isInitialized, setIsInitialized] = useState(false);
@@ -237,6 +238,7 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
         lineHeight,
         letterSpacing,
         backgroundColor,
+        backgroundOpacity,
         borderRadius,
         ...(options.extraStyles || {})
       }
@@ -426,6 +428,18 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
     commitUpdate({
       styleOnly: true,
       extraStyles: { borderRadius: newRadius }
+    });
+  };
+
+  // Lidar com alteração na opacidade do fundo
+  const handleBackgroundOpacityChange = (value: number[]) => {
+    const newOpacity = value[0];
+    setBackgroundOpacity(newOpacity);
+    
+    // Atualizar o elemento com a nova opacidade de fundo
+    commitUpdate({
+      styleOnly: true,
+      extraStyles: { backgroundOpacity: newOpacity }
     });
   };
 
@@ -636,6 +650,18 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
               value={backgroundColor} 
               onChange={(e) => handleBackgroundColorChange(e.target.value)}
               className="flex-1 h-8"
+            />
+          </div>
+          
+          <div className="mt-2">
+            <Label className="text-xs">Opacidade ({Math.round(backgroundOpacity * 100)}%)</Label>
+            <Slider
+              value={[backgroundOpacity]}
+              min={0.1}
+              max={1}
+              step={0.05}
+              onValueChange={handleBackgroundOpacityChange}
+              className="py-1"
             />
           </div>
           

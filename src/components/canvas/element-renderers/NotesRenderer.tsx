@@ -73,10 +73,48 @@ const NotesRenderer = (props: ElementRendererProps) => {
     );
   };
   
+  // Converter a cor de fundo com opacidade para formato rgba
+  const getBackgroundColorWithOpacity = () => {
+    const color = element.content?.backgroundColor || '#F9F5FF';
+    const opacity = element.content?.backgroundOpacity !== undefined ? element.content.backgroundOpacity : 1;
+    
+    // Se a cor estiver em formato hexadecimal
+    if (color.startsWith('#')) {
+      let r = 0, g = 0, b = 0;
+      
+      // #RGB ou #RGBA
+      if (color.length === 4 || color.length === 5) {
+        r = parseInt(color[1] + color[1], 16);
+        g = parseInt(color[2] + color[2], 16);
+        b = parseInt(color[3] + color[3], 16);
+      } 
+      // #RRGGBB ou #RRGGBBAA
+      else if (color.length === 7 || color.length === 9) {
+        r = parseInt(color.substring(1, 3), 16);
+        g = parseInt(color.substring(3, 5), 16);
+        b = parseInt(color.substring(5, 7), 16);
+      }
+      
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+    
+    // Se já for em formato rgba, apenas retornar
+    if (color.startsWith('rgba')) {
+      return color;
+    }
+    
+    // Se for em formato rgb, converter para rgba
+    if (color.startsWith('rgb(')) {
+      return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
+    }
+    
+    return color;
+  };
+  
   // Calcular o estilo para margem superior
   const containerStyle = {
     marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : undefined,
-    backgroundColor: element.content?.backgroundColor || '#F9F5FF',
+    backgroundColor: getBackgroundColorWithOpacity(),
     borderRadius: element.content?.borderRadius ? `${element.content.borderRadius}px` : '8px'
   };
   
