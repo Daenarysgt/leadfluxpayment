@@ -153,24 +153,35 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options]);
   
   const handleOptionClick = useCallback((option: any) => {
-    console.log("MultipleChoiceRenderer - Option clicked:", option);
+    console.log("MultipleChoiceRenderer - Option clicked:", option, "Allow multiple:", allowMultipleSelection);
     
-    // Handle multiple selection
-    setSelectedOptions(prev => {
-      if (allowMultipleSelection) {
+    if (allowMultipleSelection) {
+      // Modo de seleção múltipla - apenas atualiza a seleção sem navegar
+      setSelectedOptions(prev => {
         // Toggle selection
         return prev.includes(option.id) 
           ? prev.filter(id => id !== option.id) 
           : [...prev, option.id];
+      });
+    } else {
+      // Modo de seleção única - seleciona e navega imediatamente
+      console.log("Seleção única - navegando imediatamente");
+      
+      // Atualizar a seleção
+      setSelectedOptions([option.id]);
+      
+      // Verificar se a opção tem configuração de navegação
+      if (option.navigation) {
+        console.log("Opção tem navegação configurada:", option.navigation);
+        // Navegar após um pequeno delay para garantir que a UI atualize
+        setTimeout(() => {
+          console.log("Executando navegação para seleção única:", option.id);
+          executeNavigation(option.id);
+        }, 250);
       } else {
-        // Single selection - e navegação imediata se a opção tiver configuração de navegação
-        if (option.navigation) {
-          // Executar navegação imediatamente para single selection
-          setTimeout(() => executeNavigation(option.id), 100);
-        }
-        return [option.id];
+        console.warn("Opção clicada não tem configuração de navegação:", option.text);
       }
-    });
+    }
   }, [allowMultipleSelection, executeNavigation]);
   
   const handleContinue = useCallback(async () => {
