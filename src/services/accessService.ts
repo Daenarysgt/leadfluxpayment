@@ -505,6 +505,7 @@ export const accessService = {
         .from('funnel_responses')
         .insert({
           funnel_id: funnelId,
+          session_id: activeSessionId,
           lead_info: formData,
           answers: {},
           started_at: new Date().toISOString(),

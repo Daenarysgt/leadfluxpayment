@@ -928,9 +928,7 @@ const Leads = () => {
               <TableBody>
                 {leads.map((lead, leadIndex) => {
                   // Buscar os dados de formulário correspondentes para esta sessão específica
-                  // E como fallback, usar o formulário com o mesmo índice na lista
-                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId) || 
-                                          (formDataLeads.length > leadIndex ? formDataLeads[leadIndex] : null);
+                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
                   
                   // Log detalhado para depuração
                   console.log(`Lead #${leadIndex}:`, {
