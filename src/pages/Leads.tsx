@@ -714,17 +714,14 @@ const Leads = () => {
                         </div>
                         <div className="w-3 h-16 bg-gray-100 rounded-full relative">
                           <div 
-                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-pointer group hover:ring-2 hover:ring-offset-1 hover:ring-green-500/50 transition-all duration-200"
+                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-pointer before:content-[attr(data-tooltip)] before:absolute before:px-3 before:py-1.5 before:text-white before:text-sm before:bg-gray-800 before:rounded-md before:opacity-0 hover:before:opacity-100 before:transition-opacity before:whitespace-nowrap before:-top-8 before:left-1/2 before:-translate-x-1/2 before:z-[999]"
                             style={{ 
                               height: `${step.interaction_rate}%`,
                               minHeight: '8px',
                               transition: 'height 0.3s ease-in-out'
                             }}
-                          >
-                            <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-green-600 to-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 shadow-lg transition-all duration-200 z-50 whitespace-nowrap">
-                              Taxa: {step.interaction_rate.toFixed(1)}%
-                            </span>
-                          </div>
+                            data-tooltip={`Taxa: ${step.interaction_rate.toFixed(1)}%`}
+                          />
                         </div>
                       </div>
                     </TableHead>
