@@ -41,7 +41,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
     showControls = true,
     autoStart = false,
     timerExpiredMessage = "Tempo esgotado!",
-    displayStyle = "default",
+    displayStyle = "modern-blue",
     offerText = "Limited-time offer! Sale ends in",
     offerEmoji = "⚡",
     offerTitle = "Special Offer 30% OFF",
@@ -169,62 +169,6 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const minutesDigits = getDigits(minutes);
   const secondsDigits = getDigits(seconds);
   
-  // Renderiza o timer padrão
-  const renderDefaultTimer = () => (
-    <div 
-      className="w-full p-4 rounded-md flex flex-col"
-      style={{ 
-        backgroundColor,
-        borderColor,
-        borderWidth: "1px",
-        borderStyle: "solid",
-        borderRadius: `${borderRadius}px`
-      }}
-      onClick={onSelect ? () => onSelect(element.id) : undefined}
-    >
-      {showTitle && title && (
-        <h3 
-          className="font-medium mb-2" 
-          style={{ 
-            textAlign: titleAlign as "left" | "center" | "right",
-            marginBottom: showDescription ? "0.5rem" : "1rem"
-          }}
-        >
-          {title}
-        </h3>
-      )}
-      
-      {showDescription && description && (
-        <p 
-          className="text-sm mb-4 text-gray-600" 
-          style={{ textAlign: descriptionAlign as "left" | "center" | "right" }}
-        >
-          {description}
-        </p>
-      )}
-      
-      <div 
-        className="my-4 font-mono font-bold" 
-        style={{ 
-          textAlign: timerAlign as "left" | "center" | "right",
-          color: timerColor
-        }}
-      >
-        {hasExpired ? (
-          <div className={`${getTimerSize()} font-bold`}>
-            {timerExpiredMessage}
-          </div>
-        ) : (
-          <div className={`${getTimerSize()} font-bold`}>
-            {formatTime(timeLeft, format)}
-          </div>
-        )}
-      </div>
-      
-      {showControls && renderControls()}
-    </div>
-  );
-
   // Renderiza o timer estilo Modern Blue
   const renderModernBlueTimer = () => (
     <div className="w-full p-4 rounded-md flex flex-col items-center bg-white">
@@ -427,7 +371,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
 
   // Renderização dos controles do timer
   const renderControls = () => (
-    <div className={`flex mt-2 gap-2 ${displayStyle === "default" ? `justify-${timerAlign}` : "justify-center"}`}>
+    <div className="flex mt-2 gap-2 justify-center">
       {!isActive ? (
         <button
           className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
@@ -476,27 +420,25 @@ const TimerRenderer = (props: ElementRendererProps) => {
     </div>
   );
   
+  // Renderiza o estilo de timer expirado
+  const renderExpiredTimer = () => (
+    <div className="w-full p-4 rounded-md flex flex-col items-center">
+      <div className={`${getTimerSize()} font-bold text-center`}>
+        {timerExpiredMessage}
+      </div>
+      {showControls && renderControls()}
+    </div>
+  );
+  
   // Renderiza o estilo de timer selecionado
   const renderSelectedTimerStyle = () => {
     if (hasExpired) {
-      return (
-        <div className="w-full p-4 rounded-md flex flex-col items-center">
-          <div className={`${getTimerSize()} font-bold text-center`}>
-            {timerExpiredMessage}
-          </div>
-          {showControls && renderControls()}
-        </div>
-      );
+      return renderExpiredTimer();
     }
     
-    switch(displayStyle) {
-      case "modern-blue":
-        return renderModernBlueTimer();
-      case "offer-yellow":
-        return renderOfferYellowTimer();
-      default:
-        return renderDefaultTimer();
-    }
+    return displayStyle === "offer-yellow" 
+      ? renderOfferYellowTimer() 
+      : renderModernBlueTimer();
   };
   
   return (

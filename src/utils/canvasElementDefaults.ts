@@ -434,7 +434,7 @@ export const getDefaultContent = (componentType: string) => {
         showControls: true,
         autoStart: false,
         timerExpiredMessage: "Tempo esgotado!",
-        displayStyle: "default",
+        displayStyle: "modern-blue",
         offerText: "Limited-time offer! Sale ends in",
         offerEmoji: "⚡",
         offerTitle: "Special Offer 30% OFF",

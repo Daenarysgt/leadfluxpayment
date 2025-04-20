@@ -68,21 +68,20 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
             <div className="space-y-2">
               <Label htmlFor="display-style">Estilo de visualização</Label>
               <Select
-                value={localContent.displayStyle || "default"}
+                value={localContent.displayStyle || "modern-blue"}
                 onValueChange={(value) => handleContentChange({ displayStyle: value })}
               >
                 <SelectTrigger id="display-style">
                   <SelectValue placeholder="Selecione o estilo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Padrão</SelectItem>
                   <SelectItem value="modern-blue">Moderno Azul</SelectItem>
                   <SelectItem value="offer-yellow">Oferta (Amarelo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+            {localContent.displayStyle === "modern-blue" && (
               <div className="space-y-2">
                 <Label htmlFor="offer-text">Texto da oferta</Label>
                 <Input
@@ -94,87 +93,79 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
               </div>
             )}
 
-            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
-              <div className="space-y-2">
-                <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
-                <Input
-                  id="offer-emoji"
-                  value={localContent.offerEmoji || "⚡"}
-                  onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
-                  placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
+              <Input
+                id="offer-emoji"
+                value={localContent.offerEmoji || "⚡"}
+                onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
+                placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
+              />
+            </div>
 
-            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
-              <div className="space-y-2">
-                <Label htmlFor="show-days">Mostrar dias</Label>
-                <Switch
-                  id="show-days"
-                  checked={localContent.showDays !== false}
-                  onCheckedChange={(checked) =>
-                    handleContentChange({ showDays: checked })
-                  }
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="show-days">Mostrar dias</Label>
+              <Switch
+                id="show-days"
+                checked={localContent.showDays !== false}
+                onCheckedChange={(checked) =>
+                  handleContentChange({ showDays: checked })
+                }
+              />
+            </div>
 
-            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
-              <div className="space-y-2">
-                <Label htmlFor="show-hours">Mostrar horas</Label>
-                <Switch
-                  id="show-hours"
-                  checked={localContent.showHours !== false}
-                  onCheckedChange={(checked) =>
-                    handleContentChange({ showHours: checked })
-                  }
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="show-hours">Mostrar horas</Label>
+              <Switch
+                id="show-hours"
+                checked={localContent.showHours !== false}
+                onCheckedChange={(checked) =>
+                  handleContentChange({ showHours: checked })
+                }
+              />
+            </div>
 
-            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
-              <div className="space-y-2">
-                <Label>Personalizar textos das unidades</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="days-text" className="text-xs">Texto dos dias</Label>
-                    <Input
-                      id="days-text"
-                      value={localContent.daysText || "Days"}
-                      onChange={(e) => handleContentChange({ daysText: e.target.value })}
-                      placeholder="Days"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="hours-text" className="text-xs">Texto das horas</Label>
-                    <Input
-                      id="hours-text"
-                      value={localContent.hoursText || "Hours"}
-                      onChange={(e) => handleContentChange({ hoursText: e.target.value })}
-                      placeholder="Hours"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="minutes-text" className="text-xs">Texto dos minutos</Label>
-                    <Input
-                      id="minutes-text"
-                      value={localContent.minutesText || "Minutes"}
-                      onChange={(e) => handleContentChange({ minutesText: e.target.value })}
-                      placeholder="Minutes"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="seconds-text" className="text-xs">Texto dos segundos</Label>
-                    <Input
-                      id="seconds-text"
-                      value={localContent.secondsText || "Seconds"}
-                      onChange={(e) => handleContentChange({ secondsText: e.target.value })}
-                      placeholder="Seconds"
-                    />
-                  </div>
+            <div className="space-y-2">
+              <Label>Personalizar textos das unidades</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="days-text" className="text-xs">Texto dos dias</Label>
+                  <Input
+                    id="days-text"
+                    value={localContent.daysText || "Days"}
+                    onChange={(e) => handleContentChange({ daysText: e.target.value })}
+                    placeholder="Days"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hours-text" className="text-xs">Texto das horas</Label>
+                  <Input
+                    id="hours-text"
+                    value={localContent.hoursText || "Hours"}
+                    onChange={(e) => handleContentChange({ hoursText: e.target.value })}
+                    placeholder="Hours"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="minutes-text" className="text-xs">Texto dos minutos</Label>
+                  <Input
+                    id="minutes-text"
+                    value={localContent.minutesText || "Minutes"}
+                    onChange={(e) => handleContentChange({ minutesText: e.target.value })}
+                    placeholder="Minutes"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="seconds-text" className="text-xs">Texto dos segundos</Label>
+                  <Input
+                    id="seconds-text"
+                    value={localContent.secondsText || "Seconds"}
+                    onChange={(e) => handleContentChange({ secondsText: e.target.value })}
+                    placeholder="Seconds"
+                  />
                 </div>
               </div>
-            )}
+            </div>
 
             {localContent.displayStyle === "offer-yellow" && (
               <div className="space-y-2">
