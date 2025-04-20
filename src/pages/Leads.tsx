@@ -240,11 +240,14 @@ const Leads = () => {
 
   useEffect(() => {
     if (currentFunnel?.id) {
-      loadMetrics();
-      loadLeads();
-      loadStepMetrics();
-      loadFormData();
-      loadStepNames(); // Nova chamada para carregar os nomes das etapas
+      // Primeiro carregar os nomes das etapas para garantir que temos esses dados
+      // antes de carregar as métricas e outros dados que dependem dos nomes
+      loadStepNames().then(() => {
+        loadMetrics();
+        loadLeads();
+        loadStepMetrics();
+        loadFormData();
+      });
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -487,69 +490,80 @@ const Leads = () => {
       
       console.log('Buscando nomes das etapas para o funil:', currentFunnel.id);
       
-      // Primeiro, tentamos buscar diretamente da tabela funnel_steps
-      let { data, error } = await supabase
-        .from('funnel_steps')
-        .select('step_number, name, title')
+      // Buscar os steps diretamente do currentFunnel que já foi carregado
+      // Isso garante que usamos os nomes exatamente como configurados no builder
+      if (currentFunnel.steps && currentFunnel.steps.length > 0) {
+        console.log('Usando nomes das etapas do funil já carregado:', currentFunnel.steps);
+        
+        // Mapear os nomes das etapas
+        const names: Record<number, string> = {};
+        
+        // Ordenar as etapas por order_index para garantir a ordem correta
+        const sortedSteps = [...currentFunnel.steps].sort((a, b) => {
+          const orderA = a.order_index ?? 0;
+          const orderB = b.order_index ?? 0;
+          return orderA - orderB;
+        });
+        
+        // Mapear cada etapa para seu número (baseado na posição)
+        sortedSteps.forEach((step, index) => {
+          // O número da etapa é baseado na posição + 1
+          const stepNumber = index + 1;
+          names[stepNumber] = step.title || `Etapa ${stepNumber}`;
+          console.log(`Etapa ${stepNumber} nome definido como: "${names[stepNumber]}" (do funil)`);
+        });
+        
+        setStepNames(names);
+        return;
+      }
+      
+      // Caso o currentFunnel não tenha os steps, buscar diretamente da tabela steps
+      console.log('Funil não tem steps carregados, buscando da tabela steps');
+      
+      const { data, error } = await supabase
+        .from('steps')
+        .select('*')
         .eq('funnel_id', currentFunnel.id)
-        .order('step_number', { ascending: true });
+        .order('order_index', { ascending: true });
       
       if (error) {
-        console.error('Erro ao buscar nomes das etapas de funnel_steps:', error);
-        data = [];
+        console.error('Erro ao buscar nomes das etapas da tabela steps:', error);
+        // Criar fallback para nomes padrão baseados nas métricas
+        const defaultNames: Record<number, string> = {};
+        stepMetrics.forEach(metric => {
+          defaultNames[metric.step_number] = `Etapa ${metric.step_number}`;
+        });
+        setStepNames(defaultNames);
+        return;
       }
       
-      // Se não encontramos dados ou estão vazios, tentamos buscar da tabela canvas_elements
+      console.log('Dados obtidos da tabela steps:', data);
+      
       if (!data || data.length === 0) {
-        console.log('Não encontrados dados em funnel_steps, tentando canvas_elements...');
-        const { data: elementsData, error: elementsError } = await supabase
-          .from('canvas_elements')
-          .select('meta, step_number')
-          .eq('funnel_id', currentFunnel.id)
-          .order('step_number', { ascending: true });
-        
-        if (elementsError) {
-          console.error('Erro ao buscar elementos do canvas:', elementsError);
-        } else if (elementsData && elementsData.length > 0) {
-          console.log('Dados encontrados em canvas_elements:', elementsData);
-          data = elementsData.map(element => {
-            let title = '';
-            try {
-              // Tenta extrair o título do campo meta (JSON)
-              if (typeof element.meta === 'string') {
-                const meta = JSON.parse(element.meta);
-                title = meta.title || meta.name || '';
-              } else if (element.meta && (element.meta.title || element.meta.name)) {
-                title = element.meta.title || element.meta.name || '';
-              }
-            } catch (e) {
-              console.error('Erro ao parsear meta JSON:', e);
-            }
-            
-            return {
-              step_number: element.step_number,
-              name: title,
-              title: title
-            };
-          });
-        }
+        console.warn('Nenhum dado de etapa encontrado, usando nomes padrão');
+        // Criar fallback para nomes padrão baseados nas métricas
+        const defaultNames: Record<number, string> = {};
+        stepMetrics.forEach(metric => {
+          defaultNames[metric.step_number] = `Etapa ${metric.step_number}`;
+        });
+        setStepNames(defaultNames);
+        return;
       }
-      
-      console.log('Dados das etapas recuperados:', data);
       
       // Mapear os nomes das etapas em um objeto
       const names: Record<number, string> = {};
       
-      if (data && data.length > 0) {
-        data.forEach(step => {
-          // Usar o título se disponível, caso contrário usar o nome, ou fallback para "Etapa X"
-          const stepName = step.title || step.name || `Etapa ${step.step_number}`;
-          names[step.step_number] = stepName;
-          console.log(`Etapa ${step.step_number} nome definido como: "${stepName}"`);
-        });
-      } else {
-        console.warn('Nenhum dado de etapa encontrado, usando nomes padrão');
-      }
+      // Mapear cada etapa para seu número
+      data.forEach((step, index) => {
+        // Número da etapa baseado na posição + 1
+        const stepNumber = index + 1;
+        
+        // Tentar todas as possíveis convenções de nomenclatura
+        const title = step.title || step.Title || '';
+        
+        names[stepNumber] = title || `Etapa ${stepNumber}`;
+        console.log(`Etapa ${stepNumber} nome definido como: "${names[stepNumber]}" (da tabela)`);
+      });
       
       console.log('Nomes das etapas carregados:', names);
       setStepNames(names);
@@ -568,13 +582,17 @@ const Leads = () => {
   const reloadAllData = async () => {
     if (currentFunnel?.id) {
       try {
+        // Primeiro carregar os nomes das etapas
+        await loadStepNames();
+        
+        // Depois carregar os demais dados em paralelo
         await Promise.all([
           loadMetrics(),
           loadLeads(),
           loadStepMetrics(),
-          loadFormData(),
-          loadStepNames() // Adicionar carregamento dos nomes das etapas aqui também
+          loadFormData()
         ]);
+        
         console.log('Dados recarregados com sucesso');
       } catch (error) {
         console.error('Erro ao recarregar dados:', error);
