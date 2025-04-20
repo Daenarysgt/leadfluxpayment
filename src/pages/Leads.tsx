@@ -504,27 +504,52 @@ const Leads = () => {
       // 2. Buscar as interações para cada sessão
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
-      // 3. Buscar os dados de multiple choice diretamente da tabela funnel_step_interactions
+      // 3. Buscar explicitamente TODAS as escolhas, tanto de multiple choice image quanto de multiple choice padrão
       const { data: choiceData, error } = await supabase
         .from('funnel_step_interactions')
         .select('step_number, session_id, interaction_type, interaction_value')
         .eq('funnel_id', currentFunnel.id)
-        .in('interaction_type', ['choice']);
+        .eq('interaction_type', 'choice');
         
       console.log('Dados de múltipla escolha encontrados:', choiceData?.length || 0);
+      
+      // Adicionar log detalhado para múltiplas escolhas
+      if (choiceData && choiceData.length > 0) {
+        console.log('Exemplo de dados de múltipla escolha:', choiceData.slice(0, 5));
+      }
       
       // Criar um mapa de escolhas por sessão e step para fácil acesso
       const choiceMap = {};
       if (choiceData && Array.isArray(choiceData)) {
         choiceData.forEach(choice => {
-          if (!choiceMap[choice.session_id]) {
-            choiceMap[choice.session_id] = {};
+          // Garantir que temos um valor válido para a escolha
+          if (choice.interaction_value) {
+            // Inicializar o objeto de sessão se não existir
+            if (!choiceMap[choice.session_id]) {
+              choiceMap[choice.session_id] = {};
+            }
+            
+            // Converter o step_number para string para garantir compatibilidade
+            const stepNumber = String(choice.step_number);
+            
+            // Armazenar o valor da escolha
+            choiceMap[choice.session_id][stepNumber] = choice.interaction_value;
           }
-          choiceMap[choice.session_id][choice.step_number] = choice.interaction_value;
         });
       }
       
       console.log('Mapa de escolhas por sessão criado');
+      
+      // 4. Também buscar todas as interações de clique para análise em segundo plano
+      // Isso pode nos ajudar a identificar padrões adicionais
+      const { data: clickData } = await supabase
+        .from('funnel_step_interactions')
+        .select('step_number, session_id, interaction_type, interaction_value')
+        .eq('funnel_id', currentFunnel.id)
+        .eq('interaction_type', 'click')
+        .limit(100);
+        
+      console.log('Dados de clique amostrados:', clickData?.length || 0);
       
       // Processar os leads, incorporando dados de formulário e de escolhas múltiplas
       const formattedLeads = leadsData.map(lead => {
@@ -533,6 +558,11 @@ const Leads = () => {
         const formData = formDataLeads.find(form => form.sessionId === sessionId);
         // Buscar dados de escolhas para esta sessão
         const sessionChoices = choiceMap[sessionId] || {};
+        
+        // Log para depuração de escolhas por sessão
+        if (Object.keys(sessionChoices).length > 0) {
+          console.log(`Sessão ${sessionId} tem escolhas para os steps:`, Object.keys(sessionChoices));
+        }
         
         // Processar as interações
         const processedInteractions = {};
