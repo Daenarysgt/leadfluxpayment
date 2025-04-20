@@ -85,11 +85,12 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const selection = option.text || option.value;
             console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
             
-            // MODIFICAÇÃO: Usar a nova função que suporta button_id
-            const interactionPromise = accessService.registerChoiceInteraction(
+            // RESTAURAÇÃO: Voltar a usar a função original, mas agora com button_id
+            const interactionPromise = accessService.registerStepInteraction(
               funnel.id,
               activeStep + 1,
               null, // usar sessionId atual
+              'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
               selection, // Usar o texto completo da opção
               option.id // IMPORTANTE: Passar o ID do botão/opção
             );
