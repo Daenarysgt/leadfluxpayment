@@ -30,7 +30,7 @@
 [style*="transform: scale"] .builder-content,
 [style*="transform: scale"] .builder-canvas,
 [style*="transform: scale"] .builder-sidebar {
-  max-height: 100% !important;
+  max-height: none !important;
 }
 
 /* Correção para evitar scrollbar no body */
@@ -38,95 +38,79 @@ body {
   overflow: hidden;
 }
 
-/* Correções para sidebars - eliminar espaços vazios */
+/* SOLUÇÃO PARA REMOVER LIMITE DE ALTURA DAS SIDEBARS */
+/* Aumenta drasticamente todos os limites de altura */
+[style*="transform: scale"] * {
+  max-height: none !important;
+}
+
+/* Forçar alturas para ocupar todo o espaço disponível */
+[style*="transform: scale"] .flex,
+[style*="transform: scale"] .h-full,
+[style*="transform: scale"] .h-screen,
+[style*="transform: scale"] [class*="h-[calc"] {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+/* Corrigir especificamente as sidebars verticais */
 [style*="transform: scale"] div[class*="ResizablePanel"] {
-  height: 117.65vh !important; /* Ajustado para o fator de escala exato */
-  min-height: 117.65% !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
-/* Garantir que os painéis laterais ocupem todo o espaço disponível */
-[style*="transform: scale"] div[role="region"] {
-  height: 100% !important;
-  min-height: 100% !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-/* Ajuste para elementos específicos nas sidebars */
-[style*="transform: scale"] [data-orientation="vertical"],
+/* Fazer com que todos os contêineres das sidebars sejam pelo menos 200vh */
+[style*="transform: scale"] [data-orientation="vertical"] > div,
+[style*="transform: scale"] [data-orientation="vertical"] > div > div,
+[style*="transform: scale"] div[class*="ElementList"],
+[style*="transform: scale"] div[class*="ElementList"] > div,
 [style*="transform: scale"] div[class*="StepsSidebar"],
 [style*="transform: scale"] div[class*="ElementsSidebar"],
-[style*="transform: scale"] div[class*="ElementConfigSidebar"] {
-  height: 100% !important;
-  min-height: 100% !important;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-/* Correção para listas de elementos que ficam com espaço vazio no final */
-[style*="transform: scale"] div[class*="ElementList"],
-[style*="transform: scale"] div[class*="ConfigPanel"] {
-  flex: 1;
-  height: 100%;
-  min-height: 100%;
-  overflow-y: auto;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-/* Ajustes mais específicos para sidebar de elementos */
+[style*="transform: scale"] div[class*="ElementConfigSidebar"],
+[style*="transform: scale"] div[class*="ScrollArea"],
+[style*="transform: scale"] div[class*="ScrollArea"] > div,
+[style*="transform: scale"] div[class*="ScrollArea-viewport"],
+[style*="transform: scale"] div[class*="ScrollArea-viewport"] > div,
+[style*="transform: scale"] div[class*="TabsContent"],
+[style*="transform: scale"] div[class*="TabsContent"] > div,
 [style*="transform: scale"] .ELEMENTOS,
 [style*="transform: scale"] .AVANÇADOS,
-[style*="transform: scale"] .BÁSICOS,
-[style*="transform: scale"] div[class*="TabsContent"] {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: auto;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
+[style*="transform: scale"] .BÁSICOS {
+  min-height: 200vh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
-/* Correção para a área de conteúdo da sidebar de configuração */
-[style*="transform: scale"] .elementconfig-content,
-[style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(117.65vh - 64px);
-  height: 100%;
-  overflow-y: auto;
-  padding-bottom: 0 !important;
+/* Forçar que as listas de elementos possam crescer verticalmente sem limite */
+[style*="transform: scale"] div[class*="ElementList"] > div,
+[style*="transform: scale"] div[class*="ConfigPanel"] > div {
   margin-bottom: 0 !important;
+  position: relative !important;
 }
 
-/* Garantir que qualquer div dentro das sidebars ocupe o máximo de espaço */
-[style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
-  height: calc(117.65vh - 64px) !important;
-  min-height: calc(117.65vh - 64px) !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
+/* Adicionar padding no final das listas para garantir que tudo fique visível */
+[style*="transform: scale"] div[class*="ElementList"]:after,
+[style*="transform: scale"] div[class*="ConfigPanel"]:after,
+[style*="transform: scale"] .ELEMENTOS:after,
+[style*="transform: scale"] .AVANÇADOS:after,
+[style*="transform: scale"] .BÁSICOS:after {
+  content: "";
+  display: block;
+  height: 100px;
+  width: 100%;
 }
 
-/* Corrigir o button/divider na parte inferior que pode estar criando overlay */
+/* Regra específica para o botão de adicionar nova etapa */
 [style*="transform: scale"] button[class*="Nova"],
 [style*="transform: scale"] div[class*="Nova"],
 [style*="transform: scale"] button[class*="Adicionar"],
 [style*="transform: scale"] div[class*="Adicionar"] {
   position: relative !important;
-  bottom: 0 !important;
-  margin-top: auto !important;
+  bottom: auto !important;
+  margin-top: 20px !important;
   z-index: 1 !important;
-}
-
-/* Forçar que o último elemento da lista não fique coberto */
-[style*="transform: scale"] div[class*="ElementList"] > div:last-child,
-[style*="transform: scale"] div[class*="ConfigPanel"] > div:last-child {
-  margin-bottom: 60px !important; /* Espaço extra para não ficar coberto */
 }
 
 /* Garantir que a interface se ajuste em telas menores */
@@ -136,21 +120,6 @@ body {
     width: 120.5%; /* 100% ÷ 0.83 */
     height: 120.5%; /* 100% ÷ 0.83 */
   }
-  
-  [style*="transform: scale"] div[class*="ResizablePanel"] {
-    height: 120.5vh !important;
-    min-height: 120.5% !important;
-  }
-  
-  [style*="transform: scale"] .elementconfig-content,
-  [style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
-    min-height: calc(120.5vh - 64px);
-  }
-  
-  [style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
-    height: calc(120.5vh - 64px) !important;
-    min-height: calc(120.5vh - 64px) !important;
-  }
 }
 
 /* Ajuste ainda maior para telas muito pequenas */
@@ -159,20 +128,5 @@ body {
     transform: scale(0.8);
     width: 125%; /* 100% ÷ 0.8 */
     height: 125%; /* 100% ÷ 0.8 */
-  }
-  
-  [style*="transform: scale"] div[class*="ResizablePanel"] {
-    height: 125vh !important;
-    min-height: 125% !important;
-  }
-  
-  [style*="transform: scale"] .elementconfig-content,
-  [style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
-    min-height: calc(125vh - 64px);
-  }
-  
-  [style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
-    height: calc(125vh - 64px) !important;
-    min-height: calc(125vh - 64px) !important;
   }
 } 
