@@ -242,7 +242,23 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Find the first selected option with navigation
     const navigationOption = selectedOptionsData.find((opt: any) => opt.navigation);
     
-    if (!navigationOption) return;
+    if (!navigationOption) {
+      console.log("Nenhuma opção com navegação configurada encontrada. Criando navegação padrão para próxima etapa.");
+      
+      // CORREÇÃO: Se nenhuma opção tiver navegação, usar a primeira opção selecionada
+      // e criar uma navegação padrão para ela
+      if (selectedOptionsData.length > 0) {
+        const firstOption = selectedOptionsData[0];
+        
+        // Criar objeto de navegação temporário para a opção
+        firstOption.navigation = { type: "next" };
+        
+        // Executar navegação com a configuração padrão
+        executeNavigation(firstOption.id);
+      }
+      
+      return;
+    }
     
     // Executar a navegação padrão para múltipla seleção (botão continuar)
     executeNavigation(navigationOption.id);
