@@ -40,14 +40,18 @@ body {
 
 /* Correções para sidebars - eliminar espaços vazios */
 [style*="transform: scale"] div[class*="ResizablePanel"] {
-  height: calc(100vh / 0.85) !important;
-  min-height: calc(100% / 0.85) !important;
+  height: 117.65vh !important; /* Ajustado para o fator de escala exato */
+  min-height: 117.65% !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Garantir que os painéis laterais ocupem todo o espaço disponível */
 [style*="transform: scale"] div[role="region"] {
   height: 100% !important;
   min-height: 100% !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Ajuste para elementos específicos nas sidebars */
@@ -59,6 +63,8 @@ body {
   min-height: 100% !important;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Correção para listas de elementos que ficam com espaço vazio no final */
@@ -67,6 +73,9 @@ body {
   flex: 1;
   height: 100%;
   min-height: 100%;
+  overflow-y: auto;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Ajustes mais específicos para sidebar de elementos */
@@ -78,6 +87,9 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-y: auto;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Correção para a área de conteúdo da sidebar de configuração */
@@ -85,14 +97,36 @@ body {
 [style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 64px);
+  min-height: calc(117.65vh - 64px);
   height: 100%;
+  overflow-y: auto;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Garantir que qualquer div dentro das sidebars ocupe o máximo de espaço */
 [style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
-  height: calc(100vh - 64px) !important;
-  min-height: calc(100vh - 64px) !important;
+  height: calc(117.65vh - 64px) !important;
+  min-height: calc(117.65vh - 64px) !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Corrigir o button/divider na parte inferior que pode estar criando overlay */
+[style*="transform: scale"] button[class*="Nova"],
+[style*="transform: scale"] div[class*="Nova"],
+[style*="transform: scale"] button[class*="Adicionar"],
+[style*="transform: scale"] div[class*="Adicionar"] {
+  position: relative !important;
+  bottom: 0 !important;
+  margin-top: auto !important;
+  z-index: 1 !important;
+}
+
+/* Forçar que o último elemento da lista não fique coberto */
+[style*="transform: scale"] div[class*="ElementList"] > div:last-child,
+[style*="transform: scale"] div[class*="ConfigPanel"] > div:last-child {
+  margin-bottom: 60px !important; /* Espaço extra para não ficar coberto */
 }
 
 /* Garantir que a interface se ajuste em telas menores */
@@ -102,6 +136,21 @@ body {
     width: 120.5%; /* 100% ÷ 0.83 */
     height: 120.5%; /* 100% ÷ 0.83 */
   }
+  
+  [style*="transform: scale"] div[class*="ResizablePanel"] {
+    height: 120.5vh !important;
+    min-height: 120.5% !important;
+  }
+  
+  [style*="transform: scale"] .elementconfig-content,
+  [style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
+    min-height: calc(120.5vh - 64px);
+  }
+  
+  [style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
+    height: calc(120.5vh - 64px) !important;
+    min-height: calc(120.5vh - 64px) !important;
+  }
 }
 
 /* Ajuste ainda maior para telas muito pequenas */
@@ -110,5 +159,20 @@ body {
     transform: scale(0.8);
     width: 125%; /* 100% ÷ 0.8 */
     height: 125%; /* 100% ÷ 0.8 */
+  }
+  
+  [style*="transform: scale"] div[class*="ResizablePanel"] {
+    height: 125vh !important;
+    min-height: 125% !important;
+  }
+  
+  [style*="transform: scale"] .elementconfig-content,
+  [style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
+    min-height: calc(125vh - 64px);
+  }
+  
+  [style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
+    height: calc(125vh - 64px) !important;
+    min-height: calc(125vh - 64px) !important;
   }
 } 
