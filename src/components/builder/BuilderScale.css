@@ -38,6 +38,63 @@ body {
   overflow: hidden;
 }
 
+/* Correções para sidebars - eliminar espaços vazios */
+[style*="transform: scale"] div[class*="ResizablePanel"] {
+  height: calc(100vh / 0.85) !important;
+  min-height: calc(100% / 0.85) !important;
+}
+
+/* Garantir que os painéis laterais ocupem todo o espaço disponível */
+[style*="transform: scale"] div[role="region"] {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* Ajuste para elementos específicos nas sidebars */
+[style*="transform: scale"] [data-orientation="vertical"],
+[style*="transform: scale"] div[class*="StepsSidebar"],
+[style*="transform: scale"] div[class*="ElementsSidebar"],
+[style*="transform: scale"] div[class*="ElementConfigSidebar"] {
+  height: 100% !important;
+  min-height: 100% !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Correção para listas de elementos que ficam com espaço vazio no final */
+[style*="transform: scale"] div[class*="ElementList"],
+[style*="transform: scale"] div[class*="ConfigPanel"] {
+  flex: 1;
+  height: 100%;
+  min-height: 100%;
+}
+
+/* Ajustes mais específicos para sidebar de elementos */
+[style*="transform: scale"] .ELEMENTOS,
+[style*="transform: scale"] .AVANÇADOS,
+[style*="transform: scale"] .BÁSICOS,
+[style*="transform: scale"] div[class*="TabsContent"] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Correção para a área de conteúdo da sidebar de configuração */
+[style*="transform: scale"] .elementconfig-content,
+[style*="transform: scale"] div[class*="ScrollArea-viewport"] > div {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px);
+  height: 100%;
+}
+
+/* Garantir que qualquer div dentro das sidebars ocupe o máximo de espaço */
+[style*="transform: scale"] .h-\[calc\(100vh-64px\)\] {
+  height: calc(100vh - 64px) !important;
+  min-height: calc(100vh - 64px) !important;
+}
+
 /* Garantir que a interface se ajuste em telas menores */
 @media (max-width: 1280px) {
   .builder-scale-wrapper {
