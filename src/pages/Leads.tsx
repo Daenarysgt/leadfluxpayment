@@ -521,7 +521,7 @@ const Leads = () => {
       // Isso é necessário porque o multiple choice padrão é registrado como "click"
       const { data: allInteractions, error } = await supabase
         .from('funnel_step_interactions')
-        .select('id, step_number, session_id, interaction_type, interaction_value, created_at')
+        .select('id, step_number, session_id, interaction_type, interaction_value, created_at, button_id, funnel_id')
         .eq('funnel_id', currentFunnel.id)
         .order('created_at', { ascending: false });
         
@@ -553,6 +553,7 @@ const Leads = () => {
         });
         
         // Depois, processa as interações do tipo "click" para steps conhecidos com multiple choice padrão
+        // apenas para sessões que NÃO TÊM interações do tipo 'choice' para o mesmo step
         const clickInMultipleChoice = typedInteractions.filter(i => 
           i.interaction_type === 'click' && 
           multipleChoiceSteps[String(i.step_number)]
@@ -565,13 +566,15 @@ const Leads = () => {
           const stepNumber = String(click.step_number);
           const key = `${sessionId}-${stepNumber}`;
           
-          if (!sessionStepClicks[key] || new Date(click.created_at) > new Date(sessionStepClicks[key].created_at)) {
+          // Só adiciona se não existir uma interação 'choice' para esta sessão e step
+          const hasChoiceInteraction = choiceMap[sessionId] && choiceMap[sessionId][stepNumber];
+          
+          if (!hasChoiceInteraction && (!sessionStepClicks[key] || new Date(click.created_at) > new Date(sessionStepClicks[key].created_at))) {
             sessionStepClicks[key] = click;
           }
         });
         
-        // Para step 3 (multiple choice padrão), vamos usar um valor padrão baseado na escolha
-        // já que não temos o valor real
+        // Para step 3 (multiple choice padrão), usar o button_id real para identificar a escolha
         Object.values(sessionStepClicks).forEach((click: DatabaseInteraction) => {
           if (!choiceMap[click.session_id]) {
             choiceMap[click.session_id] = {};
@@ -579,27 +582,28 @@ const Leads = () => {
           
           const stepNumber = String(click.step_number);
           
-          // Com base no step, definimos um valor específico
+          // MODIFICADO: Com base no step, determinamos o valor com base no button_id real
           if (stepNumber === '3') {
             // Se existir um valor de interação, use-o (novos registros podem ter)
             if (click.interaction_value) {
               choiceMap[click.session_id][stepNumber] = click.interaction_value;
+            } else if (click.button_id) {
+              // NOVO: Procura no banco de dados o texto que corresponde a este button_id
+              // Isso permite que as opções mostrem o texto real em vez de "Opção Padrão"
+              const buttonOption = allInteractions.find(
+                i => i.interaction_type === 'choice' && i.button_id === click.button_id
+              );
+              
+              if (buttonOption && buttonOption.interaction_value) {
+                choiceMap[click.session_id][stepNumber] = buttonOption.interaction_value;
+                console.log(`Usando valor real para button_id ${click.button_id}: ${buttonOption.interaction_value}`);
+              } else {
+                // Fallback: Se não encontrar o texto, mostra o ID do botão
+                choiceMap[click.session_id][stepNumber] = `Opção ${click.button_id.substring(0, 8)}`;
+              }
             } else {
-              // Caso contrário, use um mapa de opções com valores mais descritivos
-              // Podemos mapear botões específicos para textos mais descritivos
-              // Este mapa pode ser melhorado conforme a necessidade
-              const optionMap: Record<string, string> = {
-                'default': 'Opção Padrão',
-                'option-1': 'Masculino',
-                'option-2': 'Feminino',
-                'option-3': 'Outro'
-              };
-              
-              // Usar o button_id se disponível, ou um valor padrão
-              const buttonId = click.button_id || 'default';
-              choiceMap[click.session_id][stepNumber] = optionMap[buttonId] || 'Opção selecionada';
-              
-              console.log(`Mapeando escolha para step ${stepNumber}, buttonId: ${buttonId}, texto: ${choiceMap[click.session_id][stepNumber]}`);
+              // Apenas se não tiver nem valor nem button_id, usar valor padrão
+              choiceMap[click.session_id][stepNumber] = 'Opção selecionada';
             }
           }
         });
