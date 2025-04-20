@@ -553,52 +553,5 @@ export const accessService = {
       console.error('Error fetching funnel form data:', error);
       return [];
     }
-  },
-
-  /**
-   * Busca as opções de um componente de múltipla escolha em um step específico
-   */
-  async getMultipleChoiceOptions(funnelId: string, stepId: string): Promise<Array<{
-    id: string;
-    text: string;
-    value?: string;
-  }>> {
-    try {
-      // Buscar o step
-      const { data: step, error } = await supabase
-        .from('steps')
-        .select('*')
-        .eq('id', stepId)
-        .eq('funnel_id', funnelId)
-        .single();
-        
-      if (error) {
-        console.error('Erro ao buscar step para opções de múltipla escolha:', error);
-        return [];
-      }
-      
-      if (!step?.canvasElements) {
-        return [];
-      }
-      
-      // Procurar o elemento de múltipla escolha
-      const multipleChoiceElement = step.canvasElements.find(
-        (elem: any) => elem.type === 'multipleChoice'
-      );
-      
-      if (!multipleChoiceElement?.content?.options) {
-        return [];
-      }
-      
-      // Retornar as opções
-      return multipleChoiceElement.content.options.map((opt: any) => ({
-        id: opt.id,
-        text: opt.text || 'Opção sem texto',
-        value: opt.value
-      }));
-    } catch (error) {
-      console.error('Erro ao buscar opções de múltipla escolha:', error);
-      return [];
-    }
   }
 }; 

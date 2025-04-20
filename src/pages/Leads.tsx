@@ -149,7 +149,6 @@ interface DatabaseInteraction {
   step_number: number;
   interaction_type: string;
   interaction_value: string | null;
-  button_id?: string;
   created_at: string;
   funnel_id?: string;
 }
@@ -521,7 +520,7 @@ const Leads = () => {
       // Isso é necessário porque o multiple choice padrão é registrado como "click"
       const { data: allInteractions, error } = await supabase
         .from('funnel_step_interactions')
-        .select('id, step_number, session_id, interaction_type, interaction_value, button_id, created_at')
+        .select('id, step_number, session_id, interaction_type, interaction_value, created_at')
         .eq('funnel_id', currentFunnel.id)
         .order('created_at', { ascending: false });
         
@@ -531,34 +530,9 @@ const Leads = () => {
       const choiceMap: Record<string, Record<string, string>> = {};
       
       // Identificar steps conhecidos que contêm multiple choice
-      const multipleChoiceSteps: Record<string, boolean> = {};
-      
-      // Detectar automaticamente quais steps têm componentes multiple choice
-      if (currentFunnel && currentFunnel.steps) {
-        currentFunnel.steps.forEach((step, stepIndex) => {
-          const stepNumber = String(stepIndex + 1);
-          
-          if (step.canvasElements && Array.isArray(step.canvasElements)) {
-            // Procurar por elementos de tipo multipleChoice
-            const hasMultipleChoice = step.canvasElements.some(
-              (elem: any) => elem.type === 'multipleChoice'
-            );
-            
-            if (hasMultipleChoice) {
-              multipleChoiceSteps[stepNumber] = true;
-              console.log(`Step ${stepNumber} identificado com multiple choice`);
-            }
-          }
-        });
-      }
-      
-      // Verificar as etapas já conhecidas que contêm multiple choice
-      if (!multipleChoiceSteps['3'] && currentFunnel) {
-        // Adicionar etapa 3 se foi especificada manualmente
-        multipleChoiceSteps['3'] = true;
-      }
-      
-      console.log('Steps com multiple choice:', Object.keys(multipleChoiceSteps));
+      const multipleChoiceSteps: Record<string, boolean> = {
+        '3': true  // O step 3 contém multiple choice padrão
+      };
       
       // Processar todas as interações
       if (allInteractions && Array.isArray(allInteractions)) {
@@ -583,36 +557,6 @@ const Leads = () => {
           multipleChoiceSteps[String(i.step_number)]
         );
         
-        // Obter dados dos elementos de múltipla escolha se tivermos acesso ao funil
-        // A estrutura dos elementos nos passos do funil
-        const multipleChoiceElements: Record<string, Array<{id: string, text: string}>> = {};
-        
-        // Tenta extrair os elementos de múltipla escolha do funil atual
-        if (currentFunnel && currentFunnel.steps) {
-          currentFunnel.steps.forEach((step, stepIndex) => {
-            const stepNumber = String(stepIndex + 1);
-            
-            // Verifica se este é um passo com múltipla escolha
-            if (multipleChoiceSteps[stepNumber] && step.canvasElements) {
-              // Procura pelo elemento de múltipla escolha
-              const multipleChoiceElement = step.canvasElements.find(
-                (elem: any) => elem.type === 'multipleChoice'
-              );
-              
-              if (multipleChoiceElement && multipleChoiceElement.content && multipleChoiceElement.content.options) {
-                // Armazena as opções disponíveis
-                multipleChoiceElements[stepNumber] = multipleChoiceElement.content.options.map(
-                  (opt: any) => ({
-                    id: opt.id,
-                    text: opt.text || 'Opção sem texto'
-                  })
-                );
-                console.log(`Opções extraídas para step ${stepNumber}:`, multipleChoiceElements[stepNumber]);
-              }
-            }
-          });
-        }
-        
         // Agrupar cliques por sessão e step para encontrar o último clique (a opção escolhida)
         const sessionStepClicks: Record<string, DatabaseInteraction> = {};
         clickInMultipleChoice.forEach(click => {
@@ -625,7 +569,8 @@ const Leads = () => {
           }
         });
         
-        // Para multiple choice padrão, vamos extrair o valor da interação ou usar o button_id para identificar a opção
+        // Para step 3 (multiple choice padrão), vamos usar um valor padrão baseado na escolha
+        // já que não temos o valor real
         Object.values(sessionStepClicks).forEach((click: DatabaseInteraction) => {
           if (!choiceMap[click.session_id]) {
             choiceMap[click.session_id] = {};
@@ -633,29 +578,10 @@ const Leads = () => {
           
           const stepNumber = String(click.step_number);
           
-          // Vamos tentar extrair o texto real da opção selecionada
-          let optionText = 'Opção selecionada';
-          
-          // Primeiro tentar usar o interaction_value se disponível (o valor correto)
-          if (click.interaction_value) {
-            optionText = click.interaction_value;
-          } 
-          // Depois tentar identificar pelo button_id se temos as opções mapeadas
-          else if (click.button_id && multipleChoiceElements[stepNumber]) {
-            // Buscar a opção pelo ID do botão
-            const buttonIdParts = click.button_id.split('-');
-            const optionId = buttonIdParts.length > 1 ? buttonIdParts[buttonIdParts.length - 1] : null;
-            
-            if (optionId) {
-              const matchedOption = multipleChoiceElements[stepNumber].find(opt => opt.id === optionId);
-              if (matchedOption) {
-                optionText = matchedOption.text;
-              }
-            }
+          // Com base no step, definimos um valor específico
+          if (stepNumber === '3') {
+            choiceMap[click.session_id][stepNumber] = 'Opção selecionada';
           }
-          
-          // Armazenar o texto da opção
-          choiceMap[click.session_id][stepNumber] = optionText;
         });
       }
       
@@ -1086,7 +1012,7 @@ const Leads = () => {
             <div className="text-muted-foreground">
               <div className="mt-1 text-xs flex items-center gap-1">
                 <ClipboardList className="h-3 w-3" />
-                <span className="font-medium">{interaction.value || 'Opção sem texto'}</span>
+                <span className="font-medium">{interaction.value}</span>
               </div>
             </div>
           </div>
