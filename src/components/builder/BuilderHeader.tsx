@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -14,6 +14,8 @@ interface BuilderHeaderProps {
   onViewModeChange: (mode: "desktop" | "mobile") => void;
   onSave: () => void;
   onOpenFullPreview: () => void;
+  useScaledUI?: boolean;
+  onToggleScaledUI?: () => void;
 }
 
 const BuilderHeader = ({
@@ -24,7 +26,9 @@ const BuilderHeader = ({
   onTogglePreview,
   onViewModeChange,
   onSave,
-  onOpenFullPreview
+  onOpenFullPreview,
+  useScaledUI = true,
+  onToggleScaledUI
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -95,6 +99,19 @@ const BuilderHeader = ({
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>
+        
+        {onToggleScaledUI && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1 text-violet-700"
+            onClick={onToggleScaledUI}
+            title={useScaledUI ? "Visualização normal (100%)" : "Visualização compacta (80%)"}
+          >
+            {useScaledUI ? <ZoomIn className="h-4 w-4" /> : <ZoomOut className="h-4 w-4" />}
+            {useScaledUI ? "100%" : "80%"}
+          </Button>
+        )}
         
         <Button
           variant="outline"
