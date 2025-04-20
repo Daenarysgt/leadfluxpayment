@@ -70,24 +70,19 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           await accessService.updateProgress(funnel.id, activeStep + 1, null);
           
           // Depois registrar a interação de escolha
-          // Garantir que sempre temos um valor para a opção selecionada
-          const selection = option.text || option.value || 'Opção selecionada';
-          console.log("MÚLTIPLA ESCOLHA - Registrando escolha:", selection, "para funil:", funnel.id, "etapa:", activeStep + 1);
+          const selection = option.text || option.value;
+          console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
           
-          // Registrar a interação como 'choice' explicitamente
-          try {
-            await accessService.registerStepInteraction(
-              funnel.id,
-              activeStep + 1,
-              null, // usar sessionId atual
-              'choice', // MUITO IMPORTANTE: deve sempre ser 'choice' para múltipla escolha
-              selection // O texto/valor da opção selecionada
-            );
-            
-            console.log(`✅ MÚLTIPLA ESCOLHA - Opção "${selection}" registrada com sucesso na etapa ${activeStep + 1}`);
-          } catch (error) {
-            console.error(`❌ ERRO - Falha ao registrar escolha "${selection}"`, error);
-          }
+          await accessService.registerStepInteraction(
+            funnel.id,
+            activeStep + 1,
+            null, // usar sessionId atual
+            'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
+            selection // Usar o texto completo da opção
+          );
+          
+          // Adicionar debug para verificar se o valor está sendo enviado corretamente
+          console.log(`Interação registrada para opção: "${selection}" na etapa ${activeStep + 1}`);
           
           // Verificar tipo de navegação e executar ação correspondente
           if (navigationType === "next") {

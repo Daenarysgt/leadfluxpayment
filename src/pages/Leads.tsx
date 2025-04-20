@@ -530,12 +530,17 @@ const Leads = () => {
       // Criar mapa de escolhas (tanto de choice quanto de cliques em múltipla escolha)
       const choiceMap: Record<string, Record<string, string>> = {};
       
+      // Identificar steps conhecidos que contêm multiple choice
+      const multipleChoiceSteps: Record<string, boolean> = {
+        '3': true  // O step 3 contém multiple choice padrão
+      };
+      
       // Processar todas as interações
       if (allInteractions && Array.isArray(allInteractions)) {
         // Tipagem segura para as interações
         const typedInteractions = allInteractions as DatabaseInteraction[];
         
-        // Primeiro, processa as interações do tipo "choice" (múltipla escolha com valor)
+        // Primeiro, processa as interações do tipo "choice" (para multiple choice image)
         const choiceInteractions = typedInteractions.filter(i => i.interaction_type === 'choice');
         choiceInteractions.forEach(choice => {
           if (choice.interaction_value) {
@@ -547,12 +552,15 @@ const Leads = () => {
           }
         });
         
-        // Depois, processa as interações do tipo "click" (múltipla escolha sem valor)
-        const clickInteractions = typedInteractions.filter(i => i.interaction_type === 'click');
+        // Depois, processa as interações do tipo "click" para steps conhecidos com multiple choice padrão
+        const clickInMultipleChoice = typedInteractions.filter(i => 
+          i.interaction_type === 'click' && 
+          multipleChoiceSteps[String(i.step_number)]
+        );
         
-        // Agrupar cliques por sessão e step para encontrar o último clique por step
+        // Agrupar cliques por sessão e step para encontrar o último clique (a opção escolhida)
         const sessionStepClicks: Record<string, DatabaseInteraction> = {};
-        clickInteractions.forEach(click => {
+        clickInMultipleChoice.forEach(click => {
           const sessionId = click.session_id;
           const stepNumber = String(click.step_number);
           const key = `${sessionId}-${stepNumber}`;
@@ -562,7 +570,8 @@ const Leads = () => {
           }
         });
         
-        // Para qualquer clique em steps sem valor registrado, usar um valor genérico
+        // Para step 3 (multiple choice padrão), vamos usar um valor padrão baseado na escolha
+        // já que não temos o valor real
         Object.values(sessionStepClicks).forEach((click: DatabaseInteraction) => {
           if (!choiceMap[click.session_id]) {
             choiceMap[click.session_id] = {};
@@ -570,10 +579,28 @@ const Leads = () => {
           
           const stepNumber = String(click.step_number);
           
-          // Se este step já tem um valor registrado como 'choice', não sobrescrever
-          if (!choiceMap[click.session_id][stepNumber]) {
-            // Usar o valor se disponível ou "Opção selecionada" como fallback
-            choiceMap[click.session_id][stepNumber] = click.interaction_value || "Opção selecionada";
+          // Com base no step, definimos um valor específico
+          if (stepNumber === '3') {
+            // Se existir um valor de interação, use-o (novos registros podem ter)
+            if (click.interaction_value) {
+              choiceMap[click.session_id][stepNumber] = click.interaction_value;
+            } else {
+              // Caso contrário, use um mapa de opções com valores mais descritivos
+              // Podemos mapear botões específicos para textos mais descritivos
+              // Este mapa pode ser melhorado conforme a necessidade
+              const optionMap: Record<string, string> = {
+                'default': 'Opção Padrão',
+                'option-1': 'Masculino',
+                'option-2': 'Feminino',
+                'option-3': 'Outro'
+              };
+              
+              // Usar o button_id se disponível, ou um valor padrão
+              const buttonId = click.button_id || 'default';
+              choiceMap[click.session_id][stepNumber] = optionMap[buttonId] || 'Opção selecionada';
+              
+              console.log(`Mapeando escolha para step ${stepNumber}, buttonId: ${buttonId}, texto: ${choiceMap[click.session_id][stepNumber]}`);
+            }
           }
         });
       }
@@ -606,6 +633,9 @@ const Leads = () => {
               // Verificar se temos dados de escolha para este step
               const choiceValue = sessionChoices[stepNumber];
               
+              // Identificar se este é um multiple choice padrão conhecido
+              const isKnownMultipleChoice = multipleChoiceSteps[stepNumber];
+              
               // Determinar o tipo de interação
               if (formData && stepNumber === '1') {
                 // Interação de formulário (captura)
@@ -615,12 +645,12 @@ const Leads = () => {
                   fields: formData.leadInfo || {},
                   timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
-              } else if (choiceValue) {
+              } else if (choiceValue || isKnownMultipleChoice) {
                 // Interação de múltipla escolha (de qualquer tipo)
                 processedInteractions[stepNumber] = {
                   type: 'choice',
                   status: 'choice',
-                  value: choiceValue,
+                  value: choiceValue || 'Opção selecionada',
                   timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
               } else {
@@ -1001,8 +1031,8 @@ const Leads = () => {
             <div className="font-medium">Escolheu</div>
             <div className="text-muted-foreground">
               <div className="mt-1 text-xs flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="font-medium text-green-700">{interaction.value}</span>
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span className="font-medium">{interaction.value}</span>
               </div>
             </div>
           </div>
