@@ -356,20 +356,30 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return null;
       
+      // Garantir que o estado de carregamento seja ativado
+      if (updateState) {
+        setMetrics(prev => ({...prev, loadingMetrics: true}));
+      }
+      
       const funnelMetrics = await accessService.getFunnelMetrics(currentFunnel.id);
       
+      // Adicionar verificação para valores nulos ou indefinidos para evitar erros
+      const total = funnelMetrics.total_sessions || 0;
+      const completion = funnelMetrics.completion_rate || 0;
+      const interaction = funnelMetrics.interaction_rate || 0;
+      
       // Calcular leads de hoje baseado na taxa de interação
-      const todayLeads = Math.round((funnelMetrics.interaction_rate * funnelMetrics.total_sessions) / 100);
+      const todayLeads = Math.round((interaction * total) / 100);
       
       const newMetrics = {
-        totalSessions: funnelMetrics.total_sessions,
-        completionRate: funnelMetrics.completion_rate,
-        interactionRate: funnelMetrics.interaction_rate,
+        totalSessions: total,
+        completionRate: completion,
+        interactionRate: interaction,
         todayLeads,
         loadingMetrics: false,
         mainSource: {
           name: selectedSource.name,
-          percentage: funnelMetrics.interaction_rate
+          percentage: interaction
         }
       };
       
@@ -397,6 +407,11 @@ const Leads = () => {
       }
       
       return fallbackMetrics;
+    } finally {
+      // Garantir que o estado de carregamento seja sempre desativado, mesmo em caso de erro
+      if (updateState) {
+        setMetrics(prev => ({...prev, loadingMetrics: false}));
+      }
     }
   };
 
@@ -407,7 +422,7 @@ const Leads = () => {
       console.log('Getting leads for funnel:', currentFunnel.id);
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
-      console.log('Leads data:', leadsData);
+      console.log('Raw leads data:', JSON.stringify(leadsData, null, 2));
       
       // Processamento e normalização mais robustos para garantir persistência de dados
       const formattedLeads = leadsData.map(lead => {
@@ -418,20 +433,48 @@ const Leads = () => {
           // Processar cada interação de forma mais robusta
           Object.entries(lead.interactions).forEach(([stepNumber, rawInteraction]) => {
             if (rawInteraction) {
-              const interaction = typeof rawInteraction === 'string' 
-                ? JSON.parse(rawInteraction) 
-                : rawInteraction;
+              // Garantir que a interação seja um objeto, mesmo se vier como string
+              let interaction;
+              try {
+                interaction = typeof rawInteraction === 'string' 
+                  ? JSON.parse(rawInteraction) 
+                  : rawInteraction;
+              } catch (e) {
+                console.error('Erro ao processar interação:', e);
+                interaction = {
+                  type: 'click',
+                  status: 'clicked',
+                  timestamp: new Date()
+                };
+              }
               
-              // Garantir que o tipo de interação seja preservado corretamente
-              const interactionType = interaction.type === 'choice' ? 'choice' : 'click';
+              // Log detalhado para depuração
+              console.log(`Processando interação para etapa ${stepNumber}:`, interaction);
               
-              // Garantir que o valor seja explicitamente preservado para escolhas
-              const interactionValue = interactionType === 'choice' && interaction.value 
-                ? String(interaction.value) 
-                : null;
+              // CORREÇÃO CRÍTICA: Verificação especializada para identificar corretamente escolhas múltiplas
+              // Verificar múltiplos padrões que podem indicar uma escolha 
+              const isChoice = 
+                interaction.type === 'choice' || 
+                interaction.status === 'choice' || 
+                (interaction.value !== undefined && interaction.value !== null) ||
+                (typeof interaction.status === 'string' && 
+                  !['clicked', 'click', 'clicou'].includes(interaction.status.toLowerCase()));
               
-              // Status depende do tipo - para choice, sempre deve ser 'choice'
-              const interactionStatus = interactionType === 'choice' ? 'choice' : 'clicked';
+              // Definir o tipo baseado na análise
+              const interactionType = isChoice ? 'choice' : 'click';
+              
+              // Para escolhas, garantir que temos um valor significativo
+              let interactionValue = null;
+              if (isChoice) {
+                // Para escolhas, usar o primeiro valor não-nulo disponível
+                interactionValue = 
+                  interaction.value || 
+                  (interaction.status !== 'choice' ? interaction.status : null) || 
+                  'opção selecionada';
+              }
+              
+              // Status depende do tipo
+              const interactionStatus = isChoice ? 'choice' : 'clicked';
               
               processedInteractions[stepNumber] = {
                 type: interactionType,
@@ -439,6 +482,9 @@ const Leads = () => {
                 value: interactionValue,
                 timestamp: new Date(interaction.timestamp || Date.now())
               };
+              
+              // Log da interação processada
+              console.log(`Interação processada para etapa ${stepNumber}:`, processedInteractions[stepNumber]);
             }
           });
         }
@@ -670,6 +716,135 @@ const Leads = () => {
     await loadAllData(true);
   };
 
+  // Render section with cards
+  const renderMetricsCards = () => {
+    return (
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+              <span>Total de Leads</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">{metrics.totalSessions}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <ArrowUpRight className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Atualizado</span>
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
+              </span>
+              <span>Taxa de Conversão</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">{metrics.completionRate.toFixed(1)}%</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <ArrowUpRight className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Atualizado</span>
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              <span>Hoje</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">{metrics.todayLeads}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
+                  Leads que interagiram hoje
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
+                {selectedSource.icon}
+              </span>
+              <span>Origem Principal</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
+                      <span className={selectedSource.color}>{selectedSource.icon}</span>
+                      {selectedSource.name}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[200px]">
+                    {TRAFFIC_SOURCES.map((source) => (
+                      <DropdownMenuItem
+                        key={source.id}
+                        onClick={() => setSelectedSource(source)}
+                        className="flex items-center gap-2"
+                      >
+                        <span className={source.color}>{source.icon}</span>
+                        {source.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {metrics.mainSource.percentage.toFixed(1)}% dos visitantes interagiram
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   if (!currentFunnel) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -784,130 +959,7 @@ const Leads = () => {
           </Button>
         </div>
 
-        {/* Cards Section */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
-                <span>Total de Leads</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.totalSessions}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
-                </span>
-                <span>Taxa de Conversão</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.completionRate.toFixed(1)}%</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <span>Hoje</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.todayLeads}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                    Leads que interagiram hoje
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
-                  {selectedSource.icon}
-                </span>
-                <span>Origem Principal</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
-                        <span className={selectedSource.color}>{selectedSource.icon}</span>
-                        {selectedSource.name}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-[200px]">
-                      {TRAFFIC_SOURCES.map((source) => (
-                        <DropdownMenuItem
-                          key={source.id}
-                          onClick={() => setSelectedSource(source)}
-                          className="flex items-center gap-2"
-                        >
-                          <span className={source.color}>{source.icon}</span>
-                          {source.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {metrics.mainSource.percentage.toFixed(1)}% dos visitantes interagiram
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {renderMetricsCards()}
 
         {/* Tracking Table Section */}
         <div className="space-y-4">
