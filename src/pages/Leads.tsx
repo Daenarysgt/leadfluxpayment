@@ -712,26 +712,16 @@ const Leads = () => {
                             {step.button_id === 'multiple-choice' ? 'múltipla escolha' : `button: ${step.button_id || '-'}`}
                           </div>
                         </div>
-                        <div className="w-3 h-16 bg-gray-100 rounded-full relative group">
+                        <div className="w-3 h-16 bg-gray-100 rounded-full relative">
                           <div 
-                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-pointer"
+                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-help"
                             style={{ 
                               height: `${step.interaction_rate}%`,
                               minHeight: '8px',
                               transition: 'height 0.3s ease-in-out'
                             }}
+                            title={`Taxa de interação: ${step.interaction_rate.toFixed(1)}%`}
                           />
-                          <div 
-                            className="absolute bottom-full left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-gray-900 text-white text-[11px] rounded-md py-1.5 px-3 whitespace-nowrap mb-2 z-10 shadow-lg"
-                            style={{
-                              transform: 'translateX(-50%)'
-                            }}
-                          >
-                            <div className="font-medium">Taxa de interação:</div>
-                            <div className="text-center font-bold text-green-400">{step.interaction_rate.toFixed(1)}%</div>
-                            {/* Triângulo apontando para a barra verde */}
-                            <div className="absolute w-2 h-2 bg-gray-900 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-1"></div>
-                          </div>
                         </div>
                       </div>
                     </TableHead>
