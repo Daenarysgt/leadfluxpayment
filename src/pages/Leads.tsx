@@ -151,6 +151,7 @@ interface DatabaseInteraction {
   interaction_value: string | null;
   created_at: string;
   funnel_id?: string;
+  button_id?: string;
 }
 
 const Leads = () => {
@@ -580,7 +581,26 @@ const Leads = () => {
           
           // Com base no step, definimos um valor específico
           if (stepNumber === '3') {
-            choiceMap[click.session_id][stepNumber] = 'Opção selecionada';
+            // Se existir um valor de interação, use-o (novos registros podem ter)
+            if (click.interaction_value) {
+              choiceMap[click.session_id][stepNumber] = click.interaction_value;
+            } else {
+              // Caso contrário, use um mapa de opções com valores mais descritivos
+              // Podemos mapear botões específicos para textos mais descritivos
+              // Este mapa pode ser melhorado conforme a necessidade
+              const optionMap: Record<string, string> = {
+                'default': 'Opção Padrão',
+                'option-1': 'Masculino',
+                'option-2': 'Feminino',
+                'option-3': 'Outro'
+              };
+              
+              // Usar o button_id se disponível, ou um valor padrão
+              const buttonId = click.button_id || 'default';
+              choiceMap[click.session_id][stepNumber] = optionMap[buttonId] || 'Opção selecionada';
+              
+              console.log(`Mapeando escolha para step ${stepNumber}, buttonId: ${buttonId}, texto: ${choiceMap[click.session_id][stepNumber]}`);
+            }
           }
         });
       }
@@ -1010,8 +1030,8 @@ const Leads = () => {
           <div className="text-sm">
             <div className="font-medium">Escolheu</div>
             <div className="text-muted-foreground">
-              <div className="mt-1 text-xs flex items-center gap-1">
-                <ClipboardList className="h-3 w-3" />
+              <div className="mt-1 text-xs flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                 <span className="font-medium">{interaction.value}</span>
               </div>
             </div>

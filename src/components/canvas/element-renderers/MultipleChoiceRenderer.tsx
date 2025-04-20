@@ -77,10 +77,11 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             funnel.id,
             activeStep + 1,
             null, // usar sessionId atual
-            'choice',
+            'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
             selection // Usar o texto completo da opção
           );
           
+          // Adicionar debug para verificar se o valor está sendo enviado corretamente
           console.log(`Interação registrada para opção: "${selection}" na etapa ${activeStep + 1}`);
           
           // Verificar tipo de navegação e executar ação correspondente
