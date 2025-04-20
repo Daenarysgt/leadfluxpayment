@@ -66,6 +66,59 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
         <TabsContent value="content" className="space-y-4 px-1">
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="display-style">Estilo de visualização</Label>
+              <Select
+                value={localContent.displayStyle || "default"}
+                onValueChange={(value) => handleContentChange({ displayStyle: value })}
+              >
+                <SelectTrigger id="display-style">
+                  <SelectValue placeholder="Selecione o estilo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Padrão</SelectItem>
+                  <SelectItem value="modern-blue">Moderno Azul</SelectItem>
+                  <SelectItem value="offer-yellow">Oferta (Amarelo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+              <div className="space-y-2">
+                <Label htmlFor="offer-text">Texto da oferta</Label>
+                <Input
+                  id="offer-text"
+                  value={localContent.offerText || "Limited-time offer! Sale ends in"}
+                  onChange={(e) => handleContentChange({ offerText: e.target.value })}
+                  placeholder="Texto para mostrar acima do timer"
+                />
+              </div>
+            )}
+
+            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+              <div className="space-y-2">
+                <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
+                <Input
+                  id="offer-emoji"
+                  value={localContent.offerEmoji || "⚡"}
+                  onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
+                  placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
+                />
+              </div>
+            )}
+
+            {localContent.displayStyle === "offer-yellow" && (
+              <div className="space-y-2">
+                <Label htmlFor="coupon-code">Código de cupom (opcional)</Label>
+                <Input
+                  id="coupon-code"
+                  value={localContent.couponCode || ""}
+                  onChange={(e) => handleContentChange({ couponCode: e.target.value })}
+                  placeholder="Código de cupom para mostrar (ex: #SALE30)"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="show-title">Mostrar título</Label>
                 <Switch
