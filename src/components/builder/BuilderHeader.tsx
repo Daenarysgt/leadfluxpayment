@@ -1,9 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Monitor, 
+  Smartphone, 
+  Eye, 
+  Save, 
+  LayoutGrid, 
+  Palette, 
+  Settings as SettingsIcon, 
+  ChevronLeft, 
+  ExternalLink,
+  ZoomIn
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import useBuilderScale from "@/hooks/useBuilderScale";
 
 interface BuilderHeaderProps {
   funnelName: string;
@@ -27,6 +48,7 @@ const BuilderHeader = ({
   onOpenFullPreview
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
+  const { scaleEnabled, toggleScale } = useBuilderScale();
 
   return (
     <header className="bg-white border-b py-2 px-4 flex items-center justify-between shadow-sm sticky top-0 z-50">
@@ -95,6 +117,35 @@ const BuilderHeader = ({
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1"
+            >
+              <ZoomIn className="h-4 w-4" />
+              Zoom {scaleEnabled ? '85%' : '100%'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Zoom da Interface</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={toggleScale}
+              className={cn(scaleEnabled && "bg-muted")}
+            >
+              Zoom 85% {scaleEnabled && "✓"}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={toggleScale}
+              className={cn(!scaleEnabled && "bg-muted")}
+            >
+              Zoom 100% {!scaleEnabled && "✓"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <Button
           variant="outline"

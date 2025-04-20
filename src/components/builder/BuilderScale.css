@@ -1,0 +1,44 @@
+/* Builder Scale CSS */
+.builder-scale-wrapper {
+  transform: scale(0.85);
+  transform-origin: top left;
+  width: 117.65%; /* 100% ÷ 0.85 */
+  height: 117.65%; /* 100% ÷ 0.85 */
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible !important; /* Garante que o conteúdo escalado não seja cortado */
+}
+
+/* Garantir que o container pai mantenha o mesmo tamanho visível sem introduzir scrolls */
+.builder-scale-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* Ajustes para garantir que componentes internos mantenham seus scrolls */
+.builder-scale-wrapper .ScrollArea,
+.builder-scale-wrapper [role="scrollbar"],
+.builder-scale-wrapper [data-radix-scroll-area-viewport] {
+  overflow: auto !important;
+}
+
+/* Garantir que a interface se ajuste em telas menores */
+@media (max-width: 1280px) {
+  .builder-scale-wrapper {
+    transform: scale(0.83);
+    width: 120.5%; /* 100% ÷ 0.83 */
+    height: 120.5%; /* 100% ÷ 0.83 */
+  }
+}
+
+/* Ajuste ainda maior para telas muito pequenas */
+@media (max-width: 768px) {
+  .builder-scale-wrapper {
+    transform: scale(0.8);
+    width: 125%; /* 100% ÷ 0.8 */
+    height: 125%; /* 100% ÷ 0.8 */
+  }
+} 

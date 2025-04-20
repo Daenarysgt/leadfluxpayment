@@ -2,15 +2,18 @@ import { useEffect } from "react";
 import { useStore } from "@/utils/store";
 import { useBuilderCanvas } from "@/hooks/useBuilderCanvas";
 import { useBuilderViewMode } from "@/hooks/useBuilderViewMode";
+import useBuilderScale from "@/hooks/useBuilderScale";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import BuilderContent from "@/components/builder/BuilderContent";
 import BuilderEmptyState from "@/components/builder/BuilderEmptyState";
+import BuilderScaleWrapper from "@/components/builder/BuilderScaleWrapper";
 
 const Builder = () => {
   const { toast } = useToast();
   const { funnelId } = useParams<{ funnelId: string }>();
+  const { scaleEnabled } = useBuilderScale();
   const { 
     currentFunnel,
     currentStep,
@@ -81,31 +84,33 @@ const Builder = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <BuilderHeader 
-        funnelName={currentFunnel.name}
-        funnelId={currentFunnel.id}
-        viewMode={viewMode}
-        previewActive={previewActive}
-        onTogglePreview={togglePreview}
-        onViewModeChange={setViewMode}
-        onSave={handleSave}
-        onOpenFullPreview={handleOpenFullPreview}
-      />
-      
-      <BuilderContent
-        viewMode={viewMode}
-        previewActive={previewActive}
-        selectedElement={selectedElement}
-        localCanvasElements={localCanvasElements}
-        canvasKey={canvasKey}
-        currentStep={currentStep}
-        onElementSelect={handleElementSelect}
-        onElementUpdate={handleElementUpdate}
-        onElementsChange={handleCanvasElementsChange}
-        onCloseElementConfig={() => setSelectedElement(null)}
-      />
-    </div>
+    <BuilderScaleWrapper scaleEnabled={scaleEnabled}>
+      <div className="flex flex-col h-screen bg-gray-50">
+        <BuilderHeader 
+          funnelName={currentFunnel.name}
+          funnelId={currentFunnel.id}
+          viewMode={viewMode}
+          previewActive={previewActive}
+          onTogglePreview={togglePreview}
+          onViewModeChange={setViewMode}
+          onSave={handleSave}
+          onOpenFullPreview={handleOpenFullPreview}
+        />
+        
+        <BuilderContent
+          viewMode={viewMode}
+          previewActive={previewActive}
+          selectedElement={selectedElement}
+          localCanvasElements={localCanvasElements}
+          canvasKey={canvasKey}
+          currentStep={currentStep}
+          onElementSelect={handleElementSelect}
+          onElementUpdate={handleElementUpdate}
+          onElementsChange={handleCanvasElementsChange}
+          onCloseElementConfig={() => setSelectedElement(null)}
+        />
+      </div>
+    </BuilderScaleWrapper>
   );
 };
 
