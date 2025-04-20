@@ -217,7 +217,16 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         // Executar navegação diretamente - vamos remover o timeout pois o controle de estado já impede chamadas duplicadas
         executeNavigation(option.id);
       } else {
-        console.warn("Opção clicada não tem configuração de navegação:", option.text);
+        console.log("Opção clicada não tem navegação configurada. Criando navegação padrão para próxima etapa.");
+        
+        // NOVA FUNCIONALIDADE: Se não houver navegação configurada em modo de seleção única,
+        // criar uma navegação padrão para a próxima etapa
+        
+        // Criar objeto de navegação temporário diretamente no objeto option
+        option.navigation = { type: "next" };
+        
+        // Executar navegação com a configuração padrão
+        executeNavigation(option.id);
       }
     }
   }, [allowMultipleSelection, executeNavigation]);
