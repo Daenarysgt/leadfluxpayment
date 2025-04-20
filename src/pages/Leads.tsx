@@ -496,148 +496,85 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return [];
       
-      console.log('👤 Carregando leads para funil:', currentFunnel.id);
+      console.log('Carregando leads para funil:', currentFunnel.id);
+      
+      // 1. Buscar os dados do formulário (já funciona)
+      await loadFormData();
+      
+      // 2. Buscar as interações para cada sessão
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
-      // Adicionar mais logs detalhados para depuração
-      console.log('👤 Dados brutos dos leads (primeiros 2):', JSON.stringify(leadsData?.slice(0, 2), null, 2));
-      
-      // Lista de IDs conhecidos de botões de múltipla escolha
-      const KNOWN_CHOICE_BUTTONS = [
-        'btn-865420a5',  // Step 2
-        'btn-c7d194b7',  // Step 3
-        'multiple-choice',
-        'multiplechoice',
-        'choice-btn',
-        'btn-f186707',   // Mulher
-        'btn-ba72f05',   // TESTE 2
-      ];
-
-      // Log completo de todos os stepMetrics para depuração
-      console.log('📊 Step Metrics disponíveis:', JSON.stringify(stepMetrics, null, 2));
-      
-      // Processamento melhorado baseado no modelo dos dados de formulário
-      const formattedLeads = leadsData.map(lead => {
-        // Mapeamento dos dados do formulário (já funciona bem)
-        const formData = formDataLeads.find(form => form.sessionId === lead.sessionId);
+      // 3. Buscar os dados de multiple choice diretamente da tabela funnel_step_interactions
+      const { data: choiceData, error } = await supabase
+        .from('funnel_step_interactions')
+        .select('step_number, session_id, interaction_type, interaction_value')
+        .eq('funnel_id', currentFunnel.id)
+        .in('interaction_type', ['choice']);
         
-        // Garantir que cada interação tenha os campos necessários
+      console.log('Dados de múltipla escolha encontrados:', choiceData?.length || 0);
+      
+      // Criar um mapa de escolhas por sessão e step para fácil acesso
+      const choiceMap = {};
+      if (choiceData && Array.isArray(choiceData)) {
+        choiceData.forEach(choice => {
+          if (!choiceMap[choice.session_id]) {
+            choiceMap[choice.session_id] = {};
+          }
+          choiceMap[choice.session_id][choice.step_number] = choice.interaction_value;
+        });
+      }
+      
+      console.log('Mapa de escolhas por sessão criado');
+      
+      // Processar os leads, incorporando dados de formulário e de escolhas múltiplas
+      const formattedLeads = leadsData.map(lead => {
+        const sessionId = lead.sessionId;
+        // Buscar dados de formulário para esta sessão
+        const formData = formDataLeads.find(form => form.sessionId === sessionId);
+        // Buscar dados de escolhas para esta sessão
+        const sessionChoices = choiceMap[sessionId] || {};
+        
+        // Processar as interações
         const processedInteractions = {};
         
-        // Logar as interações brutas do lead para depuração
-        console.log(`👤 Interações brutas para sessão ${lead.sessionId}:`, lead.interactions);
-        
         if (lead.interactions && typeof lead.interactions === 'object') {
-          // Processar cada interação usando o modelo do elemento de captura
           Object.entries(lead.interactions).forEach(([stepNumber, rawInteraction]) => {
             if (rawInteraction) {
+              let interaction;
               try {
-                // Processar a interação com base no tipo de elemento
-                const stepMetric = stepMetrics.find(m => m.step_number.toString() === stepNumber);
-                const buttonId = stepMetric?.button_id || '';
-                
-                console.log(`🔍 Processando step ${stepNumber}, buttonId: ${buttonId}`);
-                console.log(`🔍 Interação bruta:`, rawInteraction);
-                
-                // Conversão segura da interação
-                let interaction;
-                try {
-                  interaction = typeof rawInteraction === 'string' 
-                    ? JSON.parse(rawInteraction) 
-                    : rawInteraction;
-                } catch (e) {
-                  console.error('❌ Erro ao processar interação:', e);
-                  interaction = { status: 'clicked' };
-                }
-                
-                console.log(`🔍 Interação processada:`, interaction);
-                
-                // SOLUÇÃO ESPECÍFICA: Verificar todas as propriedades para encontrar valores de escolha
-                // Isso é necessário porque o formato pode variar dependendo do componente
-                let choiceValue = null;
-                
-                // 1. Verificar propriedades comuns onde o valor pode estar armazenado
-                const possibleValueProps = ['value', 'choice', 'option', 'selected', 'answer', 'text'];
-                for (const prop of possibleValueProps) {
-                  if (interaction[prop] && typeof interaction[prop] === 'string') {
-                    choiceValue = interaction[prop];
-                    console.log(`✅ Valor encontrado em "${prop}": ${choiceValue}`);
-                    break;
-                  }
-                }
-                
-                // 2. Se não encontrou, verificar o status que também pode conter o valor
-                if (!choiceValue && interaction.status && 
-                    typeof interaction.status === 'string' && 
-                    !['clicked', 'click', 'clicou', 'choice'].includes(interaction.status.toLowerCase())) {
-                  choiceValue = interaction.status;
-                  console.log(`✅ Valor encontrado em "status": ${choiceValue}`);
-                }
-                
-                // 3. Verificação especial para botões de múltipla escolha conhecidos
-                const isMultipleChoiceButton = KNOWN_CHOICE_BUTTONS.some(id => 
-                  buttonId.includes(id) || 
-                  (buttonId.toLowerCase().includes('choice'))
-                );
-                
-                console.log(`🔍 É botão de múltipla escolha? ${isMultipleChoiceButton}`);
-                
-                // 4. Valores específicos para botões conhecidos como fallback
-                if (isMultipleChoiceButton && !choiceValue) {
-                  if (buttonId.includes('865420a5')) {  // Step 2
-                    choiceValue = 'Opção do Step 2';
-                  } else if (buttonId.includes('c7d194b7')) {  // Step 3
-                    choiceValue = 'Opção do Step 3';
-                  } else {
-                    choiceValue = 'Opção selecionada';
-                  }
-                  console.log(`⚠️ Usando valor fallback para botão conhecido: ${choiceValue}`);
-                }
-                
-                // Determinar o tipo da interação
-                let interactionType = 'click';
-                if (formData && stepNumber === '1') {
-                  interactionType = 'form';
-                } else if (isMultipleChoiceButton || choiceValue) {
-                  interactionType = 'choice';
-                }
-                
-                console.log(`🔍 Tipo de interação determinado: ${interactionType}`);
-                
-                // Criar a interação processada baseada no tipo
-                if (interactionType === 'form') {
-                  processedInteractions[stepNumber] = {
-                    type: 'form',
-                    status: 'submitted',
-                    buttonId,
-                    fields: formData?.leadInfo || {},
-                    timestamp: new Date(lead.firstInteraction)
-                  };
-                } else if (interactionType === 'choice') {
-                  processedInteractions[stepNumber] = {
-                    type: 'choice',
-                    status: 'choice',
-                    buttonId,
-                    value: choiceValue || 'Opção selecionada',
-                    timestamp: new Date(interaction.timestamp || lead.firstInteraction)
-                  };
-                } else {
-                  processedInteractions[stepNumber] = {
-                    type: 'click',
-                    status: 'clicked',
-                    buttonId,
-                    timestamp: new Date(interaction.timestamp || lead.firstInteraction)
-                  };
-                }
-                
-                console.log(`✅ Interação final processada:`, processedInteractions[stepNumber]);
-              } catch (error) {
-                console.error(`❌ Erro ao processar interação para step ${stepNumber}:`, error);
-                // Fallback para garantir que pelo menos o clique seja registrado
+                interaction = typeof rawInteraction === 'string' 
+                  ? JSON.parse(rawInteraction) 
+                  : rawInteraction;
+              } catch (e) {
+                interaction = { status: 'clicked' };
+              }
+              
+              // Verificar se temos dados de escolha para este step
+              const choiceValue = sessionChoices[stepNumber];
+              
+              // Determinar o tipo de interação
+              if (formData && stepNumber === '1') {
+                // Interação de formulário (captura)
+                processedInteractions[stepNumber] = {
+                  type: 'form',
+                  status: 'submitted',
+                  fields: formData.leadInfo || {},
+                  timestamp: new Date(interaction.timestamp || lead.firstInteraction)
+                };
+              } else if (choiceValue) {
+                // Interação de múltipla escolha com valor conhecido da tabela
+                processedInteractions[stepNumber] = {
+                  type: 'choice',
+                  status: 'choice',
+                  value: choiceValue,
+                  timestamp: new Date(interaction.timestamp || lead.firstInteraction)
+                };
+              } else {
+                // Interação de clique simples
                 processedInteractions[stepNumber] = {
                   type: 'click',
                   status: 'clicked',
-                  timestamp: new Date(lead.firstInteraction)
+                  timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
               }
             }
@@ -645,17 +582,17 @@ const Leads = () => {
         }
         
         return {
-          sessionId: lead.sessionId,
+          sessionId,
           firstInteraction: new Date(lead.firstInteraction),
           interactions: processedInteractions
         };
       });
       
-      console.log('👤 Leads processados com melhorias:', formattedLeads.length);
+      console.log('Leads processados:', formattedLeads.length);
       setLeads(formattedLeads);
       return formattedLeads;
     } catch (error) {
-      console.error('❌ Erro ao carregar leads:', error);
+      console.error('Erro ao carregar leads:', error);
       setLeads([]);
       return [];
     }
@@ -1000,10 +937,8 @@ const Leads = () => {
     );
   };
 
-  // Função para renderizar interações com base no tipo
+  // Função simplificada para renderizar interações com base no tipo
   const renderInteractionCell = (interaction, stepMetric, isFirstInteractionStep, formDataForLead) => {
-    console.log(`🎨 Renderizando interação:`, interaction);
-    
     // Mapear tipos de interação para renderização apropriada
     switch (interaction.type) {
       case 'choice':
