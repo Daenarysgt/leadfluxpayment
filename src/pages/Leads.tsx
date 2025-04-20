@@ -119,7 +119,7 @@ const TRAFFIC_SOURCES = [
   { id: 'youtube', name: 'YouTube Ads', icon: <YouTubeAdsLogo />, color: 'text-[#FF0000]' }
 ];
 
-// Tipagem mais específica para interações 
+// Tipagem para interações 
 interface ChoiceInteraction {
   type: 'choice';
   buttonId: string;
@@ -139,7 +139,19 @@ interface FormInteraction {
   timestamp: Date;
 }
 
-type StepInteraction = ChoiceInteraction | ClickInteraction | FormInteraction;
+// Tipo de interação processada
+type ProcessedInteraction = ChoiceInteraction | ClickInteraction | FormInteraction;
+
+// Interface para interações do banco de dados
+interface DatabaseInteraction {
+  id?: string;
+  session_id: string;
+  step_number: number;
+  interaction_type: string;
+  interaction_value: string | null;
+  created_at: string;
+  funnel_id?: string;
+}
 
 const Leads = () => {
   const { currentFunnel, setCurrentFunnel } = useStore();
@@ -504,52 +516,76 @@ const Leads = () => {
       // 2. Buscar as interações para cada sessão
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
-      // 3. Buscar explicitamente TODAS as escolhas, tanto de multiple choice image quanto de multiple choice padrão
-      const { data: choiceData, error } = await supabase
+      // 3. Buscar TODOS os tipos de interações (choice e click)
+      // Isso é necessário porque o multiple choice padrão é registrado como "click"
+      const { data: allInteractions, error } = await supabase
         .from('funnel_step_interactions')
-        .select('step_number, session_id, interaction_type, interaction_value')
+        .select('id, step_number, session_id, interaction_type, interaction_value, created_at')
         .eq('funnel_id', currentFunnel.id)
-        .eq('interaction_type', 'choice');
+        .order('created_at', { ascending: false });
         
-      console.log('Dados de múltipla escolha encontrados:', choiceData?.length || 0);
+      console.log('Total de interações encontradas:', allInteractions?.length || 0);
       
-      // Adicionar log detalhado para múltiplas escolhas
-      if (choiceData && choiceData.length > 0) {
-        console.log('Exemplo de dados de múltipla escolha:', choiceData.slice(0, 5));
-      }
+      // Criar mapa de escolhas (tanto de choice quanto de cliques em múltipla escolha)
+      const choiceMap: Record<string, Record<string, string>> = {};
       
-      // Criar um mapa de escolhas por sessão e step para fácil acesso
-      const choiceMap = {};
-      if (choiceData && Array.isArray(choiceData)) {
-        choiceData.forEach(choice => {
-          // Garantir que temos um valor válido para a escolha
+      // Identificar steps conhecidos que contêm multiple choice
+      const multipleChoiceSteps: Record<string, boolean> = {
+        '3': true  // O step 3 contém multiple choice padrão
+      };
+      
+      // Processar todas as interações
+      if (allInteractions && Array.isArray(allInteractions)) {
+        // Tipagem segura para as interações
+        const typedInteractions = allInteractions as DatabaseInteraction[];
+        
+        // Primeiro, processa as interações do tipo "choice" (para multiple choice image)
+        const choiceInteractions = typedInteractions.filter(i => i.interaction_type === 'choice');
+        choiceInteractions.forEach(choice => {
           if (choice.interaction_value) {
-            // Inicializar o objeto de sessão se não existir
             if (!choiceMap[choice.session_id]) {
               choiceMap[choice.session_id] = {};
             }
-            
-            // Converter o step_number para string para garantir compatibilidade
             const stepNumber = String(choice.step_number);
-            
-            // Armazenar o valor da escolha
             choiceMap[choice.session_id][stepNumber] = choice.interaction_value;
+          }
+        });
+        
+        // Depois, processa as interações do tipo "click" para steps conhecidos com multiple choice padrão
+        const clickInMultipleChoice = typedInteractions.filter(i => 
+          i.interaction_type === 'click' && 
+          multipleChoiceSteps[String(i.step_number)]
+        );
+        
+        // Agrupar cliques por sessão e step para encontrar o último clique (a opção escolhida)
+        const sessionStepClicks: Record<string, DatabaseInteraction> = {};
+        clickInMultipleChoice.forEach(click => {
+          const sessionId = click.session_id;
+          const stepNumber = String(click.step_number);
+          const key = `${sessionId}-${stepNumber}`;
+          
+          if (!sessionStepClicks[key] || new Date(click.created_at) > new Date(sessionStepClicks[key].created_at)) {
+            sessionStepClicks[key] = click;
+          }
+        });
+        
+        // Para step 3 (multiple choice padrão), vamos usar um valor padrão baseado na escolha
+        // já que não temos o valor real
+        Object.values(sessionStepClicks).forEach((click: DatabaseInteraction) => {
+          if (!choiceMap[click.session_id]) {
+            choiceMap[click.session_id] = {};
+          }
+          
+          const stepNumber = String(click.step_number);
+          
+          // Com base no step, definimos um valor específico
+          if (stepNumber === '3') {
+            choiceMap[click.session_id][stepNumber] = 'Opção selecionada';
           }
         });
       }
       
-      console.log('Mapa de escolhas por sessão criado');
-      
-      // 4. Também buscar todas as interações de clique para análise em segundo plano
-      // Isso pode nos ajudar a identificar padrões adicionais
-      const { data: clickData } = await supabase
-        .from('funnel_step_interactions')
-        .select('step_number, session_id, interaction_type, interaction_value')
-        .eq('funnel_id', currentFunnel.id)
-        .eq('interaction_type', 'click')
-        .limit(100);
-        
-      console.log('Dados de clique amostrados:', clickData?.length || 0);
+      console.log('Mapa de escolhas combinado criado');
       
       // Processar os leads, incorporando dados de formulário e de escolhas múltiplas
       const formattedLeads = leadsData.map(lead => {
@@ -558,11 +594,6 @@ const Leads = () => {
         const formData = formDataLeads.find(form => form.sessionId === sessionId);
         // Buscar dados de escolhas para esta sessão
         const sessionChoices = choiceMap[sessionId] || {};
-        
-        // Log para depuração de escolhas por sessão
-        if (Object.keys(sessionChoices).length > 0) {
-          console.log(`Sessão ${sessionId} tem escolhas para os steps:`, Object.keys(sessionChoices));
-        }
         
         // Processar as interações
         const processedInteractions = {};
@@ -582,6 +613,9 @@ const Leads = () => {
               // Verificar se temos dados de escolha para este step
               const choiceValue = sessionChoices[stepNumber];
               
+              // Identificar se este é um multiple choice padrão conhecido
+              const isKnownMultipleChoice = multipleChoiceSteps[stepNumber];
+              
               // Determinar o tipo de interação
               if (formData && stepNumber === '1') {
                 // Interação de formulário (captura)
@@ -591,12 +625,12 @@ const Leads = () => {
                   fields: formData.leadInfo || {},
                   timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
-              } else if (choiceValue) {
-                // Interação de múltipla escolha com valor conhecido da tabela
+              } else if (choiceValue || isKnownMultipleChoice) {
+                // Interação de múltipla escolha (de qualquer tipo)
                 processedInteractions[stepNumber] = {
                   type: 'choice',
                   status: 'choice',
-                  value: choiceValue,
+                  value: choiceValue || 'Opção selecionada',
                   timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
               } else {
