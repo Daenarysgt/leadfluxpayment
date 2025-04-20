@@ -41,6 +41,8 @@ const TimerRenderer = (props: ElementRendererProps) => {
     showControls = true,
     autoStart = false,
     timerExpiredMessage = "Tempo esgotado!",
+    showExpiredMessage = true,
+    expiredMessageColor = "#ff0000",
     displayStyle = "modern-blue",
     offerText = "Limited-time offer! Sale ends in",
     offerEmoji = "⚡",
@@ -423,9 +425,11 @@ const TimerRenderer = (props: ElementRendererProps) => {
   // Renderiza o estilo de timer expirado
   const renderExpiredTimer = () => (
     <div className="w-full p-4 rounded-md flex flex-col items-center">
-      <div className={`${getTimerSize()} font-bold text-center`}>
-        {timerExpiredMessage}
-      </div>
+      {showExpiredMessage !== false && (
+        <div className={`${getTimerSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
+          {timerExpiredMessage}
+        </div>
+      )}
       {showControls && renderControls()}
     </div>
   );

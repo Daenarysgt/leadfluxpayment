@@ -278,13 +278,46 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timer-expired-message">Mensagem de tempo esgotado</Label>
-                <Input
-                  id="timer-expired-message"
-                  value={localContent.timerExpiredMessage || "Tempo esgotado!"}
-                  onChange={(e) => handleContentChange({ timerExpiredMessage: e.target.value })}
-                  placeholder="Mensagem quando o timer chegar a zero"
-                />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-expired-message">Mostrar mensagem de tempo esgotado</Label>
+                  <Switch
+                    id="show-expired-message"
+                    checked={localContent.showExpiredMessage !== false}
+                    onCheckedChange={(checked) =>
+                      handleContentChange({ showExpiredMessage: checked })
+                    }
+                  />
+                </div>
+                
+                {localContent.showExpiredMessage !== false && (
+                  <>
+                    <Input
+                      id="timer-expired-message"
+                      value={localContent.timerExpiredMessage || "Tempo esgotado!"}
+                      onChange={(e) => handleContentChange({ timerExpiredMessage: e.target.value })}
+                      placeholder="Mensagem quando o timer chegar a zero"
+                    />
+                    
+                    <div className="mt-2">
+                      <Label htmlFor="expired-message-color">Cor da mensagem de tempo esgotado</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="expired-message-color"
+                          type="color"
+                          value={localContent.expiredMessageColor || "#ff0000"}
+                          onChange={(e) => handleContentChange({ expiredMessageColor: e.target.value })}
+                          className="w-12 h-8 p-1"
+                        />
+                        <Input
+                          value={localContent.expiredMessageColor || "#ff0000"}
+                          onChange={(e) => handleContentChange({ expiredMessageColor: e.target.value })}
+                          placeholder="#ff0000"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">
