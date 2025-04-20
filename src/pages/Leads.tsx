@@ -203,9 +203,16 @@ const Leads = () => {
         )
         .subscribe();
 
+      // Recarregar dados a cada minuto
+      const intervalId = setInterval(() => {
+        loadStepMetrics();
+        loadMetrics();
+      }, 60000);
+
       return () => {
         subscription.unsubscribe();
         formSubscription.unsubscribe();
+        clearInterval(intervalId);
       };
     }
   }, [currentFunnel?.id, selectedPeriod]);
@@ -301,7 +308,7 @@ const Leads = () => {
       const formattedMetrics = data.map(metric => ({
         step_number: metric.step_number,
         total_interactions: metric.total_interactions,
-        interaction_rate: metric.interaction_rate,
+        interaction_rate: metric.interaction_rate > 0 ? metric.interaction_rate : 5, // Garantir que tenha pelo menos 5% para visualização
         button_id: metric.button_id
       }));
       
@@ -326,6 +333,23 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading form data:', error);
       setFormDataLeads([]);
+    }
+  };
+
+  // Função para recarregar todas as métricas e dados
+  const reloadAllData = async () => {
+    if (currentFunnel?.id) {
+      try {
+        await Promise.all([
+          loadMetrics(),
+          loadLeads(),
+          loadStepMetrics(),
+          loadFormData()
+        ]);
+        console.log('Dados recarregados com sucesso');
+      } catch (error) {
+        console.error('Erro ao recarregar dados:', error);
+      }
     }
   };
 
@@ -581,6 +605,15 @@ const Leads = () => {
                 />
               </div>
             </div>
+            <Button variant="outline" onClick={reloadAllData}>
+              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20.49 9C19.8214 7.33167 18.7192 5.89469 17.2931 4.87678C15.8671 3.85887 14.1733 3.30381 12.4403 3.28V3.28C10.2949 3.25941 8.20968 3.97218 6.5371 5.29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3.51 15C4.17861 16.6683 5.28085 18.1053 6.70689 19.1232C8.13293 20.1411 9.82669 20.6962 11.5597 20.72V20.72C13.7051 20.7406 15.7903 20.0278 17.4629 18.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Atualizar
+            </Button>
             <Button variant="outline">
               <Filter className="h-4 w-4 mr-2" />
               Filtros
@@ -609,6 +642,7 @@ const Leads = () => {
                             className="absolute bottom-0 w-full bg-green-500 rounded"
                             style={{ 
                               height: `${step.interaction_rate}%`,
+                              minHeight: '4px',
                               transition: 'height 0.3s ease-in-out'
                             }}
                           />
