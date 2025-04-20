@@ -142,7 +142,7 @@ interface FormInteraction {
 // Tipo de interação processada
 type ProcessedInteraction = ChoiceInteraction | ClickInteraction | FormInteraction;
 
-// Interface para interações do banco de dados estendida
+// Interface para interações do banco de dados
 interface DatabaseInteraction {
   id?: string;
   session_id: string;
@@ -151,7 +151,6 @@ interface DatabaseInteraction {
   interaction_value: string | null;
   created_at: string;
   funnel_id?: string;
-  button_id?: string;
 }
 
 const Leads = () => {
@@ -374,8 +373,8 @@ const Leads = () => {
 
   // Nova função unificada para carregar todos os dados de forma consistente
   const loadAllData = async (showLoading = true) => {
-    if (!currentFunnel?.id) return;
-    
+      if (!currentFunnel?.id) return;
+      
     try {
       if (showLoading) {
         setIsLoading(true);
@@ -517,58 +516,11 @@ const Leads = () => {
       // 2. Buscar as interações para cada sessão
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
-      // 3. Buscar detalhes dos steps para extrair as opções de multiple choice
-      const { data: stepsData, error: stepsError } = await supabase
-        .from('steps')
-        .select('*')
-        .eq('funnel_id', currentFunnel.id)
-        .order('order_index', { ascending: true });
-        
-      console.log('Dados dos steps encontrados:', stepsData?.length || 0);
-      
-      // Extrair as opções do multiple choice de todos os steps
-      const multipleChoiceOptionsByStep: Record<string, Record<string, string>> = {};
-      
-      if (stepsData && Array.isArray(stepsData)) {
-        // Processar todos os steps
-        stepsData.forEach((step, index) => {
-          // Número do step (baseado na posição + 1)
-          const stepNumber = index + 1;
-          
-          if (step && step.canvasElements) {
-            // Buscar todos os componentes de multiple choice no step
-            const multipleChoiceElements = step.canvasElements.filter(el => 
-              el.type === 'multipleChoice' || el.type === 'multipleChoiceImage'
-            );
-            
-            if (multipleChoiceElements.length > 0) {
-              multipleChoiceOptionsByStep[String(stepNumber)] = {};
-              
-              // Processar cada componente de multiple choice
-              multipleChoiceElements.forEach(element => {
-                if (element.content && element.content.options) {
-                  // Mapear os IDs das opções para os textos
-                  element.content.options.forEach(option => {
-                    if (option.id && (option.text || option.label)) {
-                      const optionText = option.text || option.label || '';
-                      multipleChoiceOptionsByStep[String(stepNumber)][option.id] = optionText;
-                    }
-                  });
-                }
-              });
-              
-              console.log(`Opções de múltipla escolha para Step ${stepNumber}:`, 
-                Object.keys(multipleChoiceOptionsByStep[String(stepNumber)]).length);
-            }
-          }
-        });
-      }
-      
-      // 4. Buscar TODOS os tipos de interações (choice e click)
+      // 3. Buscar TODOS os tipos de interações (choice e click)
       // Isso é necessário porque o multiple choice padrão é registrado como "click"
       const { data: allInteractions, error } = await supabase
         .from('funnel_step_interactions')
-        .select('id, step_number, session_id, interaction_type, interaction_value, created_at, button_id')
+        .select('id, step_number, session_id, interaction_type, interaction_value, created_at')
         .eq('funnel_id', currentFunnel.id)
         .order('created_at', { ascending: false });
         
@@ -576,6 +528,11 @@ const Leads = () => {
       
       // Criar mapa de escolhas (tanto de choice quanto de cliques em múltipla escolha)
       const choiceMap: Record<string, Record<string, string>> = {};
+      
+      // Identificar steps conhecidos que contêm multiple choice
+      const multipleChoiceSteps: Record<string, boolean> = {
+        '3': true  // O step 3 contém multiple choice padrão
+      };
       
       // Processar todas as interações
       if (allInteractions && Array.isArray(allInteractions)) {
@@ -594,16 +551,11 @@ const Leads = () => {
           }
         });
         
-        // Depois, processa as interações do tipo "click" para steps que podem ter multiple choice
+        // Depois, processa as interações do tipo "click" para steps conhecidos com multiple choice padrão
         const clickInMultipleChoice = typedInteractions.filter(i => 
-          i.interaction_type === 'click' && i.button_id
+          i.interaction_type === 'click' && 
+          multipleChoiceSteps[String(i.step_number)]
         );
-        
-        // Registrar todos os button_id para depuração
-        if (clickInMultipleChoice.length > 0) {
-          const buttonIds = clickInMultipleChoice.map(click => click.button_id).filter(Boolean);
-          console.log('IDs de botões clicados:', [...new Set(buttonIds)]);
-        }
         
         // Agrupar cliques por sessão e step para encontrar o último clique (a opção escolhida)
         const sessionStepClicks: Record<string, DatabaseInteraction> = {};
@@ -617,26 +569,18 @@ const Leads = () => {
           }
         });
         
-        // Para cada step, usar o button_id para encontrar a opção selecionada
-        Object.values(sessionStepClicks).forEach(click => {
+        // Para step 3 (multiple choice padrão), vamos usar um valor padrão baseado na escolha
+        // já que não temos o valor real
+        Object.values(sessionStepClicks).forEach((click: DatabaseInteraction) => {
           if (!choiceMap[click.session_id]) {
             choiceMap[click.session_id] = {};
           }
           
           const stepNumber = String(click.step_number);
-          const stepOptions = multipleChoiceOptionsByStep[stepNumber];
           
-          // Se temos opções mapeadas para este step e um button_id válido
-          if (stepOptions && click.button_id && stepOptions[click.button_id]) {
-            // Usar o texto da opção correspondente ao button_id
-            choiceMap[click.session_id][stepNumber] = stepOptions[click.button_id];
-          } else if (click.button_id) {
-            // Fallback para quando não conseguimos identificar a opção exata
-            // mas temos um button_id
+          // Com base no step, definimos um valor específico
+          if (stepNumber === '3') {
             choiceMap[click.session_id][stepNumber] = 'Opção selecionada';
-            
-            // Registrar para depuração
-            console.log(`Não foi possível identificar o texto para button_id: ${click.button_id} (step: ${stepNumber}, sessão: ${click.session_id})`);
           }
         });
       }
@@ -670,7 +614,7 @@ const Leads = () => {
               const choiceValue = sessionChoices[stepNumber];
               
               // Identificar se este é um multiple choice padrão conhecido
-              const isKnownMultipleChoice = multipleChoiceOptionsByStep[stepNumber];
+              const isKnownMultipleChoice = multipleChoiceSteps[stepNumber];
               
               // Determinar o tipo de interação
               if (formData && stepNumber === '1') {
@@ -931,129 +875,129 @@ const Leads = () => {
   // Render section with cards
   const renderMetricsCards = () => {
     return (
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
-              <span>Total de Leads</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-bold text-gray-800">{metrics.totalSessions}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <ArrowUpRight className="h-3 w-3 text-green-500" />
-                  <span className="text-green-500">Atualizado</span>
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+                <span>Total de Leads</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.loadingMetrics ? (
+                <div className="animate-pulse">
+                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-gray-800">{metrics.totalSessions}</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <ArrowUpRight className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500">Atualizado</span>
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
-              </span>
-              <span>Taxa de Conversão</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-bold text-gray-800">{metrics.completionRate.toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <ArrowUpRight className="h-3 w-3 text-green-500" />
-                  <span className="text-green-500">Atualizado</span>
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
+                </span>
+                <span>Taxa de Conversão</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.loadingMetrics ? (
+                <div className="animate-pulse">
+                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-gray-800">{metrics.completionRate.toFixed(1)}%</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <ArrowUpRight className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500">Atualizado</span>
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <span>Hoje</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-bold text-gray-800">{metrics.todayLeads}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                  Leads que interagiram hoje
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <span>Hoje</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.loadingMetrics ? (
+                <div className="animate-pulse">
+                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-3xl font-bold text-gray-800">{metrics.todayLeads}</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                    <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
+                    Leads que interagiram hoje
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
-                {selectedSource.icon}
-              </span>
-              <span>Origem Principal</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
-                      <span className={selectedSource.color}>{selectedSource.icon}</span>
-                      {selectedSource.name}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-[200px]">
-                    {TRAFFIC_SOURCES.map((source) => (
-                      <DropdownMenuItem
-                        key={source.id}
-                        onClick={() => setSelectedSource(source)}
-                        className="flex items-center gap-2"
-                      >
-                        <span className={source.color}>{source.icon}</span>
-                        {source.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {metrics.mainSource.percentage.toFixed(1)}% dos visitantes interagiram
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
+                  {selectedSource.icon}
+                </span>
+                <span>Origem Principal</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {metrics.loadingMetrics ? (
+                <div className="animate-pulse">
+                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+                </div>
+              ) : (
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
+                        <span className={selectedSource.color}>{selectedSource.icon}</span>
+                        {selectedSource.name}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[200px]">
+                      {TRAFFIC_SOURCES.map((source) => (
+                        <DropdownMenuItem
+                          key={source.id}
+                          onClick={() => setSelectedSource(source)}
+                          className="flex items-center gap-2"
+                        >
+                          <span className={source.color}>{source.icon}</span>
+                          {source.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {metrics.mainSource.percentage.toFixed(1)}% dos visitantes interagiram
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
     );
   };
 
