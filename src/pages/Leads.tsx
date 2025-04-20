@@ -8,8 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
-  ArrowUpRight, MousePointerClick, ClipboardList,
-  Info, Eye
+  ArrowUpRight, MousePointerClick, ClipboardList
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -26,22 +25,6 @@ import { accessService } from "@/services/accessService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TrackingTable } from "@/components/tracking-table";
 import { createClient } from '@supabase/supabase-js';
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  TooltipProps,
-  AreaChart,
-  Area
-} from 'recharts';
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 // Criar cliente Supabase
 const supabase = createClient(
@@ -165,11 +148,6 @@ const Leads = () => {
     submissionTime: Date;
     leadInfo: Record<string, string>;
   }>>([]);
-  // Novo estado para dados do gráfico
-  const [visitsByDate, setVisitsByDate] = useState<Array<{
-    date: string;
-    visits: number;
-  }>>([]);
 
   useEffect(() => {
     if (funnelId && (!currentFunnel || currentFunnel.id !== funnelId)) {
@@ -179,12 +157,10 @@ const Leads = () => {
 
   useEffect(() => {
     if (currentFunnel?.id) {
-      console.log('Loading all data for period:', selectedPeriod);
       loadMetrics();
       loadLeads();
       loadStepMetrics();
-      loadFormData();
-      loadVisitsByDate();
+      loadFormData(); // Nova chamada
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -350,23 +326,6 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading form data:', error);
       setFormDataLeads([]);
-    }
-  };
-
-  // Nova função para carregar dados do gráfico
-  const loadVisitsByDate = async () => {
-    try {
-      if (!currentFunnel?.id) return;
-      
-      console.log('Getting visits by date for funnel:', currentFunnel.id, 'period:', selectedPeriod);
-      setVisitsByDate([]); // Limpar dados anteriores enquanto carrega
-      const visitsData = await accessService.getFunnelVisitsByDate(currentFunnel.id, selectedPeriod);
-      
-      console.log('Visits by date loaded:', visitsData);
-      setVisitsByDate(visitsData);
-    } catch (error) {
-      console.error('Error loading visits by date:', error);
-      setVisitsByDate([]);
     }
   };
 
@@ -577,102 +536,6 @@ const Leads = () => {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        {/* NOVO: Gráfico de Visitas */}
-        <div className="bg-white p-6 rounded-lg border shadow-sm transition-all hover:shadow-md">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <Eye className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
-              <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">Visitas por Data</span>
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Total de leads que interagiram com o funil por dia
-            </p>
-          </div>
-          
-          {visitsByDate.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-                <Info className="h-8 w-8 text-gray-300" />
-              </div>
-              <p className="text-muted-foreground">Não há dados de visitas para o período selecionado</p>
-            </div>
-          ) : (
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart 
-                  data={visitsByDate}
-                  margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
-                >
-                  <defs>
-                    <linearGradient id="visitColorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#3B82F6" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#8B5CF6" stopOpacity={1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f5" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12, fill: '#6B7280' }} 
-                    tickLine={false}
-                    axisLine={{ stroke: '#E5E7EB' }}
-                  />
-                  <YAxis 
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6B7280' }}
-                    axisLine={false}
-                    domain={[0, dataMax => Math.max(Math.ceil(dataMax * 1.2), 1)]}
-                  />
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-white border shadow-lg rounded-lg p-3 text-sm backdrop-blur-sm bg-white/90">
-                            <p className="font-medium text-gray-800">{payload[0].payload.date}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"></div>
-                              <p className="font-semibold text-gray-700">
-                                {payload[0].value} <span className="text-gray-500 font-normal">leads</span>
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                    cursor={{ stroke: '#8B5CF6', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="visits" 
-                    stroke="url(#lineGradient)" 
-                    strokeWidth={3}
-                    fill="url(#visitColorGradient)" 
-                    activeDot={{ 
-                      r: 6, 
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                      fill: "#8B5CF6"
-                    }}
-                    label={{
-                      position: 'top',
-                      fill: '#8B5CF6',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      formatter: (value) => `${value} ${value === 1 ? 'lead' : 'leads'}`
-                    }}
-                    animationDuration={1500}
-                    animationEasing="ease-in-out"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
 
         {/* Tracking Table Section */}
