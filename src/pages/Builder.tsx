@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useStore } from "@/utils/store";
 import { useBuilderCanvas } from "@/hooks/useBuilderCanvas";
 import { useBuilderViewMode } from "@/hooks/useBuilderViewMode";
@@ -11,7 +11,6 @@ import BuilderEmptyState from "@/components/builder/BuilderEmptyState";
 const Builder = () => {
   const { toast } = useToast();
   const { funnelId } = useParams<{ funnelId: string }>();
-  const [useScaledUI, setUseScaledUI] = useState<boolean>(true); // Estado para controlar a escala da UI
   const { 
     currentFunnel,
     currentStep,
@@ -81,11 +80,6 @@ const Builder = () => {
     openFullPreview(saveCurrentStepElements);
   };
 
-  // Alternar entre visualização normal e escalada
-  const toggleScaledUI = () => {
-    setUseScaledUI(prev => !prev);
-  };
-
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <BuilderHeader 
@@ -97,8 +91,6 @@ const Builder = () => {
         onViewModeChange={setViewMode}
         onSave={handleSave}
         onOpenFullPreview={handleOpenFullPreview}
-        useScaledUI={useScaledUI}
-        onToggleScaledUI={toggleScaledUI}
       />
       
       <BuilderContent
@@ -112,7 +104,6 @@ const Builder = () => {
         onElementUpdate={handleElementUpdate}
         onElementsChange={handleCanvasElementsChange}
         onCloseElementConfig={() => setSelectedElement(null)}
-        useScaledUI={useScaledUI}
       />
     </div>
   );

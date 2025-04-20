@@ -6,7 +6,6 @@ import BuilderCanvas from "@/components/BuilderCanvas";
 import BuilderPreview from "@/components/builder/BuilderPreview";
 import { CanvasElement } from "@/types/canvasTypes";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 
 interface BuilderContentProps {
   viewMode: "desktop" | "mobile";
@@ -19,7 +18,6 @@ interface BuilderContentProps {
   onElementUpdate: (element: CanvasElement) => void;
   onElementsChange: (elements: CanvasElement[]) => void;
   onCloseElementConfig: () => void;
-  useScaledUI?: boolean;
 }
 
 const BuilderContent = ({
@@ -32,14 +30,10 @@ const BuilderContent = ({
   onElementSelect,
   onElementUpdate,
   onElementsChange,
-  onCloseElementConfig,
-  useScaledUI = true
+  onCloseElementConfig
 }: BuilderContentProps) => {
   return (
-    <div className={cn(
-      "flex flex-1 h-[calc(100vh-64px)] overflow-hidden", 
-      useScaledUI && "builder-scaled"
-    )}>
+    <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
           <div className="flex h-full">
