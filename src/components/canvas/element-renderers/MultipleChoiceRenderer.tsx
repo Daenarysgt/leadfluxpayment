@@ -11,6 +11,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const { content, previewMode, previewProps } = element;
   const { setCurrentStep, currentFunnel, currentStep } = useStore();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
   
   // Destructure configuration options with defaults
   const {
@@ -35,125 +36,161 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   
   // Função para executar a navegação com base na opção selecionada
   const executeNavigation = useCallback(async (optionId: string) => {
-    const option = content.options.find((opt: any) => opt.id === optionId);
-    if (!option) {
-      console.error("Opção não encontrada:", optionId);
+    // Evita processamento duplicado
+    if (isProcessingInteraction) {
+      console.log("Já existe uma interação em processamento. Aguardando...");
       return;
     }
+    
+    setIsProcessingInteraction(true);
+    
+    try {
+      const option = content.options.find((opt: any) => opt.id === optionId);
+      if (!option) {
+        console.error("Opção não encontrada:", optionId);
+        setIsProcessingInteraction(false);
+        return;
+      }
 
-    // Verificar se há configuração de navegação
-    if (!option.navigation) {
-      console.warn("Opção sem configuração de navegação:", option.text);
-      return;
-    }
+      // Verificar se há configuração de navegação
+      if (!option.navigation) {
+        console.warn("Opção sem configuração de navegação:", option.text);
+        setIsProcessingInteraction(false);
+        return;
+      }
 
-    const navigationType = option.navigation.type;
-    console.log("MultipleChoiceRenderer - executeNavigation with option:", option);
-    console.log("Navigation type:", navigationType, "Navigation config:", option.navigation);
+      const navigationType = option.navigation.type;
+      console.log("MultipleChoiceRenderer - executeNavigation with option:", option);
+      console.log("Navigation type:", navigationType, "Navigation config:", option.navigation);
 
-    // Se for tipo "none", não realiza navegação
-    if (navigationType === "none") {
-      console.log("Navegação do tipo 'none' - nenhuma ação será executada");
-      return;
-    }
+      // Se for tipo "none", não realiza navegação
+      if (navigationType === "none") {
+        console.log("Navegação do tipo 'none' - nenhuma ação será executada");
+        setIsProcessingInteraction(false);
+        return;
+      }
 
-    // Handle navigation differently based on preview mode
-    if (previewMode && previewProps) {
-      const { activeStep, onStepChange, funnel } = previewProps;
-      console.log("Preview props:", { activeStep, funnel: funnel?.id });
-      
-      if (funnel) {
-        try {
-          // IMPORTANTE: Primeiro garantir que a sessão existe atualizando o progresso
-          // Isso resolve o problema de persistência do Multiple Choice
-          console.log("Garantindo que a sessão existe atualizando o progresso primeiro");
-          await accessService.updateProgress(funnel.id, activeStep + 1, null);
-          
-          // Depois registrar a interação de escolha
-          const selection = option.text || option.value;
-          console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
-          
-          await accessService.registerStepInteraction(
-            funnel.id,
-            activeStep + 1,
-            null, // usar sessionId atual
-            'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
-            selection // Usar o texto completo da opção
-          );
-          
-          // Adicionar debug para verificar se o valor está sendo enviado corretamente
-          console.log(`Interação registrada para opção: "${selection}" na etapa ${activeStep + 1}`);
-          
-          // Verificar tipo de navegação e executar ação correspondente
-          if (navigationType === "next") {
-            console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
-            if (activeStep < funnel.steps.length - 1) {
-              console.log("Navegando para a próxima etapa:", activeStep + 1);
-              // Depois mudar a etapa com um delay para garantir que os dados foram salvos
-              setTimeout(() => onStepChange(activeStep + 1), 300);
-            } else if (activeStep === funnel.steps.length - 1) {
-              // Se for o último step, marcar como conversão
-              console.log("Última etapa - marcando como conversão");
-              await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-            }
-          }
-          else if (navigationType === "step" && option.navigation.stepId) {
-            console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
-            const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
-            console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
+      // Handle navigation differently based on preview mode
+      if (previewMode && previewProps) {
+        const { activeStep, onStepChange, funnel } = previewProps;
+        console.log("Preview props:", { activeStep, funnel: funnel?.id });
+        
+        if (funnel) {
+          try {
+            // IMPORTANTE: Primeiro garantir que a sessão existe atualizando o progresso
+            console.log("Garantindo que a sessão existe atualizando o progresso primeiro");
+            await accessService.updateProgress(funnel.id, activeStep + 1, null);
             
-            if (stepIndex !== -1) {
-              if (stepIndex === funnel.steps.length - 1) {
+            // Depois registrar a interação de escolha
+            const selection = option.text || option.value;
+            console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
+            
+            // MODIFICAÇÃO: Aguardamos explicitamente a conclusão do registro da interação
+            const interactionPromise = accessService.registerStepInteraction(
+              funnel.id,
+              activeStep + 1,
+              null, // usar sessionId atual
+              'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
+              selection // Usar o texto completo da opção
+            );
+            
+            // Aguardar explicitamente a conclusão
+            await interactionPromise;
+            
+            // Log para confirmar que os dados foram salvos
+            console.log(`Interação registrada com sucesso para opção: "${selection}" na etapa ${activeStep + 1}`);
+            
+            // MODIFICAÇÃO: Adicionamos um atraso para garantir que os dados sejam persistidos
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Verificar tipo de navegação e executar ação correspondente
+            if (navigationType === "next") {
+              console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
+              if (activeStep < funnel.steps.length - 1) {
+                console.log("Navegando para a próxima etapa:", activeStep + 1);
+                // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+                setTimeout(() => {
+                  onStepChange(activeStep + 1);
+                  setIsProcessingInteraction(false);
+                }, 500);
+              } else if (activeStep === funnel.steps.length - 1) {
                 // Se for o último step, marcar como conversão
-                console.log("Última etapa (específica) - marcando como conversão");
-                await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
-              } else {
-                // Atualizar o progresso para a etapa específica
-                await accessService.updateProgress(funnel.id, stepIndex + 1, null);
+                console.log("Última etapa - marcando como conversão");
+                await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+                setIsProcessingInteraction(false);
               }
-              
-              // Forçar um atraso maior antes de mudar a etapa
-              console.log("Navegando para a etapa específica:", stepIndex);
-              setTimeout(() => onStepChange(stepIndex), 300);
             }
+            else if (navigationType === "step" && option.navigation.stepId) {
+              console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
+              const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+              console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
+              
+              if (stepIndex !== -1) {
+                if (stepIndex === funnel.steps.length - 1) {
+                  // Se for o último step, marcar como conversão
+                  console.log("Última etapa (específica) - marcando como conversão");
+                  await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+                } else {
+                  // Atualizar o progresso para a etapa específica
+                  await accessService.updateProgress(funnel.id, stepIndex + 1, null);
+                }
+                
+                // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+                setTimeout(() => {
+                  onStepChange(stepIndex);
+                  setIsProcessingInteraction(false);
+                }, 500);
+              } else {
+                console.error("Etapa não encontrada com ID:", option.navigation.stepId);
+                setIsProcessingInteraction(false);
+              }
+            }
+            else if (navigationType === "url" && option.navigation.url) {
+              console.log("Preview mode: Open external URL:", option.navigation.url);
+              // Marcar como conversão antes de redirecionar
+              await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
+              console.log("Redirecionando para URL externa");
+              
+              // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+              setTimeout(() => {
+                window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+                setIsProcessingInteraction(false);
+              }, 500);
+            }
+          } catch (error) {
+            console.error("Erro durante a navegação:", error);
+            setIsProcessingInteraction(false);
           }
-          else if (navigationType === "url" && option.navigation.url) {
-            console.log("Preview mode: Open external URL:", option.navigation.url);
-            // Marcar como conversão antes de redirecionar
-            await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-            console.log("Redirecionando para URL externa");
-            // Pequeno delay antes de redirecionar para garantir que os dados foram salvos
-            setTimeout(() => {
-              window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-            }, 200);
-          }
-        } catch (error) {
-          console.error("Erro durante a navegação:", error);
+        } else {
+          console.warn("No funnel object available in preview props");
+          setIsProcessingInteraction(false);
         }
       } else {
-        console.warn("No funnel object available in preview props");
-      }
-    } else {
-      // Handle navigation in canvas mode
-      console.log("Modo Canvas - navegação simulada apenas");
-      if (navigationType === "next") {
-        if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
-          setCurrentStep(currentStep + 1);
-        }
-      }
-      else if (navigationType === "step" && option.navigation.stepId) {
-        if (currentFunnel) {
-          const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
-          if (stepIndex !== -1) {
-            setCurrentStep(stepIndex);
+        // Handle navigation in canvas mode
+        console.log("Modo Canvas - navegação simulada apenas");
+        if (navigationType === "next") {
+          if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
+            setCurrentStep(currentStep + 1);
           }
         }
+        else if (navigationType === "step" && option.navigation.stepId) {
+          if (currentFunnel) {
+            const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
+            if (stepIndex !== -1) {
+              setCurrentStep(stepIndex);
+            }
+          }
+        }
+        else if (navigationType === "url" && option.navigation.url) {
+          window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+        }
+        setIsProcessingInteraction(false);
       }
-      else if (navigationType === "url" && option.navigation.url) {
-        window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-      }
+    } catch (error) {
+      console.error("Erro durante executeNavigation:", error);
+      setIsProcessingInteraction(false);
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options]);
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, isProcessingInteraction]);
   
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option, "Allow multiple:", allowMultipleSelection);
@@ -176,11 +213,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       // Verificar se a opção tem configuração de navegação
       if (option.navigation) {
         console.log("Opção tem navegação configurada:", option.navigation);
-        // Navegar após um pequeno delay para garantir que a UI atualize
-        setTimeout(() => {
-          console.log("Executando navegação para seleção única:", option.id);
-          executeNavigation(option.id);
-        }, 250);
+        // Executar navegação diretamente - vamos remover o timeout pois o controle de estado já impede chamadas duplicadas
+        executeNavigation(option.id);
       } else {
         console.warn("Opção clicada não tem configuração de navegação:", option.text);
       }
@@ -287,7 +321,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 key={option.id}
                 className={cn(
                   "p-4 border cursor-pointer transition-all duration-200",
-                  isSelected && "border-violet-500"
+                  isSelected && "border-violet-500",
+                  isProcessingInteraction && "opacity-70 pointer-events-none"
                 )}
                 style={{
                   ...styleObject,
@@ -328,16 +363,17 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               "w-full mt-4 py-3 px-4 rounded-lg font-medium transition-all",
               selectedOptions.length > 0 
                 ? "cursor-pointer opacity-100" 
-                : "opacity-50 cursor-not-allowed"
+                : "opacity-50 cursor-not-allowed",
+              isProcessingInteraction && "opacity-70 cursor-wait"
             )}
             style={{
               backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
               color: selectedOptions.length > 0 ? "white" : "#a0a0a0"
             }}
             onClick={handleContinue}
-            disabled={selectedOptions.length === 0}
+            disabled={selectedOptions.length === 0 || isProcessingInteraction}
           >
-            {continueButtonText}
+            {isProcessingInteraction ? "Processando..." : continueButtonText}
           </button>
         )}
       </div>
