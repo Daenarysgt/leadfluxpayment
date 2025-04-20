@@ -44,6 +44,8 @@ export function getElementTitle(type: string): string {
       return "Preço";
     case ComponentType.Notes:
       return "Notas";
+    case ComponentType.Timer:
+      return "Temporizador";
     default:
       return type;
   }
