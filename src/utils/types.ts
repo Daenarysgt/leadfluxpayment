@@ -165,8 +165,7 @@ export enum ComponentType {
   Rating = "rating",
   Video = "video",
   Price = "price",
-  Notes = "notes",
-  Timer = "timer"
+  Notes = "notes"
 }
 
 export interface TabOption {

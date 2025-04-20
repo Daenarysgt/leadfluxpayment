@@ -26,9 +26,7 @@ import {
   SlidersHorizontal,
   Star,
   Video as VideoIcon,
-  DollarSign,
-  Clock,
-  AlarmClock
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -39,31 +37,38 @@ const ElementsSidebar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("todos");
   
-  const components = [
-    { id: ComponentType.Text, name: "Texto", icon: Type, color: "bg-violet-100 text-violet-700" },
-    { id: ComponentType.Button, name: "Botão", icon: ArrowRight, color: "bg-blue-100 text-blue-700" },
-    { id: ComponentType.Image, name: "Imagem", icon: ImageIcon, color: "bg-green-100 text-green-700" },
-    { id: ComponentType.MultipleChoice, name: "Múltipla Escolha", icon: CheckSquare, color: "bg-amber-100 text-amber-700" },
-    { id: ComponentType.MultipleChoiceImage, name: "Múltipla Escolha com Imagem", icon: ImagePlus, color: "bg-indigo-100 text-indigo-700" },
-    { id: ComponentType.Carousel, name: "Carrossel", icon: Images, color: "bg-pink-100 text-pink-700" },
-    { id: ComponentType.Height, name: "Altura", icon: Ruler, color: "bg-emerald-100 text-emerald-700" },
-    { id: ComponentType.Weight, name: "Peso", icon: Weight, color: "bg-rose-100 text-rose-700" },
-    { id: ComponentType.Comparison, name: "Comparação", icon: SlidersHorizontal, color: "bg-gray-100 text-gray-700" },
-    { id: ComponentType.Arguments, name: "Argumentos", icon: FileText, color: "bg-yellow-100 text-yellow-700" },
-    { id: ComponentType.Rating, name: "Avaliação", icon: Star, color: "bg-amber-100 text-amber-700" },
-    { id: ComponentType.Graphics, name: "Gráficos", icon: BarChart2, color: "bg-indigo-100 text-indigo-700" },
-    { id: ComponentType.Testimonials, name: "Depoimentos", icon: MessageSquareQuote, color: "bg-sky-100 text-sky-700" },
-    { id: ComponentType.Level, name: "Nível", icon: Sliders, color: "bg-teal-100 text-teal-700" },
-    { id: ComponentType.Capture, name: "Captura", icon: StickyNote, color: "bg-lime-100 text-lime-700" },
-    { id: ComponentType.Loading, name: "Carregamento", icon: Loader2, color: "bg-cyan-100 text-cyan-700" },
-    { id: ComponentType.Cartesian, name: "Cartesiano", icon: Box, color: "bg-fuchsia-100 text-fuchsia-700" },
-    { id: ComponentType.Video, name: "Vídeo", icon: VideoIcon, color: "bg-red-100 text-red-700" },
-    { id: ComponentType.Spacer, name: "Espaçador", icon: GripVertical, color: "bg-gray-100 text-gray-700" },
-    { id: ComponentType.Price, name: "Preço", icon: DollarSign, color: "bg-emerald-100 text-emerald-700" },
-    { id: ComponentType.Timer, name: "Contador", icon: Clock, color: "bg-orange-100 text-orange-700" },
+  const basicComponents = [
+    { id: ComponentType.MultipleChoice, name: "Múltipla Escolha", icon: CheckSquare, color: "bg-blue-100 text-blue-600" },
+    { id: ComponentType.MultipleChoiceImage, name: "Múltipla Escolha com Imagem", icon: ImagePlus, color: "bg-purple-100 text-purple-600" },
+    { id: ComponentType.Text, name: "Texto", icon: Type, color: "bg-gray-100 text-gray-600" },
+    { id: ComponentType.Notes, name: "Notas", icon: StickyNote, color: "bg-amber-100 text-amber-600" },
+    { id: ComponentType.Image, name: "Imagem", icon: ImageIcon, color: "bg-indigo-100 text-indigo-600" },
+    { id: ComponentType.Video, name: "Vídeo", icon: VideoIcon, color: "bg-red-100 text-red-600" },
+    { id: ComponentType.Carousel, name: "Carrossel de Imagens", icon: Images, color: "bg-pink-100 text-pink-600" },
+    { id: ComponentType.Button, name: "Botão", icon: ButtonIcon, color: "bg-green-100 text-green-600" },
+    { id: ComponentType.Height, name: "Altura", icon: Ruler, color: "bg-amber-100 text-amber-600" },
+    { id: ComponentType.Weight, name: "Peso", icon: Weight, color: "bg-orange-100 text-orange-600" },
+    { id: ComponentType.Comparison, name: "Comparação de Itens", icon: SlidersHorizontal, color: "bg-teal-100 text-teal-600" },
+    { id: ComponentType.Price, name: "Preço", icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
   ];
   
-  const filteredComponents = components.filter(comp => 
+  const advancedComponents = [
+    { id: ComponentType.Arguments, name: "Argumentos", icon: FileText, color: "bg-cyan-100 text-cyan-600" },
+    { id: ComponentType.Graphics, name: "Gráficos", icon: BarChart2, color: "bg-emerald-100 text-emerald-600" },
+    { id: ComponentType.Testimonials, name: "Depoimentos", icon: MessageSquareQuote, color: "bg-violet-100 text-violet-600" },
+    { id: ComponentType.Level, name: "Nível", icon: Sliders, color: "bg-fuchsia-100 text-fuchsia-600" },
+    { id: ComponentType.Capture, name: "Captura", icon: StickyNote, color: "bg-lime-100 text-lime-600" },
+    { id: ComponentType.Loading, name: "Loading", icon: Loader2, color: "bg-rose-100 text-rose-600" },
+    { id: ComponentType.Cartesian, name: "Cartesiano", icon: Box, color: "bg-sky-100 text-sky-600" },
+    { id: ComponentType.Spacer, name: "Espaço", icon: GripVertical, color: "bg-yellow-100 text-yellow-600" },
+    { id: ComponentType.Rating, name: "Avaliação", icon: Star, color: "bg-amber-100 text-amber-600" },
+  ];
+  
+  const filteredBasic = basicComponents.filter(comp => 
+    comp.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredAdvanced = advancedComponents.filter(comp => 
     comp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
@@ -171,7 +176,14 @@ const ElementsSidebar = () => {
                 <h4 className="text-xs font-semibold text-gray-500 mb-1">BÁSICOS</h4>
               </div>
               <div className="border-t">
-                {filteredComponents.map(renderComponentItem)}
+                {filteredBasic.map(renderComponentItem)}
+              </div>
+              
+              <div className="px-3 py-2 mt-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">AVANÇADOS</h4>
+              </div>
+              <div className="border-t">
+                {filteredAdvanced.map(renderComponentItem)}
               </div>
             </TabsContent>
             

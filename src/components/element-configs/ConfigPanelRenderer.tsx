@@ -21,7 +21,6 @@ import VideoConfig from "./VideoConfig";
 import SpacerConfig from "./SpacerConfig";
 import PriceConfig from "./PriceConfig";
 import NotesConfig from "./NotesConfig";
-import TimerConfig from "./TimerConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -216,15 +215,6 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     case ComponentType.Notes:
       return (
         <NotesConfig
-          key={stableKey}
-          element={element}
-          onUpdate={onUpdate}
-        />
-      );
-      
-    case ComponentType.Timer:
-      return (
-        <TimerConfig
           key={stableKey}
           element={element}
           onUpdate={onUpdate}
