@@ -119,6 +119,28 @@ const TRAFFIC_SOURCES = [
   { id: 'youtube', name: 'YouTube Ads', icon: <YouTubeAdsLogo />, color: 'text-[#FF0000]' }
 ];
 
+// Tipagem mais específica para interações 
+interface ChoiceInteraction {
+  type: 'choice';
+  buttonId: string;
+  value: string;
+  timestamp: Date;
+}
+
+interface ClickInteraction {
+  type: 'click';
+  buttonId?: string;
+  timestamp: Date;
+}
+
+interface FormInteraction {
+  type: 'form';
+  fields: Record<string, string>;
+  timestamp: Date;
+}
+
+type StepInteraction = ChoiceInteraction | ClickInteraction | FormInteraction;
+
 const Leads = () => {
   const { currentFunnel, setCurrentFunnel } = useStore();
   const { funnelId } = useParams<{ funnelId: string }>();
@@ -479,94 +501,93 @@ const Leads = () => {
       
       console.log('👤 Dados brutos dos leads:', JSON.stringify(leadsData?.slice(0, 2), null, 2)); // Limitando log
       
-      // Mapeamento direto para campos conhecidos de escolha múltipla
-      // Este objeto mapeia os IDs de botões para forçar o tipo de interação como 'choice'
-      const forceChoiceButtons = {
-        'btn-f186707': true,  // Botão de escolha "Mulher"
-        'btn-ba72f05': true,  // Botão "TESTE 2"
-      };
-      
-      // Processamento e normalização mais robustos para garantir persistência de dados
+      // Processamento melhorado baseado no modelo dos dados de formulário
       const formattedLeads = leadsData.map(lead => {
+        // Mapeamento dos dados do formulário (já funciona bem)
+        const formData = formDataLeads.find(form => form.sessionId === lead.sessionId);
+        
         // Garantir que cada interação tenha os campos necessários
         const processedInteractions = {};
         
         if (lead.interactions && typeof lead.interactions === 'object') {
-          // Processar cada interação de forma mais robusta
+          // Processar cada interação usando o modelo do elemento de captura
           Object.entries(lead.interactions).forEach(([stepNumber, rawInteraction]) => {
             if (rawInteraction) {
-              // Garantir que a interação seja um objeto, mesmo se vier como string
-              let interaction;
               try {
-                interaction = typeof rawInteraction === 'string' 
-                  ? JSON.parse(rawInteraction) 
-                  : rawInteraction;
-              } catch (e) {
-                console.error('❌ Erro ao processar interação:', e);
-                interaction = {
+                // Processar a interação com base no tipo de elemento
+                const stepMetric = stepMetrics.find(m => m.step_number.toString() === stepNumber);
+                const buttonId = stepMetric?.button_id || '';
+                
+                // Determinar o tipo de interação com base no ID do botão
+                const isMultipleChoice = buttonId.includes('multiple-choice') || 
+                                        buttonId.includes('choice') ||
+                                        buttonId.includes('option');
+                                        
+                // Processar como interação de formulário
+                if (formData && stepNumber === '1') {
+                  processedInteractions[stepNumber] = {
+                    type: 'form',
+                    status: 'submitted',
+                    buttonId,
+                    fields: formData.leadInfo || {},
+                    timestamp: new Date(lead.firstInteraction)
+                  };
+                }
+                // Processar como múltipla escolha
+                else if (isMultipleChoice || buttonId.includes('btn-')) {
+                  // Garantir que a interação seja um objeto
+                  let interaction;
+                  try {
+                    interaction = typeof rawInteraction === 'string' 
+                      ? JSON.parse(rawInteraction) 
+                      : rawInteraction;
+                  } catch (e) {
+                    console.error('Erro ao processar interação de múltipla escolha:', e);
+                    interaction = { status: 'clicked' };
+                  }
+                  
+                  // Extrair o valor da escolha de qualquer campo disponível
+                  const choiceValue = 
+                    interaction.value || 
+                    (interaction.status !== 'clicked' && interaction.status !== 'choice' ? interaction.status : null);
+                  
+                  // Salvar como uma interação de escolha com valor definido
+                  if (choiceValue) {
+                    processedInteractions[stepNumber] = {
+                      type: 'choice',
+                      status: 'choice',
+                      buttonId,
+                      value: choiceValue,
+                      timestamp: new Date(interaction.timestamp || lead.firstInteraction)
+                    };
+                  } else {
+                    // Se não tiver valor é apenas um clique
+                    processedInteractions[stepNumber] = {
+                      type: 'click',
+                      status: 'clicked',
+                      buttonId,
+                      timestamp: new Date(interaction.timestamp || lead.firstInteraction)
+                    };
+                  }
+                }
+                // Processar como clique simples
+                else {
+                  processedInteractions[stepNumber] = {
+                    type: 'click',
+                    status: 'clicked',
+                    buttonId,
+                    timestamp: new Date(lead.firstInteraction)
+                  };
+                }
+              } catch (error) {
+                console.error(`Erro ao processar interação para step ${stepNumber}:`, error);
+                // Fallback para garantir que pelo menos o clique seja registrado
+                processedInteractions[stepNumber] = {
                   type: 'click',
                   status: 'clicked',
-                  timestamp: new Date()
+                  timestamp: new Date(lead.firstInteraction)
                 };
               }
-              
-              // Obter o ID do botão da step_metric correspondente
-              const stepMetric = stepMetrics.find(m => m.step_number.toString() === stepNumber);
-              const buttonId = stepMetric?.button_id || '';
-              
-              console.log(`👤 Processando interação para step ${stepNumber}, button: ${buttonId}`, interaction);
-              
-              // FIX CRÍTICO: Override manual para tipos problemáticos conhecidos
-              // Se o botão está na lista de forceChoice, ou matches específicos conhecidos
-              const isKnownChoiceButton = forceChoiceButtons[buttonId] || 
-                                        buttonId.includes('f186707') || // Mulher
-                                        buttonId.includes('ba72f05');   // TESTE 2
-              
-              // CORREÇÃO CRÍTICA: Verificação especializada para identificar corretamente escolhas múltiplas
-              // Verificar múltiplos padrões que podem indicar uma escolha
-              const isChoice = 
-                isKnownChoiceButton ||  // Override manual para botões conhecidos
-                interaction.type === 'choice' || 
-                interaction.status === 'choice' || 
-                (interaction.value !== undefined && interaction.value !== null) ||
-                (typeof interaction.status === 'string' && 
-                  !['clicked', 'click', 'clicou'].includes(interaction.status.toLowerCase()));
-              
-              // Definir o tipo baseado na análise
-              const interactionType = isChoice ? 'choice' : 'click';
-              
-              // Para escolhas, garantir que temos um valor significativo
-              let interactionValue = null;
-              
-              // FIX: Override manual para valores de escolha conhecidos
-              if (isKnownChoiceButton) {
-                if (buttonId.includes('f186707')) {  // Mulher
-                  interactionValue = interaction.value || 'Feminino';
-                } else if (buttonId.includes('ba72f05')) {  // TESTE 2
-                  interactionValue = interaction.value || 'frase 3';
-                } else {
-                  interactionValue = interaction.value || 'Opção selecionada';
-                }
-              } else if (isChoice) {
-                // Para escolhas, usar o primeiro valor não-nulo disponível
-                interactionValue = 
-                  interaction.value || 
-                  (interaction.status !== 'choice' ? interaction.status : null) || 
-                  'opção selecionada';
-              }
-              
-              // Status depende do tipo
-              const interactionStatus = isChoice ? 'choice' : 'clicked';
-              
-              processedInteractions[stepNumber] = {
-                type: interactionType,
-                status: interactionStatus,
-                value: interactionValue,
-                timestamp: new Date(interaction.timestamp || Date.now())
-              };
-              
-              // Log da interação processada
-              console.log(`👤 Interação processada para step ${stepNumber}:`, processedInteractions[stepNumber]);
             }
           });
         }
@@ -927,75 +948,80 @@ const Leads = () => {
     );
   };
 
-  // Override de renderização para células de interação
+  // Função para renderizar interações com base no tipo
   const renderInteractionCell = (interaction, stepMetric, isFirstInteractionStep, formDataForLead) => {
-    // Fix para botões específicos que sabemos que são de múltipla escolha
-    const buttonId = stepMetric?.button_id || '';
-    
-    // Override manual para tipos problemáticos conhecidos
-    const isKnownChoiceButton = 
-      buttonId.includes('f186707') || // Mulher
-      buttonId.includes('ba72f05');   // TESTE 2
-      
-    // Determinar se é uma escolha baseado em vários fatores
-    const isChoice = 
-      isKnownChoiceButton || 
-      interaction.type === 'choice' || 
-      interaction.status === 'choice';
-      
-    // Valor de display para escolhas
-    let displayValue = interaction.value;
-    
-    // Override para valores conhecidos
-    if (isKnownChoiceButton) {
-      if (buttonId.includes('f186707')) {  // Mulher
-        displayValue = interaction.value || 'Feminino';
-      } else if (buttonId.includes('ba72f05')) {  // TESTE 2
-        displayValue = interaction.value || 'frase 3';
-      }
-    }
-    
-    if (isChoice) {
-      return (
-        <div className="text-sm">
-          <div className="font-medium">Escolheu</div>
-          <div className="text-muted-foreground">
-            <div className="mt-1 text-xs flex items-center gap-1">
-              <ClipboardList className="h-3 w-3" />
-              <span className="font-medium">{displayValue}</span>
+    // Mapear tipos de interação para renderização apropriada
+    switch (interaction.type) {
+      case 'choice':
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Escolheu</div>
+            <div className="text-muted-foreground">
+              <div className="mt-1 text-xs flex items-center gap-1">
+                <ClipboardList className="h-3 w-3" />
+                <span className="font-medium">{interaction.value}</span>
+              </div>
             </div>
           </div>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="text-sm">
-        <div className="font-medium">Clicou</div>
+        );
         
-        {isFirstInteractionStep && formDataForLead && (
-          <div className="mt-2 text-xs text-gray-500 space-y-1">
-            {formDataForLead.leadInfo?.email && (
-              <div className="flex items-center gap-1">
-                <Mail className="h-3 w-3" />
-                <span>{formDataForLead.leadInfo.email}</span>
-              </div>
-            )}
-            {formDataForLead.leadInfo?.phone && (
-              <div className="flex items-center gap-1">
-                <Phone className="h-3 w-3" />
-                <span>{formDataForLead.leadInfo.phone}</span>
-              </div>
-            )}
-            {formDataForLead.leadInfo?.text && (
-              <div className="flex items-center gap-1">
-                <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+      case 'form':
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Preencheu</div>
+            <div className="mt-2 text-xs text-gray-500 space-y-1">
+              {interaction.fields?.email && (
+                <div className="flex items-center gap-1">
+                  <Mail className="h-3 w-3" />
+                  <span>{interaction.fields.email}</span>
+                </div>
+              )}
+              {interaction.fields?.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span>{interaction.fields.phone}</span>
+                </div>
+              )}
+              {interaction.fields?.text && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs">{interaction.fields.text}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'click':
+      default:
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Clicou</div>
+            
+            {/* Exibir dados do formulário na primeira etapa */}
+            {isFirstInteractionStep && formDataForLead && (
+              <div className="mt-2 text-xs text-gray-500 space-y-1">
+                {formDataForLead.leadInfo?.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.email}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.phone && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.phone}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.text && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
-    );
+        );
+    }
   };
 
   if (!currentFunnel) {
