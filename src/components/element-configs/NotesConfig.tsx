@@ -307,6 +307,72 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
     commitUpdate();
   };
 
+  // Aumentar o tamanho da fonte do texto selecionado
+  const increaseFontSize = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') return;
+    
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) return;
+    
+    // Criar um span para envolver o texto selecionado
+    const span = document.createElement('span');
+    
+    // Tentar identificar o tamanho atual da fonte
+    let currentSize = fontSize;
+    const parentFontSize = window.getComputedStyle(range.commonAncestorContainer.parentElement as HTMLElement).fontSize;
+    if (parentFontSize) {
+      currentSize = parseInt(parentFontSize, 10);
+    }
+    
+    // Aumentar o tamanho em 2px
+    const newSize = currentSize + 2;
+    span.style.fontSize = `${newSize}px`;
+    
+    // Aplicar o span ao texto selecionado
+    range.surroundContents(span);
+    
+    // Manter a seleção
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    // Atualizar o conteúdo
+    commitUpdate();
+  };
+  
+  // Diminuir o tamanho da fonte do texto selecionado
+  const decreaseFontSize = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') return;
+    
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) return;
+    
+    // Criar um span para envolver o texto selecionado
+    const span = document.createElement('span');
+    
+    // Tentar identificar o tamanho atual da fonte
+    let currentSize = fontSize;
+    const parentFontSize = window.getComputedStyle(range.commonAncestorContainer.parentElement as HTMLElement).fontSize;
+    if (parentFontSize) {
+      currentSize = parseInt(parentFontSize, 10);
+    }
+    
+    // Diminuir o tamanho em 2px, mas não menor que 8px
+    const newSize = Math.max(8, currentSize - 2);
+    span.style.fontSize = `${newSize}px`;
+    
+    // Aplicar o span ao texto selecionado
+    range.surroundContents(span);
+    
+    // Manter a seleção
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    // Atualizar o conteúdo
+    commitUpdate();
+  };
+
   // Aplicar destaque (highlight)
   const applyHighlight = (color: string) => {
     setHighlightColor(color);
@@ -524,6 +590,15 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
                 <AlignRight className="h-3 w-3" />
               </ToggleGroupItem>
             </ToggleGroup>
+            
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Diminuir fonte da seleção" onClick={decreaseFontSize}>
+                <span className="font-bold text-xs">A-</span>
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Aumentar fonte da seleção" onClick={increaseFontSize}>
+                <span className="font-bold text-xs">A+</span>
+              </Button>
+            </div>
             
             <Popover>
               <PopoverTrigger asChild>
