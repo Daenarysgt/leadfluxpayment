@@ -20,6 +20,7 @@ import RatingConfig from "./RatingConfig";
 import VideoConfig from "./VideoConfig";
 import SpacerConfig from "./SpacerConfig";
 import PriceConfig from "./PriceConfig";
+import NotesConfig from "./NotesConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -205,6 +206,15 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     case ComponentType.Price:
       return (
         <PriceConfig
+          key={stableKey}
+          element={element}
+          onUpdate={onUpdate}
+        />
+      );
+      
+    case ComponentType.Notes:
+      return (
+        <NotesConfig
           key={stableKey}
           element={element}
           onUpdate={onUpdate}

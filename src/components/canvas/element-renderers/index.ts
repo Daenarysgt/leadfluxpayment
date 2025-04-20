@@ -21,6 +21,7 @@ import RatingRenderer from './RatingRenderer';
 import VideoRenderer from './VideoRenderer';
 import PriceRenderer from './PriceRenderer';
 import GenericElementRenderer from './GenericElementRenderer';
+import NotesRenderer from './NotesRenderer';
 
 // Export all renderers
 export {
@@ -44,7 +45,8 @@ export {
   RatingRenderer,
   VideoRenderer,
   PriceRenderer,
-  GenericElementRenderer
+  GenericElementRenderer,
+  NotesRenderer
 };
 
 // Export ElementFactory as default

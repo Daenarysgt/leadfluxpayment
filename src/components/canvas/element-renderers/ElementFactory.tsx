@@ -21,7 +21,8 @@ import {
   CartesianRenderer,
   VideoRenderer,
   GenericElementRenderer,
-  PriceRenderer
+  PriceRenderer,
+  NotesRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -91,6 +92,9 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Price:
       return <PriceRenderer {...props} />;
+      
+    case ComponentType.Notes:
+      return <NotesRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

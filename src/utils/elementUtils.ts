@@ -42,6 +42,8 @@ export function getElementTitle(type: string): string {
       return "Vídeo";
     case ComponentType.Price:
       return "Preço";
+    case ComponentType.Notes:
+      return "Notas";
     default:
       return type;
   }
