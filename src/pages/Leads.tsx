@@ -24,7 +24,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { accessService } from "@/services/accessService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TrackingTable } from "@/components/tracking-table";
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Criar cliente Supabase
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 // Mock data for leads
 const mockLeads = [
@@ -236,47 +242,12 @@ const Leads = () => {
     if (currentFunnel?.id) {
       // Primeiro carregar os nomes das etapas para garantir que temos esses dados
       // antes de carregar as métricas e outros dados que dependem dos nomes
-      
-      let retry = 0;
-      const maxRetries = 3;
-      
-      const loadAllData = async () => {
-        try {
-          // Verificar e restaurar sessão se necessário
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            console.log('Sessão não encontrada no carregamento inicial, tentando restaurar');
-            await supabase.auth.refreshSession();
-          }
-          
-          await loadStepNames();
-          
-          // Carregar tudo sequencialmente com pequenos atrasos
-          await loadMetrics();
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await loadLeads();
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await loadStepMetrics();
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          await loadFormData();
-          
-          console.log('Todos os dados carregados com sucesso');
-        } catch (error) {
-          console.error(`Erro ao carregar dados (tentativa ${retry + 1}/${maxRetries}):`, error);
-          
-          if (retry < maxRetries) {
-            retry++;
-            console.log(`Tentando novamente em ${retry * 2} segundos...`);
-            setTimeout(loadAllData, retry * 2000); // Aumento exponencial do tempo de espera
-          }
-        }
-      };
-      
-      // Iniciar carregamento
-      loadAllData();
+      loadStepNames().then(() => {
+        loadMetrics();
+        loadLeads();
+        loadStepMetrics();
+        loadFormData();
+      });
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -291,9 +262,12 @@ const Leads = () => {
           },
           async (payload) => {
             console.log('Novo lead detectado:', payload);
-            await loadLeads();
-            await loadMetrics();
-            await loadStepMetrics();
+            await Promise.all([
+              loadLeads(),
+              loadMetrics(),
+              loadStepMetrics(),
+              loadFormData() // Adiciona o carregamento dos dados de formulário
+            ]);
           }
         )
         .subscribe();
@@ -404,88 +378,6 @@ const Leads = () => {
       if (!currentFunnel?.id) return;
       
       console.log('Getting step metrics for funnel:', currentFunnel.id);
-      
-      // Verificar a sessão atual para garantir que a autenticação está correta
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session ? 'Autenticado' : 'Não autenticado');
-      
-      // Se não estiver autenticado, tentar restaurar a sessão a partir do localStorage
-      if (!session) {
-        console.warn('Sessão não encontrada, tentando restaurar a sessão');
-        await supabase.auth.refreshSession();
-        console.log('Sessão restaurada?', (await supabase.auth.getSession()).data.session ? 'Sim' : 'Não');
-      }
-      
-      // FALLBACK DIRETO - Tentar primeiro o método direto, sem função RPC
-      try {
-        console.log('Tentando método direto primeiro (sem RPC)...');
-        
-        // Obter total de sessões para este funil
-        const { count: totalSessions, error: sessionError } = await supabase
-          .from('funnel_access_logs')
-          .select('*', { count: 'exact', head: true })
-          .eq('funnel_id', currentFunnel.id);
-          
-        if (sessionError) throw sessionError;
-        
-        console.log(`Total de sessões encontradas: ${totalSessions || 0}`);
-        
-        // Obter etapas do funil
-        const { data: steps, error: stepsError } = await supabase
-          .from('steps')
-          .select('id, title, order_index, "canvasElements"')
-          .eq('funnel_id', currentFunnel.id)
-          .order('order_index', { ascending: true });
-          
-        if (stepsError) throw stepsError;
-        
-        console.log(`Etapas encontradas: ${steps?.length || 0}`);
-        
-        if (steps && steps.length > 0) {
-          // Obter interações para cada etapa
-          const metricsPromises = steps.map(async (step, index) => {
-            const stepNumber = index + 1;
-            const buttonId = step.canvasElements?.[0]?.buttonId || `btn-${step.id.substring(0, 8)}`;
-            
-            // Contar interações para esta etapa
-            const { count: interactionCount, error: interactionError } = await supabase
-              .from('funnel_step_interactions')
-              .select('*', { count: 'exact', head: true })
-              .eq('funnel_id', currentFunnel.id)
-              .eq('step_number', stepNumber);
-              
-            if (interactionError) {
-              console.error(`Erro ao contar interações para etapa ${stepNumber}:`, interactionError);
-              return {
-                step_number: stepNumber,
-                total_interactions: 0,
-                interaction_rate: 10, // Mínimo para visualização
-                button_id: buttonId
-              };
-            }
-            
-            // Calcular taxa de interação
-            const totalSessionsCount = totalSessions || 1;
-            const interactionRate = Math.max(10, ((interactionCount || 0) / totalSessionsCount) * 100);
-            
-            return {
-              step_number: stepNumber,
-              total_interactions: interactionCount || 0,
-              interaction_rate: interactionRate,
-              button_id: buttonId
-            };
-          });
-          
-          const metrics = await Promise.all(metricsPromises);
-          console.log('Métricas calculadas diretamente:', metrics);
-          setStepMetrics(metrics);
-          return;
-        }
-      } catch (directError) {
-        console.error('Erro no método direto, tentando RPC:', directError);
-      }
-      
-      // Se o método direto falhou, tentar RPC
       const { data, error } = await supabase
         .rpc('get_funnel_step_metrics', { 
           p_funnel_id: currentFunnel.id 
@@ -493,17 +385,15 @@ const Leads = () => {
 
       if (error) {
         console.error('Error getting funnel step metrics:', error);
-        
-        // Se o erro for de autenticação (401), tentar recarregar a página
-        if (error.code === '401' || error.message.includes('JWT')) {
-          console.warn('Erro de autenticação, tentando recarregar os dados');
-          // Esperar um momento e tentar novamente
-          setTimeout(loadStepMetrics, 1000);
-          return;
-        }
-        
-        // Falha no RPC, tentar outro método alternativo
-        console.warn('Falha na RPC, verificando interações manualmente');
+        setStepMetrics([]);
+        return;
+      }
+
+      console.log('Step metrics data (raw):', data);
+      
+      if (!data || data.length === 0) {
+        console.warn('Nenhuma métrica de etapa retornada, verificando interações manualmente');
+        // Alternativa para obter métricas se a função RPC não retornar dados
         try {
           const { data: interactionsData, error: interactionsError } = await supabase
             .from('funnel_step_interactions')
@@ -551,32 +441,6 @@ const Leads = () => {
         } catch (err) {
           console.error('Erro ao obter métricas manuais:', err);
         }
-        
-        // Se todos os métodos falharem, usar fallback
-        const fallbackMetrics = Array.from({ length: 5 }, (_, i) => ({
-          step_number: i + 1,
-          total_interactions: 0,
-          interaction_rate: 10, // Valor mínimo para visualização
-          button_id: `step-${i+1}`
-        }));
-        console.log('Usando métricas de fallback:', fallbackMetrics);
-        setStepMetrics(fallbackMetrics);
-        return;
-      }
-
-      console.log('Step metrics data from RPC:', data);
-      
-      if (!data || data.length === 0) {
-        console.warn('RPC retornou dados vazios');
-        // Criar fallback
-        const fallbackMetrics = Array.from({ length: 5 }, (_, i) => ({
-          step_number: i + 1,
-          total_interactions: 0,
-          interaction_rate: 10,
-          button_id: `step-${i+1}`
-        }));
-        setStepMetrics(fallbackMetrics);
-        return;
       }
       
       // Mapear os dados diretamente da resposta
@@ -587,7 +451,7 @@ const Leads = () => {
         button_id: metric.button_id || 'multiple-choice' // Identificador para multiple choice
       }));
       
-      console.log('Formatted metrics from RPC:', formattedMetrics);
+      console.log('Formatted metrics:', formattedMetrics);
       setStepMetrics(formattedMetrics);
     } catch (error) {
       console.error('Error loading step metrics:', error);
@@ -598,7 +462,7 @@ const Leads = () => {
         interaction_rate: 10, // Valor mínimo para visualização
         button_id: `step-${i+1}`
       }));
-      console.log('Usando métricas de fallback (erro geral):', fallbackMetrics);
+      console.log('Usando métricas de fallback:', fallbackMetrics);
       setStepMetrics(fallbackMetrics);
     }
   };
@@ -609,83 +473,12 @@ const Leads = () => {
       if (!currentFunnel?.id) return;
       
       console.log('Getting form data for funnel:', currentFunnel.id);
+      const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
       
-      // Verificar a sessão atual para garantir que a autenticação está correta
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session (loadFormData):', session ? 'Autenticado' : 'Não autenticado');
-      
-      // Se não estiver autenticado, tentar restaurar a sessão
-      if (!session) {
-        console.warn('Sessão não encontrada ao carregar formulários, tentando restaurar');
-        await supabase.auth.refreshSession();
-      }
-      
-      // FALLBACK DIRETO - Tentar buscar diretamente na tabela primeiro
-      try {
-        console.log('Tentando buscar dados de formulário diretamente (sem RPC)...');
-        
-        // Definir o início do período, se aplicável
-        let periodStart: string | null = null;
-        if (selectedPeriod === 'today') {
-          periodStart = new Date().toISOString().split('T')[0]; // Hoje YYYY-MM-DD
-        } else if (selectedPeriod === '7days') {
-          const date = new Date();
-          date.setDate(date.getDate() - 7);
-          periodStart = date.toISOString();
-        } else if (selectedPeriod === '30days') {
-          const date = new Date();
-          date.setDate(date.getDate() - 30);
-          periodStart = date.toISOString();
-        }
-        
-        // Criar a consulta base
-        let query = supabase
-          .from('funnel_responses')
-          .select('id, session_id, lead_info, completed_at')
-          .eq('funnel_id', currentFunnel.id);
-          
-        // Adicionar filtro de período se aplicável
-        if (periodStart) {
-          query = query.gte('completed_at', periodStart);
-        }
-        
-        // Executar a consulta
-        const { data: responseData, error: responseError } = await query
-          .order('completed_at', { ascending: false });
-          
-        if (responseError) throw responseError;
-        
-        console.log(`Dados de formulário encontrados diretamente: ${responseData?.length || 0}`);
-        
-        if (responseData && responseData.length > 0) {
-          // Mapear os dados no formato esperado
-          const formattedData = responseData.map(item => ({
-            sessionId: item.session_id || item.id, // Usar session_id se disponível, senão o próprio ID
-            submissionTime: new Date(item.completed_at),
-            leadInfo: item.lead_info || {}
-          }));
-          
-          console.log('Dados de formulário formatados:', formattedData);
-          setFormDataLeads(formattedData);
-          return;
-        }
-      } catch (directError) {
-        console.error('Erro na busca direta de formulários, tentando RPC:', directError);
-      }
-      
-      // Se o método direto falhou, tentar via RPC
-      try {
-        console.log('Tentando via RPC get_funnel_form_data...');
-        const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
-        
-        console.log(`Dados de formulário encontrados via RPC: ${formData?.length || 0}`);
-        setFormDataLeads(formData);
-      } catch (rpcError) {
-        console.error('Erro ao carregar dados de formulário via RPC:', rpcError);
-        setFormDataLeads([]);
-      }
+      console.log('Form data found:', formData);
+      setFormDataLeads(formData);
     } catch (error) {
-      console.error('Erro geral ao carregar dados de formulário:', error);
+      console.error('Error loading form data:', error);
       setFormDataLeads([]);
     }
   };
@@ -789,28 +582,16 @@ const Leads = () => {
   const reloadAllData = async () => {
     if (currentFunnel?.id) {
       try {
-        // Verificar a sessão atual e restaurar se necessário
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.log('Sessão não encontrada durante recarga, tentando restaurar');
-          await supabase.auth.refreshSession();
-        }
-        
         // Primeiro carregar os nomes das etapas
         await loadStepNames();
         
-        // Depois carregar os demais dados com pequenos intervalos
-        // para evitar problemas de concorrência
-        await loadMetrics();
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        await loadLeads();
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        await loadStepMetrics();
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        await loadFormData();
+        // Depois carregar os demais dados em paralelo
+        await Promise.all([
+          loadMetrics(),
+          loadLeads(),
+          loadStepMetrics(),
+          loadFormData()
+        ]);
         
         console.log('Dados recarregados com sucesso');
       } catch (error) {
