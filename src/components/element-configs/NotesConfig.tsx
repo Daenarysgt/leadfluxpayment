@@ -430,18 +430,18 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-2">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full mb-4">
+        <TabsList className="w-full mb-2">
           <TabsTrigger value="content" className="flex-1">Conteúdo</TabsTrigger>
           <TabsTrigger value="style" className="flex-1">Estilos</TabsTrigger>
           <TabsTrigger value="background" className="flex-1">Fundo</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="content" className="space-y-4">
-          <div className="flex space-x-1 mb-2">
+        <TabsContent value="content" className="space-y-2">
+          <div className="flex flex-wrap gap-1 mb-2">
             <Select value={fontFamily} onValueChange={handleFontFamilyChange}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[120px] h-8">
                 <SelectValue placeholder="Fonte" />
               </SelectTrigger>
               <SelectContent>
@@ -455,7 +455,7 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-10 w-10">
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
                   <div 
                     className="w-4 h-4 rounded-full" 
                     style={{backgroundColor: fontColor}}
@@ -463,18 +463,18 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64">
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-1">
                   {["#000000", "#FFFFFF", "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#C0C0C0", "#808080", "#800000", "#808000", "#008000", "#800080", "#008080", "#000080", "#FFA500", "#A52A2A", "#FFC0CB", "#008B8B"].map(color => (
                     <Button 
                       key={color}
                       variant="outline" 
-                      className="w-10 h-10 p-0" 
+                      className="w-8 h-8 p-0" 
                       style={{backgroundColor: color}}
                       onClick={() => applyColor(color)}
                     />
                   ))}
                 </div>
-                <div className="mt-2">
+                <div className="mt-1">
                   <Input 
                     type="color" 
                     value={fontColor} 
@@ -484,52 +484,52 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
               </PopoverContent>
             </Popover>
             
-            <ToggleGroup type="multiple" className="justify-center">
-              <ToggleGroupItem value="bold" aria-label="Negrito" onClick={() => formatText('bold')}>
-                <Bold className="h-4 w-4" />
+            <ToggleGroup type="multiple" className="flex flex-wrap">
+              <ToggleGroupItem value="bold" aria-label="Negrito" onClick={() => formatText('bold')} className="h-8 w-8 p-0">
+                <Bold className="h-3 w-3" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="italic" aria-label="Itálico" onClick={() => formatText('italic')}>
-                <Italic className="h-4 w-4" />
+              <ToggleGroupItem value="italic" aria-label="Itálico" onClick={() => formatText('italic')} className="h-8 w-8 p-0">
+                <Italic className="h-3 w-3" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="underline" aria-label="Sublinhado" onClick={() => formatText('underline')}>
-                <Underline className="h-4 w-4" />
+              <ToggleGroupItem value="underline" aria-label="Sublinhado" onClick={() => formatText('underline')} className="h-8 w-8 p-0">
+                <Underline className="h-3 w-3" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="strikethrough" aria-label="Tachado" onClick={() => formatText('strikeThrough')}>
-                <Strikethrough className="h-4 w-4" />
+              <ToggleGroupItem value="strikethrough" aria-label="Tachado" onClick={() => formatText('strikeThrough')} className="h-8 w-8 p-0">
+                <Strikethrough className="h-3 w-3" />
               </ToggleGroupItem>
             </ToggleGroup>
             
-            <ToggleGroup type="single" className="justify-center">
-              <ToggleGroupItem value="left" aria-label="Alinhar à esquerda" onClick={() => formatText('justifyLeft')}>
-                <AlignLeft className="h-4 w-4" />
+            <ToggleGroup type="single" className="flex flex-wrap">
+              <ToggleGroupItem value="left" aria-label="Alinhar à esquerda" onClick={() => formatText('justifyLeft')} className="h-8 w-8 p-0">
+                <AlignLeft className="h-3 w-3" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="center" aria-label="Centralizar" onClick={() => formatText('justifyCenter')}>
-                <AlignCenter className="h-4 w-4" />
+              <ToggleGroupItem value="center" aria-label="Centralizar" onClick={() => formatText('justifyCenter')} className="h-8 w-8 p-0">
+                <AlignCenter className="h-3 w-3" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="right" aria-label="Alinhar à direita" onClick={() => formatText('justifyRight')}>
-                <AlignRight className="h-4 w-4" />
+              <ToggleGroupItem value="right" aria-label="Alinhar à direita" onClick={() => formatText('justifyRight')} className="h-8 w-8 p-0">
+                <AlignRight className="h-3 w-3" />
               </ToggleGroupItem>
             </ToggleGroup>
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-10 w-10" title="Cor de destaque">
-                  <Highlighter className="h-4 w-4" style={{color: highlightColor}} />
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Cor de destaque">
+                  <Highlighter className="h-3 w-3" style={{color: highlightColor}} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64">
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-1">
                   {["#FFFF00", "#00FFFF", "#FF00FF", "#FFA500", "#A52A2A", "#FFC0CB", "#90EE90", "#ADD8E6", "#F5F5DC", "#E6E6FA"].map(color => (
                     <Button 
                       key={color}
                       variant="outline" 
-                      className="w-10 h-10 p-0" 
+                      className="w-8 h-8 p-0" 
                       style={{backgroundColor: color}}
                       onClick={() => applyHighlight(color)}
                     />
                   ))}
                 </div>
-                <div className="mt-2">
+                <div className="mt-1">
                   <Input 
                     type="color" 
                     value={highlightColor} 
@@ -542,7 +542,7 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
           
           <div
             ref={editorRef}
-            className="min-h-[200px] border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+            className="min-h-[150px] border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
             contentEditable
             suppressContentEditableWarning
             onInput={handleEditorInput}
@@ -558,95 +558,97 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
           />
         </TabsContent>
         
-        <TabsContent value="style" className="space-y-4">
-          <div className="space-y-4">
+        <TabsContent value="style" className="space-y-2 pt-1">
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label>Tamanho da fonte ({fontSize}px)</Label>
+              <Label className="text-xs">Tamanho ({fontSize}px)</Label>
               <Slider
                 value={[fontSize]}
                 min={10}
                 max={80}
                 step={1}
                 onValueChange={handleFontSizeChange}
+                className="py-1"
               />
             </div>
             
             <div>
-              <Label>Altura da linha ({lineHeight})</Label>
+              <Label className="text-xs">Altura da linha ({lineHeight})</Label>
               <Slider
                 value={[lineHeight]}
                 min={1}
                 max={3}
                 step={0.1}
                 onValueChange={handleLineHeightChange}
+                className="py-1"
               />
             </div>
             
             <div>
-              <Label>Espaçamento entre letras ({letterSpacing}px)</Label>
+              <Label className="text-xs">Espacejamento ({letterSpacing}px)</Label>
               <Slider
                 value={[letterSpacing]}
                 min={0}
                 max={10}
                 step={0.5}
                 onValueChange={handleLetterSpacingChange}
+                className="py-1"
               />
             </div>
             
             <div>
-              <Label>Espaço superior ({marginTop}px)</Label>
+              <Label className="text-xs">Margem superior ({marginTop}px)</Label>
               <Slider
                 value={[marginTop]}
                 min={0}
                 max={100}
                 step={1}
                 onValueChange={handleMarginTopChange}
+                className="py-1"
               />
             </div>
           </div>
         </TabsContent>
         
-        <TabsContent value="background" className="space-y-4">
-          <div className="space-y-4">
-            <div>
-              <Label>Cor de fundo</Label>
-              <div className="grid grid-cols-5 gap-2 mt-2">
-                {BACKGROUND_COLORS.map(color => (
-                  <Button 
-                    key={color}
-                    variant="outline" 
-                    className={`w-10 h-10 p-0 ${backgroundColor === color ? 'ring-2 ring-violet-500' : ''}`}
-                    style={{backgroundColor: color}}
-                    onClick={() => handleBackgroundColorChange(color)}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <Input 
-                  type="color" 
-                  value={backgroundColor} 
-                  onChange={(e) => handleBackgroundColorChange(e.target.value)}
-                  className="w-12 h-8 p-0"
-                />
-                <Input 
-                  type="text" 
-                  value={backgroundColor} 
-                  onChange={(e) => handleBackgroundColorChange(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label>Arredondamento dos cantos ({borderRadius}px)</Label>
-              <Slider
-                value={[borderRadius]}
-                min={0}
-                max={32}
-                step={1}
-                onValueChange={handleBorderRadiusChange}
+        <TabsContent value="background" className="space-y-2 pt-1">
+          <Label className="text-xs">Cor de fundo</Label>
+          <div className="grid grid-cols-5 gap-1 mt-1">
+            {BACKGROUND_COLORS.map(color => (
+              <Button 
+                key={color}
+                variant="outline" 
+                className={`w-8 h-8 p-0 ${backgroundColor === color ? 'ring-2 ring-violet-500' : ''}`}
+                style={{backgroundColor: color}}
+                onClick={() => handleBackgroundColorChange(color)}
               />
-            </div>
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-1 mt-2">
+            <Input 
+              type="color" 
+              value={backgroundColor} 
+              onChange={(e) => handleBackgroundColorChange(e.target.value)}
+              className="w-10 h-8 p-0"
+            />
+            <Input 
+              type="text" 
+              value={backgroundColor} 
+              onChange={(e) => handleBackgroundColorChange(e.target.value)}
+              className="flex-1 h-8"
+            />
+          </div>
+          
+          <div className="mt-2">
+            <Label className="text-xs">Arredondamento ({borderRadius}px)</Label>
+            <Slider
+              value={[borderRadius]}
+              min={0}
+              max={32}
+              step={1}
+              onValueChange={handleBorderRadiusChange}
+              className="py-1"
+            />
           </div>
         </TabsContent>
       </Tabs>
