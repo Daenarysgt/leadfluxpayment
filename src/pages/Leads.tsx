@@ -149,6 +149,87 @@ const Leads = () => {
     leadInfo: Record<string, string>;
   }>>([]);
 
+  // Função para exportar os dados dos leads para CSV
+  const exportLeadsToCSV = () => {
+    // Verifica se há dados para exportar
+    if (leads.length === 0) {
+      alert("Não há leads para exportar");
+      return;
+    }
+
+    // Preparar cabeçalhos e linhas para o CSV
+    const headers = ["Data", "ID da Sessão"];
+    
+    // Adiciona cabeçalhos para as etapas
+    stepMetrics.forEach(step => {
+      headers.push(`Etapa ${step.step_number}`);
+    });
+    
+    // Adiciona cabeçalhos para dados do formulário
+    headers.push("Email", "Telefone", "Informações Adicionais");
+    
+    // Criar linhas do CSV
+    const csvRows = [headers.join(',')];
+    
+    leads.forEach((lead, index) => {
+      const row = [];
+      
+      // Adiciona data
+      row.push(`"${new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}"`);
+      
+      // Adiciona ID da sessão
+      row.push(`"${lead.sessionId}"`);
+      
+      // Adiciona informações de cada etapa
+      stepMetrics.forEach(step => {
+        const interaction = lead.interactions[step.step_number];
+        if (interaction) {
+          if (interaction.type === 'choice' && interaction.value) {
+            row.push(`"Escolheu: ${interaction.value}"`);
+          } else {
+            row.push(`"Clicou"`);
+          }
+        } else {
+          row.push('""'); // Célula vazia para etapas sem interação
+        }
+      });
+      
+      // Busca os dados de formulário correspondentes
+      const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId) || 
+                         (formDataLeads.length > index ? formDataLeads[index] : null);
+      
+      // Adiciona dados do formulário se existirem
+      row.push(`"${formDataForLead?.leadInfo?.email || ''}"`);
+      row.push(`"${formDataForLead?.leadInfo?.phone || ''}"`);
+      row.push(`"${formDataForLead?.leadInfo?.text || ''}"`);
+      
+      csvRows.push(row.join(','));
+    });
+    
+    // Cria conteúdo CSV
+    const csvContent = csvRows.join('\n');
+    
+    // Função para iniciar o download
+    const downloadCSV = (content: string, filename: string) => {
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+    
+    // Gera nome do arquivo com data atual
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `leads_${currentFunnel?.name || 'funnel'}_${date}.csv`;
+    
+    // Inicia download
+    downloadCSV(csvContent, filename);
+  };
+
   useEffect(() => {
     if (funnelId && (!currentFunnel || currentFunnel.id !== funnelId)) {
       setCurrentFunnel(funnelId);
@@ -480,7 +561,7 @@ const Leads = () => {
         <Button 
           size="sm" 
           className="h-9 bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 gap-1.5 px-4 shadow-sm"
-          onClick={() => console.log("Exportar leads")}
+          onClick={exportLeadsToCSV}
         >
           <Download className="h-4 w-4" />
           Exportar CSV
