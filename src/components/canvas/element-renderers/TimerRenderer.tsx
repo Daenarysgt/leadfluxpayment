@@ -32,13 +32,12 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const showLabels = content.showLabels !== false;
   const labelPosition = content.labelPosition || "bottom"; // bottom, top
   const showIcon = content.showIcon !== false;
-  const initialTime = content.initialTime || timeInSeconds;
 
   // Estado para controlar o tempo restante
-  const [timeRemaining, setTimeRemaining] = useState(initialTime);
+  const [timeRemaining, setTimeRemaining] = useState(timeInSeconds);
   const [isExpired, setIsExpired] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const initialRender = useRef(true);
+  const previousTimeInSeconds = useRef(timeInSeconds);
 
   // Calcular dias, horas, minutos e segundos
   const days = Math.floor(timeRemaining / (24 * 60 * 60));
@@ -46,21 +45,46 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const minutes = Math.floor((timeRemaining % (60 * 60)) / 60);
   const seconds = Math.floor(timeRemaining % 60);
 
+  // Efeito para detectar mudanças no timeInSeconds e resetar o timer
+  useEffect(() => {
+    // Verifica se o tempo configurado mudou
+    if (timeInSeconds !== previousTimeInSeconds.current) {
+      console.log(`Timer: tempo configurado mudou de ${previousTimeInSeconds.current} para ${timeInSeconds}`);
+      
+      // Atualiza o tempo restante para o novo valor
+      setTimeRemaining(timeInSeconds);
+      setIsExpired(false);
+      
+      // Salva o novo valor para comparação futura
+      previousTimeInSeconds.current = timeInSeconds;
+      
+      // Se estiver em modo de preview e o timer já estiver rodando, reinicia
+      if (previewMode && timerRef.current) {
+        clearInterval(timerRef.current);
+        startTimer();
+      }
+    }
+  }, [timeInSeconds, previewMode]);
+
+  // Função para iniciar o timer
+  const startTimer = () => {
+    timerRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current as NodeJS.Timeout);
+          setIsExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   // Efeito para iniciar/parar o timer
   useEffect(() => {
     // Apenas iniciar o timer em modo de preview
     if (previewMode) {
-      // Iniciar o timer
-      timerRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current as NodeJS.Timeout);
-            setIsExpired(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startTimer();
 
       // Limpar ao desmontar
       return () => {
@@ -68,20 +92,12 @@ const TimerRenderer = (props: ElementRendererProps) => {
           clearInterval(timerRef.current);
         }
       };
-    } else if (initialRender.current) {
-      // Em modo de edição, apenas configurar o tempo inicial uma vez
-      setTimeRemaining(initialTime);
-      initialRender.current = false;
-    }
-  }, [previewMode, initialTime]);
-
-  // Resetar o timer quando o initialTime mudar (para preview/teste)
-  useEffect(() => {
-    if (!previewMode) {
-      setTimeRemaining(initialTime);
+    } else {
+      // Em modo de edição, apenas definir o tempo sem iniciar a contagem regressiva
+      setTimeRemaining(timeInSeconds);
       setIsExpired(false);
     }
-  }, [initialTime, previewMode]);
+  }, [previewMode]);
 
   // Formatar número com zero à esquerda se necessário
   const formatNumber = (num: number) => {

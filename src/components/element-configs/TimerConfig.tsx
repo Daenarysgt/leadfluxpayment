@@ -72,10 +72,20 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
   const [labelPosition, setLabelPosition] = useState(element.content?.labelPosition || "bottom");
   const [showIcon, setShowIcon] = useState(element.content?.showIcon !== false);
 
-  // Efeito para atualizar o tempo em segundos quando horas, minutos ou segundos mudam
+  // Efeito para detectar mudanças nos valores de tempo e atualizar o timeInSeconds
   useEffect(() => {
+    // Calcula o tempo total em segundos
     const totalSeconds = timeHours * 3600 + timeMinutes * 60 + timeSeconds;
-    handleUpdateTimer({ timeInSeconds: totalSeconds });
+    
+    // Verificar se o tempo realmente mudou para evitar loops
+    if (totalSeconds !== element.content?.timeInSeconds) {
+      console.log(`TimerConfig - Atualizando tempo: ${timeHours}h ${timeMinutes}m ${timeSeconds}s = ${totalSeconds}s`);
+      
+      // Atualiza o elemento com o novo tempo
+      handleUpdateTimer({ 
+        timeInSeconds: totalSeconds
+      });
+    }
   }, [timeHours, timeMinutes, timeSeconds]);
 
   // Função para validar entradas numéricas
@@ -125,7 +135,11 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
     setTimeHours(1);
     setTimeMinutes(0);
     setTimeSeconds(0);
-    handleUpdateTimer({ timeInSeconds: 3600 });
+    
+    // Atualizar explicitamente o timeInSeconds para 3600 (1 hora)
+    handleUpdateTimer({ 
+      timeInSeconds: 3600
+    });
     
     toast({
       title: "Timer resetado",
