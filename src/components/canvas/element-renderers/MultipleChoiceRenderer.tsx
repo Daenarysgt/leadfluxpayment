@@ -36,11 +36,20 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Função para executar a navegação com base na opção selecionada
   const executeNavigation = useCallback(async (optionId: string) => {
     const option = content.options.find((opt: any) => opt.id === optionId);
-    if (!option) return;
+    if (!option) {
+      console.error("Opção não encontrada:", optionId);
+      return;
+    }
 
-    const navigationType = option.navigation?.type || "next";
-    console.log("MultipleChoiceRenderer - executeNavigation with option:", option.text);
-    console.log("Navigation type:", navigationType);
+    // Verificar se há configuração de navegação
+    if (!option.navigation) {
+      console.warn("Opção sem configuração de navegação:", option.text);
+      return;
+    }
+
+    const navigationType = option.navigation.type;
+    console.log("MultipleChoiceRenderer - executeNavigation with option:", option);
+    console.log("Navigation type:", navigationType, "Navigation config:", option.navigation);
 
     // Se for tipo "none", não realiza navegação
     if (navigationType === "none") {
@@ -51,12 +60,14 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     // Handle navigation differently based on preview mode
     if (previewMode && previewProps) {
       const { activeStep, onStepChange, funnel } = previewProps;
+      console.log("Preview props:", { activeStep, funnel: funnel?.id });
       
       // Registrar a interação de clique no botão juntamente com o valor selecionado
       if (funnel) {
         // Register selected choice
         const selection = option.text || option.value;
         try {
+          console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1);
           await accessService.registerStepInteraction(
             funnel.id,
             activeStep + 1,
@@ -70,53 +81,58 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           console.error("Error registering step interaction:", error);
         }
         
-        if (navigationType === "next") {
-          console.log("Preview mode: Navigate to next step");
-          if (activeStep < funnel.steps.length - 1) {
-            onStepChange(activeStep + 1);
-          } else if (activeStep === funnel.steps.length - 1) {
-            // Se for o último step, marcar como conversão
-            await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-          }
-        }
-        else if (navigationType === "step" && option.navigation.stepId) {
-          console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
-          const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
-          console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
-          
-          if (stepIndex !== -1) {
-            if (stepIndex === funnel.steps.length - 1) {
+        // Verificar tipo de navegação e executar ação correspondente
+        try {
+          if (navigationType === "next") {
+            console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
+            if (activeStep < funnel.steps.length - 1) {
+              console.log("Navegando para a próxima etapa:", activeStep + 1);
+              // Primeiro atualizar o progresso
+              await accessService.updateProgress(funnel.id, activeStep + 1, null);
+              // Depois mudar a etapa
+              setTimeout(() => onStepChange(activeStep + 1), 100);
+            } else if (activeStep === funnel.steps.length - 1) {
               // Se for o último step, marcar como conversão
-              try {
-                await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
-              } catch (error) {
-                console.error("Error updating progress:", error);
-              }
+              console.log("Última etapa - marcando como conversão");
+              await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
             }
+          }
+          else if (navigationType === "step" && option.navigation.stepId) {
+            console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
+            const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+            console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
             
-            // Força um atraso mínimo antes de mudar a etapa (para garantir que 
-            // as operações assíncronas terminem)
-            setTimeout(() => {
-              console.log("Actually changing step to:", stepIndex);
-              onStepChange(stepIndex);
-            }, 100);
+            if (stepIndex !== -1) {
+              // Primeiro atualizar o progresso
+              await accessService.updateProgress(funnel.id, stepIndex + 1, null);
+              
+              if (stepIndex === funnel.steps.length - 1) {
+                // Se for o último step, marcar como conversão
+                console.log("Última etapa (específica) - marcando como conversão");
+                await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+              }
+              
+              // Forçar um atraso antes de mudar a etapa
+              console.log("Navegando para a etapa específica:", stepIndex);
+              setTimeout(() => onStepChange(stepIndex), 200);
+            }
           }
-        }
-        else if (navigationType === "url" && option.navigation.url) {
-          console.log("Preview mode: Open external URL:", option.navigation.url);
-          // Marcar como conversão antes de redirecionar
-          try {
+          else if (navigationType === "url" && option.navigation.url) {
+            console.log("Preview mode: Open external URL:", option.navigation.url);
+            // Marcar como conversão antes de redirecionar
             await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-          } catch (error) {
-            console.error("Error updating progress before URL redirect:", error);
+            console.log("Redirecionando para URL externa");
+            window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
           }
-          window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+        } catch (error) {
+          console.error("Erro durante a navegação:", error);
         }
       } else {
         console.warn("No funnel object available in preview props");
       }
     } else {
       // Handle navigation in canvas mode
+      console.log("Modo Canvas - navegação simulada apenas");
       if (navigationType === "next") {
         if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
           setCurrentStep(currentStep + 1);
