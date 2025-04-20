@@ -33,11 +33,12 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const labelPosition = content.labelPosition || "bottom"; // bottom, top
   const showIcon = content.showIcon !== false;
 
-  // Estado para controlar o tempo restante
+  // Estado para controlar o tempo restante e se o timer está ativo
   const [timeRemaining, setTimeRemaining] = useState(timeInSeconds);
   const [isExpired, setIsExpired] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const previousTimeInSeconds = useRef(timeInSeconds);
+  const lastTimeInSecondsRef = useRef(timeInSeconds);
 
   // Calcular dias, horas, minutos e segundos
   const days = Math.floor(timeRemaining / (24 * 60 * 60));
@@ -45,22 +46,20 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const minutes = Math.floor((timeRemaining % (60 * 60)) / 60);
   const seconds = Math.floor(timeRemaining % 60);
 
-  // Efeito para detectar mudanças no timeInSeconds e resetar o timer
+  // Efeito para detectar mudanças na configuração do timer
   useEffect(() => {
-    // Verifica se o tempo configurado mudou
-    if (timeInSeconds !== previousTimeInSeconds.current) {
-      console.log(`Timer: tempo configurado mudou de ${previousTimeInSeconds.current} para ${timeInSeconds}`);
+    // Se o tempo configurado mudou ou estamos reiniciando o componente
+    if (timeInSeconds !== lastTimeInSecondsRef.current) {
+      console.log(`Timer: Tempo configurado alterado de ${lastTimeInSecondsRef.current}s para ${timeInSeconds}s`);
       
-      // Atualiza o tempo restante para o novo valor
+      // Atualizar o tempo restante e referência
       setTimeRemaining(timeInSeconds);
+      lastTimeInSecondsRef.current = timeInSeconds;
       setIsExpired(false);
       
-      // Salva o novo valor para comparação futura
-      previousTimeInSeconds.current = timeInSeconds;
-      
-      // Se estiver em modo de preview e o timer já estiver rodando, reinicia
-      if (previewMode && timerRef.current) {
-        clearInterval(timerRef.current);
+      // Se estiver em modo de preview e já estiver rodando, reiniciar o timer
+      if (previewMode && isRunning) {
+        stopTimer();
         startTimer();
       }
     }
@@ -68,10 +67,16 @@ const TimerRenderer = (props: ElementRendererProps) => {
 
   // Função para iniciar o timer
   const startTimer = () => {
+    if (timerRef.current) return; // Evitar duplicação
+    
+    console.log(`Timer: Iniciando contagem regressiva de ${timeRemaining}s`);
+    setIsRunning(true);
+    
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
+        // Se chegou ao fim, parar o timer
         if (prev <= 1) {
-          clearInterval(timerRef.current as NodeJS.Timeout);
+          stopTimer();
           setIsExpired(true);
           return 0;
         }
@@ -80,23 +85,31 @@ const TimerRenderer = (props: ElementRendererProps) => {
     }, 1000);
   };
 
-  // Efeito para iniciar/parar o timer
+  // Função para parar o timer
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRunning(false);
+  };
+
+  // Efeito para iniciar/parar o timer baseado no modo de visualização
   useEffect(() => {
     // Apenas iniciar o timer em modo de preview
     if (previewMode) {
       startTimer();
-
-      // Limpar ao desmontar
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-      };
     } else {
-      // Em modo de edição, apenas definir o tempo sem iniciar a contagem regressiva
+      // Em modo de edição, apenas mostrar o tempo configurado sem contar
+      stopTimer();
       setTimeRemaining(timeInSeconds);
       setIsExpired(false);
     }
+    
+    // Limpar ao desmontar
+    return () => {
+      stopTimer();
+    };
   }, [previewMode]);
 
   // Formatar número com zero à esquerda se necessário
@@ -215,6 +228,13 @@ const TimerRenderer = (props: ElementRendererProps) => {
       default: return "justify-center";
     }
   };
+
+  // Adicionar log para visualizar a contagem regressiva
+  useEffect(() => {
+    if (isRunning && (timeRemaining % 10 === 0 || timeRemaining <= 5)) {
+      console.log(`Timer: ${days > 0 ? days + 'd ' : ''}${hours}h:${minutes}m:${seconds}s restantes`);
+    }
+  }, [timeRemaining, isRunning]);
 
   return (
     <BaseElementRenderer {...props}>

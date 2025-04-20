@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +44,7 @@ interface TimerConfigProps {
 const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("conteudo");
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Estados para controlar as propriedades do timer
   const [title, setTitle] = useState(element.content?.title || "Oferta por tempo limitado");
@@ -72,20 +73,37 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
   const [labelPosition, setLabelPosition] = useState(element.content?.labelPosition || "bottom");
   const [showIcon, setShowIcon] = useState(element.content?.showIcon !== false);
 
-  // Efeito para detectar mudanças nos valores de tempo e atualizar o timeInSeconds
-  useEffect(() => {
-    // Calcula o tempo total em segundos
+  // Função para atualizar o tempo
+  const updateTimer = () => {
+    // Calcular o tempo total em segundos
     const totalSeconds = timeHours * 3600 + timeMinutes * 60 + timeSeconds;
     
-    // Verificar se o tempo realmente mudou para evitar loops
-    if (totalSeconds !== element.content?.timeInSeconds) {
-      console.log(`TimerConfig - Atualizando tempo: ${timeHours}h ${timeMinutes}m ${timeSeconds}s = ${totalSeconds}s`);
-      
-      // Atualiza o elemento com o novo tempo
-      handleUpdateTimer({ 
-        timeInSeconds: totalSeconds
-      });
+    console.log(`TimerConfig: Atualizando timer para ${timeHours}h:${timeMinutes}m:${timeSeconds}s (${totalSeconds}s total)`);
+    
+    // Atualizar o elemento com o novo tempo
+    handleUpdateTimer({ 
+      timeInSeconds: totalSeconds
+    });
+  };
+
+  // Efeito para atualizar o tempo ao mudar horas, minutos ou segundos
+  useEffect(() => {
+    // Limpar qualquer timeout existente
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
+    
+    // Aplicar a atualização após um curto delay para evitar atualizações em excesso
+    updateTimeoutRef.current = setTimeout(() => {
+      updateTimer();
+    }, 300);
+    
+    // Limpar o timeout ao desmontar
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
   }, [timeHours, timeMinutes, timeSeconds]);
 
   // Função para validar entradas numéricas
@@ -137,15 +155,18 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
     setTimeSeconds(0);
     
     // Atualizar explicitamente o timeInSeconds para 3600 (1 hora)
-    handleUpdateTimer({ 
-      timeInSeconds: 3600
-    });
-    
-    toast({
-      title: "Timer resetado",
-      description: "O timer foi resetado para 1 hora",
-      variant: "default"
-    });
+    // Usando timeout para garantir que os estados sejam atualizados primeiro
+    setTimeout(() => {
+      handleUpdateTimer({ 
+        timeInSeconds: 3600
+      });
+      
+      toast({
+        title: "Timer resetado",
+        description: "O timer foi resetado para 1 hora",
+        variant: "default"
+      });
+    }, 50);
   };
 
   return (
