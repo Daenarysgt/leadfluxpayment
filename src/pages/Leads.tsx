@@ -24,13 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { accessService } from "@/services/accessService";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TrackingTable } from "@/components/tracking-table";
-import { createClient } from '@supabase/supabase-js';
-
-// Criar cliente Supabase
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/supabase';
 
 // Mock data for leads
 const mockLeads = [
@@ -378,6 +372,18 @@ const Leads = () => {
       if (!currentFunnel?.id) return;
       
       console.log('Getting step metrics for funnel:', currentFunnel.id);
+      
+      // Verificar a sessão atual para garantir que a autenticação está correta
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session ? 'Autenticado' : 'Não autenticado');
+      
+      // Se não estiver autenticado, tentar restaurar a sessão a partir do localStorage
+      if (!session) {
+        console.warn('Sessão não encontrada, tentando restaurar a sessão');
+        await supabase.auth.refreshSession();
+        console.log('Sessão restaurada?', (await supabase.auth.getSession()).data.session ? 'Sim' : 'Não');
+      }
+      
       const { data, error } = await supabase
         .rpc('get_funnel_step_metrics', { 
           p_funnel_id: currentFunnel.id 
@@ -385,6 +391,15 @@ const Leads = () => {
 
       if (error) {
         console.error('Error getting funnel step metrics:', error);
+        
+        // Se o erro for de autenticação (401), tentar recarregar a página
+        if (error.code === '401' || error.message.includes('JWT')) {
+          console.warn('Erro de autenticação, tentando recarregar os dados');
+          // Esperar um momento e tentar novamente
+          setTimeout(loadStepMetrics, 1000);
+          return;
+        }
+        
         setStepMetrics([]);
         return;
       }
@@ -473,6 +488,17 @@ const Leads = () => {
       if (!currentFunnel?.id) return;
       
       console.log('Getting form data for funnel:', currentFunnel.id);
+      
+      // Verificar a sessão atual para garantir que a autenticação está correta
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session (loadFormData):', session ? 'Autenticado' : 'Não autenticado');
+      
+      // Se não estiver autenticado, tentar restaurar a sessão
+      if (!session) {
+        console.warn('Sessão não encontrada ao carregar formulários, tentando restaurar');
+        await supabase.auth.refreshSession();
+      }
+      
       const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
       
       console.log('Form data found:', formData);
@@ -582,16 +608,28 @@ const Leads = () => {
   const reloadAllData = async () => {
     if (currentFunnel?.id) {
       try {
+        // Verificar a sessão atual e restaurar se necessário
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.log('Sessão não encontrada durante recarga, tentando restaurar');
+          await supabase.auth.refreshSession();
+        }
+        
         // Primeiro carregar os nomes das etapas
         await loadStepNames();
         
-        // Depois carregar os demais dados em paralelo
-        await Promise.all([
-          loadMetrics(),
-          loadLeads(),
-          loadStepMetrics(),
-          loadFormData()
-        ]);
+        // Depois carregar os demais dados com pequenos intervalos
+        // para evitar problemas de concorrência
+        await loadMetrics();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        await loadLeads();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        await loadStepMetrics();
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        await loadFormData();
         
         console.log('Dados recarregados com sucesso');
       } catch (error) {
