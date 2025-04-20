@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
@@ -33,84 +33,61 @@ const TimerRenderer = (props: ElementRendererProps) => {
   const labelPosition = content.labelPosition || "bottom"; // bottom, top
   const showIcon = content.showIcon !== false;
 
-  // Estado para controlar o tempo restante e se o timer está ativo
-  const [timeRemaining, setTimeRemaining] = useState(timeInSeconds);
-  const [isExpired, setIsExpired] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastTimeInSecondsRef = useRef(timeInSeconds);
-
-  // Calcular dias, horas, minutos e segundos
-  const days = Math.floor(timeRemaining / (24 * 60 * 60));
-  const hours = Math.floor((timeRemaining % (24 * 60 * 60)) / (60 * 60));
-  const minutes = Math.floor((timeRemaining % (60 * 60)) / 60);
-  const seconds = Math.floor(timeRemaining % 60);
-
-  // Efeito para detectar mudanças na configuração do timer
+  // Simplificando a lógica do contador
+  const [countdown, setCountdown] = useState(timeInSeconds);
+  const [expired, setExpired] = useState(false);
+  
+  // Forçar a exibição do tempo configurado no modo de edição
   useEffect(() => {
-    // Se o tempo configurado mudou ou estamos reiniciando o componente
-    if (timeInSeconds !== lastTimeInSecondsRef.current) {
-      console.log(`Timer: Tempo configurado alterado de ${lastTimeInSecondsRef.current}s para ${timeInSeconds}s`);
-      
-      // Atualizar o tempo restante e referência
-      setTimeRemaining(timeInSeconds);
-      lastTimeInSecondsRef.current = timeInSeconds;
-      setIsExpired(false);
-      
-      // Se estiver em modo de preview e já estiver rodando, reiniciar o timer
-      if (previewMode && isRunning) {
-        stopTimer();
-        startTimer();
-      }
+    if (!previewMode) {
+      setCountdown(timeInSeconds);
+      setExpired(false);
+    }
+  }, [timeInSeconds, previewMode]);
+  
+  // Contagem regressiva simples quando em modo preview
+  useEffect(() => {
+    // Apenas iniciar o timer quando estiver em modo de preview
+    if (!previewMode) return;
+    
+    console.log(`Timer iniciado com ${countdown} segundos restantes`);
+    
+    // Iniciar o intervalo de contagem regressiva
+    const timerInterval = setInterval(() => {
+      setCountdown(current => {
+        // Quando chegar a zero, parar e exibir mensagem de expirado
+        if (current <= 1) {
+          clearInterval(timerInterval);
+          setExpired(true);
+          console.log("Timer expirado!");
+          return 0;
+        }
+        // Decrementar normalmente
+        return current - 1;
+      });
+    }, 1000);
+    
+    // Limpar intervalo quando o componente for desmontado
+    return () => {
+      clearInterval(timerInterval);
+      console.log("Timer limpo");
+    };
+  }, [previewMode]);
+  
+  // Efeito para reiniciar o timer quando o timeInSeconds mudar
+  useEffect(() => {
+    if (previewMode) {
+      setCountdown(timeInSeconds);
+      setExpired(false);
+      console.log(`Timer reiniciado com ${timeInSeconds} segundos`);
     }
   }, [timeInSeconds, previewMode]);
 
-  // Função para iniciar o timer
-  const startTimer = () => {
-    if (timerRef.current) return; // Evitar duplicação
-    
-    console.log(`Timer: Iniciando contagem regressiva de ${timeRemaining}s`);
-    setIsRunning(true);
-    
-    timerRef.current = setInterval(() => {
-      setTimeRemaining(prev => {
-        // Se chegou ao fim, parar o timer
-        if (prev <= 1) {
-          stopTimer();
-          setIsExpired(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  // Função para parar o timer
-  const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setIsRunning(false);
-  };
-
-  // Efeito para iniciar/parar o timer baseado no modo de visualização
-  useEffect(() => {
-    // Apenas iniciar o timer em modo de preview
-    if (previewMode) {
-      startTimer();
-    } else {
-      // Em modo de edição, apenas mostrar o tempo configurado sem contar
-      stopTimer();
-      setTimeRemaining(timeInSeconds);
-      setIsExpired(false);
-    }
-    
-    // Limpar ao desmontar
-    return () => {
-      stopTimer();
-    };
-  }, [previewMode]);
+  // Calcular componentes de tempo
+  const days = Math.floor(countdown / (24 * 60 * 60));
+  const hours = Math.floor((countdown % (24 * 60 * 60)) / (60 * 60));
+  const minutes = Math.floor((countdown % (60 * 60)) / 60);
+  const seconds = Math.floor(countdown % 60);
 
   // Formatar número com zero à esquerda se necessário
   const formatNumber = (num: number) => {
@@ -229,12 +206,12 @@ const TimerRenderer = (props: ElementRendererProps) => {
     }
   };
 
-  // Adicionar log para visualizar a contagem regressiva
+  // Log para depuração
   useEffect(() => {
-    if (isRunning && (timeRemaining % 10 === 0 || timeRemaining <= 5)) {
-      console.log(`Timer: ${days > 0 ? days + 'd ' : ''}${hours}h:${minutes}m:${seconds}s restantes`);
+    if (previewMode && (countdown % 5 === 0 || countdown <= 5)) {
+      console.log(`Timer: ${days}d:${hours}h:${minutes}m:${seconds}s`);
     }
-  }, [timeRemaining, isRunning]);
+  }, [countdown, previewMode, days, hours, minutes, seconds]);
 
   return (
     <BaseElementRenderer {...props}>
@@ -265,7 +242,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
             </div>
           )}
           
-          {isExpired ? (
+          {expired ? (
             <div 
               className="text-center"
               style={{
