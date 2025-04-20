@@ -439,53 +439,223 @@ const TimerRenderer = (props: ElementRendererProps) => {
     </div>
   );
   
-  // Renderiza o estilo de timer expirado
-  const renderExpiredTimer = () => {
-    return (
-      <div className="w-full p-4 rounded-md flex flex-col items-center">
-        {showTitle && title && (
-          <h3 
-            className="font-medium mb-2" 
-            style={{ 
-              textAlign: titleAlign as "left" | "center" | "right",
-              marginBottom: showDescription ? "0.5rem" : "1rem"
-            }}
-          >
-            {title}
-          </h3>
-        )}
-        
-        {showDescription && description && (
-          <p 
-            className="text-sm mb-4 text-gray-600" 
-            style={{ textAlign: descriptionAlign as "left" | "center" | "right" }}
-          >
-            {description}
-          </p>
-        )}
-        
-        {/* Conteúdo do timer expirado */}
-        <div className="flex flex-col items-center justify-center min-h-[100px]">
-          {showExpiredMessage !== false && (
-            <div className={`${getExpiredMessageSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
-              {timerExpiredMessage}
+  // Renderiza o estilo de timer expirado para o estilo Moderno Azul
+  const renderExpiredModernBlue = () => (
+    <div className="w-full p-4 rounded-md flex flex-col items-center bg-white">
+      {showTitle && title && (
+        <h3 
+          className="font-medium mb-2" 
+          style={{ 
+            textAlign: titleAlign as "left" | "center" | "right",
+            marginBottom: showDescription ? "0.5rem" : "1rem"
+          }}
+        >
+          {title}
+        </h3>
+      )}
+      
+      {showDescription && description && (
+        <p 
+          className="text-sm mb-4 text-gray-600" 
+          style={{ textAlign: descriptionAlign as "left" | "center" | "right" }}
+        >
+          {description}
+        </p>
+      )}
+      
+      {showExpiredMessage !== false && (
+        <div className="text-center mb-4 flex items-center gap-2 justify-center">
+          <div className={`${getExpiredMessageSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
+            {timerExpiredMessage}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex justify-center gap-2 sm:gap-4">
+        {showDays && (
+          <div className="flex flex-col items-center">
+            <div className="flex gap-1">
+              {['0', '0'].map((digit, idx) => (
+                <div 
+                  key={`days-${idx}`} 
+                  className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                  style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+                >
+                  {digit}
+                </div>
+              ))}
             </div>
-          )}
+            <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{daysText}</span>
+          </div>
+        )}
+        
+        {showHours && (
+          <div className="flex flex-col items-center">
+            <div className="flex gap-1">
+              {['0', '0'].map((digit, idx) => (
+                <div 
+                  key={`hours-${idx}`} 
+                  className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                  style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+                >
+                  {digit}
+                </div>
+              ))}
+            </div>
+            <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{hoursText}</span>
+          </div>
+        )}
+        
+        <div className="flex flex-col items-center">
+          <div className="flex gap-1">
+            {['0', '0'].map((digit, idx) => (
+              <div 
+                key={`minutes-${idx}`} 
+                className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+              >
+                {digit}
+              </div>
+            ))}
+          </div>
+          <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{minutesText}</span>
         </div>
         
-        {showControls && (
-          <div className="mt-4">
-            {renderControls()}
+        <div className="flex flex-col items-center">
+          <div className="flex gap-1">
+            {['0', '0'].map((digit, idx) => (
+              <div 
+                key={`seconds-${idx}`} 
+                className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+              >
+                {digit}
+              </div>
+            ))}
+          </div>
+          <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{secondsText}</span>
+        </div>
+      </div>
+      
+      {showControls && (
+        <div className="mt-4">
+          {renderControls()}
+        </div>
+      )}
+    </div>
+  );
+
+  // Renderiza o estilo de timer expirado para o estilo Oferta Amarelo
+  const renderExpiredOfferYellow = () => (
+    <div 
+      className="w-full p-4 rounded-md flex flex-col items-center" 
+      style={{ backgroundColor: offerBgColor, color: offerTextColor }}
+    >
+      {showTitle && title && (
+        <h3 
+          className="font-medium mb-2" 
+          style={{ 
+            textAlign: titleAlign as "left" | "center" | "right",
+            marginBottom: showDescription ? "0.5rem" : "1rem",
+            color: offerTextColor
+          }}
+        >
+          {title}
+        </h3>
+      )}
+      
+      {showDescription && description && (
+        <p 
+          className="text-sm mb-4" 
+          style={{ 
+            textAlign: descriptionAlign as "left" | "center" | "right", 
+            color: offerTextColor 
+          }}
+        >
+          {description}
+        </p>
+      )}
+      
+      <div className="text-center mb-4">
+        <div className="text-2xl font-bold flex items-center justify-center gap-2">
+          <span>{offerTitle}</span>
+          <span>{offerEmoji}</span>
+        </div>
+        {couponCode && (
+          <div className="mt-2 text-xl">
+            Your coupon: <span className="font-bold">{couponCode}</span>
           </div>
         )}
       </div>
-    );
-  };
+      
+      {showExpiredMessage !== false && (
+        <div className="text-center mb-4">
+          <div className={`${getExpiredMessageSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
+            {timerExpiredMessage}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex justify-center gap-2 sm:gap-4">
+        {showDays && (
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+              style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+            >
+              00
+            </div>
+            <span className="text-sm mt-1" style={{ color: offerTextColor }}>{daysText}</span>
+          </div>
+        )}
+        
+        {showHours && (
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+              style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+            >
+              00
+            </div>
+            <span className="text-sm mt-1" style={{ color: offerTextColor }}>{hoursText}</span>
+          </div>
+        )}
+        
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+            style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+          >
+            00
+          </div>
+          <span className="text-sm mt-1" style={{ color: offerTextColor }}>{minutesText}</span>
+        </div>
+        
+        <div className="flex flex-col items-center">
+          <div 
+            className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+            style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+          >
+            00
+          </div>
+          <span className="text-sm mt-1" style={{ color: offerTextColor }}>{secondsText}</span>
+        </div>
+      </div>
+      
+      {showControls && (
+        <div className="mt-4">
+          {renderControls()}
+        </div>
+      )}
+    </div>
+  );
   
   // Renderiza o estilo de timer selecionado
   const renderSelectedTimerStyle = () => {
     if (hasExpired) {
-      return renderExpiredTimer();
+      return displayStyle === "offer-yellow" 
+        ? renderExpiredOfferYellow() 
+        : renderExpiredModernBlue();
     }
     
     return displayStyle === "offer-yellow" 
