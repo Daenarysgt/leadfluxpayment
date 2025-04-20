@@ -106,10 +106,10 @@ const BuilderHeader = ({
             size="sm"
             className="h-8 gap-1 text-violet-700"
             onClick={onToggleScaledUI}
-            title={useScaledUI ? "Visualização normal (100%)" : "Visualização compacta (80%)"}
+            title={useScaledUI ? "Visualização normal (100%)" : "Visualização compacta (85%)"}
           >
             {useScaledUI ? <ZoomIn className="h-4 w-4" /> : <ZoomOut className="h-4 w-4" />}
-            {useScaledUI ? "100%" : "80%"}
+            {useScaledUI ? "100%" : "85%"}
           </Button>
         )}
         
