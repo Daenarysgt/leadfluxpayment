@@ -22,7 +22,8 @@ import {
   VideoRenderer,
   GenericElementRenderer,
   PriceRenderer,
-  NotesRenderer
+  NotesRenderer,
+  TimerRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -95,6 +96,9 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Notes:
       return <NotesRenderer {...props} />;
+      
+    case ComponentType.Timer:
+      return <TimerRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

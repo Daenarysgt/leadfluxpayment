@@ -412,6 +412,39 @@ export const getDefaultContent = (componentType: string) => {
           }
         ]
       };
+    case ComponentType.Notes:
+      return {
+        title: "Anotações",
+        notes: "Adicione suas anotações aqui...",
+        showTitle: true,
+        style: {
+          backgroundColor: "#fff9db",
+          borderColor: "#f59f00",
+          titleAlign: "left"
+        }
+      };
+    case ComponentType.Timer:
+      return {
+        title: "Timer Personalizado",
+        description: "Contagem regressiva",
+        initialTime: 60, // tempo em segundos
+        format: "mm:ss",
+        showTitle: true,
+        showDescription: true,
+        showControls: true,
+        autoStart: false,
+        timerExpiredMessage: "Tempo esgotado!",
+        style: {
+          titleAlign: "center",
+          descriptionAlign: "center",
+          timerAlign: "center",
+          timerSize: "large",
+          timerColor: "#4B5563",
+          backgroundColor: "#f3f4f6",
+          borderColor: "#e5e7eb",
+          borderRadius: 8
+        }
+      };
     default:
       return {};
   }

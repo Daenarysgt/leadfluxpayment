@@ -22,6 +22,7 @@ import VideoRenderer from './VideoRenderer';
 import PriceRenderer from './PriceRenderer';
 import GenericElementRenderer from './GenericElementRenderer';
 import NotesRenderer from './NotesRenderer';
+import TimerRenderer from './TimerRenderer';
 
 // Export all renderers
 export {
@@ -46,7 +47,8 @@ export {
   VideoRenderer,
   PriceRenderer,
   GenericElementRenderer,
-  NotesRenderer
+  NotesRenderer,
+  TimerRenderer
 };
 
 // Export ElementFactory as default
