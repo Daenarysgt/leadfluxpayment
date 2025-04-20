@@ -412,6 +412,48 @@ export const getDefaultContent = (componentType: string) => {
           }
         ]
       };
+    case ComponentType.Notes:
+      return {
+        title: "Notas Importantes",
+        content: "Escreva suas observações aqui...",
+        style: {
+          backgroundColor: "#FEF3C7",
+          textColor: "#78350F",
+          borderColor: "#F59E0B",
+          borderWidth: 1,
+          borderRadius: 8,
+          titleAlign: "left",
+          iconColor: "#F59E0B"
+        }
+      };
+    case ComponentType.Timer:
+      return {
+        title: "Conta Regressiva",
+        description: "Aproveite esta oferta especial por tempo limitado!",
+        hours: 0,
+        minutes: 30,
+        seconds: 0,
+        showDays: false,
+        showHours: true,
+        showMinutes: true,
+        showSeconds: true,
+        expireText: "Oferta Expirada!",
+        style: {
+          titleAlign: "center",
+          descriptionAlign: "center",
+          timerAlign: "center",
+          backgroundColor: "#FFFFFF",
+          borderColor: "#E5E7EB",
+          borderWidth: 1,
+          borderRadius: 8,
+          textColor: "#111827",
+          digitBackgroundColor: "#F3F4F6",
+          digitTextColor: "#1F2937",
+          labelTextColor: "#6B7280",
+          expireTextColor: "#EF4444",
+          size: "medium"
+        }
+      };
     default:
       return {};
   }
