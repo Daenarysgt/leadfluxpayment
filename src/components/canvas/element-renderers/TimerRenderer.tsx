@@ -44,7 +44,21 @@ const TimerRenderer = (props: ElementRendererProps) => {
     displayStyle = "default",
     offerText = "Limited-time offer! Sale ends in",
     offerEmoji = "⚡",
+    offerTitle = "Special Offer 30% OFF",
     couponCode = "",
+    showDays = true,
+    showHours = true,
+    daysText = "Days",
+    hoursText = "Hours",
+    minutesText = "Minutes",
+    secondsText = "Seconds",
+    modernBlueColor = "#3b82f6",
+    modernBlueTextColor = "#ffffff",
+    modernBlueLabelColor = "#6b7280",
+    offerBgColor = "#000000",
+    offerTextColor = "#ffffff",
+    offerYellowColor = "#eab308",
+    offerDigitTextColor = "#000000",
     style = {}
   } = content || {};
   
@@ -214,52 +228,80 @@ const TimerRenderer = (props: ElementRendererProps) => {
   // Renderiza o timer estilo Modern Blue
   const renderModernBlueTimer = () => (
     <div className="w-full p-4 rounded-md flex flex-col items-center bg-white">
+      {showTitle && title && (
+        <h3 
+          className="font-medium mb-2" 
+          style={{ 
+            textAlign: titleAlign as "left" | "center" | "right",
+            marginBottom: showDescription ? "0.5rem" : "1rem"
+          }}
+        >
+          {title}
+        </h3>
+      )}
+      
+      {showDescription && description && (
+        <p 
+          className="text-sm mb-4 text-gray-600" 
+          style={{ textAlign: descriptionAlign as "left" | "center" | "right" }}
+        >
+          {description}
+        </p>
+      )}
+      
       <div className="text-center mb-4 flex items-center gap-2 justify-center">
         <span className="text-xl">{offerEmoji}</span>
         <span className="text-2xl font-medium">{offerText}</span>
       </div>
       
-      <div className="flex justify-center gap-2 sm:gap-4 text-white">
-        <div className="flex flex-col items-center">
-          <div className="flex gap-1">
-            {daysDigits.map((digit, idx) => (
-              <div 
-                key={`days-${idx}`} 
-                className="w-14 h-20 flex items-center justify-center bg-blue-500 rounded-md text-4xl font-bold"
-              >
-                {digit}
-              </div>
-            ))}
+      <div className="flex justify-center gap-2 sm:gap-4">
+        {showDays && (
+          <div className="flex flex-col items-center">
+            <div className="flex gap-1">
+              {daysDigits.map((digit, idx) => (
+                <div 
+                  key={`days-${idx}`} 
+                  className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                  style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+                >
+                  {digit}
+                </div>
+              ))}
+            </div>
+            <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{daysText}</span>
           </div>
-          <span className="text-sm text-gray-600 mt-1">Days</span>
-        </div>
+        )}
         
-        <div className="flex flex-col items-center">
-          <div className="flex gap-1">
-            {hoursDigits.map((digit, idx) => (
-              <div 
-                key={`hours-${idx}`} 
-                className="w-14 h-20 flex items-center justify-center bg-blue-500 rounded-md text-4xl font-bold"
-              >
-                {digit}
-              </div>
-            ))}
+        {showHours && (
+          <div className="flex flex-col items-center">
+            <div className="flex gap-1">
+              {hoursDigits.map((digit, idx) => (
+                <div 
+                  key={`hours-${idx}`} 
+                  className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                  style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
+                >
+                  {digit}
+                </div>
+              ))}
+            </div>
+            <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{hoursText}</span>
           </div>
-          <span className="text-sm text-gray-600 mt-1">Hours</span>
-        </div>
+        )}
         
         <div className="flex flex-col items-center">
           <div className="flex gap-1">
             {minutesDigits.map((digit, idx) => (
               <div 
                 key={`minutes-${idx}`} 
-                className="w-14 h-20 flex items-center justify-center bg-blue-500 rounded-md text-4xl font-bold"
+                className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
               >
                 {digit}
               </div>
             ))}
           </div>
-          <span className="text-sm text-gray-600 mt-1">Minutes</span>
+          <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{minutesText}</span>
         </div>
         
         <div className="flex flex-col items-center">
@@ -267,13 +309,14 @@ const TimerRenderer = (props: ElementRendererProps) => {
             {secondsDigits.map((digit, idx) => (
               <div 
                 key={`seconds-${idx}`} 
-                className="w-14 h-20 flex items-center justify-center bg-blue-500 rounded-md text-4xl font-bold"
+                className="w-14 h-20 flex items-center justify-center rounded-md text-4xl font-bold"
+                style={{ backgroundColor: modernBlueColor, color: modernBlueTextColor }}
               >
                 {digit}
               </div>
             ))}
           </div>
-          <span className="text-sm text-gray-600 mt-1">Seconds</span>
+          <span className="text-sm mt-1" style={{ color: modernBlueLabelColor }}>{secondsText}</span>
         </div>
       </div>
       
@@ -287,11 +330,39 @@ const TimerRenderer = (props: ElementRendererProps) => {
 
   // Renderiza o timer estilo Offer Yellow
   const renderOfferYellowTimer = () => (
-    <div className="w-full p-4 rounded-md flex flex-col items-center bg-black text-white">
+    <div 
+      className="w-full p-4 rounded-md flex flex-col items-center" 
+      style={{ backgroundColor: offerBgColor, color: offerTextColor }}
+    >
+      {showTitle && title && (
+        <h3 
+          className="font-medium mb-2" 
+          style={{ 
+            textAlign: titleAlign as "left" | "center" | "right",
+            marginBottom: showDescription ? "0.5rem" : "1rem",
+            color: offerTextColor
+          }}
+        >
+          {title}
+        </h3>
+      )}
+      
+      {showDescription && description && (
+        <p 
+          className="text-sm mb-4" 
+          style={{ 
+            textAlign: descriptionAlign as "left" | "center" | "right", 
+            color: offerTextColor 
+          }}
+        >
+          {description}
+        </p>
+      )}
+      
       <div className="text-center mb-4">
         <div className="text-2xl font-bold flex items-center justify-center gap-2">
-          <span>Special Offer 30% OFF</span>
-          <span>🔥</span>
+          <span>{offerTitle}</span>
+          <span>{offerEmoji}</span>
         </div>
         {couponCode && (
           <div className="mt-2 text-xl">
@@ -301,40 +372,48 @@ const TimerRenderer = (props: ElementRendererProps) => {
       </div>
       
       <div className="flex justify-center gap-2 sm:gap-4">
-        <div className="flex flex-col items-center">
-          <div 
-            className="w-16 h-14 flex items-center justify-center bg-yellow-400 rounded-md text-2xl font-bold text-black"
-          >
-            {days.toString().padStart(2, '0')}
+        {showDays && (
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+              style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+            >
+              {days.toString().padStart(2, '0')}
+            </div>
+            <span className="text-sm mt-1" style={{ color: offerTextColor }}>{daysText}</span>
           </div>
-          <span className="text-sm mt-1">Days</span>
-        </div>
+        )}
+        
+        {showHours && (
+          <div className="flex flex-col items-center">
+            <div 
+              className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+              style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
+            >
+              {hours.toString().padStart(2, '0')}
+            </div>
+            <span className="text-sm mt-1" style={{ color: offerTextColor }}>{hoursText}</span>
+          </div>
+        )}
         
         <div className="flex flex-col items-center">
           <div 
-            className="w-16 h-14 flex items-center justify-center bg-yellow-400 rounded-md text-2xl font-bold text-black"
-          >
-            {hours.toString().padStart(2, '0')}
-          </div>
-          <span className="text-sm mt-1">Hours</span>
-        </div>
-        
-        <div className="flex flex-col items-center">
-          <div 
-            className="w-16 h-14 flex items-center justify-center bg-yellow-400 rounded-md text-2xl font-bold text-black"
+            className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+            style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
           >
             {minutes.toString().padStart(2, '0')}
           </div>
-          <span className="text-sm mt-1">Minutes</span>
+          <span className="text-sm mt-1" style={{ color: offerTextColor }}>{minutesText}</span>
         </div>
         
         <div className="flex flex-col items-center">
           <div 
-            className="w-16 h-14 flex items-center justify-center bg-yellow-400 rounded-md text-2xl font-bold text-black"
+            className="w-16 h-14 flex items-center justify-center rounded-md text-2xl font-bold"
+            style={{ backgroundColor: offerYellowColor, color: offerDigitTextColor }}
           >
             {seconds.toString().padStart(2, '0')}
           </div>
-          <span className="text-sm mt-1">Seconds</span>
+          <span className="text-sm mt-1" style={{ color: offerTextColor }}>{secondsText}</span>
         </div>
       </div>
       

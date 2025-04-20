@@ -106,6 +106,88 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
               </div>
             )}
 
+            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+              <div className="space-y-2">
+                <Label htmlFor="show-days">Mostrar dias</Label>
+                <Switch
+                  id="show-days"
+                  checked={localContent.showDays !== false}
+                  onCheckedChange={(checked) =>
+                    handleContentChange({ showDays: checked })
+                  }
+                />
+              </div>
+            )}
+
+            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+              <div className="space-y-2">
+                <Label htmlFor="show-hours">Mostrar horas</Label>
+                <Switch
+                  id="show-hours"
+                  checked={localContent.showHours !== false}
+                  onCheckedChange={(checked) =>
+                    handleContentChange({ showHours: checked })
+                  }
+                />
+              </div>
+            )}
+
+            {(localContent.displayStyle === "modern-blue" || localContent.displayStyle === "offer-yellow") && (
+              <div className="space-y-2">
+                <Label>Personalizar textos das unidades</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="days-text" className="text-xs">Texto dos dias</Label>
+                    <Input
+                      id="days-text"
+                      value={localContent.daysText || "Days"}
+                      onChange={(e) => handleContentChange({ daysText: e.target.value })}
+                      placeholder="Days"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hours-text" className="text-xs">Texto das horas</Label>
+                    <Input
+                      id="hours-text"
+                      value={localContent.hoursText || "Hours"}
+                      onChange={(e) => handleContentChange({ hoursText: e.target.value })}
+                      placeholder="Hours"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="minutes-text" className="text-xs">Texto dos minutos</Label>
+                    <Input
+                      id="minutes-text"
+                      value={localContent.minutesText || "Minutes"}
+                      onChange={(e) => handleContentChange({ minutesText: e.target.value })}
+                      placeholder="Minutes"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="seconds-text" className="text-xs">Texto dos segundos</Label>
+                    <Input
+                      id="seconds-text"
+                      value={localContent.secondsText || "Seconds"}
+                      onChange={(e) => handleContentChange({ secondsText: e.target.value })}
+                      placeholder="Seconds"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {localContent.displayStyle === "offer-yellow" && (
+              <div className="space-y-2">
+                <Label htmlFor="offer-title">Título da oferta</Label>
+                <Input
+                  id="offer-title"
+                  value={localContent.offerTitle || "Special Offer 30% OFF"}
+                  onChange={(e) => handleContentChange({ offerTitle: e.target.value })}
+                  placeholder="Título para mostrar no topo"
+                />
+              </div>
+            )}
+
             {localContent.displayStyle === "offer-yellow" && (
               <div className="space-y-2">
                 <Label htmlFor="coupon-code">Código de cupom (opcional)</Label>
@@ -206,6 +288,145 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
         {/* Aba de estilo */}
         <TabsContent value="style" className="space-y-4 px-1">
           <div className="space-y-4">
+            {/* Cores específicas para o estilo Moderno Azul */}
+            {localContent.displayStyle === "modern-blue" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="modern-blue-bg-color">Cor de fundo dos dígitos</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="modern-blue-bg-color"
+                      type="color"
+                      value={localContent.modernBlueColor || "#3b82f6"}
+                      onChange={(e) => handleContentChange({ modernBlueColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.modernBlueColor || "#3b82f6"}
+                      onChange={(e) => handleContentChange({ modernBlueColor: e.target.value })}
+                      placeholder="#3b82f6"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="modern-blue-text-color">Cor do texto dos dígitos</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="modern-blue-text-color"
+                      type="color"
+                      value={localContent.modernBlueTextColor || "#ffffff"}
+                      onChange={(e) => handleContentChange({ modernBlueTextColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.modernBlueTextColor || "#ffffff"}
+                      onChange={(e) => handleContentChange({ modernBlueTextColor: e.target.value })}
+                      placeholder="#ffffff"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="modern-blue-label-color">Cor dos rótulos</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="modern-blue-label-color"
+                      type="color"
+                      value={localContent.modernBlueLabelColor || "#6b7280"}
+                      onChange={(e) => handleContentChange({ modernBlueLabelColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.modernBlueLabelColor || "#6b7280"}
+                      onChange={(e) => handleContentChange({ modernBlueLabelColor: e.target.value })}
+                      placeholder="#6b7280"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Cores específicas para o estilo Oferta Amarelo */}
+            {localContent.displayStyle === "offer-yellow" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-bg-color">Cor de fundo principal</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="offer-bg-color"
+                      type="color"
+                      value={localContent.offerBgColor || "#000000"}
+                      onChange={(e) => handleContentChange({ offerBgColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.offerBgColor || "#000000"}
+                      onChange={(e) => handleContentChange({ offerBgColor: e.target.value })}
+                      placeholder="#000000"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-text-color">Cor do texto principal</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="offer-text-color"
+                      type="color"
+                      value={localContent.offerTextColor || "#ffffff"}
+                      onChange={(e) => handleContentChange({ offerTextColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.offerTextColor || "#ffffff"}
+                      onChange={(e) => handleContentChange({ offerTextColor: e.target.value })}
+                      placeholder="#ffffff"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-yellow-color">Cor dos dígitos</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="offer-yellow-color"
+                      type="color"
+                      value={localContent.offerYellowColor || "#eab308"}
+                      onChange={(e) => handleContentChange({ offerYellowColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.offerYellowColor || "#eab308"}
+                      onChange={(e) => handleContentChange({ offerYellowColor: e.target.value })}
+                      placeholder="#eab308"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-digit-text-color">Cor do texto dos dígitos</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="offer-digit-text-color"
+                      type="color"
+                      value={localContent.offerDigitTextColor || "#000000"}
+                      onChange={(e) => handleContentChange({ offerDigitTextColor: e.target.value })}
+                      className="w-12 h-8 p-1"
+                    />
+                    <Input
+                      value={localContent.offerDigitTextColor || "#000000"}
+                      onChange={(e) => handleContentChange({ offerDigitTextColor: e.target.value })}
+                      placeholder="#000000"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Estilos comuns para todos os tipos */}
             <div className="space-y-2">
               <Label htmlFor="title-align">Alinhamento do título</Label>
               <Select
