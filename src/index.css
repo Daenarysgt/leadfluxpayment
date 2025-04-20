@@ -408,7 +408,8 @@
   transform-origin: top left;
   width: 118%;
   height: 118%;
-  overflow: hidden;
+  overflow: visible;
+  margin-bottom: 100px;
 }
 
 /* Ajustes para elementos internos do builder */
@@ -419,6 +420,8 @@
 
 .builder-scaled .scroll-area {
   height: calc(118vh - 80px) !important;
+  margin-bottom: 100px;
+  padding-bottom: 50px;
 }
 
 /* Garantir que os controles de edição sejam visíveis */
@@ -445,9 +448,22 @@
   transform-origin: top left;
 }
 
-/* Prevenção de artefatos visuais na parte inferior */
-.builder-scaled::after {
-  display: none;
+/* Garantir que o conteúdo na parte inferior seja totalmente visível */
+.builder-scaled > * {
+  padding-bottom: 100px;
+}
+
+/* Fix para resolver problema de elementos sendo cortados na parte inferior */
+.h-\[calc\(100vh-64px\)\] {
+  min-height: calc(100vh - 64px);
+  height: auto !important;
+}
+
+/* Assegurar que não haja elementos fixos tampando o conteúdo */
+.flex-col.h-screen {
+  overflow: visible;
+  min-height: 100vh;
+  height: auto !important;
 }
 
 body::after, 

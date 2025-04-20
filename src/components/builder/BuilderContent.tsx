@@ -37,8 +37,8 @@ const BuilderContent = ({
 }: BuilderContentProps) => {
   return (
     <div className={cn(
-      "flex flex-1 h-[calc(100vh-64px)] overflow-hidden", 
-      useScaledUI && "builder-scaled"
+      "flex flex-1 overflow-auto", 
+      useScaledUI ? "builder-scaled" : "h-[calc(100vh-64px)]"
     )}>
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
@@ -54,7 +54,7 @@ const BuilderContent = ({
           {previewActive ? (
             <BuilderPreview isMobile={viewMode === 'mobile'} />
           ) : (
-            <ScrollArea className="h-[calc(100vh-64px)]">
+            <ScrollArea className={cn("h-[calc(100vh-64px)]", useScaledUI && "pb-24")}>
               <div className="p-6">
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}
