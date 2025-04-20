@@ -47,6 +47,8 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
     handleContentChange({ style: updatedStyle });
   };
 
+  const displayStyle = localContent.displayStyle || "modern-blue";
+
   return (
     <div className="space-y-6 pt-2 pb-16">
       <Tabs defaultValue="content" className="w-full">
@@ -68,7 +70,7 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
             <div className="space-y-2">
               <Label htmlFor="display-style">Estilo de visualização</Label>
               <Select
-                value={localContent.displayStyle || "modern-blue"}
+                value={displayStyle}
                 onValueChange={(value) => handleContentChange({ displayStyle: value })}
               >
                 <SelectTrigger id="display-style">
@@ -81,197 +83,226 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
               </Select>
             </div>
 
-            {localContent.displayStyle === "modern-blue" && (
-              <div className="space-y-2">
-                <Label htmlFor="offer-text">Texto da oferta</Label>
-                <Input
-                  id="offer-text"
-                  value={localContent.offerText || "Limited-time offer! Sale ends in"}
-                  onChange={(e) => handleContentChange({ offerText: e.target.value })}
-                  placeholder="Texto para mostrar acima do timer"
-                />
-              </div>
+            {/* Configurações específicas para o estilo Moderno Azul */}
+            {displayStyle === "modern-blue" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-text">Texto da oferta</Label>
+                  <Input
+                    id="offer-text"
+                    value={localContent.offerText || "Limited-time offer! Sale ends in"}
+                    onChange={(e) => handleContentChange({ offerText: e.target.value })}
+                    placeholder="Texto para mostrar acima do timer"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
+                  <Input
+                    id="offer-emoji"
+                    value={localContent.offerEmoji || "⚡"}
+                    onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
+                    placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
+                  />
+                </div>
+              </>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
-              <Input
-                id="offer-emoji"
-                value={localContent.offerEmoji || "⚡"}
-                onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
-                placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="show-days">Mostrar dias</Label>
-              <Switch
-                id="show-days"
-                checked={localContent.showDays !== false}
-                onCheckedChange={(checked) =>
-                  handleContentChange({ showDays: checked })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="show-hours">Mostrar horas</Label>
-              <Switch
-                id="show-hours"
-                checked={localContent.showHours !== false}
-                onCheckedChange={(checked) =>
-                  handleContentChange({ showHours: checked })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Personalizar textos das unidades</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="days-text" className="text-xs">Texto dos dias</Label>
+            {/* Configurações específicas para o estilo Oferta (Amarelo) */}
+            {displayStyle === "offer-yellow" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="offer-title">Título da oferta</Label>
                   <Input
-                    id="days-text"
-                    value={localContent.daysText || "Days"}
-                    onChange={(e) => handleContentChange({ daysText: e.target.value })}
-                    placeholder="Days"
+                    id="offer-title"
+                    value={localContent.offerTitle || "Special Offer 30% OFF"}
+                    onChange={(e) => handleContentChange({ offerTitle: e.target.value })}
+                    placeholder="Título para mostrar no topo"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="hours-text" className="text-xs">Texto das horas</Label>
-                  <Input
-                    id="hours-text"
-                    value={localContent.hoursText || "Hours"}
-                    onChange={(e) => handleContentChange({ hoursText: e.target.value })}
-                    placeholder="Hours"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="minutes-text" className="text-xs">Texto dos minutos</Label>
-                  <Input
-                    id="minutes-text"
-                    value={localContent.minutesText || "Minutes"}
-                    onChange={(e) => handleContentChange({ minutesText: e.target.value })}
-                    placeholder="Minutes"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="seconds-text" className="text-xs">Texto dos segundos</Label>
-                  <Input
-                    id="seconds-text"
-                    value={localContent.secondsText || "Seconds"}
-                    onChange={(e) => handleContentChange({ secondsText: e.target.value })}
-                    placeholder="Seconds"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {localContent.displayStyle === "offer-yellow" && (
-              <div className="space-y-2">
-                <Label htmlFor="offer-title">Título da oferta</Label>
-                <Input
-                  id="offer-title"
-                  value={localContent.offerTitle || "Special Offer 30% OFF"}
-                  onChange={(e) => handleContentChange({ offerTitle: e.target.value })}
-                  placeholder="Título para mostrar no topo"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="coupon-code">Código de cupom (opcional)</Label>
+                  <Input
+                    id="coupon-code"
+                    value={localContent.couponCode || ""}
+                    onChange={(e) => handleContentChange({ couponCode: e.target.value })}
+                    placeholder="Código de cupom para mostrar (ex: #SALE30)"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="offer-emoji">Emoji (opcional)</Label>
+                  <Input
+                    id="offer-emoji"
+                    value={localContent.offerEmoji || "⚡"}
+                    onChange={(e) => handleContentChange({ offerEmoji: e.target.value })}
+                    placeholder="Emoji para exibir ao lado do texto (ex: ⚡, 🔥)"
+                  />
+                </div>
+              </>
             )}
 
-            {localContent.displayStyle === "offer-yellow" && (
+            {/* Controle de visibilidade das unidades de tempo - comum para ambos estilos */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Unidades de tempo</h4>
+              
               <div className="space-y-2">
-                <Label htmlFor="coupon-code">Código de cupom (opcional)</Label>
-                <Input
-                  id="coupon-code"
-                  value={localContent.couponCode || ""}
-                  onChange={(e) => handleContentChange({ couponCode: e.target.value })}
-                  placeholder="Código de cupom para mostrar (ex: #SALE30)"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-title">Mostrar título</Label>
+                <Label htmlFor="show-days">Mostrar dias</Label>
                 <Switch
-                  id="show-title"
-                  checked={localContent.showTitle}
+                  id="show-days"
+                  checked={localContent.showDays !== false}
                   onCheckedChange={(checked) =>
-                    handleContentChange({ showTitle: checked })
+                    handleContentChange({ showDays: checked })
                   }
                 />
               </div>
-              
-              {localContent.showTitle && (
-                <Input
-                  id="title"
-                  value={localContent.title || ""}
-                  onChange={(e) => handleContentChange({ title: e.target.value })}
-                  placeholder="Título do timer"
-                />
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-description">Mostrar descrição</Label>
+              <div className="space-y-2">
+                <Label htmlFor="show-hours">Mostrar horas</Label>
                 <Switch
-                  id="show-description"
-                  checked={localContent.showDescription}
+                  id="show-hours"
+                  checked={localContent.showHours !== false}
                   onCheckedChange={(checked) =>
-                    handleContentChange({ showDescription: checked })
+                    handleContentChange({ showHours: checked })
                   }
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label>Personalizar textos das unidades</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="days-text" className="text-xs">Texto dos dias</Label>
+                    <Input
+                      id="days-text"
+                      value={localContent.daysText || "Days"}
+                      onChange={(e) => handleContentChange({ daysText: e.target.value })}
+                      placeholder="Days"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hours-text" className="text-xs">Texto das horas</Label>
+                    <Input
+                      id="hours-text"
+                      value={localContent.hoursText || "Hours"}
+                      onChange={(e) => handleContentChange({ hoursText: e.target.value })}
+                      placeholder="Hours"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="minutes-text" className="text-xs">Texto dos minutos</Label>
+                    <Input
+                      id="minutes-text"
+                      value={localContent.minutesText || "Minutes"}
+                      onChange={(e) => handleContentChange({ minutesText: e.target.value })}
+                      placeholder="Minutes"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="seconds-text" className="text-xs">Texto dos segundos</Label>
+                    <Input
+                      id="seconds-text"
+                      value={localContent.secondsText || "Seconds"}
+                      onChange={(e) => handleContentChange({ secondsText: e.target.value })}
+                      placeholder="Seconds"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Configurações comuns para título e descrição */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Título e descrição</h4>
               
-              {localContent.showDescription && (
-                <Textarea
-                  id="description"
-                  value={localContent.description || ""}
-                  onChange={(e) => handleContentChange({ description: e.target.value })}
-                  placeholder="Descrição do timer"
-                  rows={3}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-title">Mostrar título</Label>
+                  <Switch
+                    id="show-title"
+                    checked={localContent.showTitle}
+                    onCheckedChange={(checked) =>
+                      handleContentChange({ showTitle: checked })
+                    }
+                  />
+                </div>
+                
+                {localContent.showTitle && (
+                  <Input
+                    id="title"
+                    value={localContent.title || ""}
+                    onChange={(e) => handleContentChange({ title: e.target.value })}
+                    placeholder="Título do timer"
+                  />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-description">Mostrar descrição</Label>
+                  <Switch
+                    id="show-description"
+                    checked={localContent.showDescription}
+                    onCheckedChange={(checked) =>
+                      handleContentChange({ showDescription: checked })
+                    }
+                  />
+                </div>
+                
+                {localContent.showDescription && (
+                  <Textarea
+                    id="description"
+                    value={localContent.description || ""}
+                    onChange={(e) => handleContentChange({ description: e.target.value })}
+                    placeholder="Descrição do timer"
+                    rows={3}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Configurações de tempo */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Configurações de tempo</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="initial-time">Tempo inicial (segundos)</Label>
+                <Input
+                  id="initial-time"
+                  type="number"
+                  min="1"
+                  value={localContent.initialTime || 60}
+                  onChange={(e) => handleContentChange({ initialTime: parseInt(e.target.value) || 60 })}
                 />
-              )}
-            </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="initial-time">Tempo inicial (segundos)</Label>
-              <Input
-                id="initial-time"
-                type="number"
-                min="1"
-                value={localContent.initialTime || 60}
-                onChange={(e) => handleContentChange({ initialTime: parseInt(e.target.value) || 60 })}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="timer-expired-message">Mensagem de tempo esgotado</Label>
+                <Input
+                  id="timer-expired-message"
+                  value={localContent.timerExpiredMessage || "Tempo esgotado!"}
+                  onChange={(e) => handleContentChange({ timerExpiredMessage: e.target.value })}
+                  placeholder="Mensagem quando o timer chegar a zero"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="timer-format">Formato do timer</Label>
-              <Select
-                value={localContent.format || "mm:ss"}
-                onValueChange={(value) => handleContentChange({ format: value })}
-              >
-                <SelectTrigger id="timer-format">
-                  <SelectValue placeholder="Selecione o formato" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hh:mm:ss">Horas:Minutos:Segundos (hh:mm:ss)</SelectItem>
-                  <SelectItem value="mm:ss">Minutos:Segundos (mm:ss)</SelectItem>
-                  <SelectItem value="ss">Apenas segundos (ss)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="timer-expired-message">Mensagem de tempo esgotado</Label>
-              <Input
-                id="timer-expired-message"
-                value={localContent.timerExpiredMessage || "Tempo esgotado!"}
-                onChange={(e) => handleContentChange({ timerExpiredMessage: e.target.value })}
-                placeholder="Mensagem quando o timer chegar a zero"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="timer-format">Formato do timer</Label>
+                <Select
+                  value={localContent.format || "mm:ss"}
+                  onValueChange={(value) => handleContentChange({ format: value })}
+                >
+                  <SelectTrigger id="timer-format">
+                    <SelectValue placeholder="Selecione o formato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hh:mm:ss">Horas:Minutos:Segundos (hh:mm:ss)</SelectItem>
+                    <SelectItem value="mm:ss">Minutos:Segundos (mm:ss)</SelectItem>
+                    <SelectItem value="ss">Apenas segundos (ss)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -279,9 +310,11 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
         {/* Aba de estilo */}
         <TabsContent value="style" className="space-y-4 px-1">
           <div className="space-y-4">
-            {/* Cores específicas para o estilo Moderno Azul */}
-            {localContent.displayStyle === "modern-blue" && (
-              <>
+            {/* Cores específicas para o estilo selecionado */}
+            {displayStyle === "modern-blue" ? (
+              <div className="p-3 bg-gray-50 rounded-md space-y-4">
+                <h4 className="font-medium">Cores do estilo Moderno Azul</h4>
+                
                 <div className="space-y-2">
                   <Label htmlFor="modern-blue-bg-color">Cor de fundo dos dígitos</Label>
                   <div className="flex items-center gap-2">
@@ -336,12 +369,11 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
                     />
                   </div>
                 </div>
-              </>
-            )}
-
-            {/* Cores específicas para o estilo Oferta Amarelo */}
-            {localContent.displayStyle === "offer-yellow" && (
-              <>
+              </div>
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-md space-y-4">
+                <h4 className="font-medium">Cores do estilo Oferta (Amarelo)</h4>
+                
                 <div className="space-y-2">
                   <Label htmlFor="offer-bg-color">Cor de fundo principal</Label>
                   <div className="flex items-center gap-2">
@@ -414,146 +446,160 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
                     />
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
-            {/* Estilos comuns para todos os tipos */}
-            <div className="space-y-2">
-              <Label htmlFor="title-align">Alinhamento do título</Label>
-              <Select
-                value={localContent.style?.titleAlign || "center"}
-                onValueChange={(value) => handleStyleChange({ titleAlign: value })}
-              >
-                <SelectTrigger id="title-align">
-                  <SelectValue placeholder="Selecione o alinhamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Esquerda</SelectItem>
-                  <SelectItem value="center">Centro</SelectItem>
-                  <SelectItem value="right">Direita</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Alinhamentos */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Alinhamentos</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="title-align">Alinhamento do título</Label>
+                <Select
+                  value={localContent.style?.titleAlign || "center"}
+                  onValueChange={(value) => handleStyleChange({ titleAlign: value })}
+                >
+                  <SelectTrigger id="title-align">
+                    <SelectValue placeholder="Selecione o alinhamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Esquerda</SelectItem>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="right">Direita</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description-align">Alinhamento da descrição</Label>
-              <Select
-                value={localContent.style?.descriptionAlign || "center"}
-                onValueChange={(value) => handleStyleChange({ descriptionAlign: value })}
-              >
-                <SelectTrigger id="description-align">
-                  <SelectValue placeholder="Selecione o alinhamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Esquerda</SelectItem>
-                  <SelectItem value="center">Centro</SelectItem>
-                  <SelectItem value="right">Direita</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="description-align">Alinhamento da descrição</Label>
+                <Select
+                  value={localContent.style?.descriptionAlign || "center"}
+                  onValueChange={(value) => handleStyleChange({ descriptionAlign: value })}
+                >
+                  <SelectTrigger id="description-align">
+                    <SelectValue placeholder="Selecione o alinhamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Esquerda</SelectItem>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="right">Direita</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="timer-align">Alinhamento do timer</Label>
-              <Select
-                value={localContent.style?.timerAlign || "center"}
-                onValueChange={(value) => handleStyleChange({ timerAlign: value })}
-              >
-                <SelectTrigger id="timer-align">
-                  <SelectValue placeholder="Selecione o alinhamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Esquerda</SelectItem>
-                  <SelectItem value="center">Centro</SelectItem>
-                  <SelectItem value="right">Direita</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="timer-size">Tamanho do timer</Label>
-              <Select
-                value={localContent.style?.timerSize || "large"}
-                onValueChange={(value) => handleStyleChange({ timerSize: value })}
-              >
-                <SelectTrigger id="timer-size">
-                  <SelectValue placeholder="Selecione o tamanho" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="small">Pequeno</SelectItem>
-                  <SelectItem value="medium">Médio</SelectItem>
-                  <SelectItem value="large">Grande</SelectItem>
-                  <SelectItem value="xlarge">Extra Grande</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="timer-color">Cor do timer</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="timer-color"
-                  type="color"
-                  value={localContent.style?.timerColor || "#4B5563"}
-                  onChange={(e) => handleStyleChange({ timerColor: e.target.value })}
-                  className="w-12 h-8 p-1"
-                />
-                <Input
-                  value={localContent.style?.timerColor || "#4B5563"}
-                  onChange={(e) => handleStyleChange({ timerColor: e.target.value })}
-                  placeholder="#4B5563"
-                  className="flex-1"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="timer-align">Alinhamento do timer</Label>
+                <Select
+                  value={localContent.style?.timerAlign || "center"}
+                  onValueChange={(value) => handleStyleChange({ timerAlign: value })}
+                >
+                  <SelectTrigger id="timer-align">
+                    <SelectValue placeholder="Selecione o alinhamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="left">Esquerda</SelectItem>
+                    <SelectItem value="center">Centro</SelectItem>
+                    <SelectItem value="right">Direita</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="background-color">Cor de fundo</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="background-color"
-                  type="color"
-                  value={localContent.style?.backgroundColor || "#f3f4f6"}
-                  onChange={(e) => handleStyleChange({ backgroundColor: e.target.value })}
-                  className="w-12 h-8 p-1"
-                />
-                <Input
-                  value={localContent.style?.backgroundColor || "#f3f4f6"}
-                  onChange={(e) => handleStyleChange({ backgroundColor: e.target.value })}
-                  placeholder="#f3f4f6"
-                  className="flex-1"
-                />
+            {/* Tamanho e aparência geral */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Tamanho e aparência</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="timer-size">Tamanho do timer</Label>
+                <Select
+                  value={localContent.style?.timerSize || "large"}
+                  onValueChange={(value) => handleStyleChange({ timerSize: value })}
+                >
+                  <SelectTrigger id="timer-size">
+                    <SelectValue placeholder="Selecione o tamanho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Pequeno</SelectItem>
+                    <SelectItem value="medium">Médio</SelectItem>
+                    <SelectItem value="large">Grande</SelectItem>
+                    <SelectItem value="xlarge">Extra Grande</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="timer-color">Cor do timer</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="timer-color"
+                    type="color"
+                    value={localContent.style?.timerColor || "#4B5563"}
+                    onChange={(e) => handleStyleChange({ timerColor: e.target.value })}
+                    className="w-12 h-8 p-1"
+                  />
+                  <Input
+                    value={localContent.style?.timerColor || "#4B5563"}
+                    onChange={(e) => handleStyleChange({ timerColor: e.target.value })}
+                    placeholder="#4B5563"
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="border-color">Cor da borda</Label>
-              <div className="flex items-center gap-2">
+            {/* Fundo e borda */}
+            <div className="p-3 bg-gray-50 rounded-md space-y-4">
+              <h4 className="font-medium">Fundo e borda</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="background-color">Cor de fundo</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="background-color"
+                    type="color"
+                    value={localContent.style?.backgroundColor || "#f3f4f6"}
+                    onChange={(e) => handleStyleChange({ backgroundColor: e.target.value })}
+                    className="w-12 h-8 p-1"
+                  />
+                  <Input
+                    value={localContent.style?.backgroundColor || "#f3f4f6"}
+                    onChange={(e) => handleStyleChange({ backgroundColor: e.target.value })}
+                    placeholder="#f3f4f6"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="border-color">Cor da borda</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="border-color"
+                    type="color"
+                    value={localContent.style?.borderColor || "#e5e7eb"}
+                    onChange={(e) => handleStyleChange({ borderColor: e.target.value })}
+                    className="w-12 h-8 p-1"
+                  />
+                  <Input
+                    value={localContent.style?.borderColor || "#e5e7eb"}
+                    onChange={(e) => handleStyleChange({ borderColor: e.target.value })}
+                    placeholder="#e5e7eb"
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="border-radius">Raio da borda</Label>
                 <Input
-                  id="border-color"
-                  type="color"
-                  value={localContent.style?.borderColor || "#e5e7eb"}
-                  onChange={(e) => handleStyleChange({ borderColor: e.target.value })}
-                  className="w-12 h-8 p-1"
-                />
-                <Input
-                  value={localContent.style?.borderColor || "#e5e7eb"}
-                  onChange={(e) => handleStyleChange({ borderColor: e.target.value })}
-                  placeholder="#e5e7eb"
-                  className="flex-1"
+                  id="border-radius"
+                  type="number"
+                  min="0"
+                  max="20"
+                  value={localContent.style?.borderRadius || 8}
+                  onChange={(e) => handleStyleChange({ borderRadius: parseInt(e.target.value) || 0 })}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="border-radius">Raio da borda</Label>
-              <Input
-                id="border-radius"
-                type="number"
-                min="0"
-                max="20"
-                value={localContent.style?.borderRadius || 8}
-                onChange={(e) => handleStyleChange({ borderRadius: parseInt(e.target.value) || 0 })}
-              />
             </div>
           </div>
         </TabsContent>
