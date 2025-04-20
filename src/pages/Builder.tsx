@@ -8,7 +8,7 @@ import { useParams } from "react-router-dom";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import BuilderContent from "@/components/builder/BuilderContent";
 import BuilderEmptyState from "@/components/builder/BuilderEmptyState";
-import BuilderScaleWrapper from "@/components/builder/BuilderScaleWrapper";
+import '../components/builder/BuilderScale.css';
 
 const Builder = () => {
   const { toast } = useToast();
@@ -83,9 +83,17 @@ const Builder = () => {
     openFullPreview(saveCurrentStepElements);
   };
 
+  // Estilo inline para aplicar o zoom
+  const scaleStyle = scaleEnabled ? {
+    transform: 'scale(0.85)',
+    transformOrigin: 'top left',
+    width: '117.65%',
+    height: '117.65%'
+  } : {};
+
   return (
-    <BuilderScaleWrapper scaleEnabled={scaleEnabled}>
-      <div className="flex flex-col h-screen bg-gray-50">
+    <div className="h-screen overflow-hidden" style={{ minHeight: '100vh' }}>
+      <div style={scaleStyle} className="flex flex-col h-screen bg-gray-50">
         <BuilderHeader 
           funnelName={currentFunnel.name}
           funnelId={currentFunnel.id}
@@ -110,7 +118,7 @@ const Builder = () => {
           onCloseElementConfig={() => setSelectedElement(null)}
         />
       </div>
-    </BuilderScaleWrapper>
+    </div>
   );
 };
 

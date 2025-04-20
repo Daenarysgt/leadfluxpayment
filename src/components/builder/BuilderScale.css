@@ -4,25 +4,38 @@
   transform-origin: top left;
   width: 117.65%; /* 100% ÷ 0.85 */
   height: 117.65%; /* 100% ÷ 0.85 */
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: visible !important; /* Garante que o conteúdo escalado não seja cortado */
 }
 
-/* Garantir que o container pai mantenha o mesmo tamanho visível sem introduzir scrolls */
+/* Garantir que o container pai mantenha o mesmo tamanho visível */
 .builder-scale-container {
-  position: relative;
-  overflow: hidden;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Ajustes para garantir que componentes internos mantenham seus scrolls */
-.builder-scale-wrapper .ScrollArea,
-.builder-scale-wrapper [role="scrollbar"],
-.builder-scale-wrapper [data-radix-scroll-area-viewport] {
+[style*="transform: scale"] .scroll-area,
+[style*="transform: scale"] .ScrollArea,
+[style*="transform: scale"] [role="scrollbar"],
+[style*="transform: scale"] [data-radix-scroll-area-viewport],
+[style*="transform: scale"] [data-scroll],
+[style*="transform: scale"] [data-scroll-container],
+[style*="transform: scale"] .overflow-auto,
+[style*="transform: scale"] .overflow-y-auto,
+[style*="transform: scale"] .overflow-x-auto {
   overflow: auto !important;
+}
+
+/* Ajustes específicos para o painel de conteúdo principal */
+[style*="transform: scale"] .builder-content,
+[style*="transform: scale"] .builder-canvas,
+[style*="transform: scale"] .builder-sidebar {
+  max-height: 100% !important;
+}
+
+/* Correção para evitar scrollbar no body */
+body {
+  overflow: hidden;
 }
 
 /* Garantir que a interface se ajuste em telas menores */
