@@ -62,12 +62,17 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       const { activeStep, onStepChange, funnel } = previewProps;
       console.log("Preview props:", { activeStep, funnel: funnel?.id });
       
-      // Registrar a interação de clique no botão juntamente com o valor selecionado
       if (funnel) {
-        // Register selected choice
-        const selection = option.text || option.value;
         try {
-          console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1);
+          // IMPORTANTE: Primeiro garantir que a sessão existe atualizando o progresso
+          // Isso resolve o problema de persistência do Multiple Choice
+          console.log("Garantindo que a sessão existe atualizando o progresso primeiro");
+          await accessService.updateProgress(funnel.id, activeStep + 1, null);
+          
+          // Depois registrar a interação de escolha
+          const selection = option.text || option.value;
+          console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
+          
           await accessService.registerStepInteraction(
             funnel.id,
             activeStep + 1,
@@ -77,20 +82,14 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           );
           
           console.log(`Interação registrada para opção: "${selection}" na etapa ${activeStep + 1}`);
-        } catch (error) {
-          console.error("Error registering step interaction:", error);
-        }
-        
-        // Verificar tipo de navegação e executar ação correspondente
-        try {
+          
+          // Verificar tipo de navegação e executar ação correspondente
           if (navigationType === "next") {
             console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
             if (activeStep < funnel.steps.length - 1) {
               console.log("Navegando para a próxima etapa:", activeStep + 1);
-              // Primeiro atualizar o progresso
-              await accessService.updateProgress(funnel.id, activeStep + 1, null);
-              // Depois mudar a etapa
-              setTimeout(() => onStepChange(activeStep + 1), 100);
+              // Depois mudar a etapa com um delay para garantir que os dados foram salvos
+              setTimeout(() => onStepChange(activeStep + 1), 300);
             } else if (activeStep === funnel.steps.length - 1) {
               // Se for o último step, marcar como conversão
               console.log("Última etapa - marcando como conversão");
@@ -103,18 +102,18 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
             
             if (stepIndex !== -1) {
-              // Primeiro atualizar o progresso
-              await accessService.updateProgress(funnel.id, stepIndex + 1, null);
-              
               if (stepIndex === funnel.steps.length - 1) {
                 // Se for o último step, marcar como conversão
                 console.log("Última etapa (específica) - marcando como conversão");
                 await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+              } else {
+                // Atualizar o progresso para a etapa específica
+                await accessService.updateProgress(funnel.id, stepIndex + 1, null);
               }
               
-              // Forçar um atraso antes de mudar a etapa
+              // Forçar um atraso maior antes de mudar a etapa
               console.log("Navegando para a etapa específica:", stepIndex);
-              setTimeout(() => onStepChange(stepIndex), 200);
+              setTimeout(() => onStepChange(stepIndex), 300);
             }
           }
           else if (navigationType === "url" && option.navigation.url) {
@@ -122,7 +121,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             // Marcar como conversão antes de redirecionar
             await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
             console.log("Redirecionando para URL externa");
-            window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+            // Pequeno delay antes de redirecionar para garantir que os dados foram salvos
+            setTimeout(() => {
+              window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+            }, 200);
           }
         } catch (error) {
           console.error("Erro durante a navegação:", error);
