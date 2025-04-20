@@ -49,6 +49,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
     offerEmoji = "⚡",
     offerTitle = "Special Offer 30% OFF",
     couponCode = "",
+    couponPrefix = "Your coupon:",
     showDays = true,
     showHours = true,
     daysText = "Days",
@@ -62,6 +63,18 @@ const TimerRenderer = (props: ElementRendererProps) => {
     offerTextColor = "#ffffff",
     offerYellowColor = "#eab308",
     offerDigitTextColor = "#000000",
+    // Textos dos botões
+    startButtonText = "Iniciar",
+    restartButtonText = "Reiniciar",
+    pauseButtonText = "Pausar",
+    resumeButtonText = "Continuar",
+    resetButtonText = "Resetar",
+    // Cores dos botões
+    startButtonColor = "#2563eb",
+    pauseButtonColor = "#eab308",
+    resumeButtonColor = "#22c55e", 
+    resetButtonColor = "#6b7280",
+    buttonTextColor = "#ffffff",
     style = {}
   } = content || {};
   
@@ -329,7 +342,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
         </div>
         {couponCode && (
           <div className="mt-2 text-xl">
-            Your coupon: <span className="font-bold">{couponCode}</span>
+            {couponPrefix} <span className="font-bold">{couponCode}</span>
           </div>
         )}
       </div>
@@ -393,48 +406,64 @@ const TimerRenderer = (props: ElementRendererProps) => {
     <div className="flex mt-2 gap-2 justify-center">
       {!isActive ? (
         <button
-          className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+          className="px-3 py-1 rounded-md text-sm"
+          style={{ 
+            backgroundColor: startButtonColor, 
+            color: buttonTextColor 
+          }}
           onClick={(e) => {
             e.stopPropagation();
             handleStart();
           }}
         >
-          {timeLeft === initialTime ? "Iniciar" : "Reiniciar"}
+          {timeLeft === initialTime ? startButtonText : restartButtonText}
         </button>
       ) : (
         <>
           {!isPaused ? (
             <button
-              className="px-3 py-1 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
+              className="px-3 py-1 rounded-md text-sm"
+              style={{ 
+                backgroundColor: pauseButtonColor, 
+                color: buttonTextColor 
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 handlePause();
               }}
             >
-              Pausar
+              {pauseButtonText}
             </button>
           ) : (
             <button
-              className="px-3 py-1 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
+              className="px-3 py-1 rounded-md text-sm"
+              style={{ 
+                backgroundColor: resumeButtonColor, 
+                color: buttonTextColor 
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleResume();
               }}
             >
-              Continuar
+              {resumeButtonText}
             </button>
           )}
         </>
       )}
       
       <button
-        className="px-3 py-1 bg-gray-500 text-white rounded-md text-sm hover:bg-gray-600"
+        className="px-3 py-1 rounded-md text-sm"
+        style={{ 
+          backgroundColor: resetButtonColor, 
+          color: buttonTextColor 
+        }}
         onClick={(e) => {
           e.stopPropagation();
           handleReset();
         }}
       >
-        Resetar
+        {resetButtonText}
       </button>
     </div>
   );
@@ -583,7 +612,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
         </div>
         {couponCode && (
           <div className="mt-2 text-xl">
-            Your coupon: <span className="font-bold">{couponCode}</span>
+            {couponPrefix} <span className="font-bold">{couponCode}</span>
           </div>
         )}
       </div>
