@@ -142,6 +142,8 @@ const Leads = () => {
     interaction_rate: number;
     button_id: string;
   }>>([]);
+  // Novo estado para armazenar os nomes das etapas
+  const [stepNames, setStepNames] = useState<Record<number, string>>({});
   // Novo estado para dados de formulários
   const [formDataLeads, setFormDataLeads] = useState<Array<{
     sessionId: string;
@@ -241,7 +243,8 @@ const Leads = () => {
       loadMetrics();
       loadLeads();
       loadStepMetrics();
-      loadFormData(); // Nova chamada
+      loadFormData();
+      loadStepNames(); // Nova chamada para carregar os nomes das etapas
       
       // Subscription para atualizações em tempo real
       const subscription = supabase
@@ -474,6 +477,39 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading form data:', error);
       setFormDataLeads([]);
+    }
+  };
+
+  // Nova função para carregar os nomes das etapas
+  const loadStepNames = async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Buscando nomes das etapas para o funil:', currentFunnel.id);
+      
+      // Consulta para buscar as etapas do funil e seus nomes
+      const { data, error } = await supabase
+        .from('funnel_steps')
+        .select('step_number, name, title')
+        .eq('funnel_id', currentFunnel.id)
+        .order('step_number', { ascending: true });
+      
+      if (error) {
+        console.error('Erro ao buscar nomes das etapas:', error);
+        return;
+      }
+      
+      // Mapear os nomes das etapas em um objeto
+      const names: Record<number, string> = {};
+      data.forEach(step => {
+        // Usar o título se disponível, caso contrário usar o nome, ou fallback para "Etapa X"
+        names[step.step_number] = step.title || step.name || `Etapa ${step.step_number}`;
+      });
+      
+      console.log('Nomes das etapas carregados:', names);
+      setStepNames(names);
+    } catch (error) {
+      console.error('Erro ao carregar nomes das etapas:', error);
     }
   };
 
@@ -798,7 +834,7 @@ const Leads = () => {
                     <TableHead key={step.step_number} className="relative min-w-[180px] border-r">
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
-                          <div>Etapa {step.step_number}</div>
+                          <div>{stepNames[step.step_number] || `Etapa ${step.step_number}`}</div>
                           <div className="text-xs text-muted-foreground">
                             {step.button_id === 'multiple-choice' ? 'múltipla escolha' : `button: ${step.button_id || '-'}`}
                           </div>
