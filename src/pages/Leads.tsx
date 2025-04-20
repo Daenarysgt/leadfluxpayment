@@ -150,6 +150,10 @@ const Leads = () => {
     submissionTime: Date;
     leadInfo: Record<string, string>;
   }>>([]);
+  // Novo estado para controlar o carregamento de dados
+  const [isLoading, setIsLoading] = useState(false);
+  // Novo estado para rastrear a última atualização
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Função para exportar os dados dos leads para CSV
   const exportLeadsToCSV = () => {
@@ -240,16 +244,10 @@ const Leads = () => {
 
   useEffect(() => {
     if (currentFunnel?.id) {
-      // Primeiro carregar os nomes das etapas para garantir que temos esses dados
-      // antes de carregar as métricas e outros dados que dependem dos nomes
-      loadStepNames().then(() => {
-        loadMetrics();
-        loadLeads();
-        loadStepMetrics();
-        loadFormData();
-      });
+      // Carrega dados iniciais de forma unificada
+      loadAllData();
       
-      // Subscription para atualizações em tempo real
+      // Subscription para atualizações em tempo real na tabela funnel_access_logs
       const subscription = supabase
         .channel(`funnel-leads-${currentFunnel.id}`)
         .on(
@@ -261,13 +259,28 @@ const Leads = () => {
             filter: `funnel_id=eq.${currentFunnel.id}`
           },
           async (payload) => {
-            console.log('Novo lead detectado:', payload);
-            await Promise.all([
-              loadLeads(),
-              loadMetrics(),
-              loadStepMetrics(),
-              loadFormData() // Adiciona o carregamento dos dados de formulário
-            ]);
+            console.log('Novo lead ou interação detectada:', payload);
+            // Carrega todos os dados novamente para manter consistência
+            loadAllData(false); // false para não mostrar indicador de carregamento em atualizações automáticas
+          }
+        )
+        .subscribe();
+
+      // Subscription para atualizações em tempo real na tabela funnel_step_interactions
+      const interactionsSubscription = supabase
+        .channel(`funnel-interactions-${currentFunnel.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'funnel_step_interactions',
+            filter: `funnel_id=eq.${currentFunnel.id}`
+          },
+          async (payload) => {
+            console.log('Nova interação de etapa detectada:', payload);
+            // Carrega todos os dados novamente para manter consistência
+            loadAllData(false);
           }
         )
         .subscribe();
@@ -285,35 +298,70 @@ const Leads = () => {
           },
           async (payload) => {
             console.log('Novos dados de formulário detectados:', payload);
-            await loadFormData();
+            // Carrega todos os dados novamente para manter consistência
+            loadAllData(false);
           }
         )
         .subscribe();
 
-      // Recarregar dados a cada minuto
+      // Recarregar dados a cada 2 minutos para garantir consistência
       const intervalId = setInterval(() => {
-        loadStepMetrics();
-        loadMetrics();
-      }, 60000);
+        loadAllData(false);
+      }, 120000);
 
       return () => {
         subscription.unsubscribe();
+        interactionsSubscription.unsubscribe();
         formSubscription.unsubscribe();
         clearInterval(intervalId);
       };
     }
   }, [currentFunnel?.id, selectedPeriod]);
 
-  const loadMetrics = async () => {
+  // Nova função unificada para carregar todos os dados de forma consistente
+  const loadAllData = async (showLoading = true) => {
+    if (!currentFunnel?.id) return;
+    
     try {
-      if (!currentFunnel?.id) return;
+      if (showLoading) {
+        setIsLoading(true);
+      }
+      
+      // Primeiro carregar os nomes das etapas, pois outros dados dependem disso
+      await loadStepNames();
+      
+      // Depois carregar os leads com interações em sequência para garantir consistência
+      await loadLeads();
+      
+      // Em seguida carregar os dados complementares
+      const [metricsResult, stepMetricsResult, formDataResult] = await Promise.all([
+        loadMetrics(false),
+        loadStepMetrics(),
+        loadFormData()
+      ]);
+      
+      // Atualizar timestamp da última atualização
+      setLastUpdated(new Date());
+      console.log('Todos os dados recarregados com sucesso');
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      if (showLoading) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const loadMetrics = async (updateState = true) => {
+    try {
+      if (!currentFunnel?.id) return null;
       
       const funnelMetrics = await accessService.getFunnelMetrics(currentFunnel.id);
       
       // Calcular leads de hoje baseado na taxa de interação
       const todayLeads = Math.round((funnelMetrics.interaction_rate * funnelMetrics.total_sessions) / 100);
       
-      setMetrics({
+      const newMetrics = {
         totalSessions: funnelMetrics.total_sessions,
         completionRate: funnelMetrics.completion_rate,
         interactionRate: funnelMetrics.interaction_rate,
@@ -323,10 +371,16 @@ const Leads = () => {
           name: selectedSource.name,
           percentage: funnelMetrics.interaction_rate
         }
-      });
+      };
+      
+      if (updateState) {
+        setMetrics(newMetrics);
+      }
+      
+      return newMetrics;
     } catch (error) {
       console.error('Error loading metrics:', error);
-      setMetrics({
+      const fallbackMetrics = {
         totalSessions: 0,
         completionRate: 0,
         interactionRate: 0,
@@ -336,40 +390,73 @@ const Leads = () => {
           name: selectedSource.name,
           percentage: 0
         }
-      });
+      };
+      
+      if (updateState) {
+        setMetrics(fallbackMetrics);
+      }
+      
+      return fallbackMetrics;
     }
   };
 
   const loadLeads = async () => {
     try {
-      if (!currentFunnel?.id) return;
+      if (!currentFunnel?.id) return [];
       
       console.log('Getting leads for funnel:', currentFunnel.id);
       const leadsData = await accessService.getFunnelLeadsWithInteractions(currentFunnel.id, selectedPeriod);
       
       console.log('Leads data:', leadsData);
-      // Converter os dados para o formato correto
-      const formattedLeads = leadsData.map(lead => ({
-        ...lead,
-        firstInteraction: new Date(lead.firstInteraction),
-        interactions: Object.fromEntries(
-          Object.entries(lead.interactions || {}).map(([key, value]) => [
-            key,
-            {
-              status: value.status || 'clicked',
-              type: value.type || 'click',
-              value: value.value || null,
-              timestamp: new Date(value.timestamp)
-            }
-          ])
-        )
-      }));
       
-      console.log('Formatted leads:', formattedLeads);
+      // Processamento e normalização mais robustos para garantir persistência de dados
+      const formattedLeads = leadsData.map(lead => {
+        // Garantir que cada interação tenha os campos necessários
+        const processedInteractions = {};
+        
+        if (lead.interactions && typeof lead.interactions === 'object') {
+          // Processar cada interação de forma mais robusta
+          Object.entries(lead.interactions).forEach(([stepNumber, rawInteraction]) => {
+            if (rawInteraction) {
+              const interaction = typeof rawInteraction === 'string' 
+                ? JSON.parse(rawInteraction) 
+                : rawInteraction;
+              
+              // Garantir que o tipo de interação seja preservado corretamente
+              const interactionType = interaction.type === 'choice' ? 'choice' : 'click';
+              
+              // Garantir que o valor seja explicitamente preservado para escolhas
+              const interactionValue = interactionType === 'choice' && interaction.value 
+                ? String(interaction.value) 
+                : null;
+              
+              // Status depende do tipo - para choice, sempre deve ser 'choice'
+              const interactionStatus = interactionType === 'choice' ? 'choice' : 'clicked';
+              
+              processedInteractions[stepNumber] = {
+                type: interactionType,
+                status: interactionStatus,
+                value: interactionValue,
+                timestamp: new Date(interaction.timestamp || Date.now())
+              };
+            }
+          });
+        }
+        
+        return {
+          sessionId: lead.sessionId,
+          firstInteraction: new Date(lead.firstInteraction),
+          interactions: processedInteractions
+        };
+      });
+      
+      console.log('Formatted leads with improved processing:', formattedLeads);
       setLeads(formattedLeads);
+      return formattedLeads;
     } catch (error) {
       console.error('Error loading leads:', error);
       setLeads([]);
+      return [];
     }
   };
 
@@ -580,24 +667,7 @@ const Leads = () => {
 
   // Função para recarregar todas as métricas e dados
   const reloadAllData = async () => {
-    if (currentFunnel?.id) {
-      try {
-        // Primeiro carregar os nomes das etapas
-        await loadStepNames();
-        
-        // Depois carregar os demais dados em paralelo
-        await Promise.all([
-          loadMetrics(),
-          loadLeads(),
-          loadStepMetrics(),
-          loadFormData()
-        ]);
-        
-        console.log('Dados recarregados com sucesso');
-      } catch (error) {
-        console.error('Erro ao recarregar dados:', error);
-      }
-    }
+    await loadAllData(true);
   };
 
   if (!currentFunnel) {
@@ -680,19 +750,37 @@ const Leads = () => {
             <h1 className="text-2xl font-bold">Leads Capturados</h1>
             <p className="text-muted-foreground">
               Gerencie e acompanhe todos os leads do seu funil
+              {lastUpdated && (
+                <span className="ml-2 text-xs text-green-600">
+                  (Atualizado: {lastUpdated.toLocaleTimeString()})
+                </span>
+              )}
             </p>
           </div>
           <Button 
             onClick={reloadAllData} 
             className="bg-gradient-to-r from-green-500 to-blue-500 text-white"
+            disabled={isLoading}
           >
-            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M20.49 9C19.8214 7.33167 18.7192 5.89469 17.2931 4.87678C15.8671 3.85887 14.1733 3.30381 12.4403 3.28V3.28C10.2949 3.25941 8.20968 3.97218 6.5371 5.29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3.51 15C4.17861 16.6683 5.28085 18.1053 6.70689 19.1232C8.13293 20.1411 9.82669 20.6962 11.5597 20.72V20.72C13.7051 20.7406 15.7903 20.0278 17.4629 18.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Atualizar métricas
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Atualizando...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M20.49 9C19.8214 7.33167 18.7192 5.89469 17.2931 4.87678C15.8671 3.85887 14.1733 3.30381 12.4403 3.28V3.28C10.2949 3.25941 8.20968 3.97218 6.5371 5.29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3.51 15C4.17861 16.6683 5.28085 18.1053 6.70689 19.1232C8.13293 20.1411 9.82669 20.6962 11.5597 20.72V20.72C13.7051 20.7406 15.7903 20.0278 17.4629 18.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Atualizar métricas
+              </>
+            )}
           </Button>
         </div>
 
@@ -926,17 +1014,30 @@ const Leads = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.map((lead, leadIndex) => {
+                {isLoading && leads.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={2 + stepMetrics.length} className="h-32 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-sm text-muted-foreground">Carregando leads...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : leads.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={2 + stepMetrics.length} className="h-32 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <Users className="h-8 w-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-muted-foreground">Nenhum lead encontrado para este período</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : leads.map((lead, leadIndex) => {
                   // Buscar os dados de formulário correspondentes para esta sessão específica
                   const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
-                  
-                  // Log detalhado para depuração
-                  console.log(`Lead #${leadIndex}:`, {
-                    sessionId: lead.sessionId,
-                    matchingFormData: !!formDataForLead,
-                    formData: formDataForLead,
-                    interactions: lead.interactions
-                  });
                   
                   return (
                     <TableRow key={lead.sessionId}>
@@ -956,9 +1057,19 @@ const Leads = () => {
                           <TableCell key={step.step_number} className="border-r">
                             {hasInteraction ? (
                               <div className="text-sm">
-                                {interaction.status === 'clicked' ? (
+                                {interaction.type === 'choice' ? (
                                   <div>
-                                    <div>Clicou</div>
+                                    <div className="font-medium">Escolheu</div>
+                                    <div className="text-muted-foreground">
+                                      <div className="mt-1 text-xs flex items-center gap-1">
+                                        <ClipboardList className="h-3 w-3" />
+                                        <span className="font-medium">{interaction.value}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="font-medium">Clicou</div>
                                     
                                     {/* Exibir dados do formulário na primeira etapa para cada lead */}
                                     {isFirstInteractionStep && formDataForLead && (
@@ -980,19 +1091,6 @@ const Leads = () => {
                                             <span className="text-xs">{formDataForLead.leadInfo.text}</span>
                                           </div>
                                         )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <div>Escolheu</div>
-                                    {interaction.type === 'choice' && (
-                                      <div className="text-muted-foreground">
-                                        {/* Exibir o valor completo da opção escolhida */}
-                                        <div className="mt-1 text-xs flex items-center gap-1">
-                                          <ClipboardList className="h-3 w-3" />
-                                          <span>{interaction.value || interaction.status}</span>
-                                        </div>
                                       </div>
                                     )}
                                   </div>
