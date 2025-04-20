@@ -487,29 +487,80 @@ const Leads = () => {
       
       console.log('Buscando nomes das etapas para o funil:', currentFunnel.id);
       
-      // Consulta para buscar as etapas do funil e seus nomes
-      const { data, error } = await supabase
+      // Primeiro, tentamos buscar diretamente da tabela funnel_steps
+      let { data, error } = await supabase
         .from('funnel_steps')
         .select('step_number, name, title')
         .eq('funnel_id', currentFunnel.id)
         .order('step_number', { ascending: true });
       
       if (error) {
-        console.error('Erro ao buscar nomes das etapas:', error);
-        return;
+        console.error('Erro ao buscar nomes das etapas de funnel_steps:', error);
+        data = [];
       }
+      
+      // Se não encontramos dados ou estão vazios, tentamos buscar da tabela canvas_elements
+      if (!data || data.length === 0) {
+        console.log('Não encontrados dados em funnel_steps, tentando canvas_elements...');
+        const { data: elementsData, error: elementsError } = await supabase
+          .from('canvas_elements')
+          .select('meta, step_number')
+          .eq('funnel_id', currentFunnel.id)
+          .order('step_number', { ascending: true });
+        
+        if (elementsError) {
+          console.error('Erro ao buscar elementos do canvas:', elementsError);
+        } else if (elementsData && elementsData.length > 0) {
+          console.log('Dados encontrados em canvas_elements:', elementsData);
+          data = elementsData.map(element => {
+            let title = '';
+            try {
+              // Tenta extrair o título do campo meta (JSON)
+              if (typeof element.meta === 'string') {
+                const meta = JSON.parse(element.meta);
+                title = meta.title || meta.name || '';
+              } else if (element.meta && (element.meta.title || element.meta.name)) {
+                title = element.meta.title || element.meta.name || '';
+              }
+            } catch (e) {
+              console.error('Erro ao parsear meta JSON:', e);
+            }
+            
+            return {
+              step_number: element.step_number,
+              name: title,
+              title: title
+            };
+          });
+        }
+      }
+      
+      console.log('Dados das etapas recuperados:', data);
       
       // Mapear os nomes das etapas em um objeto
       const names: Record<number, string> = {};
-      data.forEach(step => {
-        // Usar o título se disponível, caso contrário usar o nome, ou fallback para "Etapa X"
-        names[step.step_number] = step.title || step.name || `Etapa ${step.step_number}`;
-      });
+      
+      if (data && data.length > 0) {
+        data.forEach(step => {
+          // Usar o título se disponível, caso contrário usar o nome, ou fallback para "Etapa X"
+          const stepName = step.title || step.name || `Etapa ${step.step_number}`;
+          names[step.step_number] = stepName;
+          console.log(`Etapa ${step.step_number} nome definido como: "${stepName}"`);
+        });
+      } else {
+        console.warn('Nenhum dado de etapa encontrado, usando nomes padrão');
+      }
       
       console.log('Nomes das etapas carregados:', names);
       setStepNames(names);
     } catch (error) {
       console.error('Erro ao carregar nomes das etapas:', error);
+      // Garantir que temos pelo menos nomes padrão
+      const defaultNames: Record<number, string> = {};
+      stepMetrics.forEach(metric => {
+        defaultNames[metric.step_number] = `Etapa ${metric.step_number}`;
+      });
+      setStepNames(defaultNames);
     }
   };
 
@@ -521,7 +572,8 @@ const Leads = () => {
           loadMetrics(),
           loadLeads(),
           loadStepMetrics(),
-          loadFormData()
+          loadFormData(),
+          loadStepNames() // Adicionar carregamento dos nomes das etapas aqui também
         ]);
         console.log('Dados recarregados com sucesso');
       } catch (error) {
