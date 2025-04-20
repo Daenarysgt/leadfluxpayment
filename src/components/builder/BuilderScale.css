@@ -30,87 +30,12 @@
 [style*="transform: scale"] .builder-content,
 [style*="transform: scale"] .builder-canvas,
 [style*="transform: scale"] .builder-sidebar {
-  max-height: none !important;
+  max-height: 100% !important;
 }
 
 /* Correção para evitar scrollbar no body */
 body {
   overflow: hidden;
-}
-
-/* SOLUÇÃO PARA REMOVER LIMITE DE ALTURA DAS SIDEBARS */
-/* Aumenta drasticamente todos os limites de altura */
-[style*="transform: scale"] * {
-  max-height: none !important;
-}
-
-/* Forçar alturas para ocupar todo o espaço disponível */
-[style*="transform: scale"] .flex,
-[style*="transform: scale"] .h-full,
-[style*="transform: scale"] .h-screen,
-[style*="transform: scale"] [class*="h-[calc"] {
-  height: auto !important;
-  min-height: auto !important;
-  max-height: none !important;
-}
-
-/* Corrigir especificamente as sidebars verticais */
-[style*="transform: scale"] div[class*="ResizablePanel"] {
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-/* Fazer com que todos os contêineres das sidebars sejam pelo menos 200vh */
-[style*="transform: scale"] [data-orientation="vertical"] > div,
-[style*="transform: scale"] [data-orientation="vertical"] > div > div,
-[style*="transform: scale"] div[class*="ElementList"],
-[style*="transform: scale"] div[class*="ElementList"] > div,
-[style*="transform: scale"] div[class*="StepsSidebar"],
-[style*="transform: scale"] div[class*="ElementsSidebar"],
-[style*="transform: scale"] div[class*="ElementConfigSidebar"],
-[style*="transform: scale"] div[class*="ScrollArea"],
-[style*="transform: scale"] div[class*="ScrollArea"] > div,
-[style*="transform: scale"] div[class*="ScrollArea-viewport"],
-[style*="transform: scale"] div[class*="ScrollArea-viewport"] > div,
-[style*="transform: scale"] div[class*="TabsContent"],
-[style*="transform: scale"] div[class*="TabsContent"] > div,
-[style*="transform: scale"] .ELEMENTOS,
-[style*="transform: scale"] .AVANÇADOS,
-[style*="transform: scale"] .BÁSICOS {
-  min-height: 200vh !important;
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-/* Forçar que as listas de elementos possam crescer verticalmente sem limite */
-[style*="transform: scale"] div[class*="ElementList"] > div,
-[style*="transform: scale"] div[class*="ConfigPanel"] > div {
-  margin-bottom: 0 !important;
-  position: relative !important;
-}
-
-/* Adicionar padding no final das listas para garantir que tudo fique visível */
-[style*="transform: scale"] div[class*="ElementList"]:after,
-[style*="transform: scale"] div[class*="ConfigPanel"]:after,
-[style*="transform: scale"] .ELEMENTOS:after,
-[style*="transform: scale"] .AVANÇADOS:after,
-[style*="transform: scale"] .BÁSICOS:after {
-  content: "";
-  display: block;
-  height: 100px;
-  width: 100%;
-}
-
-/* Regra específica para o botão de adicionar nova etapa */
-[style*="transform: scale"] button[class*="Nova"],
-[style*="transform: scale"] div[class*="Nova"],
-[style*="transform: scale"] button[class*="Adicionar"],
-[style*="transform: scale"] div[class*="Adicionar"] {
-  position: relative !important;
-  bottom: auto !important;
-  margin-top: 20px !important;
-  z-index: 1 !important;
 }
 
 /* Garantir que a interface se ajuste em telas menores */
