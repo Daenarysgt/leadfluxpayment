@@ -130,7 +130,8 @@ export const accessService = {
     stepNumber: number,
     sessionId: string | null = null,
     interactionType: string = 'click',
-    interactionValue: string | null = null
+    interactionValue: string | null = null,
+    button_id: string | null = null
   ): Promise<void> {
     try {
       // Usar sessionId fornecido ou o currentSessionId
@@ -146,7 +147,8 @@ export const accessService = {
           p_session_id: activeSessionId,
           p_step_number: stepNumber,
           p_interaction_type: interactionType,
-          p_interaction_value: interactionValue
+          p_interaction_value: interactionValue,
+          p_button_id: button_id
         });
 
       if (error) {
@@ -155,6 +157,43 @@ export const accessService = {
       }
     } catch (error) {
       console.error('Error registering step interaction:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Registra uma interação específica para múltipla escolha usando a nova função SQL
+   */
+  async registerChoiceInteraction(
+    funnelId: string,
+    stepNumber: number,
+    sessionId: string | null = null,
+    interactionValue: string | null = null,
+    button_id: string | null = null
+  ): Promise<void> {
+    try {
+      // Usar sessionId fornecido ou o currentSessionId
+      const activeSessionId = sessionId || currentSessionId;
+      
+      if (!activeSessionId) {
+        throw new Error('No active session found');
+      }
+
+      const { error } = await supabase
+        .rpc('register_choice_interaction', {
+          p_funnel_id: funnelId,
+          p_session_id: activeSessionId,
+          p_step_number: stepNumber,
+          p_interaction_value: interactionValue,
+          p_button_id: button_id
+        });
+
+      if (error) {
+        console.error('Error registering choice interaction:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error registering choice interaction:', error);
       throw error;
     }
   },

@@ -85,20 +85,20 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const selection = option.text || option.value;
             console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
             
-            // MODIFICAÇÃO: Aguardamos explicitamente a conclusão do registro da interação
-            const interactionPromise = accessService.registerStepInteraction(
+            // MODIFICAÇÃO: Usar a nova função que suporta button_id
+            const interactionPromise = accessService.registerChoiceInteraction(
               funnel.id,
               activeStep + 1,
               null, // usar sessionId atual
-              'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
-              selection // Usar o texto completo da opção
+              selection, // Usar o texto completo da opção
+              option.id // IMPORTANTE: Passar o ID do botão/opção
             );
             
             // Aguardar explicitamente a conclusão
             await interactionPromise;
             
             // Log para confirmar que os dados foram salvos
-            console.log(`Interação registrada com sucesso para opção: "${selection}" na etapa ${activeStep + 1}`);
+            console.log(`Interação registrada com sucesso para opção: "${selection}" (ID: ${option.id}) na etapa ${activeStep + 1}`);
             
             // MODIFICAÇÃO: Adicionamos um atraso para garantir que os dados sejam persistidos
             await new Promise(resolve => setTimeout(resolve, 300));
