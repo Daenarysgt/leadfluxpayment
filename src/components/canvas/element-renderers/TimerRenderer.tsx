@@ -43,6 +43,7 @@ const TimerRenderer = (props: ElementRendererProps) => {
     timerExpiredMessage = "Tempo esgotado!",
     showExpiredMessage = true,
     expiredMessageColor = "#ff0000",
+    expiredMessageSize = "large",
     displayStyle = "modern-blue",
     offerText = "Limited-time offer! Sale ends in",
     offerEmoji = "⚡",
@@ -94,6 +95,22 @@ const TimerRenderer = (props: ElementRendererProps) => {
         return "text-5xl";
       default:
         return "text-4xl";
+    }
+  };
+
+  // Função para determinar o tamanho da mensagem de tempo esgotado
+  const getExpiredMessageSize = (): string => {
+    switch (expiredMessageSize) {
+      case "small":
+        return "text-lg";
+      case "medium":
+        return "text-xl";
+      case "large":
+        return "text-2xl";
+      case "xlarge":
+        return "text-3xl";
+      default:
+        return "text-2xl";
     }
   };
   
@@ -423,16 +440,47 @@ const TimerRenderer = (props: ElementRendererProps) => {
   );
   
   // Renderiza o estilo de timer expirado
-  const renderExpiredTimer = () => (
-    <div className="w-full p-4 rounded-md flex flex-col items-center">
-      {showExpiredMessage !== false && (
-        <div className={`${getTimerSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
-          {timerExpiredMessage}
+  const renderExpiredTimer = () => {
+    return (
+      <div className="w-full p-4 rounded-md flex flex-col items-center">
+        {showTitle && title && (
+          <h3 
+            className="font-medium mb-2" 
+            style={{ 
+              textAlign: titleAlign as "left" | "center" | "right",
+              marginBottom: showDescription ? "0.5rem" : "1rem"
+            }}
+          >
+            {title}
+          </h3>
+        )}
+        
+        {showDescription && description && (
+          <p 
+            className="text-sm mb-4 text-gray-600" 
+            style={{ textAlign: descriptionAlign as "left" | "center" | "right" }}
+          >
+            {description}
+          </p>
+        )}
+        
+        {/* Conteúdo do timer expirado */}
+        <div className="flex flex-col items-center justify-center min-h-[100px]">
+          {showExpiredMessage !== false && (
+            <div className={`${getExpiredMessageSize()} font-bold text-center`} style={{ color: expiredMessageColor }}>
+              {timerExpiredMessage}
+            </div>
+          )}
         </div>
-      )}
-      {showControls && renderControls()}
-    </div>
-  );
+        
+        {showControls && (
+          <div className="mt-4">
+            {renderControls()}
+          </div>
+        )}
+      </div>
+    );
+  };
   
   // Renderiza o estilo de timer selecionado
   const renderSelectedTimerStyle = () => {

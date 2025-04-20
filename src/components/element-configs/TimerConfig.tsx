@@ -316,6 +316,24 @@ const TimerConfig = ({ element, onUpdate }: TimerConfigProps) => {
                         />
                       </div>
                     </div>
+
+                    <div className="mt-2">
+                      <Label htmlFor="expired-message-size">Tamanho da fonte</Label>
+                      <Select
+                        value={localContent.expiredMessageSize || "large"}
+                        onValueChange={(value) => handleContentChange({ expiredMessageSize: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tamanho" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Pequena</SelectItem>
+                          <SelectItem value="medium">Média</SelectItem>
+                          <SelectItem value="large">Grande</SelectItem>
+                          <SelectItem value="xlarge">Extra Grande</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 )}
               </div>
