@@ -315,29 +315,74 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
     const range = selection.getRangeAt(0);
     if (range.collapsed) return;
     
-    // Criar um span para envolver o texto selecionado
-    const span = document.createElement('span');
+    // Salvar o conteúdo da seleção para restaurar depois
+    const selectedText = range.toString();
+    const rangeContainer = range.commonAncestorContainer;
     
-    // Tentar identificar o tamanho atual da fonte
-    let currentSize = fontSize;
-    const parentFontSize = window.getComputedStyle(range.commonAncestorContainer.parentElement as HTMLElement).fontSize;
-    if (parentFontSize) {
-      currentSize = parseInt(parentFontSize, 10);
+    try {
+      // Se o texto já estiver dentro de um span, modificar o tamanho da fonte
+      if (rangeContainer.nodeType === Node.TEXT_NODE && 
+          rangeContainer.parentElement && 
+          rangeContainer.parentElement.tagName === 'SPAN') {
+        
+        // Obter o elemento span pai
+        const span = rangeContainer.parentElement;
+        
+        // Obter o tamanho atual da fonte
+        let currentSize = fontSize;
+        const spanFontSize = window.getComputedStyle(span).fontSize;
+        if (spanFontSize) {
+          currentSize = parseInt(spanFontSize, 10);
+        }
+        
+        // Aumentar o tamanho
+        span.style.fontSize = `${currentSize + 2}px`;
+      } else {
+        // Criar um novo elemento span
+        document.execCommand('fontSize', false, '7'); // Valor temporário para criar um <font> tag
+        
+        // Obter o elemento recém-criado - encontrar o elemento font de maneira segura
+        let fontElement: HTMLElement | null = null;
+        
+        // Verificar se o container é um Element
+        if (rangeContainer.nodeType === Node.ELEMENT_NODE) {
+          fontElement = (rangeContainer as Element).querySelector('font[size="7"]');
+        } 
+        // Se não for um Element, procurar no documento inteiro dentro do editor
+        else if (editorRef.current) {
+          fontElement = editorRef.current.querySelector('font[size="7"]');
+        }
+        
+        if (fontElement) {
+          // Substituir o <font> por um <span> com o tamanho desejado
+          const span = document.createElement('span');
+          
+          // Tentar identificar o tamanho atual da fonte
+          let currentSize = fontSize;
+          const parentFontSize = window.getComputedStyle(rangeContainer.parentElement as HTMLElement).fontSize;
+          if (parentFontSize) {
+            currentSize = parseInt(parentFontSize, 10);
+          }
+          
+          // Aumentar o tamanho
+          span.style.fontSize = `${currentSize + 2}px`;
+          
+          // Substituir o elemento font pelo span
+          span.innerHTML = fontElement.innerHTML;
+          fontElement.parentNode?.replaceChild(span, fontElement);
+        }
+      }
+      
+      // Atualizar o elemento com as alterações
+      commitUpdate();
+      
+      // Focar no editor para manter o contexto
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
+    } catch (error) {
+      console.error('Erro ao aumentar fonte:', error);
     }
-    
-    // Aumentar o tamanho em 2px
-    const newSize = currentSize + 2;
-    span.style.fontSize = `${newSize}px`;
-    
-    // Aplicar o span ao texto selecionado
-    range.surroundContents(span);
-    
-    // Manter a seleção
-    selection.removeAllRanges();
-    selection.addRange(range);
-    
-    // Atualizar o conteúdo
-    commitUpdate();
   };
   
   // Diminuir o tamanho da fonte do texto selecionado
@@ -348,29 +393,74 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
     const range = selection.getRangeAt(0);
     if (range.collapsed) return;
     
-    // Criar um span para envolver o texto selecionado
-    const span = document.createElement('span');
+    // Salvar o conteúdo da seleção para restaurar depois
+    const selectedText = range.toString();
+    const rangeContainer = range.commonAncestorContainer;
     
-    // Tentar identificar o tamanho atual da fonte
-    let currentSize = fontSize;
-    const parentFontSize = window.getComputedStyle(range.commonAncestorContainer.parentElement as HTMLElement).fontSize;
-    if (parentFontSize) {
-      currentSize = parseInt(parentFontSize, 10);
+    try {
+      // Se o texto já estiver dentro de um span, modificar o tamanho da fonte
+      if (rangeContainer.nodeType === Node.TEXT_NODE && 
+          rangeContainer.parentElement && 
+          rangeContainer.parentElement.tagName === 'SPAN') {
+        
+        // Obter o elemento span pai
+        const span = rangeContainer.parentElement;
+        
+        // Obter o tamanho atual da fonte
+        let currentSize = fontSize;
+        const spanFontSize = window.getComputedStyle(span).fontSize;
+        if (spanFontSize) {
+          currentSize = parseInt(spanFontSize, 10);
+        }
+        
+        // Diminuir o tamanho, mas não menor que 8px
+        span.style.fontSize = `${Math.max(8, currentSize - 2)}px`;
+      } else {
+        // Criar um novo elemento span
+        document.execCommand('fontSize', false, '7'); // Valor temporário para criar um <font> tag
+        
+        // Obter o elemento recém-criado - encontrar o elemento font de maneira segura
+        let fontElement: HTMLElement | null = null;
+        
+        // Verificar se o container é um Element
+        if (rangeContainer.nodeType === Node.ELEMENT_NODE) {
+          fontElement = (rangeContainer as Element).querySelector('font[size="7"]');
+        } 
+        // Se não for um Element, procurar no documento inteiro dentro do editor
+        else if (editorRef.current) {
+          fontElement = editorRef.current.querySelector('font[size="7"]');
+        }
+        
+        if (fontElement) {
+          // Substituir o <font> por um <span> com o tamanho desejado
+          const span = document.createElement('span');
+          
+          // Tentar identificar o tamanho atual da fonte
+          let currentSize = fontSize;
+          const parentFontSize = window.getComputedStyle(rangeContainer.parentElement as HTMLElement).fontSize;
+          if (parentFontSize) {
+            currentSize = parseInt(parentFontSize, 10);
+          }
+          
+          // Diminuir o tamanho, mas não menor que 8px
+          span.style.fontSize = `${Math.max(8, currentSize - 2)}px`;
+          
+          // Substituir o elemento font pelo span
+          span.innerHTML = fontElement.innerHTML;
+          fontElement.parentNode?.replaceChild(span, fontElement);
+        }
+      }
+      
+      // Atualizar o elemento com as alterações
+      commitUpdate();
+      
+      // Focar no editor para manter o contexto
+      if (editorRef.current) {
+        editorRef.current.focus();
+      }
+    } catch (error) {
+      console.error('Erro ao diminuir fonte:', error);
     }
-    
-    // Diminuir o tamanho em 2px, mas não menor que 8px
-    const newSize = Math.max(8, currentSize - 2);
-    span.style.fontSize = `${newSize}px`;
-    
-    // Aplicar o span ao texto selecionado
-    range.surroundContents(span);
-    
-    // Manter a seleção
-    selection.removeAllRanges();
-    selection.addRange(range);
-    
-    // Atualizar o conteúdo
-    commitUpdate();
   };
 
   // Aplicar destaque (highlight)
