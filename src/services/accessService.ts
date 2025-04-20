@@ -495,8 +495,9 @@ export const accessService = {
     };
   }>> {
     try {
+      // MODIFICADO PARA TESTE: Usando a função de teste que prioriza interações 'choice'
       const { data, error } = await supabase
-        .rpc('get_funnel_leads_with_interactions', {
+        .rpc('get_funnel_leads_with_interactions_test', {
           p_funnel_id: funnelId,
           p_period: period
         });
