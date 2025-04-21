@@ -100,10 +100,74 @@ const Builder = () => {
         width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
         height: 111.12vh !important; /* 100/0.9 = ~111.11 */
       }
+      
+      /* Ajustes para resolver o espaço no rodapé */
+      .flex.flex-col.h-screen {
+        min-height: 111.12vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Garantir que o conteúdo principal preencha todo o espaço disponível */
+      .flex.flex-col.h-screen > div:nth-child(2) {
+        flex: 1 !important;
+        display: flex !important;
+        min-height: calc(111.12vh - 57px) !important;
+        height: calc(111.12vh - 57px) !important;
+        overflow: hidden !important;
+      }
+      
+      /* Garantir que as sidebars preencham toda a altura */
+      .sidebar-left,
+      .sidebar-right,
+      [class*="sidebar"],
+      [class*="canvas"],
+      [class*="elements-panel"],
+      [class*="steps-panel"] {
+        height: 100% !important;
+        min-height: calc(111.12vh - 57px) !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+      }
+      
+      /* Forçar todos os paineis a irem até o fim da tela */
+      .flex.flex-col.h-screen > div:nth-child(2) > div {
+        height: calc(111.12vh - 57px) !important;
+        min-height: calc(111.12vh - 57px) !important;
+        overflow-y: auto !important;
+      }
     `;
     
     // Adicionar ao head
     document.head.appendChild(styleElement);
+    
+    // Aplicar ajustes específicos via JavaScript
+    const applySpecificFixes = () => {
+      // Encontrar e ajustar os painéis laterais
+      const container = document.querySelector('.flex.flex-col.h-screen > div:nth-child(2)') as HTMLElement;
+      
+      if (container) {
+        // Ajustar o container principal
+        container.style.height = 'calc(111.12vh - 57px)';
+        container.style.minHeight = 'calc(111.12vh - 57px)';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'row';
+        container.style.overflow = 'hidden';
+        
+        // Ajustar todos os filhos diretos (painéis)
+        Array.from(container.children).forEach((panel: Element) => {
+          const panelElement = panel as HTMLElement;
+          panelElement.style.height = 'calc(111.12vh - 57px)';
+          panelElement.style.minHeight = 'calc(111.12vh - 57px)';
+          panelElement.style.overflowY = 'auto';
+        });
+      }
+    };
+    
+    // Executar após um pequeno delay para garantir que o DOM esteja pronto
+    setTimeout(applySpecificFixes, 100);
+    // Executar também depois de 500ms para maior garantia
+    setTimeout(applySpecificFixes, 500);
     
     // Limpar ao desmontar
     return () => {
