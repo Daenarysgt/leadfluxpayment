@@ -1891,7 +1891,7 @@ const Leads = () => {
   // Modificar o renderMetricsCards para incluir o novo card
   const renderMetricsCards = () => {
     return (
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -1975,14 +1975,15 @@ const Leads = () => {
           </CardContent>
         </Card>
         
+        {/* Status geral do funil */}
+        <FunnelStatusCard />
+        
+        {/* Segunda linha de cards */}
         <InteractionRateCard />
         <DropoffRateCard />
         
         {/* Card de visitantes ativos */}
         <ActiveLeadsCard />
-        
-        {/* Novo card de Status do Funil */}
-        <FunnelStatusCard />
         
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
