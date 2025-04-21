@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 const StepsSidebar = () => {
-  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep } = useStore();
+  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, duplicateStep } = useStore();
 
   const handleStepClick = (index: number) => {
     setCurrentStep(index);
@@ -20,6 +20,17 @@ const StepsSidebar = () => {
     e.stopPropagation();
     // Implementar edição do título do step
     console.log('Editar step:', step);
+  };
+
+  const handleStepDuplicate = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateStep(index)
+      .then(() => {
+        console.log('Etapa duplicada com sucesso');
+      })
+      .catch(error => {
+        console.error('Erro ao duplicar etapa:', error);
+      });
   };
 
   const handleAddStep = () => {
@@ -45,6 +56,7 @@ const StepsSidebar = () => {
                 onSelect={handleStepClick}
                 onDelete={handleStepDelete}
                 onEdit={handleStepEdit}
+                onDuplicate={handleStepDuplicate}
               />
             ))}
           </div>
