@@ -316,7 +316,7 @@ export default function Pricing() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.02 }}
-                className={`rounded-2xl p-8 flex flex-col h-full transition-all duration-300 ${
+                className={`rounded-2xl p-5 flex flex-col h-full transition-all duration-300 ${
                   plan.is_popular
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 ring-4 ring-purple-600 ring-opacity-20'
                     : 'bg-white'
@@ -331,17 +331,17 @@ export default function Pricing() {
                       </span>
                     )}
                   </h3>
-                  <p className={`mt-4 text-sm ${plan.is_popular ? 'text-gray-100' : 'text-gray-500'}`}>
+                  <p className={`mt-2 text-sm ${plan.is_popular ? 'text-gray-100' : 'text-gray-500'}`}>
                     {plan.description}
                   </p>
                   
                   {isAnnual && (
-                    <p className={`mt-4 text-sm line-through ${plan.is_popular ? 'text-gray-200' : 'text-gray-400'}`}>
+                    <p className={`mt-2 text-sm line-through ${plan.is_popular ? 'text-gray-200' : 'text-gray-400'}`}>
                       {`R$${(plan.price_monthly * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </p>
                   )}
                   
-                  <p className={`mt-2 ${plan.is_popular ? 'text-white' : 'text-gray-900'}`}>
+                  <p className={`mt-1 ${plan.is_popular ? 'text-white' : 'text-gray-900'}`}>
                     <span className="text-4xl font-bold">
                       {`R$${(isAnnual ? plan.price_annual : plan.price_monthly).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </span>
@@ -349,9 +349,9 @@ export default function Pricing() {
                   </p>
                 </div>
 
-                <ul className="mt-10 space-y-4 flex-grow">
+                <ul className="mt-6 space-y-2 flex-grow">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
+                    <li key={feature} className="flex items-start gap-2">
                       <div className={`flex-shrink-0 ${
                         plan.is_popular 
                           ? 'text-white' 
@@ -366,7 +366,7 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                <div className="mt-10">
+                <div className="mt-6">
                   <button
                     onClick={() => handleSelectPlan(plan)}
                     disabled={processingPlanId === plan.id}
