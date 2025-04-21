@@ -1021,8 +1021,8 @@ const Leads = () => {
           <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
-                <span>Hoje</span>
+                <MousePointerClick className="h-5 w-5 text-blue-600" />
+                <span>Taxa de Interação</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1034,16 +1034,14 @@ const Leads = () => {
               ) : (
                 <>
                   <p className="text-3xl font-bold text-gray-800">
-                    {/* Filtrar leads de hoje */}
-                    {leads.filter(lead => {
-                      const today = new Date();
-                      const leadDate = new Date(lead.firstInteraction);
-                      return leadDate.setHours(0,0,0,0) === today.setHours(0,0,0,0);
-                    }).length}
+                    {/* Cálculo da taxa de interação: leads com interações / total de sessões */}
+                    {leads.length > 0 && metrics.totalSessions > 0 
+                      ? ((leads.length / metrics.totalSessions) * 100).toFixed(1) 
+                      : '0.0'}%
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                    Leads que interagiram hoje
+                    Visitantes que interagiram com o funil
                   </p>
                 </>
               )}
