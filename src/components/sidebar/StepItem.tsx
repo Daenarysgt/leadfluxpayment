@@ -49,13 +49,13 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
           : 'border-transparent bg-transparent hover:border-gray-200 hover:bg-white hover:shadow-sm'
         }
-        cursor-pointer transition-all duration-200
+        cursor-pointer transition-all duration-200 pr-1
       `}
       onClick={() => onSelect(index)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex-1 flex items-center p-3">
+      <div className="flex-1 flex items-center p-3 pr-0">
         <div className={`
           w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
           ${isActive 
@@ -67,7 +67,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           {index + 1}
         </div>
         <span className={`
-          font-medium truncate
+          font-medium truncate max-w-[120px]
           ${isActive ? 'text-violet-900' : 'text-gray-700'}
         `}>
           {step.title}
@@ -75,14 +75,14 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       </div>
       
       <div className={`
-        flex items-center gap-2 pr-3
+        flex items-center gap-1 p-1
         ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-200
       `}>
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 rounded-md bg-gray-50 hover:bg-violet-100 text-gray-600 hover:text-violet-600 border border-gray-200"
+          className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-violet-100 text-gray-600 hover:text-violet-600 border border-gray-200 p-0 flex items-center justify-center"
           onClick={handleEditClick}
           title="Editar etapa"
         >
@@ -92,7 +92,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 rounded-md bg-gray-50 hover:bg-blue-100 text-gray-600 hover:text-blue-600 border border-gray-200"
+            className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-blue-100 text-gray-600 hover:text-blue-600 border border-gray-200 p-0 flex items-center justify-center"
             onClick={(e) => onDuplicate(index, e)}
             title="Duplicar etapa"
           >
@@ -102,7 +102,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 rounded-md bg-gray-50 hover:bg-red-100 text-gray-600 hover:text-red-600 border border-gray-200"
+          className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-red-100 text-gray-600 hover:text-red-600 border border-gray-200 p-0 flex items-center justify-center"
           onClick={(e) => onDelete(index, e)}
           title="Excluir etapa"
         >

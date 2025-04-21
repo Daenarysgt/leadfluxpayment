@@ -125,7 +125,7 @@ const ElementsSidebar = () => {
     return (
       <div
         key={component.id}
-        className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-grab active:cursor-grabbing border-b group relative transition-all hover:bg-violet-50"
+        className="flex items-center py-3 px-3 hover:bg-gray-50 cursor-grab active:cursor-grabbing border-b group relative transition-all hover:bg-violet-50"
         draggable
         onDragStart={(e) => handleDragStart(e, component.id, component.name)}
         onDragEnd={() => {
@@ -134,11 +134,11 @@ const ElementsSidebar = () => {
           console.log(`Elemento "${component.name}" arrastado`);
         }}
       >
-        <div className={cn("h-8 w-8 rounded-md flex items-center justify-center mr-3", component.color)}>
-          <Icon className="h-4 w-4" />
+        <div className={cn("h-10 w-10 rounded-md flex items-center justify-center mr-3", component.color)}>
+          <Icon className="h-5 w-5" />
         </div>
-        <span className="text-sm">{component.name}</span>
-        <ChevronRight className="h-3.5 w-3.5 text-gray-400 opacity-0 group-hover:opacity-100 absolute right-3 transition-opacity" />
+        <span className="text-sm font-medium">{component.name}</span>
+        <ChevronRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 absolute right-4 transition-opacity" />
       </div>
     );
   };
