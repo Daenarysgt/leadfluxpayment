@@ -200,29 +200,70 @@ const Dashboard = () => {
       return `${day}/${month}`;
     };
     
-    // Determinar quantos dias mostrar
-    let days = 1;
-    if (period === '7days') days = 7;
-    if (period === '30days') days = 30;
+    // Formatar horas para o caso de "hoje"
+    const formatHour = (date: Date) => {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${hours}:${minutes}`;
+    };
     
     // Gerar dados
     const data = [];
     const today = new Date();
     
-    for (let i = 0; i < days; i++) {
-      const date = new Date();
-      date.setDate(today.getDate() - (days - 1 - i));
+    if (period === 'today') {
+      // Para "hoje", mostrar dados por hora
+      // Vamos gerar um dado para cada hora nas últimas 12 horas
+      const hoursToShow = 12;
+      const currentHour = today.getHours();
       
-      // Gerar valores aleatórios mais realistas
-      const sessoes = Math.floor(Math.random() * 40) + 10; // 10-50 sessões
-      // Os concluídos serão sempre uma fração das sessões
-      const concluidos = Math.floor(sessoes * (Math.random() * 0.4 + 0.1)); // 10%-50% de taxa de conclusão
+      for (let i = 0; i < hoursToShow; i++) {
+        const hourDate = new Date();
+        // Começamos da hora atual e voltamos no tempo
+        hourDate.setHours(currentHour - (hoursToShow - 1) + i, 0, 0, 0);
+        
+        // Garantir que não mostramos horas futuras
+        if (hourDate > today) continue;
+        
+        // Para horas passadas, geramos dados crescentes ao longo do dia
+        // para simular o acúmulo de sessões e conclusões
+        const hourFactor = (i + 1) / hoursToShow; // Fator que cresce com o passar das horas
+        const baseSessions = 5 + Math.floor(Math.random() * 10); // Base aleatória entre 5-15
+        
+        // Adicionar alguma variabilidade, mas manter a tendência de crescimento ao longo do dia
+        const randomFactor = 0.7 + (Math.random() * 0.6); // Entre 0.7 e 1.3
+        const sessionIncreaseWithHour = Math.floor(baseSessions * hourFactor * randomFactor);
+        const sessoes = Math.max(1, sessionIncreaseWithHour);
+        
+        // Os concluídos são uma fração das sessões
+        const concluidos = Math.floor(sessoes * (0.1 + (Math.random() * 0.3))); // 10%-40% de taxa de conclusão
+        
+        data.push({
+          name: formatHour(hourDate),
+          sessoes: sessoes,
+          concluidos: concluidos
+        });
+      }
+    } else {
+      // Determinar quantos dias mostrar
+      let days = 7;
+      if (period === '30days') days = 30;
       
-      data.push({
-        name: formatDate(date),
-        sessoes: sessoes,
-        concluidos: concluidos
-      });
+      for (let i = 0; i < days; i++) {
+        const date = new Date();
+        date.setDate(today.getDate() - (days - 1 - i));
+        
+        // Gerar valores aleatórios mais realistas
+        const sessoes = Math.floor(Math.random() * 40) + 10; // 10-50 sessões
+        // Os concluídos serão sempre uma fração das sessões
+        const concluidos = Math.floor(sessoes * (Math.random() * 0.4 + 0.1)); // 10%-50% de taxa de conclusão
+        
+        data.push({
+          name: formatDate(date),
+          sessoes: sessoes,
+          concluidos: concluidos
+        });
+      }
     }
     
     setChartData(data);
@@ -576,6 +617,11 @@ const Dashboard = () => {
             <CardTitle className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary"></span>
               Performance dos Funis
+              {chartPeriod === 'today' && (
+                <span className="text-xs text-blue-600 bg-blue-100/70 px-2 py-1 rounded-full ml-2">
+                  Visualização por hora
+                </span>
+              )}
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button 
@@ -608,11 +654,19 @@ const Dashboard = () => {
             <div className="flex items-center gap-8 mb-4">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                <span className="text-sm text-gray-700">Sessões por dia</span>
+                <span className="text-sm text-gray-700">
+                  {chartPeriod === 'today' 
+                    ? 'Sessões por hora do dia' 
+                    : 'Sessões por dia'}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                <span className="text-sm text-gray-700">Funis concluídos por dia</span>
+                <span className="text-sm text-gray-700">
+                  {chartPeriod === 'today' 
+                    ? 'Funis concluídos por hora' 
+                    : 'Funis concluídos por dia'}
+                </span>
               </div>
             </div>
             <div className="h-[300px] w-full">
@@ -622,7 +676,16 @@ const Dashboard = () => {
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" stroke="#888888" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#888888" 
+                    tickMargin={10}
+                    // Ajustar o eixo X para o caso de dados por hora
+                    interval={chartPeriod === 'today' ? 2 : 'preserveEnd'}
+                    angle={chartPeriod === 'today' ? -45 : 0}
+                    textAnchor={chartPeriod === 'today' ? 'end' : 'middle'}
+                    height={chartPeriod === 'today' ? 60 : 30}
+                  />
                   <YAxis stroke="#888888" />
                   <Tooltip
                     contentStyle={{
@@ -630,6 +693,15 @@ const Dashboard = () => {
                       borderRadius: '8px',
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                       border: 'none',
+                    }}
+                    formatter={(value, name) => {
+                      return [value, name === 'sessoes' ? 'Sessões' : 'Concluídos'];
+                    }}
+                    labelFormatter={(label) => {
+                      if (chartPeriod === 'today') {
+                        return `Hora: ${label}`;
+                      }
+                      return `Data: ${label}`;
                     }}
                   />
                   <Legend />
