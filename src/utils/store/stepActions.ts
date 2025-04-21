@@ -440,6 +440,171 @@ export const deleteStepAction = (set: any, get: any) => async (stepIndex: number
   }
 };
 
+export const duplicateStepAction = (set: any, get: any) => async (stepIndex: number) => {
+  const { currentFunnel } = get();
+  if (!currentFunnel) return;
+  
+  // Verificar se o índice está dentro dos limites válidos
+  if (stepIndex < 0 || stepIndex >= currentFunnel.steps.length) {
+    console.error(`Invalid step index for duplication: ${stepIndex}`);
+    return;
+  }
+  
+  console.log(`StepActions - Duplicando etapa no índice: ${stepIndex}`);
+  
+  // Obter a etapa a ser duplicada
+  const stepToDuplicate = currentFunnel.steps[stepIndex];
+  
+  // Criar clone profundo da etapa para evitar referências compartilhadas
+  const stepClone = JSON.parse(JSON.stringify(stepToDuplicate));
+  
+  // Gerar novo ID para a etapa duplicada
+  const newStepId = generateValidUUID();
+  
+  // Calcular o próximo order_index baseado no maior valor existente
+  let nextOrderIndex = 0;
+  if (currentFunnel.steps && currentFunnel.steps.length > 0) {
+    let maxOrderIndex = 0;
+    currentFunnel.steps.forEach(step => {
+      const orderIndex = step.order_index ?? 0;
+      if (orderIndex > maxOrderIndex) {
+        maxOrderIndex = orderIndex;
+      }
+    });
+    nextOrderIndex = maxOrderIndex + 1;
+  }
+  
+  // Criar a nova etapa duplicada
+  const duplicatedStep = {
+    ...stepClone,
+    id: newStepId,
+    title: `${stepToDuplicate.title} (cópia)`,
+    order_index: nextOrderIndex,
+    position: currentFunnel.steps.length,
+    created_at: formatDateForSupabase(),
+    updated_at: formatDateForSupabase(),
+  };
+  
+  // Clone profundo do funnel atual
+  const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
+  
+  // Adicionar a etapa duplicada após a original
+  const updatedFunnel = {
+    ...funnelCopy,
+    steps: [...funnelCopy.steps, duplicatedStep],
+    updated_at: formatDateForSupabase(),
+  };
+  
+  const newStepIndex = updatedFunnel.steps.length - 1;
+  
+  try {
+    // Atualizar o estado local imediatamente para UI responsiva
+    set((state) => ({
+      currentFunnel: updatedFunnel,
+      funnels: state.funnels.map((funnel) => 
+        funnel.id === currentFunnel.id ? updatedFunnel : funnel
+      ),
+      currentStep: newStepIndex, // Alternar para a etapa duplicada
+    }));
+    
+    // MÉTODO 1: Persistir diretamente no Supabase
+    try {
+      console.log("StepActions - Persistindo etapa duplicada diretamente no Supabase");
+      
+      // Simplificar para campos essenciais
+      const stepToCreate = {
+        id: newStepId,
+        title: duplicatedStep.title,
+        funnel_id: currentFunnel.id,
+        order_index: nextOrderIndex,
+        created_at: formatDateForSupabase(),
+        updated_at: formatDateForSupabase()
+      };
+      
+      // Inserir a nova etapa no Supabase
+      const { data, error } = await supabase
+        .from('steps')
+        .insert(stepToCreate)
+        .select();
+      
+      if (error) {
+        console.error("StepActions - Erro ao inserir etapa duplicada:", error);
+        throw error;
+      }
+      
+      console.log("StepActions - Etapa duplicada persistida com sucesso");
+      
+      // Após criar o step, duplicar os elementos de canvas se existirem
+      if (stepToDuplicate.canvasElements && stepToDuplicate.canvasElements.length > 0) {
+        // Clone os elementos com novos IDs
+        const canvasElementsToInsert = stepToDuplicate.canvasElements.map(element => ({
+          ...element,
+          id: generateValidUUID(),
+          step_id: newStepId,
+          created_at: formatDateForSupabase(),
+          updated_at: formatDateForSupabase()
+        }));
+        
+        // Inserir elementos de canvas duplicados
+        const { error: canvasError } = await supabase
+          .from('canvas_elements')
+          .insert(canvasElementsToInsert);
+          
+        if (canvasError) {
+          console.error("StepActions - Erro ao duplicar elementos de canvas:", canvasError);
+        } else {
+          console.log("StepActions - Elementos de canvas duplicados com sucesso");
+        }
+      }
+    } 
+    // MÉTODO 2: Fallback para persistenceService
+    catch (directError) {
+      console.error("StepActions - Erro na persistência direta, usando persistenceService:", directError);
+      
+      // Persistir via persistenceService
+      operationQueueService.enqueue(
+        async (funnelData) => {
+          const result = await persistenceService._saveAllFunnelData(funnelData);
+          
+          if (!result.success) {
+            throw new Error(`Falha ao duplicar etapa: ${result.error}`);
+          }
+          
+          return result.data;
+        },
+        updatedFunnel,
+        {
+          maxAttempts: 3,
+          description: `Duplicar etapa no funil ${currentFunnel.id}`,
+          onSuccess: (savedFunnel) => {
+            console.log("StepActions - Etapa duplicada persistida com sucesso (fallback)");
+            
+            // Atualizar o estado com os dados mais recentes do servidor
+            set((state) => ({
+              funnels: state.funnels.map((funnel) => 
+                funnel.id === savedFunnel.id ? savedFunnel : funnel
+              ),
+              currentFunnel: state.currentFunnel?.id === savedFunnel.id ? savedFunnel : state.currentFunnel
+            }));
+          },
+          onError: (error) => {
+            console.error("StepActions - Erro ao persistir etapa duplicada:", error);
+          }
+        }
+      );
+    }
+    
+    // Retornar a etapa duplicada para referência
+    return {
+      step: duplicatedStep,
+      index: newStepIndex
+    };
+  } catch (error) {
+    console.error("Error duplicating step:", error);
+    throw error;
+  }
+};
+
 export const setCurrentStepAction = (set: any, get: any) => (stepIndex: number) => {
   // Evitar mudar para um índice inválido
   const { currentFunnel } = get();

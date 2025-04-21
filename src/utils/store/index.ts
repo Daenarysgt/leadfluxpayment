@@ -16,7 +16,8 @@ import {
 import { 
   addStepAction, 
   updateStepAction, 
-  deleteStepAction, 
+  deleteStepAction,
+  duplicateStepAction,
   setCurrentStepAction 
 } from './stepActions';
 
@@ -52,6 +53,7 @@ export const useStore = create<FunnelStore>()(
       addStep: addStepAction(set, get),
       updateStep: updateStepAction(set, get),
       deleteStep: deleteStepAction(set, get),
+      duplicateStep: duplicateStepAction(set, get),
       setCurrentStep: setCurrentStepAction(set, get),
       
       // Question actions
