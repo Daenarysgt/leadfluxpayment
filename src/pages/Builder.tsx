@@ -75,27 +75,44 @@ const Builder = () => {
     setSelectedElement(null);
   }, [currentStep, setSelectedElement]);
 
-  // Aplicar zoom de 90% apenas na página do Builder
+  // Aplicar zoom para o Builder
   useEffect(() => {
-    const applyZoom = () => {
-      if (builderContainerRef.current) {
-        // Usar CSS transform para o container do Builder
-        builderContainerRef.current.style.transform = "scale(0.9)";
-        builderContainerRef.current.style.transformOrigin = "top left";
-        builderContainerRef.current.style.width = "111.11%"; // Compensar a escala
-        builderContainerRef.current.style.height = "111.11%";
+    // Criar um elemento de estilo específico para o zoom
+    const styleElement = document.createElement('style');
+    styleElement.setAttribute('id', 'builder-zoom-style');
+    
+    // Adicionar CSS para controlar o zoom apenas no Builder
+    styleElement.innerHTML = `
+      #builderRoot {
+        transform: scale(0.9);
+        transform-origin: center top;
+        margin: 0 auto;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
-    };
-
-    applyZoom();
-
-    // Reestabelecer escala quando o componente for desmontado
+      body {
+        overflow: hidden;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+    `;
+    
+    // Adicionar o estilo ao head
+    document.head.appendChild(styleElement);
+    
+    // Também adicionar um ID ao container principal para que o CSS possa selecioná-lo
+    if (builderContainerRef.current) {
+      builderContainerRef.current.id = 'builderRoot';
+    }
+    
+    // Remover o estilo quando o componente for desmontado
     return () => {
-      if (builderContainerRef.current) {
-        builderContainerRef.current.style.transform = "";
-        builderContainerRef.current.style.transformOrigin = "";
-        builderContainerRef.current.style.width = "";
-        builderContainerRef.current.style.height = "";
+      const styleToRemove = document.getElementById('builder-zoom-style');
+      if (styleToRemove) {
+        styleToRemove.remove();
       }
     };
   }, []);
