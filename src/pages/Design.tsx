@@ -15,6 +15,31 @@ import { useEffect, useState, useRef } from "react";
 import { persistenceService } from "@/services/persistenceService";
 import { operationQueueService } from "@/services/operationQueueService";
 
+// Lista de fontes do Google Fonts que serão disponibilizadas
+const GOOGLE_FONTS = [
+  "Roboto",
+  "Open Sans",
+  "Lato",
+  "Montserrat",
+  "Poppins",
+  "Nunito",
+  "Raleway",
+  "PT Sans",
+  "Oswald",
+  "Quicksand",
+  "Playfair Display"
+];
+
+// Fontes do sistema que não precisam ser carregadas
+const SYSTEM_FONTS = [
+  "Arial",
+  "Helvetica",
+  "Georgia",
+  "Times New Roman",
+  "Verdana",
+  "Inter"
+];
+
 const Design = () => {
   const { toast } = useToast();
   const { currentFunnel, updateFunnel, setCurrentFunnel } = useStore();
@@ -63,6 +88,32 @@ const Design = () => {
       updateFunnel(updatedFunnel);
     }
   }, [funnelId, currentFunnel, setCurrentFunnel, updateFunnel]);
+
+  // Efeito para carregar a fonte selecionada do Google Fonts
+  useEffect(() => {
+    if (!currentFunnel?.settings?.fontFamily) return;
+    
+    const selectedFont = currentFunnel.settings.fontFamily;
+    
+    // Não carregamos fontes do sistema
+    if (SYSTEM_FONTS.includes(selectedFont)) return;
+    
+    // Verificar se a fonte já está carregada
+    const existingLink = document.getElementById(`google-font-${selectedFont}`);
+    if (existingLink) return;
+    
+    // Carregar a fonte do Google Fonts se estiver na nossa lista
+    if (GOOGLE_FONTS.includes(selectedFont)) {
+      console.log(`Carregando fonte do Google Fonts: ${selectedFont}`);
+      
+      const link = document.createElement("link");
+      link.id = `google-font-${selectedFont}`;
+      link.rel = "stylesheet";
+      link.href = `https://fonts.googleapis.com/css2?family=${selectedFont.replace(' ', '+')}&display=swap`;
+      
+      document.head.appendChild(link);
+    }
+  }, [currentFunnel?.settings?.fontFamily]);
 
   // Aplicar zoom de 90% e resolver espaços vazios no rodapé e lateral
   useEffect(() => {
@@ -140,6 +191,46 @@ const Design = () => {
       }
     };
   }, []);
+
+  // Efeito para aplicar a fonte global ao funil
+  useEffect(() => {
+    if (!currentFunnel?.settings?.fontFamily) return;
+    
+    // Criar ou obter o elemento de estilo para fontes
+    let styleElement = document.getElementById('design-global-font');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'design-global-font';
+      document.head.appendChild(styleElement);
+    }
+    
+    // Aplicar a fonte global, com exceção para elementos texto que têm sua própria fonte
+    styleElement.innerHTML = `
+      /* Aplicar fonte global a todos os elementos */
+      body, html, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, div {
+        font-family: "${currentFunnel.settings.fontFamily}", sans-serif !important;
+      }
+      
+      /* Exceção: Não aplicar a elementos de texto que têm configuração própria */
+      [data-element-type="text"] {
+        /* Permitir que elementos de texto usem suas próprias configurações */
+        font-family: inherit;
+      }
+      
+      /* Garantir que estilos específicos de texto tenham prioridade */
+      [data-custom-font-family] {
+        font-family: var(--custom-font-family, inherit) !important;
+      }
+    `;
+    
+    // Limpar ao desmontar
+    return () => {
+      const fontStyleToRemove = document.getElementById('design-global-font');
+      if (fontStyleToRemove) {
+        fontStyleToRemove.remove();
+      }
+    };
+  }, [currentFunnel?.settings?.fontFamily]);
 
   if (!currentFunnel) {
     return (
@@ -957,19 +1048,53 @@ const Design = () => {
                           id="font-family"
                           className="w-full h-10 px-3 mt-1.5 rounded-md border border-input bg-background"
                           value={currentFunnel.settings?.fontFamily || "Inter"}
-                          onChange={(e) => handleColorChange('fontFamily', e.target.value)}
+                          onChange={(e) => {
+                            // Aplicar alteração com feedback visual sobre a atualização estar em andamento
+                            const newFont = e.target.value;
+                            handleColorChange('fontFamily', newFont);
+                            
+                            // Mostrar mensagem de sucesso após a mudança
+                            toast({
+                              title: "Fonte atualizada",
+                              description: `A fonte global foi alterada para ${newFont}.`,
+                              duration: 2000,
+                            });
+                          }}
                         >
-                          <option value="Inter">Inter</option>
-                          <option value="Arial">Arial</option>
-                          <option value="Roboto">Roboto</option>
-                          <option value="Montserrat">Montserrat</option>
-                          <option value="Poppins">Poppins</option>
-                          <option value="Helvetica">Helvetica</option>
-                          <option value="Georgia">Georgia</option>
-                          <option value="Times New Roman">Times New Roman</option>
-                          <option value="Verdana">Verdana</option>
+                          {/* Agrupar fontes do sistema */}
+                          <optgroup label="Fontes do Sistema">
+                            <option value="Inter" style={{ fontFamily: 'Inter' }}>Inter</option>
+                            <option value="Arial" style={{ fontFamily: 'Arial' }}>Arial</option>
+                            <option value="Helvetica" style={{ fontFamily: 'Helvetica' }}>Helvetica</option>
+                            <option value="Georgia" style={{ fontFamily: 'Georgia' }}>Georgia</option>
+                            <option value="Times New Roman" style={{ fontFamily: 'Times New Roman' }}>Times New Roman</option>
+                            <option value="Verdana" style={{ fontFamily: 'Verdana' }}>Verdana</option>
+                          </optgroup>
+                          
+                          {/* Agrupar fontes do Google Fonts */}
+                          <optgroup label="Google Fonts">
+                            <option value="Roboto" style={{ fontFamily: 'Roboto' }}>Roboto</option>
+                            <option value="Open Sans" style={{ fontFamily: 'Open Sans' }}>Open Sans</option>
+                            <option value="Lato" style={{ fontFamily: 'Lato' }}>Lato</option>
+                            <option value="Montserrat" style={{ fontFamily: 'Montserrat' }}>Montserrat</option>
+                            <option value="Poppins" style={{ fontFamily: 'Poppins' }}>Poppins</option>
+                            <option value="Nunito" style={{ fontFamily: 'Nunito' }}>Nunito</option>
+                            <option value="Raleway" style={{ fontFamily: 'Raleway' }}>Raleway</option>
+                            <option value="PT Sans" style={{ fontFamily: 'PT Sans' }}>PT Sans</option>
+                            <option value="Oswald" style={{ fontFamily: 'Oswald' }}>Oswald</option>
+                            <option value="Quicksand" style={{ fontFamily: 'Quicksand' }}>Quicksand</option>
+                            <option value="Playfair Display" style={{ fontFamily: 'Playfair Display' }}>Playfair Display</option>
+                          </optgroup>
                         </select>
-                        <p className="text-xs text-gray-500 mt-1.5">Fonte utilizada em todo o funil</p>
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <p className="text-xs text-gray-500">Fonte utilizada em todo o funil</p>
+                          <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Global</span>
+                        </div>
+                        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                          <p className="text-xs text-blue-700">
+                            <strong>Nota:</strong> Esta configuração afeta todo o funil, exceto elementos de texto que possuem configuração própria de fonte.
+                          </p>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-5">
