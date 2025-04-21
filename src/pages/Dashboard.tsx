@@ -464,15 +464,6 @@ const Dashboard = () => {
                     className="pl-9 w-[300px] bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/50 rounded-full"
                   />
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="relative p-2 rounded-full hover:bg-muted/80 transition-colors"
-                  onClick={() => navigate('/diagnostic')}
-                >
-                  <span className="sr-only">Diagnóstico</span>
-                  <Settings className="h-4 w-4" />
-                </Button>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -490,11 +481,12 @@ const Dashboard = () => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => navigate('/settings')}
+                onClick={handleOpenNewFunnelDialog}
                 className="rounded-full shadow-sm hover:shadow-md transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-blue-100"
+                disabled={!canCreateFunnel()}
               >
-                <Settings className="h-4 w-4 mr-2 text-primary" />
-                Configurações
+                <Plus className="h-4 w-4 mr-2 text-primary" />
+                Novo Funil
               </Button>
             </div>
           </div>
