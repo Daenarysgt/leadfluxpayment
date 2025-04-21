@@ -849,7 +849,7 @@ const Leads = () => {
         .from('steps')
         .select('*')
         .eq('funnel_id', currentFunnel.id)
-        .order('order_index', { ascending: true });
+        .order('order_index', { ascending: true }); // Mudado de step_number para order_index
       
       if (error) {
         console.error('Erro ao buscar nomes das etapas da tabela steps:', error);
@@ -914,6 +914,9 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return;
       
+      console.log('****** INÍCIO DA FUNÇÃO DE VISITANTES ATIVOS ******');
+      console.log('Funil ID:', currentFunnel.id);
+      
       // Não mudar para loading se já temos dados, evita piscar durante atualizações
       if (!activeVisitors.hasData) {
         setActiveVisitors(prev => ({ ...prev, loading: true }));
@@ -926,7 +929,7 @@ const Leads = () => {
       
       console.log('Buscando visitantes ativos desde:', timestampThreshold);
 
-      // PASSO 1: Buscar acessos recentes
+      // PASSO 1: Buscar acessos recentes - funcionamento verificado e correto
       const { data: recentSessions, error: sessionsError } = await supabase
         .from('funnel_access_logs')
         .select('session_id, created_at')
@@ -937,6 +940,8 @@ const Leads = () => {
         console.error('Erro ao buscar sessões recentes:', sessionsError);
         throw sessionsError;
       }
+      
+      console.log('Sessões recentes encontradas:', recentSessions?.length || 0);
 
       // PASSO 2: Buscar interações recentes (também indica atividade)
       const { data: recentInteractions, error: interactionsError } = await supabase
@@ -949,6 +954,8 @@ const Leads = () => {
         console.error('Erro ao buscar interações recentes:', interactionsError);
         throw interactionsError;
       }
+      
+      console.log('Interações recentes encontradas:', recentInteractions?.length || 0);
 
       // PASSO 3: Buscar envios de formulário recentes (também indica atividade)
       const { data: recentFormSubmissions, error: formsError } = await supabase
@@ -961,6 +968,8 @@ const Leads = () => {
         console.error('Erro ao buscar envios de formulário recentes:', formsError);
         throw formsError;
       }
+      
+      console.log('Formulários recentes encontrados:', recentFormSubmissions?.length || 0);
       
       // PASSO 4: Juntar todas as sessões ativas de todas as fontes
       const activeSessionsMap = new Map();
@@ -1009,54 +1018,138 @@ const Leads = () => {
         }
       });
       
-      // PASSO 5: Verificar sessões que concluíram o funil
-      // Buscar última etapa do funil
-      const { data: stepsData, error: stepsError } = await supabase
-        .from('steps')
-        .select('step_number')
-        .eq('funnel_id', currentFunnel.id)
-        .order('step_number', { ascending: false })
-        .limit(1);
+      // Verificar se existem etapas no funil em primeiro lugar
+      console.log('Verificando estrutura do funil para determinar a última etapa...');
       
-      if (stepsError) {
-        console.error('Erro ao buscar última etapa:', stepsError);
-        throw stepsError;
-      }
-      
-      // Se encontrou etapas no funil, verificar quem completou
-      if (stepsData && stepsData.length > 0) {
-        const lastStepNumber = stepsData[0].step_number;
+      try {
+        // PASSO 5: Verificar sessões que concluíram o funil
+        // Buscar diretamente do funil carregado se disponível
+        let lastStepIndex = 0;
+        let completedSessions = null;
+        let completedError = null;
         
-        // Buscar sessões que completaram a última etapa (qualquer hora)
-        const { data: completedSessions, error: completedError } = await supabase
-          .from('funnel_step_interactions')
-          .select('session_id')
-          .eq('funnel_id', currentFunnel.id)
-          .eq('step_number', lastStepNumber);
-        
-        if (completedError) {
-          console.error('Erro ao buscar sessões completas:', completedError);
-          throw completedError;
+        if (currentFunnel.steps && currentFunnel.steps.length > 0) {
+          console.log('Obtendo última etapa diretamente do funil carregado');
+          // Encontrar a última etapa pelo maior order_index
+          lastStepIndex = Math.max(...currentFunnel.steps.map(s => s.order_index || 0));
+          console.log('Índice da última etapa encontrado no funil:', lastStepIndex);
+        } else {
+          // Buscar última etapa do funil do banco de dados
+          console.log('Consultando última etapa do banco de dados');
+          
+          // Exibir a estrutura exata da tabela steps para debug
+          const { data: stepsInfo, error: stepsInfoError } = await supabase
+            .from('steps')
+            .select('*') 
+            .eq('funnel_id', currentFunnel.id)
+            .limit(1);
+          
+          if (stepsInfoError) {
+            console.error('Erro ao consultar informações da tabela steps:', stepsInfoError);
+          } else {
+            console.log('Estrutura da tabela steps:', stepsInfo);
+          }
+          
+          // Tentar buscar usando colunas alternativas
+          const { data: stepsData, error: stepsError } = await supabase
+            .from('steps')
+            .select('order_index, id') 
+            .eq('funnel_id', currentFunnel.id)
+            .order('order_index', { ascending: false })
+            .limit(1);
+          
+          if (stepsError) {
+            console.error('Erro ao buscar última etapa:', stepsError);
+            console.log('Pulando verificação de sessões completas devido ao erro');
+          } else if (stepsData && stepsData.length > 0) {
+            lastStepIndex = stepsData[0].order_index;
+            console.log('Índice da última etapa:', lastStepIndex);
+          } else {
+            console.log('Nenhuma etapa encontrada para este funil');
+          }
         }
         
-        // Remover sessões que já completaram o funil
-        completedSessions?.forEach(session => {
-          // Mas verifica se a última atividade não é recente (útimo minuto)
-          // Se foi muito recente, podemos considerar que o usuário está vendo
-          // a tela de agradecimento ou a última etapa
-          const activeSession = activeSessionsMap.get(session.session_id);
+        // Se encontramos o índice da última etapa, verificar sessões completas
+        if (lastStepIndex > 0) {
+          console.log('Buscando sessões que completaram a última etapa:', lastStepIndex);
           
-          if (activeSession) {
-            const oneMinuteAgo = new Date();
-            oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
+          // Esta tabela pode ter um nome de coluna diferente para o número da etapa
+          // Vamos verificar a estrutura exata primeiro
+          const { data: interactionColumns, error: columnsError } = await supabase
+            .from('funnel_step_interactions')
+            .select('*')
+            .eq('funnel_id', currentFunnel.id)
+            .limit(1);
+          
+          if (columnsError) {
+            console.error('Erro ao verificar estrutura da tabela de interações:', columnsError);
+          } else {
+            console.log('Estrutura da tabela funnel_step_interactions:', interactionColumns);
+          }
+          
+          // Testar diferentes possíveis nomes de coluna para o número da etapa
+          let columnToUse = 'step_number'; // Nome padrão que estamos tentando
+          
+          // Buscar sessões que completaram a última etapa (qualquer hora)
+          const result = await supabase
+            .from('funnel_step_interactions')
+            .select('session_id')
+            .eq('funnel_id', currentFunnel.id)
+            .eq(columnToUse, lastStepIndex);
+          
+          completedSessions = result.data;
+          completedError = result.error;
+          
+          if (completedError) {
+            console.error(`Erro ao buscar sessões completas usando coluna "${columnToUse}":`, completedError);
+            console.log('Tentando com coluna alternativa "order_index"...');
             
-            // Se a última atividade foi há mais de 1 minuto atrás 
-            // E sabemos que completou o funil, então o usuário já saiu ou terminou
-            if (activeSession.lastActivity < oneMinuteAgo) {
-              activeSessionsMap.delete(session.session_id);
+            // Tentar com nome alternativo de coluna
+            const alternativeResult = await supabase
+              .from('funnel_step_interactions')
+              .select('session_id')
+              .eq('funnel_id', currentFunnel.id)
+              .eq('order_index', lastStepIndex);
+            
+            if (alternativeResult.error) {
+              console.error('Erro também com coluna alternativa:', alternativeResult.error);
+            } else {
+              console.log('Consulta com coluna alternativa funcionou!');
+              completedSessions = alternativeResult.data;
+              completedError = null;
             }
           }
-        });
+          
+          if (!completedError) {
+            console.log('Sessões que completaram o funil:', completedSessions?.length || 0);
+          }
+        }
+        
+        // Se encontramos sessões que completaram o funil, filtrá-las
+        if (completedSessions) {
+          // Remover sessões que já completaram o funil
+          completedSessions.forEach(session => {
+            // Mas verifica se a última atividade não é recente (útimo minuto)
+            // Se foi muito recente, podemos considerar que o usuário está vendo
+            // a tela de agradecimento ou a última etapa
+            const activeSession = activeSessionsMap.get(session.session_id);
+            
+            if (activeSession) {
+              const oneMinuteAgo = new Date();
+              oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
+              
+              // Se a última atividade foi há mais de 1 minuto atrás 
+              // E sabemos que completou o funil, então o usuário já saiu ou terminou
+              if (activeSession.lastActivity < oneMinuteAgo) {
+                console.log(`Removendo sessão ${session.session_id} que completou o funil e não está ativa recentemente`);
+                activeSessionsMap.delete(session.session_id);
+              }
+            }
+          });
+        }
+      } catch (innerError) {
+        console.error('Erro ao processar verificação de sessões completas:', innerError);
+        console.log('Usando contagem de sessões ativas sem filtrar completadas devido ao erro');
       }
       
       // Contar sessões ativas
@@ -1066,6 +1159,8 @@ const Leads = () => {
       if (activeCount > 0) {
         console.log('IDs das sessões ativas:', Array.from(activeSessionsMap.keys()));
       }
+      
+      console.log('****** FIM DA FUNÇÃO DE VISITANTES ATIVOS ******');
       
       // Pequeno atraso para evitar piscar durante atualizações frequentes
       setTimeout(() => {
@@ -1269,9 +1364,38 @@ const Leads = () => {
       try {
         if (!currentFunnel?.id) return;
         
+        console.log('****** INÍCIO DO CÁLCULO DE TAXAS DE ABANDONO ******');
+        
         // Não mudar para loading se já temos dados, evita piscar durante atualizações
         if (!dropoffData.hasData) {
           setDropoffData(prev => ({ ...prev, isLoading: true }));
+        }
+        
+        // Verificar estrutura da tabela steps primeiro
+        console.log('Verificando estrutura das tabelas...');
+        const { data: stepsStructure, error: structureError } = await supabase
+          .from('steps')
+          .select('*')
+          .eq('funnel_id', currentFunnel.id)
+          .limit(1);
+          
+        if (structureError) {
+          console.error('Erro ao verificar estrutura da tabela steps:', structureError);
+        } else if (stepsStructure && stepsStructure.length > 0) {
+          console.log('Estrutura da tabela steps (primeiro registro):', stepsStructure[0]);
+        }
+        
+        // Verificar estrutura da tabela de interações também
+        const { data: interactionsStructure, error: interactionsStructureError } = await supabase
+          .from('funnel_step_interactions')
+          .select('*')
+          .eq('funnel_id', currentFunnel.id)
+          .limit(1);
+          
+        if (interactionsStructureError) {
+          console.error('Erro ao verificar estrutura da tabela de interações:', interactionsStructureError);
+        } else if (interactionsStructure && interactionsStructure.length > 0) {
+          console.log('Estrutura da tabela funnel_step_interactions (primeiro registro):', interactionsStructure[0]);
         }
         
         // Buscar todas as interações para contar usuários por etapa
@@ -1280,7 +1404,10 @@ const Leads = () => {
           .select('session_id, step_number')
           .eq('funnel_id', currentFunnel.id);
         
-        if (interactionError) throw interactionError;
+        if (interactionError) {
+          console.error('Erro ao buscar interações:', interactionError);
+          throw interactionError;
+        }
         
         // Buscar todas as sessões para contar total
         const { data: sessions, error: sessionsError } = await supabase
@@ -1299,6 +1426,7 @@ const Leads = () => {
             isLoading: false,
             hasData: true
           });
+          console.log('Sem interações suficientes para calcular quedas');
           return;
         }
         
@@ -1322,19 +1450,22 @@ const Leads = () => {
         // Também buscar informações das etapas para nomes corretos
         const { data: stepsData, error: stepsError } = await supabase
           .from('steps')
-          .select('id, step_number, title')
+          .select('id, order_index, title') 
           .eq('funnel_id', currentFunnel.id)
-          .order('step_number', { ascending: true });
+          .order('order_index', { ascending: true }); 
         
         if (stepsError) {
           console.error('Erro ao buscar informações das etapas:', stepsError);
+        } else {
+          console.log('Etapas encontradas:', stepsData?.length || 0);
         }
         
         // Mapear nomes das etapas a partir dos dados do banco
         const dynamicStepNames = {};
         stepsData?.forEach(step => {
-          if (step.step_number) {
-            dynamicStepNames[step.step_number] = step.title || `Etapa ${step.step_number}`;
+          if (step.order_index) {
+            dynamicStepNames[step.order_index] = step.title || `Etapa ${step.order_index}`;
+            console.log(`Mapeada etapa ${step.order_index}: "${step.title || `Etapa ${step.order_index}`}"`);
           }
         });
         
@@ -1421,11 +1552,15 @@ const Leads = () => {
             isLoading: false,
             hasData: true
           });
+          console.log('Nenhuma taxa de abandono significativa detectada');
           return;
         }
         
         const highestDropoff = dropoffRates.reduce((max, current) => 
           current.dropoffRate > max.dropoffRate ? current : max, dropoffRates[0]);
+        
+        console.log('Maior taxa de abandono encontrada:', highestDropoff);
+        console.log('****** FIM DO CÁLCULO DE TAXAS DE ABANDONO ******');
         
         // Atraso mínimo para evitar piscar durante atualizações frequentes
         setTimeout(() => {
