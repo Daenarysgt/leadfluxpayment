@@ -11,7 +11,7 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuL
 import { Link, useParams } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { persistenceService } from "@/services/persistenceService";
 import { operationQueueService } from "@/services/operationQueueService";
 
@@ -20,6 +20,7 @@ const Design = () => {
   const { currentFunnel, updateFunnel, setCurrentFunnel } = useStore();
   const { funnelId } = useParams<{ funnelId: string }>();
   const [saving, setSaving] = useState(false);
+  const designContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (funnelId && (!currentFunnel || currentFunnel.id !== funnelId)) {
@@ -63,18 +64,79 @@ const Design = () => {
     }
   }, [funnelId, currentFunnel, setCurrentFunnel, updateFunnel]);
 
-  // Recarregar o funil quando houver alterações 
-  // useEffect(() => {
-  //   // A cada 2 segundos, recarregamos o funil para garantir que as alterações feitas sejam refletidas
-  //   const intervalId = setInterval(() => {
-  //     if (funnelId && currentFunnel) {
-  //       console.log("Recarregando funil para atualizar configurações...");
-  //       setCurrentFunnel(funnelId);
-  //     }
-  //   }, 2000);
+  // Aplicar zoom de 90% e resolver espaços vazios no rodapé e lateral
+  useEffect(() => {
+    // Criar um elemento de estilo dedicado
+    const styleElement = document.createElement('style');
+    styleElement.id = 'design-zoom-fix';
     
-  //   return () => clearInterval(intervalId);
-  // }, [funnelId, currentFunnel?.id, setCurrentFunnel]);
+    // CSS que garante o zoom de 90% e evita espaços vazios
+    styleElement.innerHTML = `
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #root {
+        transform: scale(0.90);
+        transform-origin: 0 0;
+        width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
+        height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+      }
+      
+      /* Ajustes para resolver o espaço no rodapé */
+      .flex.flex-col.min-h-screen {
+        min-height: 111.12vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Ajustes para área de rolagem */
+      .h-\\[500px\\] {
+        height: calc(111.12vh - 250px) !important;
+      }
+    `;
+    
+    // Adicionar ao head
+    document.head.appendChild(styleElement);
+    
+    // Aplicar ajustes específicos via JavaScript
+    const applySpecificFixes = () => {
+      if (designContainerRef.current) {
+        designContainerRef.current.style.minHeight = '111.12vh';
+      }
+      
+      // Ajustar o container principal
+      const containers = document.querySelectorAll('.container, .py-8, .space-y-6');
+      containers.forEach((container: Element) => {
+        const element = container as HTMLElement;
+        element.style.minHeight = 'calc(111.12vh - 57px)';
+      });
+      
+      // Ajustar áreas de rolagem
+      const scrollAreas = document.querySelectorAll('.scroll-area');
+      scrollAreas.forEach((area: Element) => {
+        const element = area as HTMLElement;
+        element.style.maxHeight = 'calc(111.12vh - 250px)';
+      });
+    };
+    
+    // Executar após um pequeno delay para garantir que o DOM esteja pronto
+    setTimeout(applySpecificFixes, 100);
+    // Executar também depois de 500ms para maior garantia
+    setTimeout(applySpecificFixes, 500);
+    
+    // Limpar ao desmontar
+    return () => {
+      const styleToRemove = document.getElementById('design-zoom-fix');
+      if (styleToRemove) {
+        styleToRemove.remove();
+      }
+    };
+  }, []);
 
   if (!currentFunnel) {
     return (
@@ -257,7 +319,7 @@ const Design = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-slate-50" ref={designContainerRef}>
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-gray-100" onClick={() => window.location.href = "/dashboard"}>

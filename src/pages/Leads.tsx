@@ -191,6 +191,7 @@ const Leads = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   // Flag para resolver manualmente os problemas de métricas
   const metricsForceLoaded = useRef(false);
+  const leadsContainerRef = useRef<HTMLDivElement>(null);
 
   // Função para exportar os dados dos leads para CSV
   const exportLeadsToCSV = () => {
@@ -1101,6 +1102,68 @@ const Leads = () => {
     }
   };
 
+  // Aplicar zoom de 90% e resolver espaços vazios no rodapé e lateral
+  useEffect(() => {
+    // Criar um elemento de estilo dedicado
+    const styleElement = document.createElement('style');
+    styleElement.id = 'leads-zoom-fix';
+    
+    // CSS que garante o zoom de 90% e evita espaços vazios
+    styleElement.innerHTML = `
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #root {
+        transform: scale(0.90);
+        transform-origin: 0 0;
+        width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
+        height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+      }
+      
+      /* Ajustes para resolver o espaço no rodapé */
+      .flex.flex-col.min-h-screen {
+        min-height: 111.12vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+    `;
+    
+    // Adicionar ao head
+    document.head.appendChild(styleElement);
+    
+    // Aplicar ajustes específicos via JavaScript
+    const applySpecificFixes = () => {
+      if (leadsContainerRef.current) {
+        leadsContainerRef.current.style.minHeight = '111.12vh';
+      }
+      
+      // Ajustar tamanhos de tabelas e containers
+      const containers = document.querySelectorAll('.p-6, .space-y-6');
+      containers.forEach((container: Element) => {
+        const element = container as HTMLElement;
+        element.style.minHeight = 'calc(111.12vh - 57px)';
+      });
+    };
+    
+    // Executar após um pequeno delay para garantir que o DOM esteja pronto
+    setTimeout(applySpecificFixes, 100);
+    // Executar também depois de 500ms para maior garantia
+    setTimeout(applySpecificFixes, 500);
+    
+    // Limpar ao desmontar
+    return () => {
+      const styleToRemove = document.getElementById('leads-zoom-fix');
+      if (styleToRemove) {
+        styleToRemove.remove();
+      }
+    };
+  }, []);
+
   if (!currentFunnel) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -1118,7 +1181,7 @@ const Leads = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-slate-50" ref={leadsContainerRef}>
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-gray-100" onClick={() => window.location.href = "/dashboard"}>
