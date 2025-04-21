@@ -157,140 +157,108 @@ const Dashboard = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    loadChartData().then(() => {
-      // Carregar métricas após o carregamento dos dados do gráfico
-      // para garantir consistência
-      loadMetrics();
-    });
-  }, [funnels, chartPeriod]);
-
-  // Função para carregar dados do gráfico
-  const loadChartData = async () => {
-    try {
-      setLoadingChartData(true);
-      
-      // Buscar dados usando o novo serviço otimizado
-      const data = await dashboardService.getDashboardChartData(chartPeriod);
-      
-      // Log detalhado para debug
-      console.log(`Dados do gráfico recebidos para ${chartPeriod}:`, JSON.stringify(data, null, 2));
-      
-      // Verificar se temos dados válidos
-      if (data.length > 0) {
-        // Atualizar o estado de dados por período
+    // Forçar atualização de dados ao carregar o componente
+    const loadAllData = async () => {
+      try {
+        // Limpar os dados antigos
+        setChartData([]);
+        setChartDataByPeriod({
+          today: [],
+          '7days': [],
+          '30days': []
+        });
+        setDataInitialized({
+          today: false,
+          '7days': false,
+          '30days': false
+        });
+        
+        console.log("Forçando atualização completa de dados...");
+        
+        // Buscar dados do gráfico
+        const chartData = await dashboardService.getDashboardChartData(chartPeriod);
+        console.log("Dados do gráfico recebidos:", chartData);
+        
+        // Atualizar gráfico
+        setChartData(chartData);
         setChartDataByPeriod(prev => ({
           ...prev,
-          [chartPeriod]: data
+          [chartPeriod]: chartData
         }));
-        
-        // Marcar este período como inicializado
         setDataInitialized(prev => ({
           ...prev,
           [chartPeriod]: true
         }));
         
-        // Atualizar dados do gráfico
-        setChartData(data);
-      } else {
-        console.log('Nenhum dado retornado para o período:', chartPeriod);
-        // Se não há dados, definir array vazio
-        setChartData([]);
+        // Buscar métricas para os cards
+        const metrics = await dashboardService.getDashboardCardMetrics();
+        console.log("Métricas dos cards recebidas:", metrics);
+        
+        // Atualizar métricas
+        setMetrics({
+          totalFunnels: metrics.total_funnels || funnels.length,
+          totalSessions: metrics.total_sessions || 0,
+          completionRate: metrics.completion_rate || 0,
+          interactionRate: metrics.interaction_rate || 0
+        });
+        
+        console.log("Atualização completa concluída.");
+      } catch (error) {
+        console.error("Erro na atualização completa:", error);
+      } finally {
+        setLoadingChartData(false);
+        setLoadingMetrics(false);
       }
-      
-      // Retornar os dados atuais
-      return data;
-    } catch (error) {
-      console.error('Erro ao carregar dados do gráfico:', error);
-      // Em caso de erro, manter os dados atuais ou limpar
-      setChartData([]);
-      return [];
-    } finally {
-      setLoadingChartData(false);
-    }
-  };
-
-  const loadMetrics = async () => {
-    try {
-      setLoadingMetrics(true);
-      
-      // Usar o novo serviço otimizado para obter métricas dos cards
-      const cardMetrics = await dashboardService.getDashboardCardMetrics();
-      
-      // Log detalhado para debug
-      console.log('Métricas dos cards recebidas:', JSON.stringify(cardMetrics, null, 2));
-      
-      // Atualizar o estado com as métricas obtidas diretamente do backend
-      setMetrics({
-        totalFunnels: cardMetrics.total_funnels,
-        totalSessions: cardMetrics.total_sessions,
-        completionRate: cardMetrics.completion_rate,
-        interactionRate: cardMetrics.interaction_rate
-      });
-      
-      console.log('Dashboard card metrics loaded:', cardMetrics);
-    } catch (error) {
-      console.error('Error loading dashboard metrics:', error);
-      setMetrics({
-        totalFunnels: funnels.length,
-        totalSessions: 0,
-        completionRate: 0,
-        interactionRate: 0
-      });
-    } finally {
-      setLoadingMetrics(false);
-    }
-  };
+    };
+    
+    loadAllData();
+    
+    // Configurar um intervalo para atualizar os dados a cada 30 segundos
+    const intervalId = setInterval(loadAllData, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [funnels, chartPeriod]);
 
   // Função para forçar a atualização dos dados do gráfico
   const refreshChartData = async () => {
     try {
       setLoadingChartData(true);
+      setLoadingMetrics(true);
       
-      // Resetar a inicialização dos dados para o período atual
-      setDataInitialized(prev => ({
-        ...prev,
-        [chartPeriod]: false
-      }));
+      console.log("Atualizando dados manualmente...");
       
-      // Buscar novos dados do backend usando o serviço otimizado
-      const newData = await dashboardService.getDashboardChartData(chartPeriod);
+      // Buscar novos dados do gráfico
+      const chartData = await dashboardService.getDashboardChartData(chartPeriod);
+      console.log("Novos dados do gráfico:", chartData);
       
-      // Atualizar dados do período atual
+      // Atualizar gráfico
+      setChartData(chartData);
       setChartDataByPeriod(prev => ({
         ...prev,
-        [chartPeriod]: newData
+        [chartPeriod]: chartData
       }));
       
-      // Atualizar dados do gráfico
-      setChartData(newData);
+      // Buscar novas métricas
+      const metrics = await dashboardService.getDashboardCardMetrics();
+      console.log("Novas métricas:", metrics);
       
-      // Marcar como inicializado
-      setDataInitialized(prev => ({
-        ...prev,
-        [chartPeriod]: true
-      }));
+      // Atualizar métricas
+      setMetrics({
+        totalFunnels: metrics.total_funnels || funnels.length,
+        totalSessions: metrics.total_sessions || 0,
+        completionRate: metrics.completion_rate || 0,
+        interactionRate: metrics.interaction_rate || 0
+      });
       
-      // Atualizar também as métricas para manter consistência
-      await loadMetrics();
-      
-      // Exibir mensagem de sucesso
       toast.success('Dados atualizados com sucesso!');
     } catch (error) {
-      console.error('Erro ao atualizar dados do gráfico:', error);
+      console.error('Erro ao atualizar dados:', error);
       toast.error('Erro ao atualizar dados');
     } finally {
       setLoadingChartData(false);
+      setLoadingMetrics(false);
     }
   };
-
-  // Adicionar efeito para resetar dataInitialized quando muda de período
-  useEffect(() => {
-    // Forçar o carregamento de novos dados ao mudar de período
-    setDataInitialized(prev => ({
-      ...prev,
-      [chartPeriod]: false
-    }));
-  }, [chartPeriod]);
 
   const handleOpenNewFunnelDialog = () => {
     if (!canCreateFunnel()) {
@@ -550,11 +518,22 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{metrics.totalFunnels}</div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                <ArrowUpRight className="h-3 w-3 text-green-500" />
-                <span className="text-green-500 font-medium">Atualizado</span>
-              </div>
+              {loadingMetrics ? (
+                <div className="animate-pulse">
+                  <div className="h-8 w-16 bg-blue-100 rounded"></div>
+                  <div className="h-4 w-24 bg-blue-50 rounded mt-1"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {metrics.totalFunnels || "0"}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <ArrowUpRight className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500 font-medium">Atualizado</span>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -573,7 +552,9 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{metrics.totalSessions}</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    {Number(metrics.totalSessions).toLocaleString() || "0"}
+                  </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500 font-medium">Atualizado</span>
@@ -598,7 +579,9 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">{metrics.completionRate.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                    {Number(metrics.completionRate).toFixed(1)}%
+                  </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500 font-medium">Atualizado</span>
@@ -626,7 +609,9 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <>
-                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{metrics.interactionRate.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {Number(metrics.interactionRate).toFixed(1)}%
+                  </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500 font-medium">Atualizado</span>
