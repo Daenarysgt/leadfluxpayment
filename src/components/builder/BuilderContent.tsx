@@ -68,7 +68,7 @@ const BuilderContent = ({
           <>
             <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
             
-            <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
               <ElementConfigSidebar 
                 selectedElement={selectedElement}
                 onUpdate={onElementUpdate}
