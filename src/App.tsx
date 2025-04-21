@@ -29,6 +29,7 @@ import PaymentCanceled from '@/pages/payment/PaymentCanceled';
 import { CheckoutPage } from '@/pages/checkout';
 import Account from '@/pages/Account';
 import DiagnosticPage from '@/pages/DiagnosticPage';
+import TermsOfService from '@/pages/TermsOfService';
 import { useNavigate } from 'react-router-dom';
 
 // Configure the query client with caching options
@@ -140,6 +141,7 @@ const App = () => {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/verify-otp" element={<VerifyOtpPage />} />
                 <Route path="/pricing" element={<LandingPage />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 
                 {/* Rota pública para acessar funis pelo slug */}
                 <Route path="/f/:slug" element={<PublicFunnel />} />

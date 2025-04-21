@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Github, Mail, Lock, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface LocationState {
   selectedPlan?: {
@@ -18,6 +19,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { signUp, signInWithGoogle, signInWithGithub } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,6 +80,11 @@ const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
+
+    if (!agreedToTerms) {
+      setPasswordError('Você precisa concordar com os Termos e Condições para continuar.');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setPasswordError('As senhas não coincidem');
@@ -244,6 +251,25 @@ const RegisterPage = () => {
               </div>
             </div>
 
+            <div className="flex items-start space-x-2 pt-2">
+              <Checkbox 
+                id="terms" 
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                className="mt-1"
+              />
+              <label 
+                htmlFor="terms" 
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                Ao se cadastrar você reconhece que leu, entendeu e concorda com os{' '}
+                <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors" target="_blank">
+                  Termos e Condições de Uso
+                </Link>{' '}
+                da plataforma.
+              </label>
+            </div>
+
             {passwordError && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
@@ -257,6 +283,7 @@ const RegisterPage = () => {
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+              disabled={!agreedToTerms}
             >
               Criar Conta
             </Button>
@@ -317,17 +344,6 @@ const RegisterPage = () => {
                 className="text-blue-600 hover:text-purple-600 transition-colors font-medium"
               >
                 Faça login
-              </Link>
-            </p>
-
-            <p className="text-center text-xs text-muted-foreground">
-              Ao criar uma conta, você concorda com nossos{' '}
-              <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors">
-                Termos de Serviço
-              </Link>{' '}
-              e{' '}
-              <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors">
-                Política de Privacidade
               </Link>
             </p>
           </form>
