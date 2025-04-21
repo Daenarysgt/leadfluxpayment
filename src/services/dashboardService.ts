@@ -1,5 +1,20 @@
 import { supabase } from '@/lib/supabase';
 
+// Cache para armazenar dados e evitar requisições repetidas
+const cache = {
+  cardMetrics: {
+    data: null,
+    timestamp: 0,
+    ttl: 2 * 60 * 1000, // 2 minutos
+  },
+  chartData: {
+    today: { data: null, timestamp: 0 },
+    '7days': { data: null, timestamp: 0 },
+    '30days': { data: null, timestamp: 0 },
+    ttl: 5 * 60 * 1000, // 5 minutos
+  }
+};
+
 /**
  * Serviço para obter métricas e dados para o dashboard
  */
@@ -8,14 +23,24 @@ export const dashboardService = {
    * Obtém métricas para os cards do dashboard
    * Usando funções SQL otimizadas para cada métrica
    */
-  async getDashboardCardMetrics(): Promise<{
+  async getDashboardCardMetrics(forceRefresh = false): Promise<{
     total_funnels: number;
     total_sessions: number;
     completion_rate: number;
     interaction_rate: number;
   }> {
     try {
-      console.log('Getting dashboard card metrics');
+      const now = Date.now();
+      
+      // Verificar cache se não for forçada a atualização
+      if (!forceRefresh && 
+          cache.cardMetrics.data && 
+          now - cache.cardMetrics.timestamp < cache.cardMetrics.ttl) {
+        console.log('Usando dados em cache para métricas de cards');
+        return cache.cardMetrics.data;
+      }
+      
+      console.log('Buscando novas métricas de cards do dashboard');
       
       // Chamar funções individualmente para facilitar a depuração
       const [totalFunnelsResult, totalSessionsResult, conversionRateResult, interactionRateResult] = await Promise.all([
@@ -25,27 +50,21 @@ export const dashboardService = {
         supabase.rpc('get_dashboard_interaction_rate')
       ]);
       
-      // Log detalhado de cada métrica para facilitar a depuração
-      console.log('Total funnels result:', totalFunnelsResult);
-      console.log('Total sessions result:', totalSessionsResult);
-      console.log('Conversion rate result:', conversionRateResult);
-      console.log('Interaction rate result:', interactionRateResult);
-      
       // Verificar erros individuais
       if (totalFunnelsResult.error) {
-        console.error('Error getting total funnels:', totalFunnelsResult.error);
+        console.error('Erro ao buscar total de funis:', totalFunnelsResult.error);
       }
       
       if (totalSessionsResult.error) {
-        console.error('Error getting total sessions:', totalSessionsResult.error);
+        console.error('Erro ao buscar total de sessões:', totalSessionsResult.error);
       }
       
       if (conversionRateResult.error) {
-        console.error('Error getting conversion rate:', conversionRateResult.error);
+        console.error('Erro ao buscar taxa de conversão:', conversionRateResult.error);
       }
       
       if (interactionRateResult.error) {
-        console.error('Error getting interaction rate:', interactionRateResult.error);
+        console.error('Erro ao buscar taxa de interação:', interactionRateResult.error);
       }
       
       // Construir o objeto de métricas
@@ -56,11 +75,22 @@ export const dashboardService = {
         interaction_rate: interactionRateResult.data || 0
       };
       
-      console.log('Dashboard card metrics retrieved:', metrics);
+      console.log('Métricas de cards atualizadas:', metrics);
+      
+      // Atualizar cache
+      cache.cardMetrics.data = metrics;
+      cache.cardMetrics.timestamp = now;
       
       return metrics;
     } catch (error) {
-      console.error('Unexpected error getting dashboard card metrics:', error);
+      console.error('Erro inesperado ao buscar métricas dos cards:', error);
+      
+      // Se houver dados em cache, usar como fallback
+      if (cache.cardMetrics.data) {
+        console.log('Usando dados em cache como fallback após erro');
+        return cache.cardMetrics.data;
+      }
+      
       return {
         total_funnels: 0,
         total_sessions: 0,
@@ -75,14 +105,25 @@ export const dashboardService = {
    * Usando uma função SQL otimizada para cada período
    */
   async getDashboardChartData(
-    period: 'today' | '7days' | '30days'
+    period: 'today' | '7days' | '30days',
+    forceRefresh = false
   ): Promise<Array<{
     name: string;
     sessoes: number;
     concluidos: number;
   }>> {
     try {
-      console.log('Getting dashboard chart data:', { period });
+      const now = Date.now();
+      
+      // Verificar cache se não for forçada a atualização
+      if (!forceRefresh && 
+          cache.chartData[period].data && 
+          now - cache.chartData[period].timestamp < cache.chartData.ttl) {
+        console.log(`Usando dados em cache para gráfico (${period})`);
+        return cache.chartData[period].data;
+      }
+      
+      console.log(`Buscando novos dados de gráfico: ${period}`);
       
       const { data, error } = await supabase
         .rpc('get_dashboard_chart_metrics', { 
@@ -90,19 +131,17 @@ export const dashboardService = {
         });
 
       if (error) {
-        console.error('Error getting dashboard chart data:', error);
-        return [];
+        console.error(`Erro ao buscar dados do gráfico (${period}):`, error);
+        return cache.chartData[period].data || [];
       }
 
       if (!data || data.length === 0) {
-        console.log('No dashboard chart data found for period:', period);
+        console.log(`Nenhum dado encontrado para o período: ${period}`);
         return [];
       }
 
-      console.log(`Retrieved ${data.length} data points for period ${period}`);
-
       // Formatar datas para exibição
-      return data.map(item => {
+      const formattedData = data.map(item => {
         // Formatação para período "today"
         if (period === 'today') {
           const date = new Date(item.time_period);
@@ -126,9 +165,61 @@ export const dashboardService = {
           };
         }
       });
+      
+      // Atualizar cache
+      cache.chartData[period].data = formattedData;
+      cache.chartData[period].timestamp = now;
+      
+      return formattedData;
     } catch (error) {
-      console.error('Unexpected error getting dashboard chart data:', error);
+      console.error(`Erro inesperado ao buscar dados do gráfico (${period}):`, error);
+      
+      // Se houver dados em cache, usar como fallback
+      if (cache.chartData[period].data) {
+        console.log('Usando dados em cache como fallback após erro');
+        return cache.chartData[period].data;
+      }
+      
       return [];
+    }
+  },
+  
+  /**
+   * Força a atualização de todos os dados
+   */
+  async refreshAllData() {
+    try {
+      console.log('Forçando atualização de todos os dados do dashboard');
+      
+      // Limpar cache
+      cache.cardMetrics.data = null;
+      cache.cardMetrics.timestamp = 0;
+      cache.chartData.today.data = null;
+      cache.chartData.today.timestamp = 0;
+      cache.chartData['7days'].data = null;
+      cache.chartData['7days'].timestamp = 0;
+      cache.chartData['30days'].data = null;
+      cache.chartData['30days'].timestamp = 0;
+      
+      // Buscar novos dados
+      const [metrics, todayChart, weekChart, monthChart] = await Promise.all([
+        this.getDashboardCardMetrics(true),
+        this.getDashboardChartData('today', true),
+        this.getDashboardChartData('7days', true),
+        this.getDashboardChartData('30days', true)
+      ]);
+      
+      return {
+        metrics,
+        charts: {
+          today: todayChart,
+          '7days': weekChart,
+          '30days': monthChart
+        }
+      };
+    } catch (error) {
+      console.error('Erro ao atualizar todos os dados:', error);
+      throw error;
     }
   }
 }; 

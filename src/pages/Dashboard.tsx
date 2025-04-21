@@ -160,11 +160,13 @@ const Dashboard = () => {
     // Forçar atualização de dados ao carregar o componente
     const loadAllData = async () => {
       try {
+        setLoadingChartData(true);
+        setLoadingMetrics(true);
+        
         console.log("Atualizando dados do dashboard...");
         
-        // Buscar dados do gráfico
+        // Buscar dados do gráfico (usando cache se disponível)
         const chartData = await dashboardService.getDashboardChartData(chartPeriod);
-        console.log(`Recebidos ${chartData.length} pontos de dados para o gráfico:`, chartPeriod);
         
         // Atualizar gráfico
         setChartData(chartData);
@@ -177,21 +179,15 @@ const Dashboard = () => {
           [chartPeriod]: true
         }));
         
-        // Buscar métricas para os cards
+        // Buscar métricas para os cards (usando cache se disponível)
         const metrics = await dashboardService.getDashboardCardMetrics();
-        console.log("Métricas dos cards atualizadas:", {
-          totalFunnels: metrics.total_funnels,
-          totalSessions: metrics.total_sessions,
-          conversionRate: metrics.completion_rate,
-          interactionRate: metrics.interaction_rate
-        });
         
         // Atualizar métricas
         setMetrics({
-          totalFunnels: metrics.total_funnels,
-          totalSessions: metrics.total_sessions,
-          completionRate: metrics.completion_rate,
-          interactionRate: metrics.interaction_rate
+          totalFunnels: metrics.total_funnels || funnels.length,
+          totalSessions: metrics.total_sessions || 0,
+          completionRate: metrics.completion_rate || 0,
+          interactionRate: metrics.interaction_rate || 0
         });
       } catch (error) {
         console.error("Erro ao atualizar dados do dashboard:", error);
@@ -204,9 +200,9 @@ const Dashboard = () => {
     // Carregar dados imediatamente
     loadAllData();
     
-    // Configurar um intervalo para atualizar a cada 2 minutos, 
-    // ao invés de 30 segundos (para não sobrecarregar o banco)
-    const intervalId = setInterval(loadAllData, 120000);
+    // Configurar um intervalo para atualizar a cada 5 minutos,
+    // podemos usar um intervalo maior já que temos cache
+    const intervalId = setInterval(loadAllData, 5 * 60 * 1000);
     
     return () => clearInterval(intervalId);
   }, [funnels, chartPeriod]);
@@ -219,27 +215,33 @@ const Dashboard = () => {
       
       console.log("Atualizando dados manualmente...");
       
-      // Buscar novos dados do gráfico
-      const chartData = await dashboardService.getDashboardChartData(chartPeriod);
-      console.log("Novos dados do gráfico:", chartData);
+      // Usar a nova função que atualiza todos os dados de uma vez
+      const allData = await dashboardService.refreshAllData();
       
-      // Atualizar gráfico
-      setChartData(chartData);
+      // Atualizar gráfico com os dados do período atual
+      setChartData(allData.charts[chartPeriod]);
+      
+      // Atualizar todos os dados do gráfico para os diferentes períodos
       setChartDataByPeriod(prev => ({
         ...prev,
-        [chartPeriod]: chartData
+        today: allData.charts.today,
+        '7days': allData.charts['7days'],
+        '30days': allData.charts['30days']
       }));
       
-      // Buscar novas métricas
-      const metrics = await dashboardService.getDashboardCardMetrics();
-      console.log("Novas métricas:", metrics);
+      // Marcar todos os períodos como inicializados
+      setDataInitialized({
+        today: true,
+        '7days': true,
+        '30days': true
+      });
       
-      // Atualizar métricas
+      // Atualizar métricas dos cards
       setMetrics({
-        totalFunnels: metrics.total_funnels || funnels.length,
-        totalSessions: metrics.total_sessions || 0,
-        completionRate: metrics.completion_rate || 0,
-        interactionRate: metrics.interaction_rate || 0
+        totalFunnels: allData.metrics.total_funnels || funnels.length,
+        totalSessions: allData.metrics.total_sessions || 0,
+        completionRate: allData.metrics.completion_rate || 0,
+        interactionRate: allData.metrics.interaction_rate || 0
       });
       
       toast.success('Dados atualizados com sucesso!');
