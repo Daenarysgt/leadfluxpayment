@@ -78,26 +78,39 @@ const Builder = () => {
     setSelectedElement(null);
   }, [currentStep, setSelectedElement]);
 
-  // Aplicar zoom para o Builder com preenchimento total da tela
+  // Aplicar zoom de 90% e resolver espaços vazios no rodapé e lateral
   useEffect(() => {
-    // Definir a visualização para 90%
-    document.body.style.overflow = 'hidden';
-    document.body.style.height = '100vh';
-    document.body.style.width = '100vw';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
+    // Criar um elemento de estilo dedicado
+    const styleElement = document.createElement('style');
+    styleElement.id = 'builder-zoom-fix';
     
-    // Aplicar zoom de 90%
-    document.body.style.zoom = '0.9';
+    // CSS que garante o zoom de 90% e evita espaços vazios
+    styleElement.innerHTML = `
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        width: 100vw !important;
+        height: 100vh !important;
+      }
+      
+      #root {
+        transform: scale(0.90);
+        transform-origin: 0 0;
+        width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
+        height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+      }
+    `;
+    
+    // Adicionar ao head
+    document.head.appendChild(styleElement);
     
     // Limpar ao desmontar
     return () => {
-      document.body.style.zoom = '';
-      document.body.style.overflow = '';
-      document.body.style.height = '';
-      document.body.style.width = '';
-      document.body.style.margin = '';
-      document.body.style.padding = '';
+      const styleToRemove = document.getElementById('builder-zoom-fix');
+      if (styleToRemove) {
+        styleToRemove.remove();
+      }
     };
   }, []);
 
