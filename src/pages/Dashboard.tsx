@@ -123,6 +123,28 @@ const Dashboard = () => {
     sessoes: number;
     concluidos: number;
   }>>([]);
+  
+  // Novos estados para armazenar dados consistentes por período
+  const [chartDataByPeriod, setChartDataByPeriod] = useState<{
+    today: Array<{name: string; sessoes: number; concluidos: number;}>;
+    '7days': Array<{name: string; sessoes: number; concluidos: number;}>;
+    '30days': Array<{name: string; sessoes: number; concluidos: number;}>;
+  }>({
+    today: [],
+    '7days': [],
+    '30days': []
+  });
+  
+  // Flag para controlar a inicialização dos dados
+  const [dataInitialized, setDataInitialized] = useState<{
+    today: boolean;
+    '7days': boolean;
+    '30days': boolean;
+  }>({
+    today: false,
+    '7days': false,
+    '30days': false
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -132,8 +154,31 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadMetrics();
-    generateChartData(chartPeriod); // Carregar dados do gráfico quando os funis mudarem
-  }, [funnels, chartPeriod]);
+    
+    // Verificar se os dados para este período já foram inicializados
+    if (!dataInitialized[chartPeriod]) {
+      // Gerar dados apenas se não foram inicializados anteriormente
+      const newData = generateChartData(chartPeriod);
+      
+      // Atualizar o estado de dados por período
+      setChartDataByPeriod(prev => ({
+        ...prev,
+        [chartPeriod]: newData
+      }));
+      
+      // Marcar este período como inicializado
+      setDataInitialized(prev => ({
+        ...prev,
+        [chartPeriod]: true
+      }));
+      
+      // Atualizar dados do gráfico
+      setChartData(newData);
+    } else {
+      // Usar os dados já gerados para este período
+      setChartData(chartDataByPeriod[chartPeriod]);
+    }
+  }, [funnels, chartPeriod, dataInitialized, chartDataByPeriod]);
 
   const loadMetrics = async () => {
     try {
@@ -191,7 +236,7 @@ const Dashboard = () => {
     }
   };
 
-  // Função para gerar dados mockados para o gráfico
+  // Função para gerar dados mockados para o gráfico, alterada para retornar os dados em vez de definir o estado
   const generateChartData = (period: 'today' | '7days' | '30days') => {
     // Formatar as datas
     const formatDate = (date: Date) => {
@@ -266,7 +311,21 @@ const Dashboard = () => {
       }
     }
     
-    setChartData(data);
+    return data;
+  };
+  
+  // Função para forçar a atualização dos dados do gráfico
+  const refreshChartData = () => {
+    const newData = generateChartData(chartPeriod);
+    
+    // Atualizar dados do período atual
+    setChartDataByPeriod(prev => ({
+      ...prev,
+      [chartPeriod]: newData
+    }));
+    
+    // Atualizar dados do gráfico
+    setChartData(newData);
   };
 
   const handleOpenNewFunnelDialog = () => {
@@ -647,6 +706,20 @@ const Dashboard = () => {
                 onClick={() => setChartPeriod('30days')}
               >
                 Últimos 30 dias
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs rounded-full hover:bg-blue-50"
+                onClick={refreshChartData}
+                title="Atualizar dados"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6"></path>
+                  <path d="M1 20v-6h6"></path>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                  <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
               </Button>
             </div>
           </CardHeader>
