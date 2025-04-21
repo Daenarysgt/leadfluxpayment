@@ -77,12 +77,43 @@ const RegisterPage = () => {
     }
   }, [selectedPlan, urlPlanId, urlInterval, urlPlanName, urlTimestamp]);
 
+  // Adicionar efeito para monitorar a concordância com os termos
+  useEffect(() => {
+    // Verificar se o botão deve estar habilitado
+    const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
+    if (submitButton) {
+      submitButton.disabled = !agreedToTerms;
+      
+      // Adicionar uma classe visual clara para destacar a necessidade de aceitar os termos
+      if (!agreedToTerms) {
+        submitButton.classList.add('opacity-50');
+      } else {
+        submitButton.classList.remove('opacity-50');
+      }
+    }
+    
+    // Atualizar a aparência da caixa de seleção de termos
+    const termsCheckbox = document.getElementById('terms')?.parentElement;
+    if (termsCheckbox) {
+      if (!agreedToTerms) {
+        termsCheckbox.classList.add('animate-pulse');
+      } else {
+        termsCheckbox.classList.remove('animate-pulse');
+      }
+    }
+  }, [agreedToTerms]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
 
+    // Verificação explícita dos Termos e Condições
     if (!agreedToTerms) {
       setPasswordError('Você precisa concordar com os Termos e Condições para continuar.');
+      // Destacar visualmente o checkbox
+      document.getElementById('terms')?.parentElement?.classList.add('ring-2', 'ring-red-500');
+      // Rolar até o checkbox para garantir que seja visível
+      document.getElementById('terms')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -251,19 +282,19 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <div className="flex items-start space-x-2 pt-2">
+            <div className="flex items-start space-x-3 pt-4 border p-4 rounded-md bg-blue-50/30">
               <Checkbox 
                 id="terms" 
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                className="mt-1"
+                className="mt-0.5 h-5 w-5 border-gray-300"
               />
               <label 
                 htmlFor="terms" 
-                className="text-sm text-muted-foreground cursor-pointer"
+                className="text-sm cursor-pointer"
               >
                 Ao se cadastrar você reconhece que leu, entendeu e concorda com os{' '}
-                <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors" target="_blank">
+                <Link to="/terms" className="text-blue-600 font-medium hover:underline" target="_blank">
                   Termos e Condições de Uso
                 </Link>{' '}
                 da plataforma.
@@ -282,10 +313,14 @@ const RegisterPage = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+              className={`w-full transition-all duration-300 shadow-lg hover:shadow-xl ${
+                agreedToTerms 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
               disabled={!agreedToTerms}
             >
-              Criar Conta
+              {agreedToTerms ? 'Criar Conta' : 'Aceite os termos para continuar'}
             </Button>
 
             <div className="relative">
