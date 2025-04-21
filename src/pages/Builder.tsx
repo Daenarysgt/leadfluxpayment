@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/utils/store";
 import { useBuilderCanvas } from "@/hooks/useBuilderCanvas";
 import { useBuilderViewMode } from "@/hooks/useBuilderViewMode";
@@ -42,6 +42,9 @@ const Builder = () => {
 
   // Referência ao container principal do Builder
   const builderContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Estado para armazenar a escala atual
+  const [zoomScale] = useState(0.9); // 90% de zoom
 
   // Initialize funnel if none is selected
   useEffect(() => {
@@ -75,45 +78,26 @@ const Builder = () => {
     setSelectedElement(null);
   }, [currentStep, setSelectedElement]);
 
-  // Aplicar zoom para o Builder
+  // Aplicar zoom para o Builder com preenchimento total da tela
   useEffect(() => {
-    // Criar um elemento de estilo específico para o zoom
-    const styleElement = document.createElement('style');
-    styleElement.setAttribute('id', 'builder-zoom-style');
+    // Definir a visualização para 90%
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    document.body.style.width = '100vw';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
     
-    // Adicionar CSS para controlar o zoom apenas no Builder
-    styleElement.innerHTML = `
-      #builderRoot {
-        transform: scale(0.9);
-        transform-origin: center top;
-        margin: 0 auto;
-        width: 100%;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      body {
-        overflow: hidden;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-      }
-    `;
+    // Aplicar zoom de 90%
+    document.body.style.zoom = '0.9';
     
-    // Adicionar o estilo ao head
-    document.head.appendChild(styleElement);
-    
-    // Também adicionar um ID ao container principal para que o CSS possa selecioná-lo
-    if (builderContainerRef.current) {
-      builderContainerRef.current.id = 'builderRoot';
-    }
-    
-    // Remover o estilo quando o componente for desmontado
+    // Limpar ao desmontar
     return () => {
-      const styleToRemove = document.getElementById('builder-zoom-style');
-      if (styleToRemove) {
-        styleToRemove.remove();
-      }
+      document.body.style.zoom = '';
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+      document.body.style.width = '';
+      document.body.style.margin = '';
+      document.body.style.padding = '';
     };
   }, []);
 
