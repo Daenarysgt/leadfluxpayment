@@ -1057,7 +1057,155 @@ const Leads = () => {
     await loadAllData(true);
   };
 
-  // Render section with cards
+  // Adicionar um novo componente isolado para o card de Queda mais frequente
+  const DropoffRateCard = () => {
+    const [dropoffData, setDropoffData] = useState({
+      highestDropoffStep: 0,
+      highestDropoffRate: 0,
+      stepName: '',
+      isLoading: true
+    });
+    
+    useEffect(() => {
+      // Função isolada para calcular a taxa de abandono por etapa
+      const calculateDropoffRates = async () => {
+        try {
+          if (!currentFunnel?.id) return;
+          
+          setDropoffData(prev => ({ ...prev, isLoading: true }));
+          
+          // Buscar todas as interações para contar usuários por etapa
+          const { data: interactions, error: interactionError } = await supabase
+            .from('funnel_step_interactions')
+            .select('session_id, step_number')
+            .eq('funnel_id', currentFunnel.id);
+          
+          if (interactionError) throw interactionError;
+          
+          // Buscar o número total de passos no funil
+          const { data: stepsData, error: stepsError } = await supabase
+            .from('steps')
+            .select('id, step_number')
+            .eq('funnel_id', currentFunnel.id);
+          
+          if (stepsError) throw stepsError;
+          
+          // Agrupar interações por etapa e contar usuários únicos
+          const stepUsers = {};
+          interactions?.forEach(interaction => {
+            const step = interaction.step_number;
+            if (!stepUsers[step]) {
+              stepUsers[step] = new Set();
+            }
+            stepUsers[step].add(interaction.session_id);
+          });
+          
+          // Converter para contagens
+          const stepCounts = Object.keys(stepUsers).sort((a, b) => parseInt(a) - parseInt(b)).map(step => ({
+            step: parseInt(step),
+            count: stepUsers[step].size
+          }));
+          
+          console.log('Contagem de usuários por etapa:', stepCounts);
+          
+          // Calcular taxas de abandono entre etapas
+          const dropoffRates = [];
+          for (let i = 0; i < stepCounts.length - 1; i++) {
+            const currentStep = stepCounts[i];
+            const nextStep = stepCounts[i + 1];
+            
+            if (currentStep.count === 0) continue;
+            
+            const dropoffCount = currentStep.count - nextStep.count;
+            const dropoffRate = (dropoffCount / currentStep.count) * 100;
+            
+            dropoffRates.push({
+              step: currentStep.step,
+              dropoffRate: dropoffRate,
+              users: {
+                current: currentStep.count,
+                next: nextStep.count
+              }
+            });
+          }
+          
+          console.log('Taxas de abandono por etapa:', dropoffRates);
+          
+          // Encontrar a etapa com maior taxa de abandono
+          if (dropoffRates.length === 0) {
+            setDropoffData({
+              highestDropoffStep: 0,
+              highestDropoffRate: 0,
+              stepName: 'Nenhuma etapa',
+              isLoading: false
+            });
+            return;
+          }
+          
+          const highestDropoff = dropoffRates.reduce((max, current) => 
+            current.dropoffRate > max.dropoffRate ? current : max, dropoffRates[0]);
+          
+          // Obter o nome da etapa com maior abandono
+          const stepName = stepNames[highestDropoff.step] || `Etapa ${highestDropoff.step}`;
+          
+          setDropoffData({
+            highestDropoffStep: highestDropoff.step,
+            highestDropoffRate: highestDropoff.dropoffRate,
+            stepName: stepName,
+            isLoading: false
+          });
+        } catch (error) {
+          console.error('Erro ao calcular taxas de abandono:', error);
+          setDropoffData(prev => ({ 
+            ...prev, 
+            isLoading: false 
+          }));
+        }
+      };
+      
+      calculateDropoffRates();
+    }, [currentFunnel?.id, lastUpdated, stepNames]); // Recalcular quando o funil mudar ou os dados forem atualizados
+    
+    return (
+      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <span className="h-5 w-5 text-amber-500">📉</span>
+            <span>Queda mais frequente</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dropoffData.isLoading ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gray-800">
+                {dropoffData.highestDropoffRate > 0 ? (
+                  <>
+                    {dropoffData.stepName}
+                    <span className="text-amber-500 ml-1">
+                      ({dropoffData.highestDropoffRate.toFixed(1)}%)
+                    </span>
+                  </>
+                ) : (
+                  "Nenhuma queda significativa"
+                )}
+              </p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <span className="inline-block h-3 w-3 bg-amber-500 rounded-full"></span>
+                Etapa com maior taxa de abandono
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Agora alterar a função renderMetricsCards para incluir o novo card e usar um grid de 5 colunas
   const renderMetricsCards = () => {
     // Componente isolado para calcular a taxa de interação sem afetar outras partes
     const InteractionRateCard = () => {
@@ -1149,112 +1297,115 @@ const Leads = () => {
     };
 
     return (
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
-                <span>Total de Leads</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-800">{leads.length}</p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-5 gap-4">
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+              <span>Total de Leads</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">{leads.length}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <ArrowUpRight className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Atualizado</span>
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
-                </span>
-                <span>Taxa de Conversão</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  {/* Calcular a taxa com base nos leads que completaram o último passo */}
-                  <p className="text-3xl font-bold text-gray-800">
-                    {leads.length > 0 
-                      ? (leads.filter(lead => Object.keys(lead.interactions).some(key => parseInt(key) === stepMetrics.length)).length / leads.length * 100).toFixed(1) 
-                      : '0.0'}%
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <ArrowUpRight className="h-3 w-3 text-green-500" />
-                    <span className="text-green-500">Atualizado</span>
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
+              </span>
+              <span>Taxa de Conversão</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                {/* Calcular a taxa com base nos leads que completaram o último passo */}
+                <p className="text-3xl font-bold text-gray-800">
+                  {leads.length > 0 
+                    ? (leads.filter(lead => Object.keys(lead.interactions).some(key => parseInt(key) === stepMetrics.length)).length / leads.length * 100).toFixed(1) 
+                    : '0.0'}%
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <ArrowUpRight className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Atualizado</span>
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Usar o componente isolado para a taxa de interação */}
-          <InteractionRateCard />
+        {/* Usar o componente isolado para a taxa de interação */}
+        <InteractionRateCard />
+        
+        {/* Adicionar o novo card de Queda mais frequente */}
+        <DropoffRateCard />
 
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
-                  {selectedSource.icon}
-                </span>
-                <span>Origem Principal</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
-                        <span className={selectedSource.color}>{selectedSource.icon}</span>
-                        {selectedSource.name}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-[200px]">
-                      {TRAFFIC_SOURCES.map((source) => (
-                        <DropdownMenuItem
-                          key={source.id}
-                          onClick={() => setSelectedSource(source)}
-                          className="flex items-center gap-2"
-                        >
-                          <span className={source.color}>{source.icon}</span>
-                          {source.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {leads.length > 0 ? '100.0' : '0.0'}% dos visitantes interagiram
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
+                {selectedSource.icon}
+              </span>
+              <span>Origem Principal</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
+                      <span className={selectedSource.color}>{selectedSource.icon}</span>
+                      {selectedSource.name}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[200px]">
+                    {TRAFFIC_SOURCES.map((source) => (
+                      <DropdownMenuItem
+                        key={source.id}
+                        onClick={() => setSelectedSource(source)}
+                        className="flex items-center gap-2"
+                      >
+                        <span className={source.color}>{source.icon}</span>
+                        {source.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {leads.length > 0 ? '100.0' : '0.0'}% dos visitantes interagiram
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
