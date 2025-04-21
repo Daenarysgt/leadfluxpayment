@@ -1108,12 +1108,11 @@ const Leads = () => {
     const styleElement = document.createElement('style');
     styleElement.id = 'leads-zoom-fix';
     
-    // CSS exatamente como nas outras páginas que funcionaram, com ajustes para tabela
+    // CSS simplificado apenas com zoom, permitindo scroll na página inteira
     styleElement.innerHTML = `
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden !important;
         width: 100vw !important;
         height: 100vh !important;
       }
@@ -1123,25 +1122,6 @@ const Leads = () => {
         transform-origin: 0 0;
         width: 111.12vw !important;
         height: 111.12vh !important;
-      }
-      
-      /* Classe customizada para melhorar a visualização da tabela */
-      .leads-table-wrapper {
-        max-height: 60vh;
-        overflow-y: auto;
-        border-radius: 0.375rem;
-        border: 1px solid #e2e8f0;
-      }
-      
-      .leads-table-wrapper table {
-        width: 100%;
-      }
-      
-      .leads-table-wrapper thead {
-        position: sticky;
-        top: 0;
-        background-color: white;
-        z-index: 10;
       }
     `;
     
@@ -1342,8 +1322,8 @@ const Leads = () => {
             </p>
           </div>
 
-          {/* Aplicando a classe customizada para a tabela */}
-          <div className="leads-table-wrapper">
+          {/* Voltar para o estilo padrão da tabela */}
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
