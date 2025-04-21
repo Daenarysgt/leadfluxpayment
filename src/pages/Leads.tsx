@@ -197,6 +197,13 @@ const Leads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [leadsPerPage] = useState(10);
 
+  // Adicionar estado para armazenar a taxa de interação
+  const [interactionMetrics, setInteractionMetrics] = useState({
+    totalSessions: 0,
+    interactedSessions: 0,
+    loading: true
+  });
+
   // Função para exportar os dados dos leads para CSV
   const exportLeadsToCSV = () => {
     // Verifica se há dados para exportar
@@ -393,6 +400,9 @@ const Leads = () => {
       
       // Carregar métricas primeiro para garantir que os cards apareçam
       await loadMetrics(true);
+      
+      // Carregar a taxa de interação correta
+      await loadInteractionRate();
       
       // Forçar saída do estado de carregamento após um tempo máximo
       setTimeout(() => {
@@ -951,6 +961,96 @@ const Leads = () => {
     }
   };
 
+  // Adicionar função para carregar a taxa de interação corretamente
+  const loadInteractionRate = async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Carregando taxa de interação correta para o funil:', currentFunnel.id);
+      setInteractionMetrics(prev => ({ ...prev, loading: true }));
+      
+      // Buscar dados diretamente do banco de dados
+      const { data, error } = await supabase.rpc('get_interaction_rate', { 
+        p_funnel_id: currentFunnel.id 
+      });
+      
+      if (error) {
+        console.error('Erro ao obter taxa de interação:', error);
+        
+        // Alternativa: consulta direta nas tabelas
+        const { count: totalCount, error: directError } = await supabase
+          .from('funnel_access_logs')
+          .select('session_id', { count: 'exact', head: true })
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (directError) throw directError;
+        
+        const { data: interactionsData, error: interactionsError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id)
+          .limit(1000);
+        
+        if (interactionsError) throw interactionsError;
+        
+        // Contagem de sessões distintas que interagiram
+        const uniqueSessions = new Set();
+        interactionsData?.forEach(item => uniqueSessions.add(item.session_id));
+        
+        setInteractionMetrics({
+          totalSessions: totalCount || 0,
+          interactedSessions: uniqueSessions.size,
+          loading: false
+        });
+        
+        return;
+      }
+      
+      // Se tiver dados da função RPC, usar eles
+      if (data && data.length > 0) {
+        setInteractionMetrics({
+          totalSessions: data[0].total_sessions || 0,
+          interactedSessions: data[0].interacted_sessions || 0,
+          loading: false
+        });
+        return;
+      }
+      
+      // Fallback se a RPC retornar vazio
+      const { count: totalSessions, error: totalError } = await supabase
+        .from('funnel_access_logs')
+        .select('session_id', { count: 'exact', head: true })
+        .eq('funnel_id', currentFunnel.id);
+      
+      const { data: interactedData, error: interactedError } = await supabase
+        .from('funnel_step_interactions')
+        .select('session_id')
+        .eq('funnel_id', currentFunnel.id)
+        .limit(1000);
+      
+      if (totalError || interactedError) {
+        throw totalError || interactedError;
+      }
+      
+      // Contar sessões únicas que interagiram
+      const uniqueInteracted = new Set();
+      interactedData?.forEach(item => uniqueInteracted.add(item.session_id));
+      
+      setInteractionMetrics({
+        totalSessions: totalSessions || 0,
+        interactedSessions: uniqueInteracted.size,
+        loading: false
+      });
+      
+    } catch (error) {
+      console.error('Erro ao carregar taxa de interação:', error);
+      setInteractionMetrics(prev => ({ 
+        ...prev, 
+        loading: false 
+      }));
+    }
+  };
+
   // Função para recarregar todas as métricas e dados
   const reloadAllData = async () => {
     setCurrentPage(1); // Reset para a primeira página ao recarregar dados
@@ -959,6 +1059,95 @@ const Leads = () => {
 
   // Render section with cards
   const renderMetricsCards = () => {
+    // Componente isolado para calcular a taxa de interação sem afetar outras partes
+    const InteractionRateCard = () => {
+      const [interactionRate, setInteractionRate] = useState({
+        value: 0,
+        isLoading: true
+      });
+      
+      useEffect(() => {
+        // Função isolada para calcular a taxa de interação só para este card
+        const calculateInteractionRate = async () => {
+          try {
+            if (!currentFunnel?.id) return;
+            
+            setInteractionRate(prev => ({ ...prev, isLoading: true }));
+            
+            // Buscar o total de sessões
+            const { count: totalSessions, error: totalError } = await supabase
+              .from('funnel_access_logs')
+              .select('session_id', { count: 'exact', head: true })
+              .eq('funnel_id', currentFunnel.id);
+            
+            if (totalError) throw totalError;
+            
+            // Buscar sessões que interagiram
+            const { data: interactions, error: interactionError } = await supabase
+              .from('funnel_step_interactions')
+              .select('session_id')
+              .eq('funnel_id', currentFunnel.id);
+            
+            if (interactionError) throw interactionError;
+            
+            // Contar sessões únicas que interagiram
+            const uniqueInteractions = new Set();
+            interactions?.forEach(item => uniqueInteractions.add(item.session_id));
+            
+            // Calcular a taxa
+            const rate = totalSessions > 0 
+              ? (uniqueInteractions.size / totalSessions) * 100 
+              : 0;
+            
+            console.log('Taxa de interação calculada:', {
+              totalSessions,
+              interactingSessions: uniqueInteractions.size,
+              rate
+            });
+            
+            setInteractionRate({
+              value: rate,
+              isLoading: false
+            });
+          } catch (error) {
+            console.error('Erro ao calcular taxa de interação:', error);
+            setInteractionRate(prev => ({ ...prev, isLoading: false }));
+          }
+        };
+        
+        calculateInteractionRate();
+      }, [currentFunnel?.id, lastUpdated]); // Recalcular quando o funil mudar ou os dados forem atualizados
+      
+      return (
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MousePointerClick className="h-5 w-5 text-blue-600" />
+              <span>Taxa de Interação</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {interactionRate.isLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">
+                  {interactionRate.value.toFixed(1)}%
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
+                  Visitantes que interagiram com o funil
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      );
+    };
+
     return (
         <div className="grid grid-cols-4 gap-4">
           <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
@@ -1018,35 +1207,8 @@ const Leads = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MousePointerClick className="h-5 w-5 text-blue-600" />
-                <span>Taxa de Interação</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {metrics.loadingMetrics ? (
-                <div className="animate-pulse">
-                  <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-800">
-                    {/* Cálculo da taxa de interação: leads com interações / total de sessões */}
-                    {leads.length > 0 && metrics.totalSessions > 0 
-                      ? ((leads.length / metrics.totalSessions) * 100).toFixed(1) 
-                      : '0.0'}%
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                    Visitantes que interagiram com o funil
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          {/* Usar o componente isolado para a taxa de interação */}
+          <InteractionRateCard />
 
           <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
