@@ -593,5 +593,71 @@ export const accessService = {
       console.error('Error fetching funnel form data:', error);
       return [];
     }
-  }
+  },
+
+  /**
+   * Obtém dados históricos para o gráfico do dashboard
+   * @param funnelId ID do funnel (ou null para todos os funis do usuário)
+   * @param period Período para buscar dados ('today', '7days', '30days')
+   * @returns Array com dados de sessões e conclusões por período
+   */
+  async getHistoricalChartData(
+    period: 'today' | '7days' | '30days',
+    funnelId: string | null = null
+  ): Promise<Array<{
+    name: string;
+    sessoes: number;
+    concluidos: number;
+  }>> {
+    try {
+      console.log('Getting historical chart data:', { period, funnelId });
+      
+      const { data, error } = await supabase
+        .rpc('get_historical_metrics', { 
+          p_period: period,
+          p_funnel_id: funnelId
+        });
+
+      if (error) {
+        console.error('Error getting historical chart data:', error);
+        // Retornar array vazio em caso de erro
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        console.log('No historical data found for period:', period);
+        return [];
+      }
+
+      // Formatar datas para exibição
+      return data.map(item => {
+        // Formatação para período "today"
+        if (period === 'today') {
+          const date = new Date(item.time_period);
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          return {
+            name: `${hours}:${minutes}`,
+            sessoes: item.total_sessions || 0,
+            concluidos: item.completed_sessions || 0
+          };
+        } 
+        // Formatação para períodos de dias
+        else {
+          const date = new Date(item.time_period);
+          const day = date.getDate();
+          const month = date.getMonth() + 1;
+          return {
+            name: `${day}/${month}`,
+            sessoes: item.total_sessions || 0,
+            concluidos: item.completed_sessions || 0
+          };
+        }
+      });
+    } catch (error) {
+      console.error('Unexpected error getting historical chart data:', error);
+      // Retornar array vazio em caso de erro
+      return [];
+    }
+  },
 }; 

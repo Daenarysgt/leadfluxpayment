@@ -135,7 +135,7 @@ const Dashboard = () => {
     '30days': []
   });
   
-  // Flag para controlar a inicialização dos dados
+  // Flag para controlar a inicialização dos dados por período
   const [dataInitialized, setDataInitialized] = useState<{
     today: boolean;
     '7days': boolean;
@@ -146,6 +146,9 @@ const Dashboard = () => {
     '30days': false
   });
 
+  // Flag para controlar carregamento do gráfico
+  const [loadingChartData, setLoadingChartData] = useState<boolean>(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -154,31 +157,45 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadMetrics();
-    
-    // Verificar se os dados para este período já foram inicializados
-    if (!dataInitialized[chartPeriod]) {
-      // Gerar dados apenas se não foram inicializados anteriormente
-      const newData = generateChartData(chartPeriod);
-      
-      // Atualizar o estado de dados por período
-      setChartDataByPeriod(prev => ({
-        ...prev,
-        [chartPeriod]: newData
-      }));
-      
-      // Marcar este período como inicializado
-      setDataInitialized(prev => ({
-        ...prev,
-        [chartPeriod]: true
-      }));
-      
-      // Atualizar dados do gráfico
-      setChartData(newData);
-    } else {
-      // Usar os dados já gerados para este período
-      setChartData(chartDataByPeriod[chartPeriod]);
+    loadChartData();
+  }, [funnels, chartPeriod]);
+
+  // Função para carregar dados do gráfico
+  const loadChartData = async () => {
+    try {
+      // Verificar se os dados para este período já foram inicializados
+      if (!dataInitialized[chartPeriod]) {
+        setLoadingChartData(true);
+        
+        // Buscar dados reais do backend
+        const data = await accessService.getHistoricalChartData(chartPeriod);
+        
+        // Atualizar o estado de dados por período
+        setChartDataByPeriod(prev => ({
+          ...prev,
+          [chartPeriod]: data
+        }));
+        
+        // Marcar este período como inicializado
+        setDataInitialized(prev => ({
+          ...prev,
+          [chartPeriod]: true
+        }));
+        
+        // Atualizar dados do gráfico
+        setChartData(data);
+      } else {
+        // Usar os dados já carregados para este período
+        setChartData(chartDataByPeriod[chartPeriod]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do gráfico:', error);
+      // Em caso de erro, manter os dados atuais ou limpar
+      setChartData([]);
+    } finally {
+      setLoadingChartData(false);
     }
-  }, [funnels, chartPeriod, dataInitialized, chartDataByPeriod]);
+  };
 
   const loadMetrics = async () => {
     try {
@@ -236,96 +253,31 @@ const Dashboard = () => {
     }
   };
 
-  // Função para gerar dados mockados para o gráfico, alterada para retornar os dados em vez de definir o estado
-  const generateChartData = (period: 'today' | '7days' | '30days') => {
-    // Formatar as datas
-    const formatDate = (date: Date) => {
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
-      return `${day}/${month}`;
-    };
-    
-    // Formatar horas para o caso de "hoje"
-    const formatHour = (date: Date) => {
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
-    };
-    
-    // Gerar dados
-    const data = [];
-    const today = new Date();
-    
-    if (period === 'today') {
-      // Para "hoje", mostrar dados por hora
-      // Vamos gerar um dado para cada hora nas últimas 12 horas
-      const hoursToShow = 12;
-      const currentHour = today.getHours();
-      
-      for (let i = 0; i < hoursToShow; i++) {
-        const hourDate = new Date();
-        // Começamos da hora atual e voltamos no tempo
-        hourDate.setHours(currentHour - (hoursToShow - 1) + i, 0, 0, 0);
-        
-        // Garantir que não mostramos horas futuras
-        if (hourDate > today) continue;
-        
-        // Para horas passadas, geramos dados crescentes ao longo do dia
-        // para simular o acúmulo de sessões e conclusões
-        const hourFactor = (i + 1) / hoursToShow; // Fator que cresce com o passar das horas
-        const baseSessions = 5 + Math.floor(Math.random() * 10); // Base aleatória entre 5-15
-        
-        // Adicionar alguma variabilidade, mas manter a tendência de crescimento ao longo do dia
-        const randomFactor = 0.7 + (Math.random() * 0.6); // Entre 0.7 e 1.3
-        const sessionIncreaseWithHour = Math.floor(baseSessions * hourFactor * randomFactor);
-        const sessoes = Math.max(1, sessionIncreaseWithHour);
-        
-        // Os concluídos são uma fração das sessões
-        const concluidos = Math.floor(sessoes * (0.1 + (Math.random() * 0.3))); // 10%-40% de taxa de conclusão
-        
-        data.push({
-          name: formatHour(hourDate),
-          sessoes: sessoes,
-          concluidos: concluidos
-        });
-      }
-    } else {
-      // Determinar quantos dias mostrar
-      let days = 7;
-      if (period === '30days') days = 30;
-      
-      for (let i = 0; i < days; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() - (days - 1 - i));
-        
-        // Gerar valores aleatórios mais realistas
-        const sessoes = Math.floor(Math.random() * 40) + 10; // 10-50 sessões
-        // Os concluídos serão sempre uma fração das sessões
-        const concluidos = Math.floor(sessoes * (Math.random() * 0.4 + 0.1)); // 10%-50% de taxa de conclusão
-        
-        data.push({
-          name: formatDate(date),
-          sessoes: sessoes,
-          concluidos: concluidos
-        });
-      }
-    }
-    
-    return data;
-  };
-  
   // Função para forçar a atualização dos dados do gráfico
-  const refreshChartData = () => {
-    const newData = generateChartData(chartPeriod);
-    
-    // Atualizar dados do período atual
-    setChartDataByPeriod(prev => ({
-      ...prev,
-      [chartPeriod]: newData
-    }));
-    
-    // Atualizar dados do gráfico
-    setChartData(newData);
+  const refreshChartData = async () => {
+    try {
+      setLoadingChartData(true);
+      
+      // Buscar novos dados do backend
+      const newData = await accessService.getHistoricalChartData(chartPeriod);
+      
+      // Atualizar dados do período atual
+      setChartDataByPeriod(prev => ({
+        ...prev,
+        [chartPeriod]: newData
+      }));
+      
+      // Atualizar dados do gráfico
+      setChartData(newData);
+      
+      // Exibir mensagem de sucesso
+      toast.success('Dados do gráfico atualizados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar dados do gráfico:', error);
+      toast.error('Erro ao atualizar dados do gráfico');
+    } finally {
+      setLoadingChartData(false);
+    }
   };
 
   const handleOpenNewFunnelDialog = () => {
@@ -688,6 +640,7 @@ const Dashboard = () => {
                 size="sm" 
                 className={`text-xs rounded-full ${chartPeriod === 'today' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
                 onClick={() => setChartPeriod('today')}
+                disabled={loadingChartData}
               >
                 Hoje
               </Button>
@@ -696,6 +649,7 @@ const Dashboard = () => {
                 size="sm" 
                 className={`text-xs rounded-full ${chartPeriod === '7days' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
                 onClick={() => setChartPeriod('7days')}
+                disabled={loadingChartData}
               >
                 Últimos 7 dias
               </Button>
@@ -704,6 +658,7 @@ const Dashboard = () => {
                 size="sm" 
                 className={`text-xs rounded-full ${chartPeriod === '30days' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
                 onClick={() => setChartPeriod('30days')}
+                disabled={loadingChartData}
               >
                 Últimos 30 dias
               </Button>
@@ -713,13 +668,18 @@ const Dashboard = () => {
                 className="text-xs rounded-full hover:bg-blue-50"
                 onClick={refreshChartData}
                 title="Atualizar dados"
+                disabled={loadingChartData}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 4v6h-6"></path>
-                  <path d="M1 20v-6h6"></path>
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
-                  <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
+                {loadingChartData ? (
+                  <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                    <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                )}
               </Button>
             </div>
           </CardHeader>
@@ -743,61 +703,85 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={chartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#888888" 
-                    tickMargin={10}
-                    // Ajustar o eixo X para o caso de dados por hora
-                    interval={chartPeriod === 'today' ? 2 : 'preserveEnd'}
-                    angle={chartPeriod === 'today' ? -45 : 0}
-                    textAnchor={chartPeriod === 'today' ? 'end' : 'middle'}
-                    height={chartPeriod === 'today' ? 60 : 30}
-                  />
-                  <YAxis stroke="#888888" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      border: 'none',
-                    }}
-                    formatter={(value, name) => {
-                      return [value, name === 'sessoes' ? 'Sessões' : 'Concluídos'];
-                    }}
-                    labelFormatter={(label) => {
-                      if (chartPeriod === 'today') {
-                        return `Hora: ${label}`;
-                      }
-                      return `Data: ${label}`;
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="sessoes"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ stroke: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ stroke: '#3b82f6', strokeWidth: 2, r: 6 }}
-                    name="Sessões"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="concluidos"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    dot={{ stroke: '#22c55e', strokeWidth: 2, r: 4 }}
-                    activeDot={{ stroke: '#22c55e', strokeWidth: 2, r: 6 }}
-                    name="Concluídos"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {loadingChartData ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-muted-foreground">Carregando dados...</p>
+                  </div>
+                </div>
+              ) : chartData.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-muted-foreground py-6 px-4 border border-dashed rounded-xl bg-slate-50/50 max-w-sm">
+                    <p className="mb-3">Nenhum dado disponível para este período.</p>
+                    <Button onClick={refreshChartData} variant="outline" className="rounded-full hover:bg-white shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                        <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                      </svg>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#888888" 
+                      tickMargin={10}
+                      // Ajustar o eixo X para o caso de dados por hora
+                      interval={chartPeriod === 'today' ? 2 : 'preserveEnd'}
+                      angle={chartPeriod === 'today' ? -45 : 0}
+                      textAnchor={chartPeriod === 'today' ? 'end' : 'middle'}
+                      height={chartPeriod === 'today' ? 60 : 30}
+                    />
+                    <YAxis stroke="#888888" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        border: 'none',
+                      }}
+                      formatter={(value, name) => {
+                        return [value, name === 'sessoes' ? 'Sessões' : 'Concluídos'];
+                      }}
+                      labelFormatter={(label) => {
+                        if (chartPeriod === 'today') {
+                          return `Hora: ${label}`;
+                        }
+                        return `Data: ${label}`;
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="sessoes"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={{ stroke: '#3b82f6', strokeWidth: 2, r: 4 }}
+                      activeDot={{ stroke: '#3b82f6', strokeWidth: 2, r: 6 }}
+                      name="Sessões"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="concluidos"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={{ stroke: '#22c55e', strokeWidth: 2, r: 4 }}
+                      activeDot={{ stroke: '#22c55e', strokeWidth: 2, r: 6 }}
+                      name="Concluídos"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
