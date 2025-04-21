@@ -26,7 +26,8 @@ import {
   XCircleIcon,
   AlertCircleIcon,
   LoaderIcon,
-  User
+  User,
+  CalendarIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -56,6 +57,7 @@ import { accessService } from '@/services/accessService';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { funnelService } from '@/services/funnelService';
 import ProfileModal from '@/components/ProfileModal';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -114,6 +116,14 @@ const Dashboard = () => {
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  // Estado para o gráfico e período
+  const [chartPeriod, setChartPeriod] = useState<'today' | '7days' | '30days'>('7days');
+  const [chartData, setChartData] = useState<Array<{
+    name: string;
+    sessoes: number;
+    concluidos: number;
+  }>>([]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
@@ -122,7 +132,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadMetrics();
-  }, [funnels]);
+    generateChartData(chartPeriod); // Carregar dados do gráfico quando os funis mudarem
+  }, [funnels, chartPeriod]);
 
   const loadMetrics = async () => {
     try {
@@ -178,6 +189,43 @@ const Dashboard = () => {
     } finally {
       setLoadingMetrics(false);
     }
+  };
+
+  // Função para gerar dados mockados para o gráfico
+  const generateChartData = (period: 'today' | '7days' | '30days') => {
+    // Formatar as datas
+    const formatDate = (date: Date) => {
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      return `${day}/${month}`;
+    };
+    
+    // Determinar quantos dias mostrar
+    let days = 1;
+    if (period === '7days') days = 7;
+    if (period === '30days') days = 30;
+    
+    // Gerar dados
+    const data = [];
+    const today = new Date();
+    
+    for (let i = 0; i < days; i++) {
+      const date = new Date();
+      date.setDate(today.getDate() - (days - 1 - i));
+      
+      // Gerar valores aleatórios mais realistas
+      const sessoes = Math.floor(Math.random() * 40) + 10; // 10-50 sessões
+      // Os concluídos serão sempre uma fração das sessões
+      const concluidos = Math.floor(sessoes * (Math.random() * 0.4 + 0.1)); // 10%-50% de taxa de conclusão
+      
+      data.push({
+        name: formatDate(date),
+        sessoes: sessoes,
+        concluidos: concluidos
+      });
+    }
+    
+    setChartData(data);
   };
 
   const handleOpenNewFunnelDialog = () => {
@@ -521,6 +569,93 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Novo componente de gráfico */}
+        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 border-blue-100/50 rounded-xl mb-8">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
+              Performance dos Funis
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={chartPeriod === 'today' ? 'default' : 'outline'} 
+                size="sm" 
+                className={`text-xs rounded-full ${chartPeriod === 'today' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
+                onClick={() => setChartPeriod('today')}
+              >
+                Hoje
+              </Button>
+              <Button 
+                variant={chartPeriod === '7days' ? 'default' : 'outline'} 
+                size="sm" 
+                className={`text-xs rounded-full ${chartPeriod === '7days' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
+                onClick={() => setChartPeriod('7days')}
+              >
+                Últimos 7 dias
+              </Button>
+              <Button 
+                variant={chartPeriod === '30days' ? 'default' : 'outline'} 
+                size="sm" 
+                className={`text-xs rounded-full ${chartPeriod === '30days' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-blue-50'}`}
+                onClick={() => setChartPeriod('30days')}
+              >
+                Últimos 30 dias
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-8 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                <span className="text-sm text-gray-700">Sessões por dia</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                <span className="text-sm text-gray-700">Funis concluídos por dia</span>
+              </div>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" stroke="#888888" />
+                  <YAxis stroke="#888888" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      border: 'none',
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="sessoes"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ stroke: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ stroke: '#3b82f6', strokeWidth: 2, r: 6 }}
+                    name="Sessões"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="concluidos"
+                    stroke="#22c55e"
+                    strokeWidth={2}
+                    dot={{ stroke: '#22c55e', strokeWidth: 2, r: 4 }}
+                    activeDot={{ stroke: '#22c55e', strokeWidth: 2, r: 6 }}
+                    name="Concluídos"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Grid Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
