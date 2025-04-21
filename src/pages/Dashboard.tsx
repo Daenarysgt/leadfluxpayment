@@ -771,8 +771,15 @@ const Dashboard = () => {
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                         border: 'none',
                       }}
-                      formatter={(value, name) => {
-                        return [value, name === 'sessoes' ? 'Sessões' : 'Concluídos'];
+                      formatter={(value, name, props) => {
+                        // Corrigir os rótulos para mostrar Sessões e Concluídos corretamente
+                        if (name === 'sessoes' || props?.dataKey === 'sessoes') {
+                          return [value, 'Sessões'];
+                        }
+                        if (name === 'concluidos' || props?.dataKey === 'concluidos') {
+                          return [value, 'Concluídos'];
+                        }
+                        return [value, name];
                       }}
                       labelFormatter={(label) => {
                         if (chartPeriod === 'today') {
