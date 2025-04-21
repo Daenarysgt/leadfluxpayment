@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useStore } from "@/utils/store";
 import { QuestionType } from "@/utils/types";
@@ -13,6 +12,7 @@ export const useFunnelStepManager = () => {
     addStep, 
     updateStep, 
     deleteStep,
+    duplicateStep,
     addQuestion,
     deleteQuestion,
     updateQuestion
@@ -86,12 +86,35 @@ export const useFunnelStepManager = () => {
     });
   };
 
+  const handleDuplicateStep = async () => {
+    if (!currentFunnel) return;
+    
+    try {
+      const result = await duplicateStep();
+      
+      if (result) {
+        toast({
+          title: "Step duplicated",
+          description: `"${result.step.title}" has been created with all its content`,
+        });
+      }
+    } catch (error) {
+      console.error("Error duplicating step:", error);
+      toast({
+        title: "Error duplicating step",
+        description: "There was a problem duplicating the step. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     currentFunnel,
     currentStep,
     handleStepChange,
     handleAddStep,
     handleDeleteStep,
+    handleDuplicateStep,
     handleUpdateStepTitle,
     handleUpdateButtonText,
     handleAddQuestion,
