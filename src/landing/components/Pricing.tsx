@@ -29,44 +29,44 @@ interface Plan {
 // Features para cada tipo de plano
 const planFeatures = {
   basic: [
-    'Até 3 funis',
-    'Até 5 mil leads na conta',
-    'Componentes interativos',
-    'Domínio próprio',
-    'Pixel e Scripts de trackeamento',
-    'Gestão e downloads dos leads'
+    '3 funis',
+    'Até 10 mil leads',
+    'Componentes Interativos',
+    'Domínio Próprio',
+    'Pixel e Trackeamento Meta Ads',
+    'Gestao e Download dos leads',
+    'Painel de métricas em tempo real',
+    'Visualização de visitantes em tempo real dentro do funil'
   ],
   pro: [
-    'Até 6 funis',
-    'Até 10 mil leads na conta',
-    'Componentes interativos',
-    'Webhook',
-    'Domínio próprio',
-    'Pixel e Scripts de trackeamento',
-    'Gestão e downloads dos leads'
+    '6 funis',
+    'Até 20 mil Leads',
+    'Componentes Interativos',
+    'Domínio Próprio',
+    'Pixel e Trackeamento Meta Ads',
+    'Gestao e Download dos leads',
+    'Painel de métricas em tempo real',
+    'Visualização de visitantes em tempo real dentro do funil'
   ],
   elite: [
-    'Até 12 funis',
-    'Até 25 mil leads na conta',
-    'Componentes interativos',
-    'Webhook',
-    'Domínio próprio',
-    'Pixel e Scripts de trackeamento',
-    'Gestão e downloads dos leads',
-    'Compartilhamento de funis',
-    'Edição compartilhada'
+    '12 funis',
+    'Até 50 mil Leads',
+    'Componentes Interativos',
+    'Domínio Próprio',
+    'Pixel e Trackeamento Meta Ads',
+    'Gestao e Download dos leads',
+    'Painel de métricas em tempo real',
+    'Visualização de visitantes em tempo real dentro do funil'
   ],
   scale: [
-    'Até 30 funis',
-    'Até 100 mil leads na conta',
-    'Componentes interativos',
-    'Webhook',
-    'Domínio próprio',
-    'Pixel e Scripts de trackeamento',
-    'Gestão e downloads dos leads',
-    'Suporte com video chamadas',
-    'Compartilhamento de funis',
-    'Edição compartilhada'
+    '30 funis',
+    'Até 100 mil Leads',
+    'Componentes Interativos',
+    'Domínio Próprio',
+    'Pixel e Trackeamento Meta Ads',
+    'Gestao e Download dos leads',
+    'Painel de métricas em tempo real',
+    'Visualização de visitantes em tempo real dentro do funil'
   ]
 };
 
