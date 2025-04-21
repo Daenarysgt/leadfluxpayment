@@ -462,9 +462,35 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
   const newStepId = generateValidUUID();
   
   // Calcular o próximo order_index baseado no order_index da etapa atual
-  // Aumentar em 0.5 para que fique entre a etapa atual e a próxima
+  // Para garantir que fique abaixo, devemos adicionar um valor MAIOR
   const currentOrderIndex = stepToDuplicate.order_index ?? 0;
-  const nextOrderIndex = currentOrderIndex + 0.5;
+  
+  // Encontrar o próximo índice após a etapa atual
+  let nextOrderIndex = currentOrderIndex + 1;
+  
+  // Verificar se já existe uma etapa com este order_index
+  const hasStepWithNextOrderIndex = currentFunnel.steps.some(
+    step => (step.order_index === nextOrderIndex)
+  );
+  
+  // Se já existe, então usamos um valor intermediário maior
+  if (hasStepWithNextOrderIndex) {
+    // Verificar qual é o próximo order_index disponível (maior que o atual)
+    const nextSteps = currentFunnel.steps
+      .filter(step => step.order_index > currentOrderIndex)
+      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    
+    if (nextSteps.length > 0) {
+      // A etapa duplicada ficará entre a atual e a próxima
+      nextOrderIndex = currentOrderIndex + 
+        ((nextSteps[0].order_index ?? (currentOrderIndex + 1)) - currentOrderIndex) / 2;
+    } else {
+      // Se não há próxima etapa, adicione um valor significativamente maior
+      nextOrderIndex = currentOrderIndex + 10;
+    }
+  }
+  
+  console.log(`Índice atual: ${currentOrderIndex}, Índice para cópia: ${nextOrderIndex}`);
   
   // Criar a nova etapa duplicada
   const duplicatedStep = {
