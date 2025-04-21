@@ -160,24 +160,11 @@ const Dashboard = () => {
     // Forçar atualização de dados ao carregar o componente
     const loadAllData = async () => {
       try {
-        // Limpar os dados antigos
-        setChartData([]);
-        setChartDataByPeriod({
-          today: [],
-          '7days': [],
-          '30days': []
-        });
-        setDataInitialized({
-          today: false,
-          '7days': false,
-          '30days': false
-        });
-        
-        console.log("Forçando atualização completa de dados...");
+        console.log("Atualizando dados do dashboard...");
         
         // Buscar dados do gráfico
         const chartData = await dashboardService.getDashboardChartData(chartPeriod);
-        console.log("Dados do gráfico recebidos:", chartData);
+        console.log(`Recebidos ${chartData.length} pontos de dados para o gráfico:`, chartPeriod);
         
         // Atualizar gráfico
         setChartData(chartData);
@@ -192,29 +179,34 @@ const Dashboard = () => {
         
         // Buscar métricas para os cards
         const metrics = await dashboardService.getDashboardCardMetrics();
-        console.log("Métricas dos cards recebidas:", metrics);
+        console.log("Métricas dos cards atualizadas:", {
+          totalFunnels: metrics.total_funnels,
+          totalSessions: metrics.total_sessions,
+          conversionRate: metrics.completion_rate,
+          interactionRate: metrics.interaction_rate
+        });
         
         // Atualizar métricas
         setMetrics({
-          totalFunnels: metrics.total_funnels || funnels.length,
-          totalSessions: metrics.total_sessions || 0,
-          completionRate: metrics.completion_rate || 0,
-          interactionRate: metrics.interaction_rate || 0
+          totalFunnels: metrics.total_funnels,
+          totalSessions: metrics.total_sessions,
+          completionRate: metrics.completion_rate,
+          interactionRate: metrics.interaction_rate
         });
-        
-        console.log("Atualização completa concluída.");
       } catch (error) {
-        console.error("Erro na atualização completa:", error);
+        console.error("Erro ao atualizar dados do dashboard:", error);
       } finally {
         setLoadingChartData(false);
         setLoadingMetrics(false);
       }
     };
     
+    // Carregar dados imediatamente
     loadAllData();
     
-    // Configurar um intervalo para atualizar os dados a cada 30 segundos
-    const intervalId = setInterval(loadAllData, 30000);
+    // Configurar um intervalo para atualizar a cada 2 minutos, 
+    // ao invés de 30 segundos (para não sobrecarregar o banco)
+    const intervalId = setInterval(loadAllData, 120000);
     
     return () => clearInterval(intervalId);
   }, [funnels, chartPeriod]);
