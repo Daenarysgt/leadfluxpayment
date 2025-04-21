@@ -976,7 +976,7 @@ const Leads = () => {
                 </div>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.totalSessions}</p>
+                  <p className="text-3xl font-bold text-gray-800">{leads.length}</p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500">Atualizado</span>
@@ -1003,7 +1003,12 @@ const Leads = () => {
                 </div>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.completionRate.toFixed(1)}%</p>
+                  {/* Calcular a taxa com base nos leads que completaram o último passo */}
+                  <p className="text-3xl font-bold text-gray-800">
+                    {leads.length > 0 
+                      ? (leads.filter(lead => Object.keys(lead.interactions).some(key => parseInt(key) === stepMetrics.length)).length / leads.length * 100).toFixed(1) 
+                      : '0.0'}%
+                  </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500">Atualizado</span>
@@ -1028,7 +1033,14 @@ const Leads = () => {
                 </div>
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-800">{metrics.todayLeads}</p>
+                  <p className="text-3xl font-bold text-gray-800">
+                    {/* Filtrar leads de hoje */}
+                    {leads.filter(lead => {
+                      const today = new Date();
+                      const leadDate = new Date(lead.firstInteraction);
+                      return leadDate.setHours(0,0,0,0) === today.setHours(0,0,0,0);
+                    }).length}
+                  </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                     <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
                     Leads que interagiram hoje
@@ -1076,7 +1088,7 @@ const Leads = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {metrics.mainSource.percentage.toFixed(1)}% dos visitantes interagiram
+                    {leads.length > 0 ? '100.0' : '0.0'}% dos visitantes interagiram
                   </p>
                 </>
               )}
