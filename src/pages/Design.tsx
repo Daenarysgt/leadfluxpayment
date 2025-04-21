@@ -70,14 +70,14 @@ const Design = () => {
     const styleElement = document.createElement('style');
     styleElement.id = 'design-zoom-fix';
     
-    // CSS que garante o zoom de 90% e evita espaços vazios
+    // CSS que garante o zoom de 90% mas permite scrollagem
     styleElement.innerHTML = `
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden !important;
         width: 100vw !important;
         height: 100vh !important;
+        overflow-x: hidden !important; /* Apenas esconder overflow horizontal */
       }
       
       #root {
@@ -94,7 +94,7 @@ const Design = () => {
         flex-direction: column !important;
       }
       
-      /* Ajustes para área de rolagem */
+      /* Ajustes para área de rolagem - permitir scroll */
       .h-\\[500px\\] {
         height: calc(111.12vh - 250px) !important;
       }
@@ -108,6 +108,9 @@ const Design = () => {
       if (designContainerRef.current) {
         designContainerRef.current.style.minHeight = '111.12vh';
       }
+      
+      // Permitir scroll vertical
+      document.body.style.overflowY = 'auto';
       
       // Ajustar o container principal
       const containers = document.querySelectorAll('.container, .py-8, .space-y-6');

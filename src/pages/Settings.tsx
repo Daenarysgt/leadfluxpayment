@@ -67,14 +67,14 @@ const Settings = () => {
     const styleElement = document.createElement('style');
     styleElement.id = 'settings-zoom-fix';
     
-    // CSS que garante o zoom de 90% e evita espaços vazios
+    // CSS que garante o zoom de 90% mas permite scrollagem
     styleElement.innerHTML = `
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden !important;
         width: 100vw !important;
         height: 100vh !important;
+        overflow-x: hidden !important; /* Apenas esconder overflow horizontal */
       }
       
       #root {
@@ -100,6 +100,9 @@ const Settings = () => {
       if (settingsContainerRef.current) {
         settingsContainerRef.current.style.minHeight = '111.12vh';
       }
+      
+      // Permitir scroll vertical
+      document.body.style.overflowY = 'auto';
       
       // Ajustar containers principais
       const containers = document.querySelectorAll('.container, .py-8, .space-y-6');
