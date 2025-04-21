@@ -1121,7 +1121,7 @@ const Leads = () => {
     <div className="flex flex-col min-h-screen bg-slate-50">
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-gray-100" onClick={() => window.location.href = "/"}>
+          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-gray-100" onClick={() => window.location.href = "/dashboard"}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h1 className="font-semibold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">LeadFlux</h1>
