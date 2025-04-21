@@ -32,10 +32,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const style = content?.style || {};
   const marginTop = style.marginTop;
   
-  // Obter configurações globais de tipografia
-  const fontFamily = funnelSettings.fontFamily || 'Inter';
-  const headingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
-  const bodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
+  // Obter configurações de fonte específicas do elemento ou usar valores padrão
+  const fontFamily = style.fontFamily || funnelSettings.fontFamily || 'Inter';
+  const titleFontSize = style.titleFontSize || 20;
+  const optionFontSize = style.optionFontSize || 16;
+  const descriptionFontSize = style.descriptionFontSize || 14;
+  
+  // Obter configurações globais de tipografia (usadas apenas se não houver específicas)
+  const globalHeadingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
+  const globalBodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
   const lineHeight = funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5;
   const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
   const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
@@ -149,16 +154,21 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   // Se for o último step, marcar como conversão
                   console.log("Última etapa (específica) - marcando como conversão");
                   await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
+                  // Adicionamos a navegação mesmo para a última etapa
+                  setTimeout(() => {
+                    onStepChange(stepIndex);
+                    setIsProcessingInteraction(false);
+                  }, 500);
                 } else {
                   // Atualizar o progresso para a etapa específica
                   await accessService.updateProgress(funnel.id, stepIndex + 1, null);
+                  
+                  // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+                  setTimeout(() => {
+                    onStepChange(stepIndex);
+                    setIsProcessingInteraction(false);
+                  }, 500);
                 }
-                
-                // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
-                setTimeout(() => {
-                  onStepChange(stepIndex);
-                  setIsProcessingInteraction(false);
-                }, 500);
               } else {
                 console.error("Etapa não encontrada com ID:", option.navigation.stepId);
                 setIsProcessingInteraction(false);
@@ -295,7 +305,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           <h3 
             className="font-medium" 
             style={{
-              fontSize: `${headingSize}px`,
+              fontSize: `${titleFontSize}px`,
               fontFamily: fontFamily,
               lineHeight: String(lineHeight),
               fontStyle,
@@ -311,7 +321,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           <p 
             className="text-muted-foreground" 
             style={{
-              fontSize: `${bodySize}px`,
+              fontSize: `${descriptionFontSize}px`,
               fontFamily: fontFamily,
               lineHeight: String(lineHeight),
               fontStyle,
@@ -329,7 +339,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           <p 
             className="text-muted-foreground" 
             style={{
-              fontSize: `${bodySize - 2}px`,
+              fontSize: `${descriptionFontSize}px`,
               fontFamily: fontFamily,
               lineHeight: String(lineHeight),
               fontStyle,
@@ -424,12 +434,13 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                       <span 
                         className="font-medium"
                         style={{
-                          fontSize: `${bodySize}px`,
+                          fontSize: `${optionFontSize}px`,
                           lineHeight: String(lineHeight),
                           fontStyle,
                           fontWeight,
                           textDecoration,
-                          textTransform
+                          textTransform,
+                          fontFamily: fontFamily
                         }}
                       >
                         {option.text}
@@ -438,12 +449,13 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                         <div 
                           className="text-muted-foreground mt-1"
                           style={{
-                            fontSize: `${bodySize - 2}px`,
+                            fontSize: `${descriptionFontSize}px`,
                             lineHeight: String(lineHeight),
                             fontStyle,
                             fontWeight,
                             textDecoration,
-                            textTransform
+                            textTransform,
+                            fontFamily: fontFamily
                           }}
                         >
                           {option.description}
@@ -475,7 +487,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               color: selectedOptions.length > 0 ? "white" : "#a0a0a0",
               borderRadius: `${borderRadiusValue}px`,
               fontFamily: fontFamily,
-              fontSize: `${bodySize}px`
+              fontSize: `${optionFontSize}px`
             }}
             onClick={handleContinue}
             disabled={selectedOptions.length === 0 || isProcessingInteraction}

@@ -9,6 +9,22 @@ import { ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Lista de fontes disponíveis
+const FONT_OPTIONS = [
+  { value: "Inter", label: "Inter" },
+  { value: "Roboto", label: "Roboto" },
+  { value: "Montserrat", label: "Montserrat" },
+  { value: "Open Sans", label: "Open Sans" },
+  { value: "Lato", label: "Lato" },
+  { value: "Poppins", label: "Poppins" },
+  { value: "Raleway", label: "Raleway" },
+  { value: "Oswald", label: "Oswald" },
+  { value: "Playfair Display", label: "Playfair Display" },
+  { value: "Merriweather", label: "Merriweather" }
+];
 
 interface MultipleChoiceConfigProps {
   element: any;
@@ -31,6 +47,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
   const [marginTop, setMarginTop] = useState(element.content?.style?.marginTop || 0);
+  
+  // Novos estados para fonte e tamanhos
+  const [fontFamily, setFontFamily] = useState(element.content?.style?.fontFamily || "Inter");
+  const [titleFontSize, setTitleFontSize] = useState(element.content?.style?.titleFontSize || 20);
+  const [optionFontSize, setOptionFontSize] = useState(element.content?.style?.optionFontSize || 16);
+  const [descriptionFontSize, setDescriptionFontSize] = useState(element.content?.style?.descriptionFontSize || 14);
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -77,6 +99,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get margin top
     setMarginTop(element.content?.style?.marginTop || 0);
+    
+    // Obter configurações de fonte
+    setFontFamily(element.content?.style?.fontFamily || "Inter");
+    setTitleFontSize(element.content?.style?.titleFontSize || 20);
+    setOptionFontSize(element.content?.style?.optionFontSize || 16);
+    setDescriptionFontSize(element.content?.style?.descriptionFontSize || 14);
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -483,6 +511,66 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       }
     });
   };
+  
+  // Novas funções para atualizar as configurações de fonte
+  const handleFontFamilyChange = (value: string) => {
+    setFontFamily(value);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          fontFamily: value
+        }
+      }
+    });
+  };
+  
+  const handleTitleFontSizeChange = (value: number[]) => {
+    const size = value[0];
+    setTitleFontSize(size);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          titleFontSize: size
+        }
+      }
+    });
+  };
+  
+  const handleOptionFontSizeChange = (value: number[]) => {
+    const size = value[0];
+    setOptionFontSize(size);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          optionFontSize: size
+        }
+      }
+    });
+  };
+  
+  const handleDescriptionFontSizeChange = (value: number[]) => {
+    const size = value[0];
+    setDescriptionFontSize(size);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          descriptionFontSize: size
+        }
+      }
+    });
+  };
 
   return (
     <div className="p-4 pb-16 space-y-6">
@@ -512,6 +600,162 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onOptionSelectedStyleChange={handleOptionSelectedStyleChange}
       />
 
+      <Separator />
+      
+      {/* Seção de Fontes */}
+      <div className="space-y-4">
+        <h3 className="font-medium text-sm">Configurações de Fonte</h3>
+        
+        {/* Família de Fonte */}
+        <div className="space-y-2">
+          <Label htmlFor="font-family">Fonte</Label>
+          <Select 
+            value={fontFamily} 
+            onValueChange={handleFontFamilyChange}
+          >
+            <SelectTrigger id="font-family">
+              <SelectValue placeholder="Selecione uma fonte" />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_OPTIONS.map(font => (
+                <SelectItem key={font.value} value={font.value}>
+                  <span style={{ fontFamily: font.value }}>{font.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Tamanho da Fonte do Título */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="title-font-size">Tamanho do Título: {titleFontSize}px</Label>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleTitleFontSizeChange([Math.max(12, titleFontSize - 1)])}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleTitleFontSizeChange([titleFontSize + 1])}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <Slider
+            id="title-font-size"
+            min={12}
+            max={40}
+            step={1}
+            value={[titleFontSize]}
+            onValueChange={handleTitleFontSizeChange}
+          />
+          <div className="p-2 border rounded-md bg-gray-50 overflow-hidden whitespace-nowrap text-ellipsis">
+            <span 
+              style={{ 
+                fontFamily: fontFamily,
+                fontSize: `${titleFontSize}px`
+              }}
+            >
+              Exemplo de título
+            </span>
+          </div>
+        </div>
+        
+        {/* Tamanho da Fonte das Opções */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="option-font-size">Tamanho das Opções: {optionFontSize}px</Label>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleOptionFontSizeChange([Math.max(10, optionFontSize - 1)])}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleOptionFontSizeChange([optionFontSize + 1])}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <Slider
+            id="option-font-size"
+            min={10}
+            max={32}
+            step={1}
+            value={[optionFontSize]}
+            onValueChange={handleOptionFontSizeChange}
+          />
+          <div className="p-2 border rounded-md bg-gray-50">
+            <span 
+              style={{ 
+                fontFamily: fontFamily,
+                fontSize: `${optionFontSize}px`
+              }}
+            >
+              Exemplo de opção
+            </span>
+          </div>
+        </div>
+        
+        {/* Tamanho da Fonte das Descrições */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="description-font-size">Tamanho das Descrições: {descriptionFontSize}px</Label>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleDescriptionFontSizeChange([Math.max(8, descriptionFontSize - 1)])}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0"
+                onClick={() => handleDescriptionFontSizeChange([descriptionFontSize + 1])}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <Slider
+            id="description-font-size"
+            min={8}
+            max={24}
+            step={1}
+            value={[descriptionFontSize]}
+            onValueChange={handleDescriptionFontSizeChange}
+          />
+          <div className="p-2 border rounded-md bg-gray-50 text-gray-500">
+            <span 
+              style={{ 
+                fontFamily: fontFamily,
+                fontSize: `${descriptionFontSize}px`
+              }}
+            >
+              Exemplo de descrição de opção
+            </span>
+          </div>
+        </div>
+      </div>
+      
       <Separator />
       
       <StyleSettings 
