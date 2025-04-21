@@ -42,6 +42,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Obter configuração de negrito para opções
   const optionsBold = style.optionsBold || false;
   
+  // Obter configuração de estilo visual das opções
+  const optionsStyle = style.optionsStyle || 'flat';
+  
   // Função auxiliar para garantir nome da fonte corretamente formatado
   const formatFontFamily = (font: string) => {
     // Adicionar aspas apenas se o nome da fonte tiver espaço
@@ -308,6 +311,95 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     fontFamily: formatFontFamily(fontFamily)
   };
 
+  // Função para aplicar os estilos avançados de opções
+  const getAdvancedOptionStyles = (isSelected: boolean, optionStyle: any) => {
+    // Valores base para todos os estilos
+    const baseStyles: any = {
+      backgroundColor: isSelected 
+        ? (optionStyle.selectedBackgroundColor || "#f5f3ff") 
+        : (optionStyle.backgroundColor || ""),
+      borderColor: isSelected 
+        ? (optionStyle.selectedBorderColor || indicatorColor) 
+        : (optionStyle.borderColor || ""),
+      color: isSelected 
+        ? (optionStyle.selectedTextColor || "#4c1d95") 
+        : (optionStyle.textColor || ""),
+      borderRadius: `${borderRadiusValue}px`,
+      transition: "all 0.2s ease",
+      fontFamily: formatFontFamily(fontFamily)
+    };
+    
+    // Aplicar estilos adicionais com base no valor de optionsStyle
+    switch (optionsStyle) {
+      case '3d':
+        return {
+          ...baseStyles,
+          boxShadow: isSelected
+            ? `0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.2), inset 0 0 0 1px ${
+                optionStyle.selectedBorderColor || indicatorColor
+              }`
+            : '0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.15)',
+          transform: isSelected ? 'translateY(-2px)' : 'none'
+        };
+        
+      case 'neumorphism':
+        // Para neumorfismo, usar cores mais claras
+        const bgColor = isSelected 
+          ? (optionStyle.selectedBackgroundColor || "#f0f0f0") 
+          : (optionStyle.backgroundColor || "#f0f0f0");
+          
+        return {
+          ...baseStyles,
+          backgroundColor: bgColor,
+          border: 'none',
+          boxShadow: isSelected
+            ? `inset 3px 3px 6px rgba(0,0,0,0.15), 
+               inset -3px -3px 6px rgba(255,255,255,0.8), 
+               0 0 0 2px ${optionStyle.selectedBorderColor || indicatorColor}`
+            : '5px 5px 10px rgba(0,0,0,0.1), -5px -5px 10px rgba(255,255,255,0.8)'
+        };
+        
+      case 'glassmorphism':
+        return {
+          ...baseStyles,
+          backgroundColor: isSelected
+            ? `rgba(${hexToRgb(optionStyle.selectedBackgroundColor || "#f5f3ff")}, 0.75)`
+            : 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(10px)',
+          border: isSelected
+            ? `1px solid ${optionStyle.selectedBorderColor || indicatorColor}`
+            : '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        };
+        
+      default: // 'flat'
+        return baseStyles;
+    }
+  };
+
+  // Função auxiliar para converter hex para rgb (necessário para glassmorphism)
+  const hexToRgb = (hex: string) => {
+    // Remover o '#' se existir
+    hex = hex.replace('#', '');
+    
+    // Verificar formatos válidos de hex
+    if (hex.length !== 3 && hex.length !== 6) {
+      return '255, 255, 255'; // Branco por padrão
+    }
+    
+    // Expandir formato curto (3 dígitos)
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    
+    // Converter para RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    return `${r}, ${g}, ${b}`;
+  };
+
   return (
     <BaseElementRenderer {...props}>
       <div className="space-y-4" style={containerStyle}>
@@ -368,15 +460,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const optionStyle = option.style || {};
             const isSelected = selectedOptions.includes(option.id);
             
-            // Inline styles for the option
-            const styleObject = {
-              backgroundColor: isSelected ? (optionStyle.selectedBackgroundColor || "#f5f3ff") : (optionStyle.backgroundColor || ""),
-              borderColor: isSelected ? (optionStyle.selectedBorderColor || indicatorColor) : (optionStyle.borderColor || ""),
-              color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
-              borderRadius: `${borderRadiusValue}px`,
-              transition: "all 0.2s ease",
-              fontFamily: formatFontFamily(fontFamily)
-            };
+            // Aplicar estilos avançados baseados na seleção de estilo
+            const styleObject = getAdvancedOptionStyles(isSelected, optionStyle);
             
             // Prepare the indicator element (circle or square)
             const renderIndicator = () => {

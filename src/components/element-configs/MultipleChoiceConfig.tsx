@@ -59,6 +59,11 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   // Novo estado para controlar o negrito das opções
   const [optionsBold, setOptionsBold] = useState(element.content?.style?.optionsBold || false);
 
+  // Adicionar novo estado para o estilo das opções
+  const [optionsStyle, setOptionsStyle] = useState<'flat' | '3d' | 'neumorphism' | 'glassmorphism'>(
+    element.content?.style?.optionsStyle || 'flat'
+  );
+
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
@@ -104,6 +109,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get show indicators setting (default é true)
     setShowIndicators(element.content?.showIndicators !== false);
+    
+    // Get optionsStyle setting (default é 'flat')
+    setOptionsStyle(element.content?.style?.optionsStyle || 'flat');
     
     // Get margin top
     setMarginTop(element.content?.style?.marginTop || 0);
@@ -617,6 +625,21 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  // Adicionar função para alterar o estilo das opções
+  const handleOptionsStyleChange = (style: 'flat' | '3d' | 'neumorphism' | 'glassmorphism') => {
+    setOptionsStyle(style);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content?.style || {}),
+          optionsStyle: style
+        }
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -827,6 +850,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         helperText={helperText}
         showHelperText={showHelperText}
         showIndicators={showIndicators}
+        optionsStyle={optionsStyle}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
@@ -839,6 +863,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}
         onToggleIndicators={toggleIndicators}
+        onOptionsStyleChange={handleOptionsStyleChange}
       />
 
       <Separator />

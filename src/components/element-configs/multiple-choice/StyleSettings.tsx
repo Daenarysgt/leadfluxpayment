@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface StyleSettingsProps {
   showEmojis: boolean;
@@ -21,6 +22,7 @@ export interface StyleSettingsProps {
   helperText: string;
   showHelperText: boolean;
   showIndicators: boolean;
+  optionsStyle: 'flat' | '3d' | 'neumorphism' | 'glassmorphism';
   onToggleEmojis: () => void;
   onToggleImages: () => void;
   onBorderRadiusChange: (value: number[]) => void;
@@ -33,6 +35,7 @@ export interface StyleSettingsProps {
   onHelperTextChange: (text: string) => void;
   onToggleHelperText: () => void;
   onToggleIndicators: () => void;
+  onOptionsStyleChange: (style: 'flat' | '3d' | 'neumorphism' | 'glassmorphism') => void;
 }
 
 const StyleSettings: React.FC<StyleSettingsProps> = ({
@@ -48,6 +51,7 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   helperText,
   showHelperText,
   showIndicators,
+  optionsStyle,
   onToggleEmojis,
   onToggleImages,
   onBorderRadiusChange,
@@ -59,9 +63,57 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   onContinueButtonTextChange,
   onHelperTextChange,
   onToggleHelperText,
-  onToggleIndicators
+  onToggleIndicators,
+  onOptionsStyleChange
 }) => {
   const form = useForm();
+
+  const renderStylePreview = (style: 'flat' | '3d' | 'neumorphism' | 'glassmorphism') => {
+    const getPreviewStyles = () => {
+      const baseStyles = {
+        height: '24px',
+        width: '100%',
+        borderRadius: '4px',
+        transition: 'all 0.2s ease'
+      };
+
+      switch(style) {
+        case 'flat':
+          return {
+            ...baseStyles,
+            backgroundColor: '#f5f5f5',
+            border: '1px solid #e0e0e0'
+          };
+        case '3d':
+          return {
+            ...baseStyles,
+            backgroundColor: '#f5f5f5',
+            border: '1px solid #e0e0e0',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.15)'
+          };
+        case 'neumorphism':
+          return {
+            ...baseStyles,
+            backgroundColor: '#f0f0f0',
+            boxShadow: '3px 3px 6px rgba(0,0,0,0.1), -3px -3px 6px rgba(255,255,255,0.8)'
+          };
+        case 'glassmorphism':
+          return {
+            ...baseStyles,
+            backgroundColor: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(5px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+          };
+        default:
+          return baseStyles;
+      }
+    };
+
+    return (
+      <div style={getPreviewStyles()}></div>
+    );
+  };
 
   return (
     <Form {...form}>
@@ -69,6 +121,46 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
         <CardContent className="p-4 space-y-4">
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Aparência</h3>
+            
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="optionsStyle" className="text-xs block">Estilo das opções</Label>
+              <Select
+                value={optionsStyle}
+                onValueChange={(value) => 
+                  onOptionsStyleChange(value as 'flat' | '3d' | 'neumorphism' | 'glassmorphism')
+                }
+              >
+                <SelectTrigger id="optionsStyle" className="h-8 text-xs">
+                  <SelectValue placeholder="Selecione um estilo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flat" className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>Plano (padrão)</span>
+                      <div className="w-16">{renderStylePreview('flat')}</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="3d" className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>3D</span>
+                      <div className="w-16">{renderStylePreview('3d')}</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="neumorphism" className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>Neumorfismo</span>
+                      <div className="w-16">{renderStylePreview('neumorphism')}</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="glassmorphism" className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span>Vidro</span>
+                      <div className="w-16">{renderStylePreview('glassmorphism')}</div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="grid grid-cols-2 gap-2">
               <div>
