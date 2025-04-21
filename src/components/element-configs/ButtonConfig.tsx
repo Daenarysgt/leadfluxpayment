@@ -63,15 +63,44 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
   const handleNavigationUpdate = (updates: Record<string, any>) => {
     console.log("ButtonConfig - Navigation update:", updates);
     
+    // Criar nova configuração de navegação combinando a atual com as atualizações
+    const updatedNavigation = {
+      ...navigation,
+      ...updates,
+    };
+    
+    console.log("ButtonConfig - Nova configuração de navegação:", updatedNavigation);
+    
+    // Caso especial para mudança de tipo: limpar campos específicos
+    if (updates.type && updates.type !== navigation.type) {
+      console.log("ButtonConfig - Mudança de tipo de navegação detectada");
+      
+      // Limpar campos que não são relevantes para o novo tipo
+      if (updates.type === "next") {
+        // Para navegação "next", não precisamos de stepId ou url
+        delete updatedNavigation.stepId;
+        delete updatedNavigation.url;
+      } else if (updates.type === "step") {
+        // Para navegação "step", não precisamos de url
+        delete updatedNavigation.url;
+      } else if (updates.type === "url") {
+        // Para navegação "url", não precisamos de stepId
+        delete updatedNavigation.stepId;
+      }
+    }
+    
+    // Atualizar o elemento com a nova configuração
     onUpdate({
       content: {
         ...content,
-        navigation: {
-          ...navigation,
-          ...updates,
-        },
+        navigation: updatedNavigation,
       },
     });
+    
+    // Verificar após a atualização
+    setTimeout(() => {
+      console.log("ButtonConfig - Verificação pós-atualização:", element.content?.navigation);
+    }, 100);
   };
 
   const handleMarginTopChange = (value: number[]) => {
@@ -605,7 +634,22 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
               <Label htmlFor="step-selector">Selecionar Passo</Label>
               <Select
                 value={navigation.stepId || ""}
-                onValueChange={(value) => handleNavigationUpdate({ stepId: value })}
+                onValueChange={(value) => {
+                  console.log("Selecionando passo específico com ID:", value);
+                  // Verificar se o ID selecionado existe nas etapas disponíveis
+                  const stepExists = steps.some(step => step.id === value);
+                  
+                  if (!stepExists) {
+                    console.error(`ID de passo selecionado ${value} não encontrado nas etapas disponíveis`);
+                    console.log("Etapas disponíveis:", steps);
+                  }
+                  
+                  handleNavigationUpdate({ stepId: value });
+                  console.log("Configuração de navegação atualizada:", {
+                    ...navigation,
+                    stepId: value
+                  });
+                }}
               >
                 <SelectTrigger id="step-selector">
                   <SelectValue placeholder="Escolha um passo" />
@@ -618,6 +662,11 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Adicionar mensagem de verificação para ajudar no diagnóstico */}
+              <p className="text-xs text-muted-foreground mt-1">
+                Passo selecionado: {navigation.stepId ? `ID: ${navigation.stepId}` : "Nenhum"}
+              </p>
             </div>
           )}
 

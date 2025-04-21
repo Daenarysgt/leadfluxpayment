@@ -44,12 +44,20 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   }, [funnel]);
   
   const handleStepChange = async (index: number) => {
-    console.log("CanvasPreview - handleStepChange called with index:", index);
+    console.log("CanvasPreview - handleStepChange called com índice:", index);
     
     if (!funnel) {
       console.warn("CanvasPreview - No funnel available for navigation");
       return;
     }
+    
+    // Validar se o índice é válido
+    if (index < 0 || index >= funnel.steps.length) {
+      console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
+      return;
+    }
+    
+    console.log(`CanvasPreview - Navegando da etapa ${activeStep} para etapa ${index}`);
     
     try {
       // Registrar interação do usuário com o funil para a etapa ATUAL
@@ -74,10 +82,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     }
     
     console.log("CanvasPreview - Changing step to:", index);
-    // Garante que a mudança de etapa não seja bloqueada pelo processamento assíncrono
+    
+    // Garantir que a mudança de etapa não seja bloqueada pelo processamento assíncrono
     setTimeout(() => {
+      console.log("CanvasPreview - Executando mudança de etapa para:", index);
       onStepChange(index);
-    }, 50);
+    }, 100);
   };
   
   const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
