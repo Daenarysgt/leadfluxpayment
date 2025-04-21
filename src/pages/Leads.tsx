@@ -9,7 +9,7 @@ import {
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
   ArrowUpRight, MousePointerClick, ClipboardList,
-  CheckCircle, Activity
+  CheckCircle, Activity, TrendingDown, Flame
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -1961,7 +1961,7 @@ const Leads = () => {
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-amber-100">
-                <span className="text-amber-600 text-sm">📉</span>
+                <TrendingDown className="h-4 w-4 text-amber-600" />
               </div>
               <span>Queda mais frequente</span>
             </CardTitle>
@@ -1974,7 +1974,7 @@ const Leads = () => {
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-red-50 to-rose-100">
-                <span className="text-red-600 text-sm">🔥</span>
+                <Flame className="h-4 w-4 text-red-600" />
               </div>
               <span>Visitantes em tempo real</span>
               
