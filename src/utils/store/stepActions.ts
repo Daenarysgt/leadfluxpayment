@@ -461,71 +461,47 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
   // Gerar novo ID para a etapa duplicada
   const newStepId = generateValidUUID();
   
-  // Encontrar explicitamente a próxima etapa após a atual
-  let nextOrderIndex;
+  // Clone profundo do funnel atual
+  const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
   
-  // Obtém todas as etapas ordenadas por order_index
-  const orderedSteps = [...currentFunnel.steps].sort((a, b) => 
-    (a.order_index ?? 0) - (b.order_index ?? 0)
+  // ABORDAGEM SIMPLIFICADA: Ordene as etapas por position primeiro
+  const orderedByPosition = [...funnelCopy.steps].sort((a, b) => 
+    (a.position ?? 0) - (b.position ?? 0)
   );
   
-  // Encontra a posição da etapa atual na lista ordenada
-  const orderedStepIndex = orderedSteps.findIndex(s => s.id === stepToDuplicate.id);
+  // Encontre a posição visual da etapa atual
+  const currentVisualPosition = orderedByPosition.findIndex(s => s.id === stepToDuplicate.id);
   
-  // Se não for a última etapa
-  if (orderedStepIndex < orderedSteps.length - 1) {
-    // Pega a próxima etapa da ordem
-    const nextStep = orderedSteps[orderedStepIndex + 1];
-    const currentOrderIndex = stepToDuplicate.order_index ?? 0;
-    const nextStepOrderIndex = nextStep.order_index ?? (currentOrderIndex + 10);
-    
-    // Calcula um valor intermediário entre a etapa atual e a próxima
-    nextOrderIndex = currentOrderIndex + ((nextStepOrderIndex - currentOrderIndex) / 2);
-    console.log(`Calculando order_index entre etapa atual (${currentOrderIndex}) e próxima (${nextStepOrderIndex}): ${nextOrderIndex}`);
-  } else {
-    // Se for a última etapa, adiciona um valor maior
-    nextOrderIndex = (stepToDuplicate.order_index ?? 0) + 10;
-    console.log(`Etapa é a última, usando order_index: ${nextOrderIndex}`);
-  }
-  
-  // Criar a nova etapa duplicada
+  // SEMPRE inserir a etapa duplicada logo após a original, na posição visual + 1
+  // Isso é muito mais previsível que usar order_index
   const duplicatedStep = {
     ...stepClone,
     id: newStepId,
     title: `${stepToDuplicate.title} (cópia)`,
-    order_index: nextOrderIndex,
+    position: currentVisualPosition + 1, // Posição visual + 1
     created_at: formatDateForSupabase(),
     updated_at: formatDateForSupabase(),
   };
   
-  // Clone profundo do funnel atual
-  const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
+  // Inserir na posição visual + 1 (logo após a original)
+  orderedByPosition.splice(currentVisualPosition + 1, 0, duplicatedStep);
   
-  // Importante: Reordenar as etapas por order_index antes de inserir
-  const orderedFunnelSteps = [...funnelCopy.steps].sort((a, b) => 
-    (a.order_index ?? 0) - (b.order_index ?? 0)
-  );
-  
-  // Encontrar a posição ordenada da etapa original
-  const originalStepOrderedIndex = orderedFunnelSteps.findIndex(s => s.id === stepToDuplicate.id);
-  
-  // Inserir a nova etapa APÓS a etapa original (na posição ordenada + 1)
-  orderedFunnelSteps.splice(originalStepOrderedIndex + 1, 0, duplicatedStep);
-  
-  // Atualizar posição em todas as etapas após a inserção
-  orderedFunnelSteps.forEach((step, idx) => {
+  // Reindexar todas as posições para garantir consistência
+  orderedByPosition.forEach((step, idx) => {
     step.position = idx;
+    // Atualizar order_index para corresponder à posição visual
+    step.order_index = idx * 10;
   });
   
-  // Atualizar o funnel com as etapas ordenadas
+  // Atualizar o funnel com as etapas reordenadas
   const updatedFunnel = {
     ...funnelCopy,
-    steps: orderedFunnelSteps,
+    steps: orderedByPosition,
     updated_at: formatDateForSupabase(),
   };
   
-  // O novo índice é logo após o índice ordenado da etapa original
-  const newStepIndex = originalStepOrderedIndex + 1;
+  // O novo índice atual é SEMPRE a posição visual + 1
+  const newStepIndex = currentVisualPosition + 1;
   
   try {
     // Atualizar o estado local imediatamente para UI responsiva
@@ -546,8 +522,8 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         id: newStepId,
         title: duplicatedStep.title,
         funnel_id: currentFunnel.id,
-        order_index: nextOrderIndex,
-        position: newStepIndex, // Importante: definir position corretamente
+        order_index: duplicatedStep.order_index,
+        position: duplicatedStep.position,
         created_at: formatDateForSupabase(),
         updated_at: formatDateForSupabase()
       };
@@ -588,27 +564,30 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         }
       }
       
-      // Atualizar também todas as posições/order_index das outras etapas
-      const updates = orderedFunnelSteps
-        .filter(step => step.id !== newStepId) // Excluir a etapa recém-criada
+      // IMPORTANTE: Atualizar TODAS as etapas para garantir posições e order_index consistentes
+      const updates = orderedByPosition
+        .filter(step => step.id !== newStepId) // Excluir a etapa recém-criada que já foi inserida
         .map(step => ({
           id: step.id,
           position: step.position,
+          order_index: step.order_index,
           updated_at: formatDateForSupabase()
         }));
       
       if (updates.length > 0) {
+        console.log("Atualizando posições de todas as etapas:", 
+          updates.map(u => `${u.id}: position=${u.position}, order=${u.order_index}`).join(', '));
+        
         const { error: updateError } = await supabase
           .from('steps')
           .upsert(updates);
           
         if (updateError) {
           console.error("StepActions - Erro ao atualizar posições das etapas:", updateError);
+        } else {
+          console.log("StepActions - Posições das etapas atualizadas com sucesso");
         }
       }
-      
-      // Normalizar os order_index de todas as etapas para garantir consistência
-      await normalizeStepOrderIndexes(currentFunnel.id);
     } 
     // MÉTODO 2: Fallback para persistenceService
     catch (directError) {

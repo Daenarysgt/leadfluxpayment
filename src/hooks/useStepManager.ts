@@ -16,26 +16,30 @@ export const useStepManager = () => {
   const { toast } = useToast();
   const isChangingStepRef = useRef<boolean>(false);
   
-  // Ordenar os steps por ordem_index para garantir consistência
+  // Ordenar os steps por position para garantir consistência, usando order_index como secondary sort
   const sortedSteps = useMemo(() => {
     if (!currentFunnel?.steps) return [];
     
-    // Garantir que etapas com order_index igual sejam ordenadas por posição ou ID para consistência
+    // Primeiro ordenar por position, depois por order_index caso haja empate
     return [...currentFunnel.steps].sort((a, b) => {
+      // Prioridade 1: usar position (mais confiável para ordem visual)
+      const posA = a.position ?? 0;
+      const posB = b.position ?? 0;
+      
+      if (posA !== posB) {
+        return posA - posB;
+      }
+      
+      // Se positions são iguais, usar order_index como secondary sort
       const orderA = a.order_index ?? 0;
       const orderB = b.order_index ?? 0;
       
-      // Se os order_index são iguais, ordenar por posição ou ID para consistência
-      if (orderA === orderB) {
-        // Se temos posição, usar ela primeiro
-        if (a.position !== undefined && b.position !== undefined) {
-          return a.position - b.position;
-        }
-        // Caso contrário, usar ID como fallback para ordem estável
-        return a.id.localeCompare(b.id);
+      if (orderA !== orderB) {
+        return orderA - orderB;
       }
       
-      return orderA - orderB;
+      // Último recurso: ordenar por ID para estabilidade
+      return a.id.localeCompare(b.id);
     });
   }, [currentFunnel?.steps]);
   
