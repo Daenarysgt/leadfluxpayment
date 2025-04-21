@@ -47,6 +47,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [continueButtonText, setContinueButtonText] = useState("Continuar");
   const [helperText, setHelperText] = useState("Selecione uma ou mais opções para avançar");
   const [showHelperText, setShowHelperText] = useState(false);
+  const [showIndicators, setShowIndicators] = useState(element.content?.showIndicators !== false);
   const [marginTop, setMarginTop] = useState(element.content?.style?.marginTop || 0);
   
   // Novos estados para fonte e tamanhos
@@ -100,6 +101,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     
     // Get show helper text setting
     setShowHelperText(element.content?.showHelperText === true);
+    
+    // Get show indicators setting (default é true)
+    setShowIndicators(element.content?.showIndicators !== false);
     
     // Get margin top
     setMarginTop(element.content?.style?.marginTop || 0);
@@ -460,6 +464,19 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
   
+  // Adicionar função para alternar a exibição dos indicadores
+  const toggleIndicators = () => {
+    const newShowIndicators = !showIndicators;
+    setShowIndicators(newShowIndicators);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        showIndicators: newShowIndicators
+      }
+    });
+  };
+  
   // Função para formatar corretamente nomes de fontes
   const formatFontFamily = (font: string) => {
     // Adicionar aspas apenas se o nome da fonte tiver espaço
@@ -809,6 +826,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         continueButtonText={continueButtonText}
         helperText={helperText}
         showHelperText={showHelperText}
+        showIndicators={showIndicators}
         onToggleEmojis={toggleEmojis}
         onToggleImages={toggleImages}
         onBorderRadiusChange={handleBorderRadiusChange}
@@ -820,6 +838,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
         onContinueButtonTextChange={handleContinueButtonTextChange}
         onHelperTextChange={handleHelperTextChange}
         onToggleHelperText={toggleHelperText}
+        onToggleIndicators={toggleIndicators}
       />
 
       <Separator />

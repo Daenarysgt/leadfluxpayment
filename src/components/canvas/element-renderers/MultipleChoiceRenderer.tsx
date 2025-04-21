@@ -25,7 +25,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     indicatorIconColor = "#FFFFFF", // Cor padrão branca
     continueButtonText = "Continuar",
     helperText = "Selecione uma ou mais opções para avançar",
-    showHelperText = true
+    showHelperText = true,
+    showIndicators = true // Nova opção para controlar visibilidade dos indicadores
   } = content || {};
   
   // Get style settings
@@ -433,11 +434,11 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               >
                 <div className="flex items-center gap-3">
                   {/* Posicionamento condicional do indicador */}
-                  {indicatorAlign === "left" && renderIndicator()}
+                  {showIndicators && indicatorAlign === "left" && renderIndicator()}
                   
                   <div className="flex-1 flex items-center">
                     {option.emoji && (
-                      <span className="mr-2 text-xl">{option.emoji}</span>
+                      <span className="mr-3 text-2xl" style={{ fontSize: '1.75rem' }}>{option.emoji}</span>
                     )}
                     <div>
                       <span 
@@ -474,7 +475,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   </div>
                   
                   {/* Indicador à direita quando configurado */}
-                  {indicatorAlign === "right" && renderIndicator()}
+                  {showIndicators && indicatorAlign === "right" && renderIndicator()}
                 </div>
               </div>
             );

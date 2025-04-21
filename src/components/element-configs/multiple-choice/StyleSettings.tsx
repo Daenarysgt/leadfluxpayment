@@ -20,6 +20,7 @@ export interface StyleSettingsProps {
   continueButtonText: string;
   helperText: string;
   showHelperText: boolean;
+  showIndicators: boolean;
   onToggleEmojis: () => void;
   onToggleImages: () => void;
   onBorderRadiusChange: (value: number[]) => void;
@@ -31,6 +32,7 @@ export interface StyleSettingsProps {
   onContinueButtonTextChange: (text: string) => void;
   onHelperTextChange: (text: string) => void;
   onToggleHelperText: () => void;
+  onToggleIndicators: () => void;
 }
 
 const StyleSettings: React.FC<StyleSettingsProps> = ({
@@ -45,6 +47,7 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   continueButtonText,
   helperText,
   showHelperText,
+  showIndicators,
   onToggleEmojis,
   onToggleImages,
   onBorderRadiusChange,
@@ -55,7 +58,8 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
   onIndicatorIconColorChange,
   onContinueButtonTextChange,
   onHelperTextChange,
-  onToggleHelperText
+  onToggleHelperText,
+  onToggleIndicators
 }) => {
   const form = useForm();
 
@@ -152,75 +156,88 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Indicadores</h3>
             
-            <div>
-              <Label className="text-xs mb-2 block">Tipo de indicador</Label>
-              <RadioGroup
-                defaultValue={indicatorType}
-                value={indicatorType}
-                onValueChange={(value) => onIndicatorTypeChange(value as 'circle' | 'square')}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="circle" id="circle" />
-                  <Label htmlFor="circle" className="text-xs">Círculo</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="square" id="square" />
-                  <Label htmlFor="square" className="text-xs">Quadrado</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            <Label htmlFor="showIndicators" className="text-xs flex items-center justify-between">
+              Mostrar indicadores
+              <Switch
+                id="showIndicators"
+                checked={showIndicators}
+                onCheckedChange={onToggleIndicators}
+              />
+            </Label>
             
-            <div className="pt-2">
-              <Label className="text-xs mb-2 block">Alinhamento do indicador</Label>
-              <RadioGroup
-                defaultValue={indicatorAlign}
-                value={indicatorAlign}
-                onValueChange={(value) => onIndicatorAlignChange(value as 'left' | 'right')}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="left" id="left" />
-                  <Label htmlFor="left" className="text-xs">Esquerda</Label>
+            {showIndicators && (
+              <>
+                <div>
+                  <Label className="text-xs mb-2 block">Tipo de indicador</Label>
+                  <RadioGroup
+                    defaultValue={indicatorType}
+                    value={indicatorType}
+                    onValueChange={(value) => onIndicatorTypeChange(value as 'circle' | 'square')}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="circle" id="circle" />
+                      <Label htmlFor="circle" className="text-xs">Círculo</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="square" id="square" />
+                      <Label htmlFor="square" className="text-xs">Quadrado</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="right" id="right" />
-                  <Label htmlFor="right" className="text-xs">Direita</Label>
+                
+                <div className="pt-2">
+                  <Label className="text-xs mb-2 block">Alinhamento do indicador</Label>
+                  <RadioGroup
+                    defaultValue={indicatorAlign}
+                    value={indicatorAlign}
+                    onValueChange={(value) => onIndicatorAlignChange(value as 'left' | 'right')}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="left" id="left" />
+                      <Label htmlFor="left" className="text-xs">Esquerda</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="right" id="right" />
+                      <Label htmlFor="right" className="text-xs">Direita</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="pt-3">
-              <Label className="text-xs mb-2 block">Cor do indicador selecionado</Label>
-              <div className="flex space-x-2 items-center">
-                <div 
-                  className="h-6 w-6 rounded border"
-                  style={{ backgroundColor: indicatorColor || '#8b5cf6' }}
-                />
-                <Input
-                  value={indicatorColor}
-                  onChange={(e) => onIndicatorColorChange(e.target.value)}
-                  placeholder="#8b5cf6"
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
-            
-            <div className="pt-3">
-              <Label className="text-xs mb-2 block">Cor do ícone do indicador</Label>
-              <div className="flex space-x-2 items-center">
-                <div 
-                  className="h-6 w-6 rounded border"
-                  style={{ backgroundColor: indicatorIconColor || '#FFFFFF' }}
-                />
-                <Input
-                  value={indicatorIconColor}
-                  onChange={(e) => onIndicatorIconColorChange(e.target.value)}
-                  placeholder="#FFFFFF"
-                  className="h-8 text-xs"
-                />
-              </div>
-            </div>
+                
+                <div className="pt-3">
+                  <Label className="text-xs mb-2 block">Cor do indicador selecionado</Label>
+                  <div className="flex space-x-2 items-center">
+                    <div 
+                      className="h-6 w-6 rounded border"
+                      style={{ backgroundColor: indicatorColor || '#8b5cf6' }}
+                    />
+                    <Input
+                      value={indicatorColor}
+                      onChange={(e) => onIndicatorColorChange(e.target.value)}
+                      placeholder="#8b5cf6"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-3">
+                  <Label className="text-xs mb-2 block">Cor do ícone do indicador</Label>
+                  <div className="flex space-x-2 items-center">
+                    <div 
+                      className="h-6 w-6 rounded border"
+                      style={{ backgroundColor: indicatorIconColor || '#FFFFFF' }}
+                    />
+                    <Input
+                      value={indicatorIconColor}
+                      onChange={(e) => onIndicatorIconColorChange(e.target.value)}
+                      placeholder="#FFFFFF"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
