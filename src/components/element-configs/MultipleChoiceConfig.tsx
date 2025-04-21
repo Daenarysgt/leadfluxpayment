@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Lista de fontes disponíveis
 const FONT_OPTIONS = [
@@ -34,6 +35,7 @@ interface MultipleChoiceConfigProps {
 
 const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) => {
   const { currentFunnel } = useStore();
+  const [activeTab, setActiveTab] = useState<string>("content");
   
   // Initialize state with values from the element
   const [showEmojis, setShowEmojis] = useState(false);
@@ -472,7 +474,6 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
   
-  // Adicionar função para alternar a exibição dos indicadores
   const toggleIndicators = () => {
     const newShowIndicators = !showIndicators;
     setShowIndicators(newShowIndicators);
@@ -633,7 +634,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
       content: {
         ...element.content,
         style: {
-          ...(element.content?.style || {}),
+          ...(element.content.style || {}),
           optionsStyle: style
         }
       }
@@ -642,267 +643,283 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
 
   return (
     <div className="p-4 pb-16 space-y-6">
-      <TitleInput 
-        title={element.content?.title || ""} 
-        onChange={handleTitleChange} 
-      />
-
-      <Separator />
-      
-      <OptionsList 
-        options={element.content?.options || []}
-        showEmojis={showEmojis}
-        showImages={showImages}
-        emojiOptions={EMOJI_OPTIONS}
-        steps={steps}
-        onOptionTextChange={handleOptionTextChange}
-        onOptionEmojiChange={handleOptionEmojiChange}
-        onOptionBackgroundColorChange={handleOptionBackgroundColorChange}
-        onOptionBorderColorChange={handleOptionBorderColorChange}
-        onOptionTextColorChange={handleOptionTextColorChange}
-        onOptionNavigationTypeChange={handleOptionNavigationTypeChange}
-        onOptionStepIdChange={handleOptionStepIdChange}
-        onOptionUrlChange={handleOptionUrlChange}
-        onDeleteOption={handleDeleteOption}
-        onAddOption={handleAddOption}
-        onOptionSelectedStyleChange={handleOptionSelectedStyleChange}
-      />
-
-      <Separator />
-      
-      {/* Seção de Fontes */}
-      <div className="space-y-4">
-        <h3 className="font-medium text-sm">Configurações de Fonte</h3>
+      <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full grid grid-cols-3">
+          <TabsTrigger value="content">Conteúdo</TabsTrigger>
+          <TabsTrigger value="style">Estilo</TabsTrigger>
+          <TabsTrigger value="settings">Configurações</TabsTrigger>
+        </TabsList>
         
-        {/* Família de Fonte */}
-        <div className="space-y-2">
-          <Label htmlFor="font-family">Fonte</Label>
-          <Select 
-            value={fontFamily} 
-            onValueChange={handleFontFamilyChange}
-          >
-            <SelectTrigger id="font-family">
-              <SelectValue placeholder="Selecione uma fonte" />
-            </SelectTrigger>
-            <SelectContent>
-              {FONT_OPTIONS.map(font => (
-                <SelectItem key={font.value} value={font.value}>
-                  <span style={{ fontFamily: formatFontFamily(font.value) }}>{font.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Aba de Conteúdo */}
+        <TabsContent value="content" className="space-y-6 pt-4">
+          <TitleInput 
+            title={element.content?.title || ""} 
+            onChange={handleTitleChange} 
+          />
+          
+          <Separator />
+          
+          <OptionsList 
+            options={element.content?.options || []}
+            showEmojis={showEmojis}
+            showImages={showImages}
+            emojiOptions={EMOJI_OPTIONS}
+            steps={steps}
+            onOptionTextChange={handleOptionTextChange}
+            onOptionEmojiChange={handleOptionEmojiChange}
+            onOptionBackgroundColorChange={handleOptionBackgroundColorChange}
+            onOptionBorderColorChange={handleOptionBorderColorChange}
+            onOptionTextColorChange={handleOptionTextColorChange}
+            onOptionNavigationTypeChange={handleOptionNavigationTypeChange}
+            onOptionStepIdChange={handleOptionStepIdChange}
+            onOptionUrlChange={handleOptionUrlChange}
+            onDeleteOption={handleDeleteOption}
+            onAddOption={handleAddOption}
+            onOptionSelectedStyleChange={handleOptionSelectedStyleChange}
+          />
+        </TabsContent>
         
-        {/* Tamanho da Fonte do Título */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="title-font-size">Tamanho do Título: {titleFontSize}px</Label>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleTitleFontSizeChange([Math.max(12, titleFontSize - 1)])}
+        {/* Aba de Estilo */}
+        <TabsContent value="style" className="space-y-6 pt-4">
+          {/* Seção de Aparência */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-sm">Aparência</h3>
+            
+            <StyleSettings 
+              showEmojis={showEmojis}
+              showImages={showImages}
+              borderRadius={borderRadius}
+              allowMultipleSelection={allowMultipleSelection}
+              indicatorType={indicatorType}
+              indicatorAlign={indicatorAlign}
+              indicatorColor={indicatorColor}
+              indicatorIconColor={indicatorIconColor}
+              continueButtonText={continueButtonText}
+              helperText={helperText}
+              showHelperText={showHelperText}
+              showIndicators={showIndicators}
+              optionsStyle={optionsStyle}
+              onToggleEmojis={toggleEmojis}
+              onToggleImages={toggleImages}
+              onBorderRadiusChange={handleBorderRadiusChange}
+              onToggleMultipleSelection={toggleMultipleSelection}
+              onIndicatorTypeChange={handleIndicatorTypeChange}
+              onIndicatorAlignChange={handleIndicatorAlignChange}
+              onIndicatorColorChange={handleIndicatorColorChange}
+              onIndicatorIconColorChange={handleIndicatorIconColorChange}
+              onContinueButtonTextChange={handleContinueButtonTextChange}
+              onHelperTextChange={handleHelperTextChange}
+              onToggleHelperText={toggleHelperText}
+              onToggleIndicators={toggleIndicators}
+              onOptionsStyleChange={handleOptionsStyleChange}
+            />
+          </div>
+        </TabsContent>
+        
+        {/* Aba de Configurações */}
+        <TabsContent value="settings" className="space-y-6 pt-4">
+          {/* Configurações de Fonte */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-sm">Fonte e Tipografia</h3>
+            
+            {/* Família de Fonte */}
+            <div className="space-y-2">
+              <Label htmlFor="font-family">Fonte</Label>
+              <Select 
+                value={fontFamily} 
+                onValueChange={handleFontFamilyChange}
               >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleTitleFontSizeChange([titleFontSize + 1])}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
+                <SelectTrigger id="font-family">
+                  <SelectValue placeholder="Selecione uma fonte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_OPTIONS.map(font => (
+                    <SelectItem key={font.value} value={font.value}>
+                      <span style={{ fontFamily: formatFontFamily(font.value) }}>{font.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Tamanho da Fonte do Título */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="title-font-size">Tamanho do Título: {titleFontSize}px</Label>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleTitleFontSizeChange([Math.max(12, titleFontSize - 1)])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleTitleFontSizeChange([titleFontSize + 1])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <Slider
+                id="title-font-size"
+                min={12}
+                max={40}
+                step={1}
+                value={[titleFontSize]}
+                onValueChange={handleTitleFontSizeChange}
+              />
+              <div className="p-2 border rounded-md bg-gray-50 overflow-hidden whitespace-nowrap text-ellipsis">
+                <span 
+                  style={{ 
+                    fontFamily: formatFontFamily(fontFamily),
+                    fontSize: `${titleFontSize}px`
+                  }}
+                >
+                  Exemplo de título
+                </span>
+              </div>
+            </div>
+            
+            {/* Tamanho da Fonte das Opções */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="option-font-size">Tamanho das Opções: {optionFontSize}px</Label>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleOptionFontSizeChange([Math.max(10, optionFontSize - 1)])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleOptionFontSizeChange([optionFontSize + 1])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <Slider
+                id="option-font-size"
+                min={10}
+                max={32}
+                step={1}
+                value={[optionFontSize]}
+                onValueChange={handleOptionFontSizeChange}
+              />
+              <div className="p-2 border rounded-md bg-gray-50">
+                <span 
+                  style={{ 
+                    fontFamily: formatFontFamily(fontFamily),
+                    fontSize: `${optionFontSize}px`,
+                    fontWeight: optionsBold ? 'bold' : 'normal'
+                  }}
+                >
+                  Exemplo de opção
+                </span>
+              </div>
+            </div>
+            
+            {/* Negrito para Opções */}
+            <div className="flex items-center justify-between space-y-0 pt-2">
+              <Label htmlFor="options-bold">Texto das opções em negrito</Label>
+              <Switch
+                id="options-bold"
+                checked={optionsBold}
+                onCheckedChange={handleOptionsBoldChange}
+              />
+            </div>
+            
+            {/* Tamanho da Fonte das Descrições */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description-font-size">Tamanho das Descrições: {descriptionFontSize}px</Label>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleDescriptionFontSizeChange([Math.max(8, descriptionFontSize - 1)])}
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 w-7 p-0"
+                    onClick={() => handleDescriptionFontSizeChange([descriptionFontSize + 1])}
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <Slider
+                id="description-font-size"
+                min={8}
+                max={24}
+                step={1}
+                value={[descriptionFontSize]}
+                onValueChange={handleDescriptionFontSizeChange}
+              />
+              <div className="p-2 border rounded-md bg-gray-50 text-gray-500">
+                <span 
+                  style={{ 
+                    fontFamily: formatFontFamily(fontFamily),
+                    fontSize: `${descriptionFontSize}px`
+                  }}
+                >
+                  Exemplo de descrição de opção
+                </span>
+              </div>
+            </div>
+            
+            {/* Controle de Margem Superior */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="margin-top">Margem superior</Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm text-muted-foreground">{marginTop}px</span>
+                  <div className="flex flex-col">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-5 w-5"
+                      onClick={() => handleMarginTopChange([marginTop - 5])}
+                    >
+                      <ArrowUp className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-5 w-5"
+                      onClick={() => handleMarginTopChange([marginTop + 5])}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <Slider
+                id="margin-top"
+                min={-100}
+                max={100}
+                step={1}
+                value={[marginTop]}
+                onValueChange={handleMarginTopChange}
+              />
             </div>
           </div>
-          <Slider
-            id="title-font-size"
-            min={12}
-            max={40}
-            step={1}
-            value={[titleFontSize]}
-            onValueChange={handleTitleFontSizeChange}
-          />
-          <div className="p-2 border rounded-md bg-gray-50 overflow-hidden whitespace-nowrap text-ellipsis">
-            <span 
-              style={{ 
-                fontFamily: formatFontFamily(fontFamily),
-                fontSize: `${titleFontSize}px`
-              }}
-            >
-              Exemplo de título
-            </span>
-          </div>
-        </div>
-        
-        {/* Tamanho da Fonte das Opções */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="option-font-size">Tamanho das Opções: {optionFontSize}px</Label>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleOptionFontSizeChange([Math.max(10, optionFontSize - 1)])}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleOptionFontSizeChange([optionFontSize + 1])}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-          <Slider
-            id="option-font-size"
-            min={10}
-            max={32}
-            step={1}
-            value={[optionFontSize]}
-            onValueChange={handleOptionFontSizeChange}
-          />
-          <div className="p-2 border rounded-md bg-gray-50">
-            <span 
-              style={{ 
-                fontFamily: formatFontFamily(fontFamily),
-                fontSize: `${optionFontSize}px`,
-                fontWeight: optionsBold ? 'bold' : 'normal'
-              }}
-            >
-              Exemplo de opção
-            </span>
-          </div>
-        </div>
-        
-        {/* Negrito para Opções */}
-        <div className="flex items-center justify-between space-y-0 pt-2">
-          <Label htmlFor="options-bold">Texto das opções em negrito</Label>
-          <Switch
-            id="options-bold"
-            checked={optionsBold}
-            onCheckedChange={handleOptionsBoldChange}
-          />
-        </div>
-        
-        {/* Tamanho da Fonte das Descrições */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="description-font-size">Tamanho das Descrições: {descriptionFontSize}px</Label>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleDescriptionFontSizeChange([Math.max(8, descriptionFontSize - 1)])}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0"
-                onClick={() => handleDescriptionFontSizeChange([descriptionFontSize + 1])}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-          <Slider
-            id="description-font-size"
-            min={8}
-            max={24}
-            step={1}
-            value={[descriptionFontSize]}
-            onValueChange={handleDescriptionFontSizeChange}
-          />
-          <div className="p-2 border rounded-md bg-gray-50 text-gray-500">
-            <span 
-              style={{ 
-                fontFamily: formatFontFamily(fontFamily),
-                fontSize: `${descriptionFontSize}px`
-              }}
-            >
-              Exemplo de descrição de opção
-            </span>
-          </div>
-        </div>
-      </div>
-      
-      <Separator />
-      
-      <StyleSettings 
-        showEmojis={showEmojis}
-        showImages={showImages}
-        borderRadius={borderRadius}
-        allowMultipleSelection={allowMultipleSelection}
-        indicatorType={indicatorType}
-        indicatorAlign={indicatorAlign}
-        indicatorColor={indicatorColor}
-        indicatorIconColor={indicatorIconColor}
-        continueButtonText={continueButtonText}
-        helperText={helperText}
-        showHelperText={showHelperText}
-        showIndicators={showIndicators}
-        optionsStyle={optionsStyle}
-        onToggleEmojis={toggleEmojis}
-        onToggleImages={toggleImages}
-        onBorderRadiusChange={handleBorderRadiusChange}
-        onToggleMultipleSelection={toggleMultipleSelection}
-        onIndicatorTypeChange={handleIndicatorTypeChange}
-        onIndicatorAlignChange={handleIndicatorAlignChange}
-        onIndicatorColorChange={handleIndicatorColorChange}
-        onIndicatorIconColorChange={handleIndicatorIconColorChange}
-        onContinueButtonTextChange={handleContinueButtonTextChange}
-        onHelperTextChange={handleHelperTextChange}
-        onToggleHelperText={toggleHelperText}
-        onToggleIndicators={toggleIndicators}
-        onOptionsStyleChange={handleOptionsStyleChange}
-      />
-
-      <Separator />
-      
-      {/* Controle de Margem Superior */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Label htmlFor="margin-top">Margem superior</Label>
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-muted-foreground">{marginTop}px</span>
-            <div className="flex flex-col">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-5 w-5"
-                onClick={() => handleMarginTopChange([marginTop - 5])}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-5 w-5"
-                onClick={() => handleMarginTopChange([marginTop + 5])}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </div>
-        <Slider
-          id="margin-top"
-          min={-100}
-          max={100}
-          step={1}
-          value={[marginTop]}
-          onValueChange={handleMarginTopChange}
-        />
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
