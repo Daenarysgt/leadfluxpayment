@@ -919,20 +919,97 @@ const Leads = () => {
         setActiveVisitors(prev => ({ ...prev, loading: true }));
       }
       
-      // Calcular timestamp de há 3 minutos atrás
-      const threeMinutesAgo = new Date();
-      threeMinutesAgo.setMinutes(threeMinutesAgo.getMinutes() - 3);
-      const timestampThreshold = threeMinutesAgo.toISOString();
+      // Calcular timestamp de há 5 minutos atrás (janela de atividade)
+      const fiveMinutesAgo = new Date();
+      fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5);
+      const timestampThreshold = fiveMinutesAgo.toISOString();
       
-      // Buscar sessões ativas recentes
+      console.log('Buscando visitantes ativos desde:', timestampThreshold);
+
+      // PASSO 1: Buscar acessos recentes
       const { data: recentSessions, error: sessionsError } = await supabase
         .from('funnel_access_logs')
         .select('session_id, created_at')
         .eq('funnel_id', currentFunnel.id)
         .gte('created_at', timestampThreshold);
       
-      if (sessionsError) throw sessionsError;
+      if (sessionsError) {
+        console.error('Erro ao buscar sessões recentes:', sessionsError);
+        throw sessionsError;
+      }
+
+      // PASSO 2: Buscar interações recentes (também indica atividade)
+      const { data: recentInteractions, error: interactionsError } = await supabase
+        .from('funnel_step_interactions')
+        .select('session_id, created_at')
+        .eq('funnel_id', currentFunnel.id)
+        .gte('created_at', timestampThreshold);
       
+      if (interactionsError) {
+        console.error('Erro ao buscar interações recentes:', interactionsError);
+        throw interactionsError;
+      }
+
+      // PASSO 3: Buscar envios de formulário recentes (também indica atividade)
+      const { data: recentFormSubmissions, error: formsError } = await supabase
+        .from('funnel_responses')
+        .select('session_id, created_at')
+        .eq('funnel_id', currentFunnel.id)
+        .gte('created_at', timestampThreshold);
+      
+      if (formsError) {
+        console.error('Erro ao buscar envios de formulário recentes:', formsError);
+        throw formsError;
+      }
+      
+      // PASSO 4: Juntar todas as sessões ativas de todas as fontes
+      const activeSessionsMap = new Map();
+      
+      // Adicionar acessos recentes
+      recentSessions?.forEach(session => {
+        activeSessionsMap.set(session.session_id, {
+          sessionId: session.session_id,
+          lastActivity: new Date(session.created_at)
+        });
+      });
+      
+      // Adicionar ou atualizar com interações recentes
+      recentInteractions?.forEach(interaction => {
+        const existingSession = activeSessionsMap.get(interaction.session_id);
+        const interactionDate = new Date(interaction.created_at);
+        
+        if (!existingSession) {
+          activeSessionsMap.set(interaction.session_id, {
+            sessionId: interaction.session_id,
+            lastActivity: interactionDate
+          });
+        } 
+        // Atualizar timestamp de última atividade se for mais recente
+        else if (interactionDate > existingSession.lastActivity) {
+          existingSession.lastActivity = interactionDate;
+          activeSessionsMap.set(interaction.session_id, existingSession);
+        }
+      });
+      
+      // Adicionar ou atualizar com envios de formulário recentes
+      recentFormSubmissions?.forEach(form => {
+        const existingSession = activeSessionsMap.get(form.session_id);
+        const formDate = new Date(form.created_at);
+        
+        if (!existingSession) {
+          activeSessionsMap.set(form.session_id, {
+            sessionId: form.session_id,
+            lastActivity: formDate
+          });
+        } 
+        // Atualizar timestamp de última atividade se for mais recente
+        else if (formDate > existingSession.lastActivity) {
+          existingSession.lastActivity = formDate;
+          activeSessionsMap.set(form.session_id, existingSession);
+        }
+      });
+      
+      // PASSO 5: Verificar sessões que concluíram o funil
       // Buscar última etapa do funil
       const { data: stepsData, error: stepsError } = await supabase
         .from('steps')
@@ -941,38 +1018,59 @@ const Leads = () => {
         .order('step_number', { ascending: false })
         .limit(1);
       
-      if (stepsError) throw stepsError;
+      if (stepsError) {
+        console.error('Erro ao buscar última etapa:', stepsError);
+        throw stepsError;
+      }
       
-      const lastStepNumber = stepsData && stepsData.length > 0 ? stepsData[0].step_number : 0;
+      // Se encontrou etapas no funil, verificar quem completou
+      if (stepsData && stepsData.length > 0) {
+        const lastStepNumber = stepsData[0].step_number;
+        
+        // Buscar sessões que completaram a última etapa (qualquer hora)
+        const { data: completedSessions, error: completedError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id)
+          .eq('step_number', lastStepNumber);
+        
+        if (completedError) {
+          console.error('Erro ao buscar sessões completas:', completedError);
+          throw completedError;
+        }
+        
+        // Remover sessões que já completaram o funil
+        completedSessions?.forEach(session => {
+          // Mas verifica se a última atividade não é recente (útimo minuto)
+          // Se foi muito recente, podemos considerar que o usuário está vendo
+          // a tela de agradecimento ou a última etapa
+          const activeSession = activeSessionsMap.get(session.session_id);
+          
+          if (activeSession) {
+            const oneMinuteAgo = new Date();
+            oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
+            
+            // Se a última atividade foi há mais de 1 minuto atrás 
+            // E sabemos que completou o funil, então o usuário já saiu ou terminou
+            if (activeSession.lastActivity < oneMinuteAgo) {
+              activeSessionsMap.delete(session.session_id);
+            }
+          }
+        });
+      }
       
-      // Buscar interações com a última etapa
-      const { data: completedSessions, error: completedError } = await supabase
-        .from('funnel_step_interactions')
-        .select('session_id')
-        .eq('funnel_id', currentFunnel.id)
-        .eq('step_number', lastStepNumber);
+      // Contar sessões ativas
+      const activeCount = activeSessionsMap.size;
       
-      if (completedError) throw completedError;
-      
-      // Criar conjunto de sessões que completaram o funil
-      const completedSessionIds = new Set();
-      completedSessions?.forEach(session => {
-        completedSessionIds.add(session.session_id);
-      });
-      
-      // Filtrar sessões ativas que não completaram o funil
-      const activeSessionIds = recentSessions
-        ?.filter(session => !completedSessionIds.has(session.session_id))
-        .map(session => session.session_id) || [];
-      
-      const uniqueActiveSessions = [...new Set(activeSessionIds)];
-      
-      console.log('Visitantes ativos:', uniqueActiveSessions.length);
+      console.log('Visitantes ativos encontrados:', activeCount, 'sessões únicas');
+      if (activeCount > 0) {
+        console.log('IDs das sessões ativas:', Array.from(activeSessionsMap.keys()));
+      }
       
       // Pequeno atraso para evitar piscar durante atualizações frequentes
       setTimeout(() => {
         setActiveVisitors({
-          count: uniqueActiveSessions.length,
+          count: activeCount,
           loading: false,
           hasData: true
         });
@@ -993,10 +1091,10 @@ const Leads = () => {
     if (currentFunnel?.id) {
       loadActiveVisitors();
       
-      // Atualizar a cada 10 segundos
+      // Atualizar a cada 20 segundos (aumentado de 10 para 20)
       const intervalId = setInterval(() => {
         loadActiveVisitors();
-      }, 10000);
+      }, 20000);
       
       return () => clearInterval(intervalId);
     }
@@ -1020,12 +1118,25 @@ const Leads = () => {
             </div>
           ) : (
             <>
-              <p className="text-3xl font-bold text-gray-800">
-                {activeVisitors.count}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-3xl font-bold text-gray-800">
+                  {activeVisitors.count}
+                </p>
+                {activeVisitors.count > 0 && (
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <span className="inline-block h-3 w-3 bg-red-500 rounded-full animate-pulse"></span>
-                Visitantes ativos agora
+                {activeVisitors.count === 0 ? (
+                  "Nenhum visitante ativo no momento"
+                ) : activeVisitors.count === 1 ? (
+                  "1 visitante ativo agora"
+                ) : (
+                  `${activeVisitors.count} visitantes ativos agora`
+                )}
               </p>
             </>
           )}
