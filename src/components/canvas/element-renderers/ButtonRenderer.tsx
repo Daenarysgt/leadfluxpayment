@@ -32,6 +32,9 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const { content = {}, previewMode, previewProps } = element;
   const { setCurrentStep, currentFunnel, currentStep } = useStore();
   
+  // Obter as configurações globais do funil, se disponíveis
+  const funnelSettings = element.previewProps?.funnel?.settings || {};
+  
   console.log("ButtonRenderer - Rendering with props:", JSON.stringify(element));
   console.log("ButtonRenderer - Preview mode:", previewMode, "Preview props:", previewProps);
   
@@ -42,7 +45,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const alignment = content.alignment || "center";
   const size = content.size || "default";
   const variant = content.variant || "default";
-  const buttonColor = content.buttonColor || "#7c3aed"; // Default violet-600
+  const buttonColor = content.buttonColor || funnelSettings.primaryColor || "#7c3aed"; // Use funil primary color as fallback
   const textColor = content.textColor || "#ffffff"; // Default white for text
   const animationEnabled = content.animationEnabled || false;
   const animationType = content.animationType || "none"; // Novo campo para tipo de animação
@@ -54,7 +57,10 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const facebookCustomEventName = content.facebookCustomEventName || ""; // Nome do evento personalizado
   const facebookEventParams = content.facebookEventParams || {}; // Parâmetros do evento
   const facebookEventDebugMode = content.facebookEventDebugMode || false; // Modo de debug
-  const borderRadius = content.borderRadius || 4; // Novo campo para arredondamento de cantos
+  // Usar borderRadius específico ou pegar das configurações globais do funil
+  const borderRadius = content.borderRadius !== undefined 
+    ? content.borderRadius 
+    : (funnelSettings.borderRadius ? parseInt(funnelSettings.borderRadius) : 4);
   const fullWidth = content.fullWidth !== false; // Novo campo para definir se o botão ocupa largura total
   
   // Effect to handle the appearance delay
@@ -280,7 +286,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
             color: variant === "outline" || variant === "ghost" || variant === "link" ? 
                   buttonColor : 
                   textColor,
-            borderRadius: variant === "rounded" ? "9999px" : `${borderRadius}px`, // Arredondamento personalizado
+            borderRadius: variant === "rounded" ? "9999px" : `${borderRadius}px`, // Usar valor atualizado
             // Para variantes específicas, aplicar estilos específicos
             ...(variant === "gradient" ? { 
               background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 

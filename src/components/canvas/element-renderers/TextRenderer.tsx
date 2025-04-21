@@ -5,6 +5,9 @@ import { ElementRendererProps } from "@/types/canvasTypes";
 const TextRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   
+  // Obter as configurações globais do funil, se disponíveis
+  const funnelSettings = element.previewProps?.funnel?.settings || {};
+  
   const renderFormattedText = () => {
     // Se existir texto formatado em HTML, renderizamos ele diretamente
     if (element.content?.formattedText) {
@@ -22,17 +25,40 @@ const TextRenderer = (props: ElementRendererProps) => {
         }
       `;
       
+      // Usar configurações específicas do elemento ou cair para as configurações globais
+      const fontFamily = element.content?.fontFamily || funnelSettings.fontFamily || 'Inter';
+      const fontSize = element.content?.fontSize 
+        ? element.content.fontSize 
+        : (funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16);
+      const fontColor = element.content?.fontColor || undefined;
+      const lineHeight = element.content?.lineHeight !== undefined 
+        ? element.content.lineHeight 
+        : (funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5);
+      const letterSpacing = element.content?.letterSpacing !== undefined 
+        ? element.content.letterSpacing 
+        : 0;
+        
+      // Calcular estilos de texto adicionais com base nas configurações globais
+      const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
+      const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
+      const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
+      const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
+      
       return (
         <>
           <style>{customStyles}</style>
           <div 
             className="prose max-w-none text-content"
             style={{
-              fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-              color: element.content?.fontColor,
-              fontFamily: element.content?.fontFamily || 'Inter',
-              lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
-              letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
+              fontSize: `${fontSize}px`,
+              color: fontColor,
+              fontFamily,
+              lineHeight: String(lineHeight),
+              letterSpacing: letterSpacing ? `${letterSpacing}px` : undefined,
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
             }}
             dangerouslySetInnerHTML={{ __html: element.content.formattedText }} 
           />
@@ -41,16 +67,42 @@ const TextRenderer = (props: ElementRendererProps) => {
     }
     
     // Fallback para o estilo antigo se não tiver texto formatado
+    // Usar configurações específicas do elemento ou cair para as configurações globais
+    const titleFontFamily = element.content?.fontFamily || funnelSettings.fontFamily || 'Inter';
+    const titleFontSize = element.content?.fontSize 
+      ? element.content.fontSize 
+      : (funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 32);
+    const bodyFontSize = element.content?.fontSize 
+      ? (element.content.fontSize - 4) 
+      : (funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16);
+    const fontColor = element.content?.fontColor || undefined;
+    const lineHeight = element.content?.lineHeight !== undefined 
+      ? element.content.lineHeight 
+      : (funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5);
+    const letterSpacing = element.content?.letterSpacing !== undefined 
+      ? element.content.letterSpacing 
+      : 0;
+      
+    // Calcular estilos de texto adicionais com base nas configurações globais
+    const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
+    const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
+    const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
+    const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
+    
     return (
       <>
         <h2 
           className="text-xl font-semibold text-center"
           style={{
-            fontSize: element.content?.fontSize ? `${element.content.fontSize}px` : undefined,
-            color: element.content?.fontColor,
-            fontFamily: element.content?.fontFamily || 'Inter',
-            lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
-            letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
+            fontSize: `${titleFontSize}px`,
+            color: fontColor,
+            fontFamily: titleFontFamily,
+            lineHeight: String(lineHeight),
+            letterSpacing: letterSpacing ? `${letterSpacing}px` : undefined,
+            fontStyle,
+            fontWeight,
+            textDecoration,
+            textTransform
           }}
         >
           {element.content?.title || "Título aqui"}
@@ -59,11 +111,15 @@ const TextRenderer = (props: ElementRendererProps) => {
           <p 
             className="text-gray-600 text-center mt-2"
             style={{
-              fontSize: element.content?.fontSize ? `${element.content.fontSize - 4}px` : undefined,
-              color: element.content?.fontColor,
-              fontFamily: element.content?.fontFamily || 'Inter',
-              lineHeight: element.content?.lineHeight !== undefined ? String(element.content.lineHeight) : undefined,
-              letterSpacing: element.content?.letterSpacing !== undefined ? `${element.content.letterSpacing}px` : undefined
+              fontSize: `${bodyFontSize}px`,
+              color: fontColor,
+              fontFamily: titleFontFamily,
+              lineHeight: String(lineHeight),
+              letterSpacing: letterSpacing ? `${letterSpacing}px` : undefined,
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
             }}
           >
             {element.content.description}
