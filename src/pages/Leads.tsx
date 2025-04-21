@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
-  ArrowUpRight, MousePointerClick, ClipboardList
+  ArrowUpRight, MousePointerClick, ClipboardList,
+  CheckCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -51,6 +52,7 @@ interface LeadMetrics {
     name: string;
     percentage: number;
   };
+  completedFlows: number; // Adicionar a métrica de fluxos completos
 }
 
 interface TrackingData {
@@ -169,7 +171,8 @@ const Leads = () => {
     mainSource: {
       name: TRAFFIC_SOURCES[0].name,
       percentage: 0
-    }
+    },
+    completedFlows: 0 // Inicializar o contador de fluxos completos
   });
   const [stepMetrics, setStepMetrics] = useState<Array<{
     step_number: number;
@@ -464,6 +467,9 @@ const Leads = () => {
       // Calcular leads de hoje baseado na taxa de interação
       const todayLeads = Math.round((interaction * total) / 100);
       
+      // Carregar contagem de fluxos completos
+      const completedFlows = await calculateCompletedFlows() || 0;
+      
       const newMetrics = {
         totalSessions: total,
         completionRate: completion,
@@ -473,7 +479,8 @@ const Leads = () => {
         mainSource: {
           name: selectedSource.name,
           percentage: interaction
-        }
+        },
+        completedFlows // Adicionar fluxos completos às métricas
       };
       
       console.log("📊 Métricas processadas:", newMetrics);
@@ -496,7 +503,8 @@ const Leads = () => {
         mainSource: {
           name: selectedSource.name,
           percentage: Math.max(8.2, metrics.mainSource.percentage || 0)
-        }
+        },
+        completedFlows: metrics.completedFlows || 0 // Manter o valor anterior ou usar 0
       };
       
       console.log("📊 Usando métricas de fallback:", fallbackMetrics);
@@ -1722,7 +1730,70 @@ const Leads = () => {
     }
   };
 
-  // Função renderMetricsCards modificada para incluir o card de visitantes ativos
+  // Nova função para calcular fluxos completos
+  const calculateCompletedFlows = useCallback(async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Calculando número de fluxos completos...');
+      
+      // Encontrar qual é a última etapa do funil
+      let lastStepNumber = 0;
+      
+      // Tentar obter a última etapa do funil a partir do currentFunnel
+      if (currentFunnel.steps && currentFunnel.steps.length > 0) {
+        // Encontrar o maior order_index que representa a última etapa
+        lastStepNumber = Math.max(...currentFunnel.steps.map(s => s.order_index || 0));
+        console.log('Última etapa do funil identificada:', lastStepNumber);
+      } else {
+        // Se não tiver no currentFunnel, buscar do banco de dados
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('steps')
+          .select('order_index')
+          .eq('funnel_id', currentFunnel.id)
+          .order('order_index', { ascending: false })
+          .limit(1);
+          
+        if (stepsError) {
+          console.error('Erro ao buscar última etapa:', stepsError);
+        } else if (stepsData && stepsData.length > 0) {
+          lastStepNumber = stepsData[0].order_index;
+          console.log('Última etapa do funil (do banco):', lastStepNumber);
+        }
+      }
+      
+      if (lastStepNumber === 0) {
+        console.warn('Não foi possível identificar a última etapa do funil');
+        return 0;
+      }
+      
+      // Buscar todas sessões que tiveram interação na última etapa
+      const { data: completedSessions, error: sessionsError } = await supabase
+        .from('funnel_step_interactions')
+        .select('session_id')
+        .eq('funnel_id', currentFunnel.id)
+        .eq('step_number', lastStepNumber);
+        
+      if (sessionsError) {
+        console.error('Erro ao buscar sessões que completaram o funil:', sessionsError);
+        return 0;
+      }
+      
+      // Contar sessões únicas
+      const uniqueCompletedSessions = new Set();
+      completedSessions?.forEach(session => uniqueCompletedSessions.add(session.session_id));
+      
+      const completedCount = uniqueCompletedSessions.size;
+      console.log(`Encontrados ${completedCount} fluxos completos`);
+      
+      return completedCount;
+    } catch (error) {
+      console.error('Erro ao calcular fluxos completos:', error);
+      return 0;
+    }
+  }, [currentFunnel?.id]);
+
+  // Função para renderMetricsCards modificada para incluir o card de visitantes ativos
   const renderMetricsCards = () => {
     return (
       <div className="grid grid-cols-6 gap-4">
@@ -1745,6 +1816,32 @@ const Leads = () => {
                 <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
                   <span className="text-green-500">Atualizado</span>
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Novo card para Fluxos Completos */}
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Fluxos Completos</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {metrics.loadingMetrics ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-3xl font-bold text-gray-800">{metrics.completedFlows}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <span className="inline-block h-3 w-3 bg-green-500 rounded-full"></span>
+                  Finalizaram todo o funil
                 </p>
               </>
             )}
@@ -1786,7 +1883,7 @@ const Leads = () => {
         <InteractionRateCard />
         <DropoffRateCard />
         
-        {/* Novo card de visitantes ativos */}
+        {/* Card de visitantes ativos */}
         <ActiveLeadsCard />
         
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
