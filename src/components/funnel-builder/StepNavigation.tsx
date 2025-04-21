@@ -54,9 +54,9 @@ const StepNavigation = ({
             variant="outline" 
             size="sm" 
             onClick={onDuplicateStep}
-            title="Duplicate Step"
+            title="Duplicar Etapa"
           >
-            <Copy className="h-4 w-4 text-blue-600" />
+            <Copy className="h-4 w-4 mr-1 text-blue-600" /> Duplicar
           </Button>
         )}
         <Button 
