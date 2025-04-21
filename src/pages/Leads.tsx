@@ -450,69 +450,6 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return null;
       
-      // Declarar a função calculateCompletedFlows inline para evitar o erro de referência
-      const calculateCompletedFlows = async () => {
-        try {
-          if (!currentFunnel?.id) return 0;
-          
-          console.log('Calculando número de fluxos completos...');
-          
-          // Encontrar qual é a última etapa do funil
-          let lastStepNumber = 0;
-          
-          // Tentar obter a última etapa do funil a partir do currentFunnel
-          if (currentFunnel.steps && currentFunnel.steps.length > 0) {
-            // Encontrar o maior order_index que representa a última etapa
-            lastStepNumber = Math.max(...currentFunnel.steps.map(s => s.order_index || 0));
-            console.log('Última etapa do funil identificada:', lastStepNumber);
-          } else {
-            // Se não tiver no currentFunnel, buscar do banco de dados
-            const { data: stepsData, error: stepsError } = await supabase
-              .from('steps')
-              .select('order_index')
-              .eq('funnel_id', currentFunnel.id)
-              .order('order_index', { ascending: false })
-              .limit(1);
-              
-            if (stepsError) {
-              console.error('Erro ao buscar última etapa:', stepsError);
-            } else if (stepsData && stepsData.length > 0) {
-              lastStepNumber = stepsData[0].order_index;
-              console.log('Última etapa do funil (do banco):', lastStepNumber);
-            }
-          }
-          
-          if (lastStepNumber === 0) {
-            console.warn('Não foi possível identificar a última etapa do funil');
-            return 0;
-          }
-          
-          // Buscar todas sessões que tiveram interação na última etapa
-          const { data: completedSessions, error: sessionsError } = await supabase
-            .from('funnel_step_interactions')
-            .select('session_id')
-            .eq('funnel_id', currentFunnel.id)
-            .eq('step_number', lastStepNumber);
-            
-          if (sessionsError) {
-            console.error('Erro ao buscar sessões que completaram o funil:', sessionsError);
-            return 0;
-          }
-          
-          // Contar sessões únicas
-          const uniqueCompletedSessions = new Set();
-          completedSessions?.forEach(session => uniqueCompletedSessions.add(session.session_id));
-          
-          const completedCount = uniqueCompletedSessions.size;
-          console.log(`Encontrados ${completedCount} fluxos completos`);
-          
-          return completedCount;
-        } catch (error) {
-          console.error('Erro ao calcular fluxos completos:', error);
-          return 0;
-        }
-      };
-      
       // Garantir que o estado de carregamento seja ativado
       if (updateState) {
         setMetrics(prev => ({...prev, loadingMetrics: true}));
@@ -530,8 +467,8 @@ const Leads = () => {
       // Calcular leads de hoje baseado na taxa de interação
       const todayLeads = Math.round((interaction * total) / 100);
       
-      // Use um valor fixo ao invés de chamar calculateCompletedFlows que está com erro
-      const completedFlows = 0; // Valor temporário até resolver o erro
+      // Carregar contagem de fluxos completos
+      const completedFlows = await calculateCompletedFlows() || 0;
       
       const newMetrics = {
         totalSessions: total,
@@ -1266,6 +1203,596 @@ const Leads = () => {
     }
   }, [currentFunnel?.id, loadActiveVisitors]);
 
+  // Componente do card de visitantes ativos
+  const ActiveLeadsCard = () => {
+    return (
+      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <span className="h-5 w-5 text-red-500">🔥</span>
+            <span>Visitantes em tempo real</span>
+            
+            {/* Adicionar ícone de informação com tooltip */}
+            <div 
+              className="relative flex items-center ml-1 cursor-help text-gray-400 hover:text-gray-600" 
+              title="Contabiliza visitantes com interação nos últimos 5 minutos. Períodos de inatividade superiores são considerados como abandono."
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activeVisitors.loading && !activeVisitors.hasData ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <p className="text-3xl font-bold text-gray-800">
+                  {activeVisitors.count}
+                </p>
+                {activeVisitors.count > 0 && (
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                {activeVisitors.count === 0 ? (
+                  "Nenhum visitante ativo no momento"
+                ) : activeVisitors.count === 1 ? (
+                  "1 visitante ativo agora"
+                ) : (
+                  `${activeVisitors.count} visitantes ativos agora`
+                )}
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Componente InteractionRateCard
+  const InteractionRateCard = () => {
+    const [interactionRate, setInteractionRate] = useState({
+      value: 0,
+      isLoading: true,
+      hasData: false
+    });
+    
+    // Usar useCallback para evitar recriações desnecessárias da função
+    const calculateInteractionRate = useCallback(async () => {
+      try {
+        if (!currentFunnel?.id) return;
+        
+        // Não mudar para loading se já temos dados, evita piscar durante atualizações
+        if (!interactionRate.hasData) {
+          setInteractionRate(prev => ({ ...prev, isLoading: true }));
+        }
+        
+        // Buscar o total de sessões
+        const { count: totalSessions, error: totalError } = await supabase
+          .from('funnel_access_logs')
+          .select('session_id', { count: 'exact', head: true })
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (totalError) throw totalError;
+        
+        // Buscar sessões que interagiram
+        const { data: interactions, error: interactionError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (interactionError) throw interactionError;
+        
+        // Contar sessões únicas que interagiram
+        const uniqueInteractions = new Set();
+        interactions?.forEach(item => uniqueInteractions.add(item.session_id));
+        
+        // Calcular a taxa
+        const rate = totalSessions > 0 
+          ? (uniqueInteractions.size / totalSessions) * 100 
+          : 0;
+        
+        console.log('Taxa de interação calculada:', {
+          totalSessions,
+          interactingSessions: uniqueInteractions.size,
+          rate
+        });
+        
+        // Atraso mínimo para evitar piscar durante atualizações frequentes
+        setTimeout(() => {
+          setInteractionRate({
+            value: rate,
+            isLoading: false,
+            hasData: true
+          });
+        }, 300);
+        
+      } catch (error) {
+        console.error('Erro ao calcular taxa de interação:', error);
+        setInteractionRate(prev => ({ 
+          ...prev, 
+          isLoading: false,
+          hasData: true
+        }));
+      }
+    }, [currentFunnel?.id, interactionRate.hasData]);
+    
+    useEffect(() => {
+      calculateInteractionRate();
+      
+      // Configurar um intervalo para atualizar periodicamente, mas não com frequência demais
+      const intervalId = setInterval(() => {
+        calculateInteractionRate();
+      }, 15000); // Atualiza a cada 15 segundos
+      
+      return () => clearInterval(intervalId);
+    }, [currentFunnel?.id, lastUpdated, calculateInteractionRate]);
+    
+    return (
+      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MousePointerClick className="h-5 w-5 text-blue-600" />
+            <span>Taxa de Interação</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {interactionRate.isLoading && !interactionRate.hasData ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <p className="text-3xl font-bold text-gray-800">
+                {interactionRate.value.toFixed(1)}%
+              </p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
+                Visitantes que interagiram com o funil
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+  
+  // Componente DropoffRateCard
+  const DropoffRateCard = () => {
+    const [dropoffData, setDropoffData] = useState({
+      highestDropoffStep: 0,
+      highestDropoffRate: 0,
+      stepName: '',
+      isLoading: true,
+      hasData: false
+    });
+    
+    // Usar useCallback para evitar recriações desnecessárias da função
+    const calculateDropoffRates = useCallback(async () => {
+      try {
+        if (!currentFunnel?.id) return;
+        
+        console.log('****** INÍCIO DO CÁLCULO DE TAXAS DE ABANDONO ******');
+        
+        // Não mudar para loading se já temos dados, evita piscar durante atualizações
+        if (!dropoffData.hasData) {
+          setDropoffData(prev => ({ ...prev, isLoading: true }));
+        }
+        
+        // Verificar estrutura da tabela steps primeiro
+        console.log('Verificando estrutura das tabelas...');
+        const { data: stepsStructure, error: structureError } = await supabase
+          .from('steps')
+          .select('*')
+          .eq('funnel_id', currentFunnel.id)
+          .limit(1);
+          
+        if (structureError) {
+          console.error('Erro ao verificar estrutura da tabela steps:', structureError);
+        } else if (stepsStructure && stepsStructure.length > 0) {
+          console.log('Estrutura da tabela steps (primeiro registro):', stepsStructure[0]);
+        }
+        
+        // Verificar estrutura da tabela de interações também
+        const { data: interactionsStructure, error: interactionsStructureError } = await supabase
+          .from('funnel_step_interactions')
+          .select('*')
+          .eq('funnel_id', currentFunnel.id)
+          .limit(1);
+          
+        if (interactionsStructureError) {
+          console.error('Erro ao verificar estrutura da tabela de interações:', interactionsStructureError);
+        } else if (interactionsStructure && interactionsStructure.length > 0) {
+          console.log('Estrutura da tabela funnel_step_interactions (primeiro registro):', interactionsStructure[0]);
+        }
+        
+        // Buscar todas as interações para contar usuários por etapa
+        const { data: interactions, error: interactionError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id, step_number')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (interactionError) {
+          console.error('Erro ao buscar interações:', interactionError);
+          throw interactionError;
+        }
+        
+        // Buscar todas as sessões para contar total
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('funnel_access_logs')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (sessionsError) throw sessionsError;
+        
+        // Se não houver interações suficientes, não podemos calcular quedas
+        if (!interactions || interactions.length === 0) {
+          setDropoffData({
+            highestDropoffStep: 0,
+            highestDropoffRate: 0,
+            stepName: 'Sem dados suficientes',
+            isLoading: false,
+            hasData: true
+          });
+          console.log('Sem interações suficientes para calcular quedas');
+          return;
+        }
+        
+        // Determinar dinamicamente o número máximo de etapas com base nas interações
+        const maxStepNumber = interactions.reduce((max, interaction) => 
+          Math.max(max, interaction.step_number), 0);
+        
+        console.log('Número máximo de etapas detectado:', maxStepNumber);
+        
+        // Contagem de sessões por etapa usando uma abordagem mais simples
+        const stepCounts = [];
+        
+        // Inicializar contagens para cada etapa (dinamicamente)
+        const sessionsByStep = {};
+        
+        // Primeiro, inicializar com base no número máximo de etapas detectado
+        for (let i = 1; i <= maxStepNumber; i++) {
+          sessionsByStep[i] = [];
+        }
+        
+        // Também buscar informações das etapas para nomes corretos
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('steps')
+          .select('id, order_index, title') 
+          .eq('funnel_id', currentFunnel.id)
+          .order('order_index', { ascending: true }); 
+        
+        if (stepsError) {
+          console.error('Erro ao buscar informações das etapas:', stepsError);
+        } else {
+          console.log('Etapas encontradas:', stepsData?.length || 0);
+        }
+        
+        // Mapear nomes das etapas a partir dos dados do banco
+        const dynamicStepNames = {};
+        stepsData?.forEach(step => {
+          if (step.order_index) {
+            dynamicStepNames[step.order_index] = step.title || `Etapa ${step.order_index}`;
+            console.log(`Mapeada etapa ${step.order_index}: "${step.title || `Etapa ${step.order_index}`}"`);
+          }
+        });
+        
+        // Contar sessões únicas por etapa
+        interactions.forEach(interaction => {
+          const step = interaction.step_number;
+          const sessionId = interaction.session_id;
+          
+          if (!sessionsByStep[step]) {
+            sessionsByStep[step] = [];
+          }
+          
+          if (!sessionsByStep[step].includes(sessionId)) {
+            sessionsByStep[step].push(sessionId);
+          }
+        });
+        
+        // Converter para o formato que precisamos
+        for (let step = 1; step <= maxStepNumber; step++) {
+          if (sessionsByStep[step]) {
+            // Usar nomes de etapas de várias fontes, priorizando dados do banco
+            const stepName = dynamicStepNames[step] || stepNames[step] || `Etapa ${step}`;
+            stepCounts.push({
+              step,
+              count: sessionsByStep[step].length,
+              name: stepName
+            });
+          }
+        }
+        
+        // Ordenar por número da etapa
+        stepCounts.sort((a, b) => a.step - b.step);
+        
+        console.log('Contagem de usuários por etapa (dinâmica):', stepCounts);
+        
+        // Contar sessões que não iniciaram o funil
+        const totalSessions = sessions?.length || 0;
+        const startedSessions = sessionsByStep[1]?.length || 0;
+        const notStartedCount = totalSessions - startedSessions;
+        
+        if (notStartedCount > 0) {
+          // Adicionar "Etapa 0" para sessões que não iniciaram
+          stepCounts.unshift({
+            step: 0,
+            count: notStartedCount,
+            name: "Não iniciaram"
+          });
+        }
+        
+        // Calcular taxas de abandono entre etapas
+        const dropoffRates = [];
+        
+        for (let i = 0; i < stepCounts.length - 1; i++) {
+          const currentStep = stepCounts[i];
+          const nextStep = stepCounts[i + 1];
+          
+          if (currentStep.count === 0) continue;
+          
+          const dropoffCount = currentStep.count - nextStep.count;
+          const dropoffRate = (dropoffCount / currentStep.count) * 100;
+          
+          if (dropoffCount > 0) { // Registrar apenas quedas reais
+            dropoffRates.push({
+              step: currentStep.step,
+              stepName: currentStep.name,
+              dropoffRate: dropoffRate,
+              users: {
+                current: currentStep.count,
+                next: nextStep.count,
+                diff: dropoffCount
+              }
+            });
+          }
+        }
+        
+        console.log('Taxas de abandono por etapa (dinamicamente calculadas):', dropoffRates);
+        
+        // Encontrar a etapa com maior taxa de abandono
+        if (dropoffRates.length === 0) {
+          setDropoffData({
+            highestDropoffStep: 0,
+            highestDropoffRate: 0,
+            stepName: 'Sem quedas detectadas',
+            isLoading: false,
+            hasData: true
+          });
+          console.log('Nenhuma taxa de abandono significativa detectada');
+          return;
+        }
+        
+        const highestDropoff = dropoffRates.reduce((max, current) => 
+          current.dropoffRate > max.dropoffRate ? current : max, dropoffRates[0]);
+        
+        console.log('Maior taxa de abandono encontrada:', highestDropoff);
+        console.log('****** FIM DO CÁLCULO DE TAXAS DE ABANDONO ******');
+        
+        // Atraso mínimo para evitar piscar durante atualizações frequentes
+        setTimeout(() => {
+          setDropoffData({
+            highestDropoffStep: highestDropoff.step,
+            highestDropoffRate: highestDropoff.dropoffRate,
+            stepName: highestDropoff.stepName,
+            isLoading: false,
+            hasData: true
+          });
+        }, 300);
+        
+      } catch (error) {
+        console.error('Erro ao calcular taxas de abandono:', error);
+        setDropoffData(prev => ({ 
+          ...prev, 
+          isLoading: false,
+          hasData: true,
+          stepName: 'Erro ao calcular'
+        }));
+      }
+    }, [currentFunnel?.id, stepNames, dropoffData.hasData]);
+    
+    useEffect(() => {
+      calculateDropoffRates();
+      
+      // Configurar um intervalo para atualizar periodicamente, mas não com frequência demais
+      const intervalId = setInterval(() => {
+        calculateDropoffRates();
+      }, 15000); // Atualiza a cada 15 segundos
+      
+      return () => clearInterval(intervalId);
+    }, [currentFunnel?.id, lastUpdated, stepNames, calculateDropoffRates]);
+    
+    return (
+      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <span className="h-5 w-5 text-amber-500">📉</span>
+            <span>Queda mais frequente</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dropoffData.isLoading && !dropoffData.hasData ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gray-800">
+                {dropoffData.highestDropoffRate > 0 ? (
+                  <>
+                    {dropoffData.stepName}
+                    <span className="text-amber-500 ml-1">
+                      ({dropoffData.highestDropoffRate.toFixed(1)}%)
+                    </span>
+                  </>
+                ) : (
+                  "Sem quedas significativas"
+                )}
+              </p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <span className="inline-block h-3 w-3 bg-amber-500 rounded-full"></span>
+                Etapa com maior taxa de abandono
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Função simplificada para renderizar interações com base no tipo
+  const renderInteractionCell = (interaction, stepMetric, isFirstInteractionStep, formDataForLead) => {
+    // Mapear tipos de interação para renderização apropriada
+    switch (interaction.type) {
+      case 'choice':
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Escolheu</div>
+            <div className="text-muted-foreground">
+              <div className="mt-1 text-xs flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span className="font-medium">{interaction.value}</span>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'form':
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Preencheu</div>
+            <div className="mt-2 text-xs text-gray-500 space-y-1">
+              {interaction.fields?.email && (
+                <div className="flex items-center gap-1">
+                  <Mail className="h-3 w-3" />
+                  <span>{interaction.fields.email}</span>
+                </div>
+              )}
+              {interaction.fields?.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span>{interaction.fields.phone}</span>
+                </div>
+              )}
+              {interaction.fields?.text && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs">{interaction.fields.text}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'click':
+      default:
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Clicou</div>
+            
+            {/* Exibir dados do formulário na primeira etapa */}
+            {isFirstInteractionStep && formDataForLead && (
+              <div className="mt-2 text-xs text-gray-500 space-y-1">
+                {formDataForLead.leadInfo?.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.email}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.phone && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.phone}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.text && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+    }
+  };
+
+  // Nova função para calcular fluxos completos
+  const calculateCompletedFlows = useCallback(async () => {
+    try {
+      if (!currentFunnel?.id) return;
+      
+      console.log('Calculando número de fluxos completos...');
+      
+      // Encontrar qual é a última etapa do funil
+      let lastStepNumber = 0;
+      
+      // Tentar obter a última etapa do funil a partir do currentFunnel
+      if (currentFunnel.steps && currentFunnel.steps.length > 0) {
+        // Encontrar o maior order_index que representa a última etapa
+        lastStepNumber = Math.max(...currentFunnel.steps.map(s => s.order_index || 0));
+        console.log('Última etapa do funil identificada:', lastStepNumber);
+      } else {
+        // Se não tiver no currentFunnel, buscar do banco de dados
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('steps')
+          .select('order_index')
+          .eq('funnel_id', currentFunnel.id)
+          .order('order_index', { ascending: false })
+          .limit(1);
+          
+        if (stepsError) {
+          console.error('Erro ao buscar última etapa:', stepsError);
+        } else if (stepsData && stepsData.length > 0) {
+          lastStepNumber = stepsData[0].order_index;
+          console.log('Última etapa do funil (do banco):', lastStepNumber);
+        }
+      }
+      
+      if (lastStepNumber === 0) {
+        console.warn('Não foi possível identificar a última etapa do funil');
+        return 0;
+      }
+      
+      // Buscar todas sessões que tiveram interação na última etapa
+      const { data: completedSessions, error: sessionsError } = await supabase
+        .from('funnel_step_interactions')
+        .select('session_id')
+        .eq('funnel_id', currentFunnel.id)
+        .eq('step_number', lastStepNumber);
+        
+      if (sessionsError) {
+        console.error('Erro ao buscar sessões que completaram o funil:', sessionsError);
+        return 0;
+      }
+      
+      // Contar sessões únicas
+      const uniqueCompletedSessions = new Set();
+      completedSessions?.forEach(session => uniqueCompletedSessions.add(session.session_id));
+      
+      const completedCount = uniqueCompletedSessions.size;
+      console.log(`Encontrados ${completedCount} fluxos completos`);
+      
+      return completedCount;
+    } catch (error) {
+      console.error('Erro ao calcular fluxos completos:', error);
+      return 0;
+    }
+  }, [currentFunnel?.id]);
+
   // Modificar o renderMetricsCards para incluir o novo card e garantir consistência
   const renderMetricsCards = () => {
     // Calcular a taxa de conversão uma vez só e usar em ambos os cards para garantir consistência
@@ -1295,11 +1822,8 @@ const Leads = () => {
           return {
             color: "text-green-600",
             bgColor: "bg-green-600",
-            gradient: "from-green-500 to-green-600",
-            lightGradient: "from-white to-green-50/50",
             bgLight: "bg-green-100",
-            borderColor: "border-green-100/50",
-            shadow: "shadow-green-200/50",
+            borderColor: "border-green-300",
             icon: "🟢",
             text: "Funil saudável",
             description: "Ótima taxa de conversão"
@@ -1308,11 +1832,8 @@ const Leads = () => {
           return {
             color: "text-yellow-600",
             bgColor: "bg-yellow-500",
-            gradient: "from-yellow-500 to-amber-600",
-            lightGradient: "from-white to-yellow-50/50",
             bgLight: "bg-yellow-100",
-            borderColor: "border-yellow-100/50",
-            shadow: "shadow-yellow-200/50",
+            borderColor: "border-yellow-300",
             icon: "🟡",
             text: "Conversão regular",
             description: "Taxa de conversão mediana"
@@ -1321,11 +1842,8 @@ const Leads = () => {
           return {
             color: "text-red-600",
             bgColor: "bg-red-600",
-            gradient: "from-red-500 to-red-600",
-            lightGradient: "from-white to-red-50/50",
             bgLight: "bg-red-100",
-            borderColor: "border-red-100/50",
-            shadow: "shadow-red-200/50",
+            borderColor: "border-red-300",
             icon: "🔴",
             text: "Performance baixa",
             description: "Taxa de conversão abaixo do ideal"
@@ -1336,12 +1854,12 @@ const Leads = () => {
       const status = getStatus();
       
       return (
-        <Card className={`group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br ${status.lightGradient} ${status.borderColor} rounded-xl`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status geral do funil</CardTitle>
-            <div className="p-2 rounded-full bg-green-100/30 group-hover:bg-green-100 transition-colors">
-              <Activity className={`h-4 w-4 ${status.color}`} />
-            </div>
+        <Card className={`bg-white border-none shadow-sm hover:shadow-md transition-shadow ${status.borderColor} border-l-4`}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className={`h-5 w-5 ${status.color}`} />
+              <span>Status geral do funil</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {metrics.loadingMetrics ? (
@@ -1351,13 +1869,13 @@ const Leads = () => {
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${status.bgColor} transition-all duration-300 group-hover:scale-110`}></div>
-                  <p className={`text-xl font-bold bg-gradient-to-r ${status.gradient} bg-clip-text text-transparent`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-4 h-4 rounded-full ${status.bgColor}`}></div>
+                  <p className={`text-2xl font-bold ${status.color}`}>
                     {status.text}
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 ml-5">
+                <p className="text-sm text-muted-foreground">
                   Baseado na taxa de conversão atual
                 </p>
               </>
@@ -1368,191 +1886,121 @@ const Leads = () => {
     };
     
     return (
-      <div className="grid grid-cols-4 gap-5 pb-1">
-        {/* PRIMEIRA LINHA DE CARDS */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 border-blue-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-            <div className="p-2 rounded-full bg-blue-100/30 group-hover:bg-blue-100 transition-colors">
-              <Users className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors" />
-            </div>
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+              <span>Total de Leads</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
-                <div className="h-8 w-16 bg-blue-100 rounded"></div>
-                <div className="h-4 w-24 bg-blue-50 rounded mt-1"></div>
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{leads.length}</div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                <p className="text-3xl font-bold text-gray-800">{leads.length}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
-                  <span className="text-green-500 font-medium">Atualizado</span>
-                </div>
+                  <span className="text-green-500">Atualizado</span>
+                </p>
               </>
             )}
           </CardContent>
         </Card>
 
-        {/* Card para Fluxos Completos */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-green-50/50 border-green-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fluxos Completos</CardTitle>
-            <div className="p-2 rounded-full bg-green-100/30 group-hover:bg-green-100 transition-colors">
-              <CheckCircle className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors" />
-            </div>
+        {/* Novo card para Fluxos Completos */}
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Fluxos Completos</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
-                <div className="h-8 w-16 bg-green-100 rounded"></div>
-                <div className="h-4 w-24 bg-green-50 rounded mt-1"></div>
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">{metrics.completedFlows}</div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                  <span className="inline-block h-2 w-2 bg-green-500 rounded-full"></span>
-                  <span>Finalizaram todo o funil</span>
-                </div>
+                <p className="text-3xl font-bold text-gray-800">{metrics.completedFlows}</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <span className="inline-block h-3 w-3 bg-green-500 rounded-full"></span>
+                  Finalizaram todo o funil
+                </p>
               </>
             )}
           </CardContent>
         </Card>
 
-        {/* Card de Taxa de Conversão */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-indigo-50/50 border-indigo-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-            <div className="p-2 rounded-full bg-indigo-100/30 group-hover:bg-indigo-100 transition-colors">
-              <span className="h-4 w-4 flex items-center justify-center">
-                <span className="h-2 w-2 rounded-full bg-indigo-600 group-hover:scale-125 transition-transform"></span>
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
               </span>
-            </div>
+              <span>Taxa de Conversão</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
-                <div className="h-8 w-16 bg-indigo-100 rounded"></div>
-                <div className="h-4 w-24 bg-indigo-50 rounded mt-1"></div>
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                {/* Usar a taxa de conversão calculada de forma centralizada */}
+                <p className="text-3xl font-bold text-gray-800">
                   {currentConversionRate.toFixed(1)}%
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
-                  <span className="text-green-500 font-medium">Atualizado</span>
-                </div>
+                  <span className="text-green-500">Atualizado</span>
+                </p>
               </>
             )}
           </CardContent>
         </Card>
         
-        {/* Status do Funil */}
+        {/* Status geral do funil com a taxa compartilhada */}
         <FunnelStatusCardWithRate />
         
-        {/* SEGUNDA LINHA DE CARDS */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50/50 border-blue-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Interação</CardTitle>
-            <div className="p-2 rounded-full bg-blue-100/30 group-hover:bg-blue-100 transition-colors">
-              <MousePointerClick className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              {metrics.interactionRate.toFixed(1)}%
-            </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-              <span className="inline-block h-2 w-2 bg-blue-500 rounded-full"></span>
-              <span>Visitantes que interagiram</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card de Queda mais Frequente */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-amber-50/50 border-amber-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Queda mais frequente</CardTitle>
-            <div className="p-2 rounded-full bg-amber-100/30 group-hover:bg-amber-100 transition-colors">
-              <span className="text-amber-600 text-sm">📉</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent truncate">
-              Step 3 <span className="text-amber-500">(26.7%)</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-              <span className="inline-block h-2 w-2 bg-amber-500 rounded-full"></span>
-              <span>Etapa com maior abandono</span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Segunda linha de cards */}
+        <InteractionRateCard />
+        <DropoffRateCard />
         
-        {/* Card de Visitantes em tempo real */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-red-50/50 border-red-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Visitantes em tempo real</CardTitle>
-            <div className="p-2 rounded-full bg-red-100/30 group-hover:bg-red-100 transition-colors">
-              <span className="text-red-500 text-sm">🔥</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {activeVisitors.loading && !activeVisitors.hasData ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-red-100 rounded"></div>
-                <div className="h-4 w-24 bg-red-50 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
-                    {activeVisitors.count}
-                  </span>
-                  {activeVisitors.count > 0 && (
-                    <span className="relative flex h-2 w-2 mt-1">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {activeVisitors.count === 0 ? "Nenhum visitante ativo" : 
-                   activeVisitors.count === 1 ? "1 visitante ativo agora" : 
-                   `${activeVisitors.count} visitantes ativos`}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        {/* Card de visitantes ativos */}
+        <ActiveLeadsCard />
         
-        {/* Card de Origem Principal */}
-        <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-purple-50/50 border-purple-100/50 rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Origem Principal</CardTitle>
-            <div className="p-2 rounded-full bg-purple-100/30 group-hover:bg-purple-100 transition-colors">
-              <span className={`h-4 w-4 flex items-center justify-center ${selectedSource.color}`}>
+        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
                 {selectedSource.icon}
               </span>
-            </div>
+              <span>Origem Principal</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
-                <div className="h-8 w-16 bg-purple-100 rounded"></div>
-                <div className="h-4 w-24 bg-purple-50 rounded mt-1"></div>
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
               </div>
             ) : (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 text-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
+                    <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
                       <span className={selectedSource.color}>{selectedSource.icon}</span>
                       {selectedSource.name}
-                    </button>
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[200px]">
                     {TRAFFIC_SOURCES.map((source) => (
@@ -1567,9 +2015,9 @@ const Leads = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <div className="text-xs text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {leads.length > 0 ? '100.0' : '0.0'}% dos visitantes interagiram
-                </div>
+                </p>
               </>
             )}
           </CardContent>
@@ -1688,19 +2136,19 @@ const Leads = () => {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-800 bg-clip-text text-transparent">Leads Capturados</h1>
-            <p className="text-muted-foreground flex items-center">
+            <h1 className="text-2xl font-bold">Leads Capturados</h1>
+            <p className="text-muted-foreground">
               Gerencie e acompanhe todos os leads do seu funil
               {lastUpdated && (
-                <span className="ml-2 text-xs bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center">
-                  <span className="mr-1">●</span> Atualizado: {lastUpdated.toLocaleTimeString()}
+                <span className="ml-2 text-xs text-green-600">
+                  (Atualizado: {lastUpdated.toLocaleTimeString()})
                 </span>
               )}
             </p>
           </div>
           <Button 
             onClick={reloadAllData} 
-            className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-600 hover:to-blue-600 transition-all duration-200"
+            className="bg-gradient-to-r from-green-500 to-blue-500 text-white"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -1729,81 +2177,79 @@ const Leads = () => {
 
         {/* Tracking Table Section */}
         <div className="space-y-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4 bg-white p-3 rounded-xl shadow-sm">
-              <Button
-                variant={selectedPeriod === 'all' ? 'default' : 'outline'}
-                className={selectedPeriod === 'all' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white rounded-lg' : 'rounded-lg hover:bg-gray-100/80'}
-                onClick={() => {
-                  setSelectedPeriod('all');
-                  setCurrentPage(1); // Reset da página ao mudar o filtro
-                }}
-              >
-                Todos os leads
-              </Button>
-              <Button
-                variant={selectedPeriod === 'today' ? 'default' : 'outline'}
-                className={selectedPeriod === 'today' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white rounded-lg' : 'rounded-lg hover:bg-gray-100/80'}
-                onClick={() => {
-                  setSelectedPeriod('today');
-                  setCurrentPage(1); // Reset da página ao mudar o filtro
-                }}
-              >
-                Hoje
-              </Button>
-              <Button
-                variant={selectedPeriod === '7days' ? 'default' : 'outline'}
-                className={selectedPeriod === '7days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white rounded-lg' : 'rounded-lg hover:bg-gray-100/80'}
-                onClick={() => {
-                  setSelectedPeriod('7days');
-                  setCurrentPage(1); // Reset da página ao mudar o filtro
-                }}
-              >
-                Últimos 7 dias
-              </Button>
-              <Button
-                variant={selectedPeriod === '30days' ? 'default' : 'outline'}
-                className={selectedPeriod === '30days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white rounded-lg' : 'rounded-lg hover:bg-gray-100/80'}
-                onClick={() => {
-                  setSelectedPeriod('30days');
-                  setCurrentPage(1); // Reset da página ao mudar o filtro
-                }}
-              >
-                Últimos 30 dias
-              </Button>
-              
-              <div className="ml-auto flex items-center gap-2">
-                <Button variant="outline" onClick={reloadAllData} className="gap-2 rounded-lg hover:bg-gray-100/80 transition-colors">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M20.49 9C19.8214 7.33167 18.7192 5.89469 17.2931 4.87678C15.8671 3.85887 14.1733 3.30381 12.4403 3.28V3.28C10.2949 3.25941 8.20968 3.97218 6.5371 5.29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M3.51 15C4.17861 16.6683 5.28085 18.1053 6.70689 19.1232C8.13293 20.1411 9.82669 20.6962 11.5597 20.72V20.72C13.7051 20.7406 15.7903 20.0278 17.4629 18.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Atualizar
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 bg-white p-3 rounded-xl shadow-sm">
-              <div className="flex-1">
-                <div className="relative max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar leads..."
-                    className="pl-9 rounded-lg border-gray-200 focus-visible:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <Button variant="outline" className="rounded-lg hover:bg-gray-100/80 transition-colors">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
+          <div className="flex items-center gap-4">
+            <Button
+              variant={selectedPeriod === 'all' ? 'default' : 'outline'}
+              className={selectedPeriod === 'all' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
+              onClick={() => {
+                setSelectedPeriod('all');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
+            >
+              Todos os leads
+            </Button>
+            <Button
+              variant={selectedPeriod === 'today' ? 'default' : 'outline'}
+              className={selectedPeriod === 'today' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
+              onClick={() => {
+                setSelectedPeriod('today');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
+            >
+              Hoje
+            </Button>
+            <Button
+              variant={selectedPeriod === '7days' ? 'default' : 'outline'}
+              className={selectedPeriod === '7days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
+              onClick={() => {
+                setSelectedPeriod('7days');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
+            >
+              Últimos 7 dias
+            </Button>
+            <Button
+              variant={selectedPeriod === '30days' ? 'default' : 'outline'}
+              className={selectedPeriod === '30days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
+              onClick={() => {
+                setSelectedPeriod('30days');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
+            >
+              Últimos 30 dias
+            </Button>
+            
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" onClick={reloadAllData} className="gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 4V10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M23 20V14H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M20.49 9C19.8214 7.33167 18.7192 5.89469 17.2931 4.87678C15.8671 3.85887 14.1733 3.30381 12.4403 3.28V3.28C10.2949 3.25941 8.20968 3.97218 6.5371 5.29" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3.51 15C4.17861 16.6683 5.28085 18.1053 6.70689 19.1232C8.13293 20.1411 9.82669 20.6962 11.5597 20.72V20.72C13.7051 20.7406 15.7903 20.0278 17.4629 18.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Atualizar
               </Button>
             </div>
           </div>
 
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar leads..."
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Button variant="outline">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
+
           {/* Aviso sobre os tooltips de taxa de interação */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3 text-blue-700">
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center gap-3 text-blue-700">
             <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
@@ -1813,16 +2259,16 @@ const Leads = () => {
           </div>
 
           {/* Voltar para o estilo padrão da tabela */}
-          <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <div className="rounded-md border">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox />
                   </TableHead>
-                  <TableHead className="w-[120px] border-r font-medium">Data</TableHead>
+                  <TableHead className="w-[120px] border-r">Data</TableHead>
                   {stepMetrics.map((step) => (
-                    <TableHead key={step.step_number} className="relative min-w-[180px] border-r font-medium">
+                    <TableHead key={step.step_number} className="relative min-w-[180px] border-r">
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
                           <div>{stepNames[step.step_number] || `Etapa ${step.step_number}`}</div>
@@ -1832,7 +2278,7 @@ const Leads = () => {
                         </div>
                         <div className="w-3 h-16 bg-gray-100 rounded-full relative">
                           <div 
-                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-pointer transition-all hover:bg-green-600"
+                            className="absolute bottom-0 w-full bg-green-500 rounded-full cursor-pointer"
                             style={{ 
                               height: `${step.interaction_rate}%`,
                               minHeight: '8px',
@@ -1869,122 +2315,38 @@ const Leads = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  // Função para renderizar células de interação
-                  (() => {
-                    // Função simplificada para renderizar interações com base no tipo
-                    const renderInteractionCell = (interaction, stepMetric, isFirstInteractionStep, formDataForLead) => {
-                      // Mapear tipos de interação para renderização apropriada
-                      switch (interaction.type) {
-                        case 'choice':
-                          return (
-                            <div className="text-sm">
-                              <div className="font-medium">Escolheu</div>
-                              <div className="text-muted-foreground">
-                                <div className="mt-1 text-xs flex items-center gap-1.5">
-                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                  <span className="font-medium">{interaction.value}</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                          
-                        case 'form':
-                          return (
-                            <div className="text-sm">
-                              <div className="font-medium">Preencheu</div>
-                              <div className="mt-2 text-xs text-gray-500 space-y-1">
-                                {interaction.fields?.email && (
-                                  <div className="flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    <span>{interaction.fields.email}</span>
-                                  </div>
-                                )}
-                                {interaction.fields?.phone && (
-                                  <div className="flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />
-                                    <span>{interaction.fields.phone}</span>
-                                  </div>
-                                )}
-                                {interaction.fields?.text && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs">{interaction.fields.text}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        
-                        case 'click':
-                        default:
-                          return (
-                            <div className="text-sm">
-                              <div className="font-medium">Clicou</div>
-                              
-                              {/* Exibir dados do formulário na primeira etapa */}
-                              {isFirstInteractionStep && formDataForLead && (
-                                <div className="mt-2 text-xs text-gray-500 space-y-1">
-                                  {formDataForLead.leadInfo?.email && (
-                                    <div className="flex items-center gap-1">
-                                      <Mail className="h-3 w-3" />
-                                      <span>{formDataForLead.leadInfo.email}</span>
-                                    </div>
-                                  )}
-                                  {formDataForLead.leadInfo?.phone && (
-                                    <div className="flex items-center gap-1">
-                                      <Phone className="h-3 w-3" />
-                                      <span>{formDataForLead.leadInfo.phone}</span>
-                                    </div>
-                                  )}
-                                  {formDataForLead.leadInfo?.text && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs">{formDataForLead.leadInfo.text}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                      }
-                    };
-                    
-                    // Retornar o mapeamento de leads
-                    return leads
-                      .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
-                      .map((lead, leadIndex) => {
-                        // Buscar os dados de formulário correspondentes para esta sessão específica
-                        const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
-                        
-                        return (
-                          <TableRow key={lead.sessionId} className="hover:bg-gray-50 transition-colors">
-                            <TableCell>
-                              <Checkbox />
-                            </TableCell>
-                            <TableCell className="border-r">
-                              {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
-                            </TableCell>
-                            {stepMetrics.map((step, stepIndex) => {
-                              // Exibir informações do formulário na primeira etapa com interação
-                              const isFirstInteractionStep = stepIndex === 0;
-                              const hasInteraction = !!lead.interactions[step.step_number];
-                              const interaction = lead.interactions[step.step_number];
-                              
-                              return (
-                                <TableCell key={step.step_number} className={`border-r ${hasInteraction ? 'bg-green-50/40' : ''}`}>
-                                  {hasInteraction ? (
-                                    // Versão simplificada temporária até resolver o erro de renderInteractionCell
-                                    <div className="text-sm">
-                                      <div className="font-medium">
-                                        {interaction.type === 'choice' ? 'Escolheu: ' + (interaction.value || '-') : 'Clicou'}
-                                      </div>
-                                    </div>
-                                  ) : ''}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        );
-                      });
-                  })()
+                  // Lógica de paginação para mostrar apenas 10 leads por página
+                  leads
+                    .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
+                    .map((lead, leadIndex) => {
+                      // Buscar os dados de formulário correspondentes para esta sessão específica
+                      const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
+                      
+                      return (
+                        <TableRow key={lead.sessionId}>
+                          <TableCell>
+                            <Checkbox />
+                          </TableCell>
+                          <TableCell className="border-r">
+                            {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          {stepMetrics.map((step, stepIndex) => {
+                            // Exibir informações do formulário na primeira etapa com interação
+                            const isFirstInteractionStep = stepIndex === 0;
+                            const hasInteraction = !!lead.interactions[step.step_number];
+                            const interaction = lead.interactions[step.step_number];
+                            
+                            return (
+                              <TableCell key={step.step_number} className="border-r">
+                                {hasInteraction ? (
+                                  renderInteractionCell(interaction, step, isFirstInteractionStep, formDataForLead)
+                                ) : ''}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      );
+                    })
                 )}
               </TableBody>
             </Table>
