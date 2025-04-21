@@ -8,6 +8,7 @@ import FunnelPasswordProtection from "@/components/FunnelPasswordProtection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Loader2, Lock } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const PublicFunnel = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -64,9 +65,37 @@ const PublicFunnel = () => {
           return;
         }
 
-        // Registrar acesso ao funil
-        const newSessionId = await accessService.logAccess(fetchedFunnel.id);
-        setSessionId(newSessionId);
+        console.log("Funil carregado, registrando acesso:", fetchedFunnel.id);
+        
+        try {
+          // Registrar acesso ao funil
+          const newSessionId = await accessService.logAccess(fetchedFunnel.id);
+          setSessionId(newSessionId);
+          console.log("Acesso registrado com ID de sessão:", newSessionId);
+          
+          // Armazenar sessionId no storage do navegador para maior persistência
+          window.sessionStorage.setItem('funnel_session_id', newSessionId);
+
+          // E também no localStorage para retorno do visitante
+          try {
+            window.localStorage.setItem('funnel_session_id', newSessionId);
+          } catch (storageError) {
+            console.warn('Não foi possível salvar sessão no localStorage:', storageError);
+          }
+          
+          // Registrar também no registro diário (para estatísticas adicionais)
+          try {
+            await supabase.rpc('register_daily_access', {
+              p_funnel_id: fetchedFunnel.id,
+              p_session_id: newSessionId
+            });
+          } catch (dailyError) {
+            console.error("Erro ao registrar acesso diário:", dailyError);
+          }
+        } catch (accessError) {
+          console.error("Erro ao registrar acesso:", accessError);
+          // Continuar mesmo se houver erro no registro de acesso
+        }
 
         setFunnel(fetchedFunnel);
         setError(null);
@@ -82,18 +111,77 @@ const PublicFunnel = () => {
   }, [slug]);
 
   const handlePasswordVerification = async () => {
+    if (!funnel) return;
+    
+    try {
+      // Registrar acesso depois que a senha for verificada
+      const newSessionId = await accessService.logAccess(funnel.id);
+      setSessionId(newSessionId);
+      console.log("Acesso registrado após verificação de senha:", newSessionId);
+
+      // Armazenar sessionId no storage do navegador após verificação de senha
+      window.sessionStorage.setItem('funnel_session_id', newSessionId);
+      try {
+        window.localStorage.setItem('funnel_session_id', newSessionId);
+      } catch (storageError) {
+        console.warn('Não foi possível salvar sessão no localStorage:', storageError);
+      }
+    } catch (error) {
+      console.error("Erro ao registrar acesso após senha:", error);
+    }
+    
     setIsPasswordVerified(true);
   };
 
   const handleStepChange = async (index: number) => {
     if (!funnel) return;
     
-    // Registrar interação do usuário com o funil
-    await accessService.updateProgress(funnel.id, index + 1, sessionId);
+    console.log(`Mudando para o passo ${index+1} de ${funnel.steps.length}`);
     
-    // Se chegou na última etapa, registrar como conversão
-    if (index === funnel.steps.length - 1) {
-      await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
+    try {
+      // Registrar o progresso
+      await accessService.updateProgress(funnel.id, index + 1, sessionId);
+      console.log(`Progresso atualizado para passo ${index+1}`);
+      
+      // Registrar também interação com este passo específico
+      await accessService.registerStepInteraction(
+        funnel.id,
+        index + 1,
+        sessionId,
+        'click',
+        null,
+        funnel.steps[index]?.canvasElements?.[0]?.buttonId || `btn-step-${index+1}`
+      );
+      
+      // Se chegou na última etapa, registrar como conversão
+      if (index === funnel.steps.length - 1) {
+        console.log("Última etapa alcançada, registrando conversão");
+        
+        try {
+          await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
+          console.log("Conversão registrada com sucesso");
+          
+          // Tente também registrar um evento de fluxo completo diretamente
+          // para ter redundância no registro da conversão
+          try {
+            const { error } = await supabase.rpc('register_flow_complete', {
+              p_funnel_id: funnel.id,
+              p_session_id: sessionId
+            });
+            
+            if (error) {
+              console.error("Erro ao registrar fluxo completo:", error);
+            }
+          } catch (flowError) {
+            console.error("Exceção ao registrar fluxo completo:", flowError);
+          }
+        } catch (convError) {
+          console.error("Erro ao registrar conversão:", convError);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar progresso:", error);
+      // Continuar a navegação mesmo se houver erro no registro
     }
     
     setCurrentStepIndex(index);

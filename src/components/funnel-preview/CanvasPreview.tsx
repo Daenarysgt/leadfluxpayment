@@ -103,6 +103,51 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     ? "w-full mx-auto min-h-[300px] mobile-full-width" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
+  // Adicionar logs para monitorar eventos de clique e registros de interação
+
+  // Melhorar a função handleNextStep para garantir que interações sejam registradas
+  const handleNextStep = (event: React.MouseEvent) => {
+    // Evitar comportamento padrão do botão
+    event.preventDefault();
+    
+    console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
+    // Obter o ID do botão ou gerar um ID padrão
+    const buttonId = event.currentTarget.id || `btn-step-${activeStep+1}`;
+    
+    // Em ambientes de produção (não preview), registrar a interação
+    if (window.location.pathname.includes('/f/')) {
+      try {
+        console.log(`Tentando registrar interação para step ${activeStep+1} em ambiente de produção`);
+        const sessionId = window.sessionStorage.getItem('funnel_session_id');
+        const funnelId = funnel?.id;
+        
+        if (funnelId && sessionId) {
+          accessService.registerStepInteraction(
+            funnelId,
+            activeStep+1,
+            sessionId,
+            'click',
+            null,
+            buttonId
+          ).then(() => {
+            console.log('Interação registrada com sucesso no modo público');
+          }).catch(err => {
+            console.error('Erro ao registrar interação no modo público:', err);
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao tentar registrar interação:', error);
+      }
+    }
+    
+    // Avançar para o próximo passo
+    if (onStepChange) {
+      const nextStep = activeStep + 1;
+      console.log(`Alterando para o passo ${nextStep}`);
+      onStepChange(nextStep);
+    }
+  };
+  
   return (
     <div 
       className={containerClass}

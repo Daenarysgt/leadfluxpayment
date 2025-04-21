@@ -99,10 +99,13 @@ export const accessService = {
       // Gerar novo sessionId apenas se não existir
       if (!currentSessionId) {
         currentSessionId = uuidv4();
+        console.log('Gerado novo sessionId:', currentSessionId);
       }
 
+      console.log('Registrando acesso ao funil:', {funnelId, sessionId: currentSessionId});
+
       // Insert into funnel_progress
-      const { error: progressError } = await supabase
+      const { data, error: progressError } = await supabase
         .rpc('update_funnel_progress', {
           p_funnel_id: funnelId,
           p_session_id: currentSessionId,
@@ -112,7 +115,51 @@ export const accessService = {
 
       if (progressError) {
         console.error('Error logging funnel progress:', progressError);
-        throw progressError;
+        console.error('Detalhes do erro:', {
+          message: progressError.message,
+          details: progressError.details,
+          hint: progressError.hint,
+          code: progressError.code
+        });
+        
+        // Tentar um método alternativo se a RPC falhar
+        try {
+          console.log('Tentando registrar acesso diretamente na tabela...');
+          const { error: insertError } = await supabase
+            .from('funnel_access_logs')
+            .insert({
+              funnel_id: funnelId,
+              session_id: currentSessionId,
+              step_reached: 1,
+              is_conversion: false,
+              is_first_access: true
+            });
+            
+          if (insertError) {
+            console.error('Erro na inserção direta:', insertError);
+          } else {
+            console.log('Inserção direta bem-sucedida');
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback:', fallbackError);
+        }
+      } else {
+        console.log('Progresso registrado com sucesso:', data);
+      }
+
+      // Sempre tente registrar também no funnel_flow_events para redundância
+      try {
+        const { error: flowError } = await supabase
+          .rpc('register_flow_start', {
+            p_funnel_id: funnelId,
+            p_session_id: currentSessionId
+          });
+          
+        if (flowError) {
+          console.error('Erro ao registrar fluxo de início:', flowError);
+        }
+      } catch (flowErr) {
+        console.error('Exceção ao registrar fluxo:', flowErr);
       }
 
       return currentSessionId;
@@ -141,6 +188,15 @@ export const accessService = {
         throw new Error('No active session found');
       }
 
+      console.log('Registrando interação:', {
+        funnelId, 
+        stepNumber, 
+        sessionId: activeSessionId,
+        interactionType,
+        interactionValue,
+        button_id
+      });
+
       const { error } = await supabase
         .rpc('register_step_interaction', {
           p_funnel_id: funnelId,
@@ -153,7 +209,37 @@ export const accessService = {
 
       if (error) {
         console.error('Error registering step interaction:', error);
-        throw error;
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // Tentar método alternativo caso a RPC falhe
+        try {
+          console.log('Tentando registrar interação diretamente na tabela...');
+          const { error: insertError } = await supabase
+            .from('funnel_step_interactions')
+            .insert({
+              funnel_id: funnelId,
+              session_id: activeSessionId,
+              step_number: stepNumber,
+              interaction_type: interactionType,
+              interaction_value: interactionValue,
+              button_id: button_id
+            });
+            
+          if (insertError) {
+            console.error('Erro na inserção direta de interação:', insertError);
+          } else {
+            console.log('Interação registrada com sucesso diretamente');
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback de interação:', fallbackError);
+        }
+      } else {
+        console.log('Interação registrada com sucesso via RPC');
       }
     } catch (error) {
       console.error('Error registering step interaction:', error);
@@ -215,8 +301,15 @@ export const accessService = {
         throw new Error('No active session found');
       }
 
+      console.log('Atualizando progresso:', {
+        funnelId,
+        stepNumber,
+        sessionId: activeSessionId,
+        isConversion
+      });
+
       // Atualizar apenas o progresso, sem registrar interação
-      const { error } = await supabase
+      const { data, error } = await supabase
         .rpc('update_funnel_progress', {
           p_funnel_id: funnelId,
           p_session_id: activeSessionId,
@@ -226,7 +319,63 @@ export const accessService = {
 
       if (error) {
         console.error('Error updating progress:', error);
-        throw error;
+        console.error('Detalhes do erro:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // Tentar um método alternativo se a RPC falhar
+        try {
+          console.log('Tentando atualizar progresso diretamente na tabela...');
+          const { error: upsertError } = await supabase
+            .from('funnel_access_logs')
+            .upsert({
+              funnel_id: funnelId,
+              session_id: activeSessionId,
+              step_reached: stepNumber,
+              is_conversion: isConversion,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'session_id'
+            });
+            
+          if (upsertError) {
+            console.error('Erro na atualização direta:', upsertError);
+          } else {
+            console.log('Atualização direta bem-sucedida');
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback:', fallbackError);
+        }
+      } else {
+        console.log('Progresso atualizado com sucesso:', data);
+      }
+
+      // Registrar também uma interação neste passo específico
+      try {
+        await this.registerStepInteraction(
+          funnelId,
+          stepNumber,
+          activeSessionId,
+          'click' // tipo padrão de interação
+        );
+        
+        // Se for conversão, registrar no funnel_flow_events também
+        if (isConversion) {
+          const { error: flowError } = await supabase
+            .rpc('register_flow_complete', {
+              p_funnel_id: funnelId,
+              p_session_id: activeSessionId
+            });
+            
+          if (flowError) {
+            console.error('Erro ao registrar conclusão de fluxo:', flowError);
+          }
+        }
+      } catch (regErr) {
+        console.error('Erro ao registrar interação complementar:', regErr);
       }
     } catch (error) {
       console.error('Error updating progress:', error);
