@@ -192,6 +192,10 @@ const Leads = () => {
   // Flag para resolver manualmente os problemas de métricas
   const metricsForceLoaded = useRef(false);
   const leadsContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [leadsPerPage] = useState(10);
 
   // Função para exportar os dados dos leads para CSV
   const exportLeadsToCSV = () => {
@@ -894,6 +898,7 @@ const Leads = () => {
 
   // Função para recarregar todas as métricas e dados
   const reloadAllData = async () => {
+    setCurrentPage(1); // Reset para a primeira página ao recarregar dados
     await loadAllData(true);
   };
 
@@ -1257,28 +1262,40 @@ const Leads = () => {
             <Button
               variant={selectedPeriod === 'all' ? 'default' : 'outline'}
               className={selectedPeriod === 'all' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
-              onClick={() => setSelectedPeriod('all')}
+              onClick={() => {
+                setSelectedPeriod('all');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
             >
               Todos os leads
             </Button>
             <Button
               variant={selectedPeriod === 'today' ? 'default' : 'outline'}
               className={selectedPeriod === 'today' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
-              onClick={() => setSelectedPeriod('today')}
+              onClick={() => {
+                setSelectedPeriod('today');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
             >
               Hoje
             </Button>
             <Button
               variant={selectedPeriod === '7days' ? 'default' : 'outline'}
               className={selectedPeriod === '7days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
-              onClick={() => setSelectedPeriod('7days')}
+              onClick={() => {
+                setSelectedPeriod('7days');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
             >
               Últimos 7 dias
             </Button>
             <Button
               variant={selectedPeriod === '30days' ? 'default' : 'outline'}
               className={selectedPeriod === '30days' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
-              onClick={() => setSelectedPeriod('30days')}
+              onClick={() => {
+                setSelectedPeriod('30days');
+                setCurrentPage(1); // Reset da página ao mudar o filtro
+              }}
             >
               Últimos 30 dias
             </Button>
@@ -1378,38 +1395,130 @@ const Leads = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : leads.map((lead, leadIndex) => {
-                  // Buscar os dados de formulário correspondentes para esta sessão específica
-                  const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
-                  
-                  return (
-                    <TableRow key={lead.sessionId}>
-                      <TableCell>
-                        <Checkbox />
-                      </TableCell>
-                      <TableCell className="border-r">
-                        {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      {stepMetrics.map((step, stepIndex) => {
-                        // Exibir informações do formulário na primeira etapa com interação
-                        const isFirstInteractionStep = stepIndex === 0;
-                        const hasInteraction = !!lead.interactions[step.step_number];
-                        const interaction = lead.interactions[step.step_number];
-                        
-                        return (
-                          <TableCell key={step.step_number} className="border-r">
-                            {hasInteraction ? (
-                              renderInteractionCell(interaction, step, isFirstInteractionStep, formDataForLead)
-                            ) : ''}
+                ) : (
+                  // Lógica de paginação para mostrar apenas 10 leads por página
+                  leads
+                    .slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage)
+                    .map((lead, leadIndex) => {
+                      // Buscar os dados de formulário correspondentes para esta sessão específica
+                      const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
+                      
+                      return (
+                        <TableRow key={lead.sessionId}>
+                          <TableCell>
+                            <Checkbox />
                           </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
+                          <TableCell className="border-r">
+                            {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          {stepMetrics.map((step, stepIndex) => {
+                            // Exibir informações do formulário na primeira etapa com interação
+                            const isFirstInteractionStep = stepIndex === 0;
+                            const hasInteraction = !!lead.interactions[step.step_number];
+                            const interaction = lead.interactions[step.step_number];
+                            
+                            return (
+                              <TableCell key={step.step_number} className="border-r">
+                                {hasInteraction ? (
+                                  renderInteractionCell(interaction, step, isFirstInteractionStep, formDataForLead)
+                                ) : ''}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      );
+                    })
+                )}
               </TableBody>
             </Table>
           </div>
+          
+          {/* Paginação */}
+          {leads.length > 0 && (
+            <div className="flex items-center justify-between mt-4 border-t pt-4">
+              <div className="text-sm text-muted-foreground">
+                Exibindo {Math.min(leads.length, (currentPage - 1) * leadsPerPage + 1)} a {Math.min(leads.length, currentPage * leadsPerPage)} de {leads.length} leads
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                
+                {/* Números de página */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, Math.ceil(leads.length / leadsPerPage)) }, (_, i) => {
+                    // Lógica para mostrar páginas:
+                    // Se tivermos menos de 6 páginas, mostrar todas
+                    // Caso contrário, mostrar páginas ao redor da atual
+                    const totalPages = Math.ceil(leads.length / leadsPerPage);
+                    let pageToShow = i + 1;
+                    
+                    if (totalPages > 5) {
+                      // Se estivermos nas primeiras 3 páginas
+                      if (currentPage <= 3) {
+                        pageToShow = i + 1;
+                      } 
+                      // Se estivermos nas últimas 3 páginas
+                      else if (currentPage >= totalPages - 2) {
+                        pageToShow = totalPages - 4 + i;
+                      } 
+                      // Caso contrário, mostrar duas páginas antes e depois da atual
+                      else {
+                        pageToShow = currentPage - 2 + i;
+                      }
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageToShow}
+                        variant={currentPage === pageToShow ? "default" : "outline"}
+                        size="sm"
+                        className={`h-8 w-8 p-0 ${currentPage === pageToShow ? 'bg-gradient-to-r from-blue-700 to-purple-700' : ''}`}
+                        onClick={() => setCurrentPage(pageToShow)}
+                      >
+                        {pageToShow}
+                      </Button>
+                    );
+                  })}
+                  
+                  {/* Adicionar ellipsis e última página se tivermos muitas páginas */}
+                  {Math.ceil(leads.length / leadsPerPage) > 5 && (
+                    <>
+                      {currentPage < Math.ceil(leads.length / leadsPerPage) - 2 && (
+                        <span className="mx-1">...</span>
+                      )}
+                      
+                      {currentPage < Math.ceil(leads.length / leadsPerPage) - 2 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setCurrentPage(Math.ceil(leads.length / leadsPerPage))}
+                        >
+                          {Math.ceil(leads.length / leadsPerPage)}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(leads.length / leadsPerPage), prev + 1))}
+                  disabled={currentPage >= Math.ceil(leads.length / leadsPerPage)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
