@@ -9,7 +9,8 @@ export const useStepManager = () => {
     setCurrentStep,
     addStep,
     deleteStep,
-    duplicateStep
+    duplicateStep,
+    reorderSteps
   } = useStore();
   
   const { toast } = useToast();
@@ -178,6 +179,41 @@ export const useStepManager = () => {
       });
   }, [currentFunnel, sortedSteps, duplicateStep, toast]);
   
+  const handleReorderSteps = useCallback((sourceIndex: number, destinationIndex: number) => {
+    if (!currentFunnel) return;
+    
+    // Obter os índices reais com base na lista original (não ordenada)
+    const sourceStepId = sortedSteps[sourceIndex]?.id;
+    const destStepId = sortedSteps[destinationIndex]?.id;
+    
+    if (!sourceStepId || !destStepId) return;
+    
+    // Encontrar os índices correspondentes na lista original
+    const realSourceIndex = currentFunnel.steps.findIndex(s => s.id === sourceStepId);
+    const realDestIndex = currentFunnel.steps.findIndex(s => s.id === destStepId);
+    
+    if (realSourceIndex === -1 || realDestIndex === -1) return;
+    
+    console.log(`useStepManager - Reordenando etapa de ${sourceIndex} para ${destinationIndex} (índices reais: ${realSourceIndex} -> ${realDestIndex})`);
+    
+    // Chamar a função de reordenação com os índices reais
+    reorderSteps(realSourceIndex, realDestIndex)
+      .then(() => {
+        toast({
+          title: "Etapas reordenadas",
+          description: "A ordem das etapas foi atualizada com sucesso.",
+        });
+      })
+      .catch(error => {
+        console.error("Erro ao reordenar etapas:", error);
+        toast({
+          title: "Erro ao reordenar etapas",
+          description: "Ocorreu um erro ao tentar reordenar as etapas.",
+          variant: "destructive"
+        });
+      });
+  }, [currentFunnel, sortedSteps, reorderSteps, toast]);
+  
   return {
     currentFunnel,
     currentStep,
@@ -185,6 +221,7 @@ export const useStepManager = () => {
     handleSelectStep,
     handleDeleteStep,
     handleDuplicateStep,
+    handleReorderSteps,
     isChangingStepRef,
     sortedSteps
   };

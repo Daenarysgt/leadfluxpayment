@@ -461,18 +461,10 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
   // Gerar novo ID para a etapa duplicada
   const newStepId = generateValidUUID();
   
-  // Calcular o próximo order_index baseado no maior valor existente
-  let nextOrderIndex = 0;
-  if (currentFunnel.steps && currentFunnel.steps.length > 0) {
-    let maxOrderIndex = 0;
-    currentFunnel.steps.forEach(step => {
-      const orderIndex = step.order_index ?? 0;
-      if (orderIndex > maxOrderIndex) {
-        maxOrderIndex = orderIndex;
-      }
-    });
-    nextOrderIndex = maxOrderIndex + 1;
-  }
+  // Calcular o próximo order_index baseado no order_index da etapa atual
+  // Aumentar em 0.5 para que fique entre a etapa atual e a próxima
+  const currentOrderIndex = stepToDuplicate.order_index ?? 0;
+  const nextOrderIndex = currentOrderIndex + 0.5;
   
   // Criar a nova etapa duplicada
   const duplicatedStep = {
@@ -480,7 +472,6 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
     id: newStepId,
     title: `${stepToDuplicate.title} (cópia)`,
     order_index: nextOrderIndex,
-    position: currentFunnel.steps.length,
     created_at: formatDateForSupabase(),
     updated_at: formatDateForSupabase(),
   };
@@ -488,14 +479,23 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
   // Clone profundo do funnel atual
   const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
   
-  // Adicionar a etapa duplicada após a original
+  // Inserir a etapa duplicada logo após a etapa original
+  const updatedSteps = [...funnelCopy.steps];
+  updatedSteps.splice(stepIndex + 1, 0, duplicatedStep);
+  
+  // Atualizar a posição e order_index de cada etapa após inserção
+  updatedSteps.forEach((step, idx) => {
+    step.position = idx;
+  });
+  
   const updatedFunnel = {
     ...funnelCopy,
-    steps: [...funnelCopy.steps, duplicatedStep],
+    steps: updatedSteps,
     updated_at: formatDateForSupabase(),
   };
   
-  const newStepIndex = updatedFunnel.steps.length - 1;
+  // O novo índice é logo após o índice atual
+  const newStepIndex = stepIndex + 1;
   
   try {
     // Atualizar o estado local imediatamente para UI responsiva
@@ -556,6 +556,9 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           console.log("StepActions - Elementos de canvas duplicados com sucesso");
         }
       }
+      
+      // Normalizar os order_index de todas as etapas para garantir consistência
+      await normalizeStepOrderIndexes(currentFunnel.id);
     } 
     // MÉTODO 2: Fallback para persistenceService
     catch (directError) {
@@ -605,6 +608,47 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
   }
 };
 
+// Função auxiliar para normalizar os order_index de todas as etapas
+// Isso garante que todas as etapas tenham order_index sequenciais sem buracos
+async function normalizeStepOrderIndexes(funnelId: string) {
+  try {
+    // Buscar todas as etapas do funil
+    const { data: steps, error } = await supabase
+      .from('steps')
+      .select('id, order_index')
+      .eq('funnel_id', funnelId)
+      .order('order_index');
+    
+    if (error) {
+      console.error("Erro ao buscar etapas para normalização:", error);
+      return;
+    }
+    
+    // Se não há etapas para normalizar, retornar
+    if (!steps || steps.length === 0) return;
+    
+    // Criar um lote de atualizações para evitar múltiplas chamadas
+    const updates = steps.map((step, index) => ({
+      id: step.id,
+      order_index: index * 10, // Usar múltiplos de 10 para permitir inserções futuras
+      updated_at: formatDateForSupabase()
+    }));
+    
+    // Atualizar todas as etapas com novos order_index
+    const { error: updateError } = await supabase
+      .from('steps')
+      .upsert(updates);
+    
+    if (updateError) {
+      console.error("Erro ao normalizar order_index das etapas:", updateError);
+    } else {
+      console.log("Order_index das etapas normalizado com sucesso");
+    }
+  } catch (error) {
+    console.error("Erro ao normalizar order_index das etapas:", error);
+  }
+}
+
 export const setCurrentStepAction = (set: any, get: any) => (stepIndex: number) => {
   // Evitar mudar para um índice inválido
   const { currentFunnel } = get();
@@ -615,4 +659,122 @@ export const setCurrentStepAction = (set: any, get: any) => (stepIndex: number) 
   
   set({ currentStep: stepIndex });
   console.log(`Store - Current step set to: ${stepIndex}`);
+};
+
+export const reorderStepsAction = (set: any, get: any) => async (sourceIndex: number, destinationIndex: number) => {
+  const { currentFunnel, currentStep } = get();
+  if (!currentFunnel) return;
+  
+  // Validar os índices
+  if (sourceIndex < 0 || sourceIndex >= currentFunnel.steps.length || 
+      destinationIndex < 0 || destinationIndex >= currentFunnel.steps.length) {
+    console.error(`Índices inválidos para reordenação: ${sourceIndex} -> ${destinationIndex}`);
+    return;
+  }
+  
+  console.log(`StepActions - Reordenando etapa: ${sourceIndex} -> ${destinationIndex}`);
+  
+  // Criar uma cópia profunda do funnel e das etapas
+  const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
+  const updatedSteps = [...funnelCopy.steps];
+  
+  // Remover a etapa da posição atual
+  const [removedStep] = updatedSteps.splice(sourceIndex, 1);
+  
+  // Inserir a etapa na nova posição
+  updatedSteps.splice(destinationIndex, 0, removedStep);
+  
+  // Atualizar as posições e order_index
+  updatedSteps.forEach((step, index) => {
+    step.position = index;
+    step.order_index = index * 10; // Usar múltiplos de 10 para facilitar inserções futuras
+    step.updated_at = formatDateForSupabase();
+  });
+  
+  // Atualizar o funnel
+  const updatedFunnel = {
+    ...funnelCopy,
+    steps: updatedSteps,
+    updated_at: formatDateForSupabase(),
+  };
+  
+  // Calcular o novo índice atual
+  let newCurrentStep = currentStep;
+  
+  // Se movemos a etapa atual
+  if (sourceIndex === currentStep) {
+    newCurrentStep = destinationIndex;
+  } 
+  // Se movemos uma etapa de uma posição antes da atual para uma posição depois
+  else if (sourceIndex < currentStep && destinationIndex >= currentStep) {
+    newCurrentStep = currentStep - 1;
+  } 
+  // Se movemos uma etapa de uma posição depois da atual para uma posição antes
+  else if (sourceIndex > currentStep && destinationIndex <= currentStep) {
+    newCurrentStep = currentStep + 1;
+  }
+  
+  try {
+    // Atualizar o estado local imediatamente
+    set((state) => ({
+      currentFunnel: updatedFunnel,
+      funnels: state.funnels.map((funnel) => 
+        funnel.id === currentFunnel.id ? updatedFunnel : funnel
+      ),
+      currentStep: newCurrentStep
+    }));
+    
+    // Persistir no Supabase
+    try {
+      // Criar um lote de atualizações para os order_index
+      const updates = updatedSteps.map(step => ({
+        id: step.id,
+        order_index: step.order_index,
+        updated_at: formatDateForSupabase()
+      }));
+      
+      // Atualizar todas as etapas com novos order_index
+      const { error } = await supabase
+        .from('steps')
+        .upsert(updates);
+      
+      if (error) {
+        console.error(`Erro ao atualizar order_index após reordenação:`, error);
+        throw error;
+      }
+      
+      console.log(`Order_index das etapas atualizado com sucesso após reordenação`);
+    } catch (error) {
+      console.error(`Erro ao persistir reordenação:`, error);
+      
+      // Fallback para persistenceService
+      operationQueueService.enqueue(
+        async (funnelData) => {
+          const result = await persistenceService.saveFunnel(funnelData);
+          
+          if (!result.success) {
+            throw new Error(`Falha ao reordenar etapas: ${result.error}`);
+          }
+          
+          return result.data;
+        },
+        updatedFunnel,
+        {
+          maxAttempts: 3,
+          description: `Reordenar etapas no funil ${currentFunnel.id}`,
+          onSuccess: (savedFunnel) => {
+            console.log("StepActions - Reordenação persistida com sucesso (fallback)");
+          },
+          onError: (error) => {
+            console.error(`StepActions - Erro ao persistir reordenação:`, error);
+          }
+        }
+      );
+    }
+    
+    return { updatedFunnel, newCurrentStep };
+  } catch (error) {
+    console.error("Erro ao reordenar etapas:", error);
+    throw error;
+  }
 };
