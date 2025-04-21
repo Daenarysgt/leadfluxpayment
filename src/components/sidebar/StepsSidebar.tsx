@@ -11,6 +11,7 @@ const StepsSidebar = () => {
     handleAddStep,
     handleSelectStep,
     handleDeleteStep,
+    handleDuplicateStep,
     sortedSteps
   } = useStepManager();
   
@@ -46,6 +47,7 @@ const StepsSidebar = () => {
             onSelect={handleSelectStep}
             onDelete={handleDeleteStep}
             onEdit={handleEditStart}
+            onDuplicate={handleDuplicateStep}
           />
         ))}
         

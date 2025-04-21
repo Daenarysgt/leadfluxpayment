@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Copy } from "lucide-react";
 import { useState } from "react";
 import StepEditor from "./StepEditor";
 
@@ -13,15 +13,31 @@ interface StepItemProps {
   onSelect: (index: number) => void;
   onDelete: (index: number, e: React.MouseEvent) => void;
   onEdit: (step: { id: string; title: string }, e: React.MouseEvent) => void;
+  onDuplicate?: (index: number, e: React.MouseEvent) => void;
 }
 
-const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit }: StepItemProps) => {
+const StepItem = ({ 
+  step, 
+  index, 
+  isActive, 
+  onSelect, 
+  onDelete, 
+  onEdit,
+  onDuplicate 
+}: StepItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
+  };
+
+  const handleDuplicateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDuplicate) {
+      onDuplicate(index, e);
+    }
   };
 
   if (isEditing) {
@@ -86,6 +102,17 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit }: StepIte
         >
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
+        {onDuplicate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 text-gray-500 hover:text-blue-600"
+            onClick={handleDuplicateClick}
+            title="Duplicar etapa"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
