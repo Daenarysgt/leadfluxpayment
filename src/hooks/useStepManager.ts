@@ -20,21 +20,9 @@ export const useStepManager = () => {
   const sortedSteps = useMemo(() => {
     if (!currentFunnel?.steps) return [];
     
-    // Garantir que etapas com order_index igual sejam ordenadas por posição ou ID para consistência
     return [...currentFunnel.steps].sort((a, b) => {
       const orderA = a.order_index ?? 0;
       const orderB = b.order_index ?? 0;
-      
-      // Se os order_index são iguais, ordenar por posição ou ID para consistência
-      if (orderA === orderB) {
-        // Se temos posição, usar ela primeiro
-        if (a.position !== undefined && b.position !== undefined) {
-          return a.position - b.position;
-        }
-        // Caso contrário, usar ID como fallback para ordem estável
-        return a.id.localeCompare(b.id);
-      }
-      
       return orderA - orderB;
     });
   }, [currentFunnel?.steps]);

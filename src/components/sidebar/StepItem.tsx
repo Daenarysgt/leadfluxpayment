@@ -49,13 +49,13 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
           : 'border-transparent bg-transparent hover:border-gray-200 hover:bg-white hover:shadow-sm'
         }
-        cursor-pointer transition-all duration-200 pr-1
+        cursor-pointer transition-all duration-200
       `}
       onClick={() => onSelect(index)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex-1 flex items-center p-3 pr-0">
+      <div className="flex-1 flex items-center p-3">
         <div className={`
           w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
           ${isActive 
@@ -67,7 +67,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           {index + 1}
         </div>
         <span className={`
-          font-medium truncate max-w-[120px]
+          font-medium truncate
           ${isActive ? 'text-violet-900' : 'text-gray-700'}
         `}>
           {step.title}
@@ -75,38 +75,36 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       </div>
       
       <div className={`
-        flex items-center gap-1 p-1
+        flex items-center gap-1 pr-2
         ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-200
       `}>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-violet-100 text-gray-600 hover:text-violet-600 border border-gray-200 p-0 flex items-center justify-center"
+          className="h-7 w-7 text-gray-500 hover:text-violet-600"
           onClick={handleEditClick}
-          title="Editar etapa"
         >
-          <Edit2 className="h-4 w-4" />
+          <Edit2 className="h-3.5 w-3.5" />
         </Button>
         {onDuplicate && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-blue-100 text-gray-600 hover:text-blue-600 border border-gray-200 p-0 flex items-center justify-center"
+            className="h-7 w-7 text-gray-500 hover:text-blue-600"
             onClick={(e) => onDuplicate(index, e)}
             title="Duplicar etapa"
           >
-            <Copy className="h-4 w-4" />
+            <Copy className="h-3.5 w-3.5" />
           </Button>
         )}
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 min-w-7 rounded-md bg-gray-50 hover:bg-red-100 text-gray-600 hover:text-red-600 border border-gray-200 p-0 flex items-center justify-center"
+          className="h-7 w-7 text-gray-500 hover:text-red-600"
           onClick={(e) => onDelete(index, e)}
-          title="Excluir etapa"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
