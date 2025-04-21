@@ -1599,7 +1599,7 @@ const Leads = () => {
             <p className="text-2xl font-bold">
               {dropoffData.highestDropoffRate > 0 ? (
                 <>
-                  <span className="text-amber-600">Step {dropoffData.highestDropoffStep}</span>
+                  <span className="text-amber-600">{dropoffData.stepName}</span>
                   <span className="text-amber-500 ml-1 text-xl">
                     ({dropoffData.highestDropoffRate.toFixed(1)}%)
                   </span>
