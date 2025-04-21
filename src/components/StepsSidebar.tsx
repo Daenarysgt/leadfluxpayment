@@ -19,7 +19,7 @@ interface StepItemProps {
 }
 
 const StepsSidebar = () => {
-  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, duplicateStep } = useStore();
+  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, duplicateStep, updateStep } = useStore();
   const { toast } = useToast();
 
   const handleStepClick = (index: number) => {
@@ -33,8 +33,8 @@ const StepsSidebar = () => {
 
   const handleStepEdit = (step: { id: string; title: string }, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Implementar edição do título do step
-    console.log('Editar step:', step);
+    // Esta função não é mais necessária pois a edição ocorre diretamente no componente StepEditor
+    // que é renderizado quando isEditing é true no StepItem
   };
 
   const handleStepDuplicate = async (index: number, e: React.MouseEvent) => {

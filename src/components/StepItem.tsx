@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2, Copy } from "lucide-react";
 import { useState } from "react";
+import StepEditor from "./StepEditor";
 
 interface StepItemProps {
   step: {
@@ -25,6 +26,29 @@ const StepItem = ({
   onDuplicate 
 }: StepItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  };
+
+  // Se estiver em modo de edição, mostrar o editor
+  if (isEditing) {
+    return (
+      <div 
+        className={`
+          rounded-lg border ${isActive ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 bg-white'} 
+          shadow-sm transition-all
+        `}
+      >
+        <StepEditor 
+          step={step} 
+          onComplete={() => setIsEditing(false)} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -60,7 +84,7 @@ const StepItem = ({
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0 text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-          onClick={(e) => onEdit(step, e)}
+          onClick={handleEditClick}
           title="Editar nome"
         >
           <Edit2 className="h-4 w-4" />
