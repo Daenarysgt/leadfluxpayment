@@ -1203,6 +1203,18 @@ const Leads = () => {
           <CardTitle className="text-lg flex items-center gap-2">
             <span className="h-5 w-5 text-red-500">🔥</span>
             <span>Visitantes em tempo real</span>
+            
+            {/* Adicionar ícone de informação com tooltip */}
+            <div 
+              className="relative flex items-center ml-1 cursor-help text-gray-400 hover:text-gray-600" 
+              title="Contabiliza visitantes com interação nos últimos 5 minutos. Períodos de inatividade superiores são considerados como abandono."
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
