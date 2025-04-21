@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { accessService } from '@/services/accessService';
+import { dashboardService } from '@/services/dashboardService';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { funnelService } from '@/services/funnelService';
 import ProfileModal from '@/components/ProfileModal';
@@ -166,13 +167,13 @@ const Dashboard = () => {
   // Função para carregar dados do gráfico
   const loadChartData = async () => {
     try {
-      // Verificar se os dados para este período já foram inicializados
-      if (!dataInitialized[chartPeriod]) {
-        setLoadingChartData(true);
-        
-        // Buscar dados reais do backend
-        const data = await accessService.getHistoricalChartData(chartPeriod);
-        
+      setLoadingChartData(true);
+      
+      // Buscar dados usando o novo serviço otimizado
+      const data = await dashboardService.getDashboardChartData(chartPeriod);
+      
+      // Verificar se temos dados válidos
+      if (data.length > 0) {
         // Atualizar o estado de dados por período
         setChartDataByPeriod(prev => ({
           ...prev,
@@ -188,12 +189,13 @@ const Dashboard = () => {
         // Atualizar dados do gráfico
         setChartData(data);
       } else {
-        // Usar os dados já carregados para este período
-        setChartData(chartDataByPeriod[chartPeriod]);
+        console.log('Nenhum dado retornado para o período:', chartPeriod);
+        // Se não há dados, definir array vazio
+        setChartData([]);
       }
       
       // Retornar os dados atuais
-      return chartDataByPeriod[chartPeriod] || [];
+      return data;
     } catch (error) {
       console.error('Erro ao carregar dados do gráfico:', error);
       // Em caso de erro, manter os dados atuais ou limpar
@@ -208,102 +210,20 @@ const Dashboard = () => {
     try {
       setLoadingMetrics(true);
       
-      // Total de funis é simplesmente o comprimento do array de funis
-      const totalFunnels = funnels.length;
+      // Usar o novo serviço otimizado para obter métricas dos cards
+      const cardMetrics = await dashboardService.getDashboardCardMetrics();
       
-      // Usar os dados do período atual, se disponíveis
-      const currentPeriodData = chartDataByPeriod[chartPeriod] || [];
-      
-      // Verificar se precisamos buscar novos dados
-      let dataToUse = currentPeriodData;
-      
-      // Se não temos dados para o período atual, buscar dados
-      if (dataToUse.length === 0) {
-        // Tentar dados do período atual
-        const newData = await accessService.getHistoricalChartData(chartPeriod);
-        if (newData.length > 0) {
-          dataToUse = newData;
-        } else {
-          // Se ainda não temos dados, tentar outro período
-          const altPeriod = chartPeriod === '7days' ? 'today' : '7days';
-          const altData = await accessService.getHistoricalChartData(altPeriod);
-          if (altData.length > 0) {
-            dataToUse = altData;
-          }
-        }
-      }
-      
-      // Extrair sessões e conclusões do gráfico que já está funcionando
-      let totalSessions = 0;
-      let totalCompletions = 0;
-      
-      if (dataToUse.length > 0) {
-        // Somar todas as sessões e concluídos dos dados do gráfico
-        dataToUse.forEach(item => {
-          totalSessions += item.sessoes || 0;
-          totalCompletions += item.concluidos || 0;
-        });
-        
-        console.log('Usando dados do gráfico para métricas:', { 
-          period: chartPeriod, 
-          dataPoints: dataToUse.length,
-          totalSessions,
-          totalCompletions
-        });
-      } else {
-        console.log('Sem dados do gráfico, tentando métricas individuais de funis');
-        
-        // Se não tivermos dados do gráfico, tentar obter das métricas individuais dos funis
-        const metricsPromises = funnels.map(funnel => 
-          accessService.getFunnelMetrics(funnel.id)
-            .catch(error => {
-              console.error(`Error loading metrics for funnel ${funnel.id}:`, error);
-              return {
-                total_sessions: 0,
-                completion_rate: 0,
-                interaction_rate: 0
-              };
-            })
-        );
-        
-        const funnelMetrics = await Promise.all(metricsPromises);
-        
-        // Somar sessões
-        totalSessions = funnelMetrics.reduce((sum, metric) => sum + metric.total_sessions, 0);
-        
-        // Estimar conclusões com base nas taxas
-        totalCompletions = funnelMetrics.reduce((sum, metric) => {
-          const completions = Math.round((metric.completion_rate * metric.total_sessions) / 100);
-          return sum + completions;
-        }, 0);
-      }
-      
-      // Presumir que metade das sessões têm alguma interação
-      // (Esta é uma aproximação simples. Idealmente, buscaríamos essa informação do backend)
-      const totalInteractions = Math.max(Math.round(totalSessions * 0.5), totalCompletions);
-      
-      // Calcular as taxas
-      const completionRate = totalSessions > 0 ? (totalCompletions / totalSessions) * 100 : 0;
-      const interactionRate = totalSessions > 0 ? (totalInteractions / totalSessions) * 100 : 0;
-      
-      console.log('Dashboard metrics calculated:', {
-        totalFunnels,
-        totalSessions,
-        totalCompletions,
-        totalInteractions,
-        completionRate,
-        interactionRate
-      });
-      
-      // Atualizar o estado com as métricas calculadas
+      // Atualizar o estado com as métricas obtidas diretamente do backend
       setMetrics({
-        totalFunnels,
-        totalSessions,
-        completionRate,
-        interactionRate
+        totalFunnels: cardMetrics.total_funnels,
+        totalSessions: cardMetrics.total_sessions,
+        completionRate: cardMetrics.completion_rate,
+        interactionRate: cardMetrics.interaction_rate
       });
+      
+      console.log('Dashboard card metrics loaded:', cardMetrics);
     } catch (error) {
-      console.error('Error loading metrics:', error);
+      console.error('Error loading dashboard metrics:', error);
       setMetrics({
         totalFunnels: funnels.length,
         totalSessions: 0,
@@ -326,8 +246,8 @@ const Dashboard = () => {
         [chartPeriod]: false
       }));
       
-      // Buscar novos dados do backend
-      const newData = await accessService.getHistoricalChartData(chartPeriod);
+      // Buscar novos dados do backend usando o serviço otimizado
+      const newData = await dashboardService.getDashboardChartData(chartPeriod);
       
       // Atualizar dados do período atual
       setChartDataByPeriod(prev => ({
