@@ -1131,6 +1131,46 @@ const Leads = () => {
         display: flex !important;
         flex-direction: column !important;
       }
+
+      /* Ajustes específicos para tabelas na página de Leads */
+      .rounded-md.border {
+        width: 100% !important;
+        max-height: calc(111.12vh - 350px) !important; 
+        overflow: auto !important;
+      }
+      
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      
+      /* Garantir que o conteúdo principal preencha o espaço vertical */
+      .p-6.space-y-6 {
+        min-height: calc(111.12vh - 57px) !important;
+        padding-bottom: 40px !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Fixar o header da tabela durante rolagem */
+      thead {
+        position: sticky !important;
+        top: 0 !important;
+        background-color: white !important;
+        z-index: 10 !important;
+      }
+      
+      /* Ajustes para o container de métricas */
+      .grid.grid-cols-4.gap-4 {
+        margin-bottom: 20px !important;
+      }
+      
+      /* Ajuste do padding do conteúdo */
+      .p-6.space-y-6 > div:last-child {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
     `;
     
     // Adicionar ao head
@@ -1142,18 +1182,61 @@ const Leads = () => {
         leadsContainerRef.current.style.minHeight = '111.12vh';
       }
       
-      // Ajustar tamanhos de tabelas e containers
-      const containers = document.querySelectorAll('.p-6, .space-y-6');
+      // Ajustar o container principal
+      const containers = document.querySelectorAll('.p-6.space-y-6');
       containers.forEach((container: Element) => {
         const element = container as HTMLElement;
         element.style.minHeight = 'calc(111.12vh - 57px)';
+        element.style.paddingBottom = '40px';
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
       });
+      
+      // Ajustar largura da tabela
+      const tables = document.querySelectorAll('.rounded-md.border');
+      tables.forEach((table: Element) => {
+        const element = table as HTMLElement;
+        element.style.width = '100%';
+        element.style.maxWidth = '100%';
+        element.style.maxHeight = 'calc(111.12vh - 350px)';
+        element.style.overflow = 'auto';
+      });
+      
+      // Fixar o cabeçalho da tabela
+      const headers = document.querySelectorAll('thead');
+      headers.forEach((header: Element) => {
+        const element = header as HTMLElement;
+        element.style.position = 'sticky';
+        element.style.top = '0';
+        element.style.backgroundColor = 'white';
+        element.style.zIndex = '10';
+      });
+      
+      // O container final (onde está a tabela) deve crescer para preencher o espaço
+      const tableContainer = document.querySelector('.p-6.space-y-6 > div:last-child');
+      if (tableContainer) {
+        const element = tableContainer as HTMLElement;
+        element.style.flex = '1';
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
+      }
+      
+      // Garantir que o último elemento (tabela) ocupe todo o espaço disponível
+      const spaceY6LastChild = document.querySelector('.space-y-6 > div:last-child');
+      if (spaceY6LastChild) {
+        const element = spaceY6LastChild as HTMLElement;
+        element.style.flex = '1';
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
+      }
     };
     
     // Executar após um pequeno delay para garantir que o DOM esteja pronto
     setTimeout(applySpecificFixes, 100);
     // Executar também depois de 500ms para maior garantia
     setTimeout(applySpecificFixes, 500);
+    // E uma última verificação após 1s para casos em que o DOM leva mais tempo para renderizar
+    setTimeout(applySpecificFixes, 1000);
     
     // Limpar ao desmontar
     return () => {
@@ -1238,8 +1321,8 @@ const Leads = () => {
         </Button>
       </header>
 
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="p-6 space-y-6 flex-1 flex flex-col">
+        <div className="flex items-center justify-between flex-shrink-0">
           <div>
             <h1 className="text-2xl font-bold">Leads Capturados</h1>
             <p className="text-muted-foreground">
@@ -1278,11 +1361,13 @@ const Leads = () => {
           </Button>
         </div>
 
-        {renderMetricsCards()}
+        <div className="grid grid-cols-4 gap-4 flex-shrink-0 mb-6">
+          {renderMetricsCards()}
+        </div>
 
         {/* Tracking Table Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
+        <div className="space-y-4 flex-1 flex flex-col">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <Button
               variant={selectedPeriod === 'all' ? 'default' : 'outline'}
               className={selectedPeriod === 'all' ? 'bg-gradient-to-r from-blue-700 to-purple-700 hover:from-blue-800 hover:to-purple-800 text-white' : ''}
@@ -1325,7 +1410,7 @@ const Leads = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <div className="flex-1">
               <div className="relative max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1342,7 +1427,7 @@ const Leads = () => {
           </div>
 
           {/* Aviso sobre os tooltips de taxa de interação */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center gap-3 text-blue-700">
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center gap-3 text-blue-700 flex-shrink-0">
             <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
@@ -1351,9 +1436,9 @@ const Leads = () => {
             </p>
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-auto flex-1" style={{ maxHeight: 'calc(111.12vh - 350px)' }}>
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-white">
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox />
