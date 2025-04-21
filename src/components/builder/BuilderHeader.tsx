@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -65,6 +65,14 @@ const BuilderHeader = ({
             >
               <SettingsIcon className="h-3.5 w-3.5 mr-1.5" />
               Configurações
+            </TabsTrigger>
+            <TabsTrigger 
+              value="leads" 
+              className="text-xs px-3 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-transparent data-[state=active]:bg-clip-text"
+              onClick={() => navigate(`/leads/${funnelId}`)}
+            >
+              <Users className="h-3.5 w-3.5 mr-1.5" />
+              Leads
             </TabsTrigger>
           </TabsList>
         </Tabs>
