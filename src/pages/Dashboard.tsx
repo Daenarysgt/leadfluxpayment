@@ -214,31 +214,78 @@ const Dashboard = () => {
           })
       );
       
-      const funnelMetrics = await Promise.all(metricsPromises);
+      // Carregar métricas de leads para cada funil para calcular conversão corretamente
+      const leadsPromises = funnels.map(funnel => 
+        accessService.getFunnelLeadsWithInteractions(funnel.id)
+          .catch(error => {
+            console.error(`Error loading leads for funnel ${funnel.id}:`, error);
+            return [];
+          })
+      );
       
-      // Calcular totais
-      const totals = funnelMetrics.reduce((acc, metrics) => {
-        // Converter as taxas de volta para números absolutos
-        const completions = Math.round((metrics.completion_rate * metrics.total_sessions) / 100);
-        const interactions = Math.round((metrics.interaction_rate * metrics.total_sessions) / 100);
+      // Carregar métricas de etapas para cada funil
+      const stepMetricsPromises = funnels.map(funnel => 
+        accessService.getFunnelStepMetrics(funnel.id)
+          .catch(error => {
+            console.error(`Error loading step metrics for funnel ${funnel.id}:`, error);
+            return [];
+          })
+      );
+      
+      // Aguardar todas as promessas
+      const [funnelMetrics, allLeads, allStepMetrics] = await Promise.all([
+        Promise.all(metricsPromises),
+        Promise.all(leadsPromises),
+        Promise.all(stepMetricsPromises)
+      ]);
+      
+      // Dados totais para todos os funis
+      let totalSessions = 0;
+      let totalConversions = 0;
+      let totalInteractions = 0;
+      
+      // Para cada funil, calcular métricas com o método mais preciso
+      funnels.forEach((funnel, index) => {
+        const metrics = funnelMetrics[index];
+        const leads = allLeads[index];
+        const stepMetrics = allStepMetrics[index];
         
-        return {
-          totalSessions: acc.totalSessions + metrics.total_sessions,
-          totalCompletions: acc.totalCompletions + completions,
-          totalInteractions: acc.totalInteractions + interactions
-        };
-      }, {
-        totalSessions: 0,
-        totalCompletions: 0,
-        totalInteractions: 0
+        // Adicionar sessões ao total
+        totalSessions += metrics.total_sessions;
+        
+        // Calcular conversões usando a lógica da página Leads quando possível
+        if (leads.length > 0 && stepMetrics.length > 0) {
+          // Encontrar a última etapa do funil
+          const lastStepNumber = Math.max(...stepMetrics.map(step => step.stepNumber));
+          
+          // Contar leads que chegaram à última etapa
+          const completedLeads = leads.filter(lead => 
+            Object.keys(lead.interactions).some(key => parseInt(key) === lastStepNumber)
+          ).length;
+          
+          totalConversions += completedLeads;
+        } else {
+          // Fallback: usar a taxa fornecida pelo backend
+          totalConversions += Math.round((metrics.completion_rate * metrics.total_sessions) / 100);
+        }
+        
+        // Contar interações
+        if (leads.length > 0) {
+          // Número de leads com pelo menos uma interação
+          const interactingLeads = leads.filter(lead => Object.keys(lead.interactions).length > 0).length;
+          totalInteractions += interactingLeads;
+        } else {
+          // Fallback: usar a taxa fornecida pelo backend
+          totalInteractions += Math.round((metrics.interaction_rate * metrics.total_sessions) / 100);
+        }
       });
       
       // Calcular as taxas globais
       setMetrics({
         totalFunnels: funnels.length,
-        totalSessions: totals.totalSessions,
-        completionRate: totals.totalSessions > 0 ? (totals.totalCompletions / totals.totalSessions) * 100 : 0,
-        interactionRate: totals.totalSessions > 0 ? (totals.totalInteractions / totals.totalSessions) * 100 : 0
+        totalSessions: totalSessions,
+        completionRate: totalSessions > 0 ? (totalConversions / totalSessions) * 100 : 0,
+        interactionRate: totalSessions > 0 ? (totalInteractions / totalSessions) * 100 : 0
       });
     } catch (error) {
       console.error('Error loading metrics:', error);
@@ -594,7 +641,7 @@ const Dashboard = () => {
 
           <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-green-50/50 border-green-100/50 rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Conclusão</CardTitle>
+              <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
               <div className="p-2 rounded-full bg-green-100/30 group-hover:bg-green-100 transition-colors">
                 <CheckCircleIcon className="h-4 w-4 text-green-600 group-hover:text-green-700 transition-colors" />
               </div>
@@ -611,6 +658,9 @@ const Dashboard = () => {
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500 font-medium">Atualizado</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span className="text-xs">Percentual de visitantes que chegam até a última etapa do funil</span>
                   </div>
                 </>
               )}
@@ -636,6 +686,9 @@ const Dashboard = () => {
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
                     <span className="text-green-500 font-medium">Atualizado</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <span className="text-xs">Percentual de visitantes que interagem com pelo menos uma etapa</span>
                   </div>
                 </>
               )}
