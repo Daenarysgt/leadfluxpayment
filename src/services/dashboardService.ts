@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 export const dashboardService = {
   /**
    * Obtém métricas para os cards do dashboard
-   * Usando uma função SQL otimizada que calcula todas as métricas de uma vez
+   * Usando funções SQL otimizadas para cada métrica
    */
   async getDashboardCardMetrics(): Promise<{
     total_funnels: number;
@@ -17,38 +17,48 @@ export const dashboardService = {
     try {
       console.log('Getting dashboard card metrics');
       
-      const { data, error } = await supabase
-        .rpc('get_dashboard_card_metrics');
-
-      if (error) {
-        console.error('Error getting dashboard card metrics:', error);
-        return {
-          total_funnels: 0,
-          total_sessions: 0,
-          completion_rate: 0,
-          interaction_rate: 0
-        };
+      // Chamar funções individualmente para facilitar a depuração
+      const [totalFunnelsResult, totalSessionsResult, conversionRateResult, interactionRateResult] = await Promise.all([
+        supabase.rpc('get_dashboard_total_funnels'),
+        supabase.rpc('get_dashboard_total_sessions'),
+        supabase.rpc('get_dashboard_conversion_rate'),
+        supabase.rpc('get_dashboard_interaction_rate')
+      ]);
+      
+      // Log detalhado de cada métrica para facilitar a depuração
+      console.log('Total funnels result:', totalFunnelsResult);
+      console.log('Total sessions result:', totalSessionsResult);
+      console.log('Conversion rate result:', conversionRateResult);
+      console.log('Interaction rate result:', interactionRateResult);
+      
+      // Verificar erros individuais
+      if (totalFunnelsResult.error) {
+        console.error('Error getting total funnels:', totalFunnelsResult.error);
       }
-
-      if (!data || data.length === 0) {
-        console.log('No dashboard metrics found');
-        return {
-          total_funnels: 0,
-          total_sessions: 0,
-          completion_rate: 0,
-          interaction_rate: 0
-        };
+      
+      if (totalSessionsResult.error) {
+        console.error('Error getting total sessions:', totalSessionsResult.error);
       }
-
-      const metrics = data[0];
-      console.log('Dashboard card metrics retrieved:', metrics);
-
-      return {
-        total_funnels: metrics.total_funnels || 0,
-        total_sessions: metrics.total_sessions || 0,
-        completion_rate: metrics.completion_rate || 0,
-        interaction_rate: metrics.interaction_rate || 0
+      
+      if (conversionRateResult.error) {
+        console.error('Error getting conversion rate:', conversionRateResult.error);
+      }
+      
+      if (interactionRateResult.error) {
+        console.error('Error getting interaction rate:', interactionRateResult.error);
+      }
+      
+      // Construir o objeto de métricas
+      const metrics = {
+        total_funnels: totalFunnelsResult.data || 0,
+        total_sessions: totalSessionsResult.data || 0,
+        completion_rate: conversionRateResult.data || 0,
+        interaction_rate: interactionRateResult.data || 0
       };
+      
+      console.log('Dashboard card metrics retrieved:', metrics);
+      
+      return metrics;
     } catch (error) {
       console.error('Unexpected error getting dashboard card metrics:', error);
       return {
