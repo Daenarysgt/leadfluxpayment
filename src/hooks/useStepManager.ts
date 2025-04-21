@@ -8,9 +8,7 @@ export const useStepManager = () => {
     currentStep,
     setCurrentStep,
     addStep,
-    deleteStep,
-    duplicateStep,
-    reorderSteps
+    deleteStep
   } = useStore();
   
   const { toast } = useToast();
@@ -140,88 +138,12 @@ export const useStepManager = () => {
     });
   }, [currentFunnel, sortedSteps, deleteStep, toast]);
   
-  const handleDuplicateStep = useCallback((index: number, e: React.MouseEvent) => {
-    // Garantir que o evento não se propague
-    e.stopPropagation();
-    
-    if (!currentFunnel) return;
-    
-    // Obter o id do step a partir do índice na lista ordenada
-    const stepId = sortedSteps[index]?.id;
-    if (!stepId) return;
-    
-    // Encontrar o índice correspondente ao step na lista original
-    let stepIndex = currentFunnel.steps.findIndex(s => s.id === stepId);
-    if (stepIndex === -1) return;
-    
-    // Verificação de segurança para garantir que o índice seja válido
-    if (stepIndex < 0 || stepIndex >= currentFunnel.steps.length) {
-      console.error(`useStepManager - Índice inválido para duplicação: ${stepIndex}`);
-      return;
-    }
-    
-    // Chamar a função de duplicação
-    duplicateStep(stepIndex)
-      .then(() => {
-        // Mostrar notificação
-        toast({
-          title: `Etapa duplicada`,
-          description: "A etapa foi duplicada com todos os seus elementos.",
-        });
-      })
-      .catch(error => {
-        console.error("Erro ao duplicar etapa:", error);
-        toast({
-          title: "Erro ao duplicar etapa",
-          description: "Ocorreu um erro ao tentar duplicar esta etapa.",
-          variant: "destructive"
-        });
-      });
-  }, [currentFunnel, sortedSteps, duplicateStep, toast]);
-  
-  const handleReorderSteps = useCallback((sourceIndex: number, destinationIndex: number) => {
-    if (!currentFunnel) return;
-    
-    // Obter os índices reais com base na lista original (não ordenada)
-    const sourceStepId = sortedSteps[sourceIndex]?.id;
-    const destStepId = sortedSteps[destinationIndex]?.id;
-    
-    if (!sourceStepId || !destStepId) return;
-    
-    // Encontrar os índices correspondentes na lista original
-    const realSourceIndex = currentFunnel.steps.findIndex(s => s.id === sourceStepId);
-    const realDestIndex = currentFunnel.steps.findIndex(s => s.id === destStepId);
-    
-    if (realSourceIndex === -1 || realDestIndex === -1) return;
-    
-    console.log(`useStepManager - Reordenando etapa de ${sourceIndex} para ${destinationIndex} (índices reais: ${realSourceIndex} -> ${realDestIndex})`);
-    
-    // Chamar a função de reordenação com os índices reais
-    reorderSteps(realSourceIndex, realDestIndex)
-      .then(() => {
-        toast({
-          title: "Etapas reordenadas",
-          description: "A ordem das etapas foi atualizada com sucesso.",
-        });
-      })
-      .catch(error => {
-        console.error("Erro ao reordenar etapas:", error);
-        toast({
-          title: "Erro ao reordenar etapas",
-          description: "Ocorreu um erro ao tentar reordenar as etapas.",
-          variant: "destructive"
-        });
-      });
-  }, [currentFunnel, sortedSteps, reorderSteps, toast]);
-  
   return {
     currentFunnel,
     currentStep,
     handleAddStep,
     handleSelectStep,
     handleDeleteStep,
-    handleDuplicateStep,
-    handleReorderSteps,
     isChangingStepRef,
     sortedSteps
   };
