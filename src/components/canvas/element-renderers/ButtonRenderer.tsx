@@ -208,8 +208,14 @@ const ButtonRenderer = (props: ElementRendererProps) => {
                 // Marcar como conversão
                 await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
                 console.log("Conversão registrada com sucesso!");
+                
+                // Navegar novamente para a última etapa para manter consistência
+                console.log("Mantendo navegação na última etapa");
+                onStepChange(activeStep);
               } catch (error) {
                 console.error("Erro ao registrar conversão:", error);
+                // Mesmo com erro, manter na última etapa
+                onStepChange(activeStep);
               }
             } else if (activeStep < funnel.steps.length - 1) {
               console.log("Chamando onStepChange para avançar para a próxima etapa:", activeStep + 1);
@@ -250,8 +256,15 @@ const ButtonRenderer = (props: ElementRendererProps) => {
                   // Marcar como conversão
                   await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
                   console.log("Conversão registrada com sucesso (specific)!");
+                  
+                  // Navegar para o último passo mesmo assim
+                  console.log("Navegando para a última etapa:", stepIndex);
+                  onStepChange(stepIndex);
                 } catch (error) {
                   console.error("Erro ao registrar conversão (specific):", error);
+                  // Mesmo com erro, ainda navegar para o último passo
+                  console.log("Navegando para a última etapa mesmo com erro:", stepIndex);
+                  onStepChange(stepIndex);
                 }
               } else {
                 console.log("Executando navegação para o índice de etapa:", stepIndex);
