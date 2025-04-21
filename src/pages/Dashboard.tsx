@@ -258,6 +258,12 @@ const Dashboard = () => {
     try {
       setLoadingChartData(true);
       
+      // Resetar a inicialização dos dados para o período atual
+      setDataInitialized(prev => ({
+        ...prev,
+        [chartPeriod]: false
+      }));
+      
       // Buscar novos dados do backend
       const newData = await accessService.getHistoricalChartData(chartPeriod);
       
@@ -270,6 +276,12 @@ const Dashboard = () => {
       // Atualizar dados do gráfico
       setChartData(newData);
       
+      // Marcar como inicializado
+      setDataInitialized(prev => ({
+        ...prev,
+        [chartPeriod]: true
+      }));
+      
       // Exibir mensagem de sucesso
       toast.success('Dados do gráfico atualizados com sucesso!');
     } catch (error) {
@@ -279,6 +291,15 @@ const Dashboard = () => {
       setLoadingChartData(false);
     }
   };
+
+  // Adicionar efeito para resetar dataInitialized quando muda de período
+  useEffect(() => {
+    // Forçar o carregamento de novos dados ao mudar de período
+    setDataInitialized(prev => ({
+      ...prev,
+      [chartPeriod]: false
+    }));
+  }, [chartPeriod]);
 
   const handleOpenNewFunnelDialog = () => {
     if (!canCreateFunnel()) {
