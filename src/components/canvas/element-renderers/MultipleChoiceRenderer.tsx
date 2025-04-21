@@ -38,6 +38,12 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const optionFontSize = style.optionFontSize || 16;
   const descriptionFontSize = style.descriptionFontSize || 14;
   
+  // Função auxiliar para garantir nome da fonte corretamente formatado
+  const formatFontFamily = (font: string) => {
+    // Adicionar aspas apenas se o nome da fonte tiver espaço
+    return font.includes(' ') ? `"${font}"` : font;
+  };
+  
   // Obter configurações globais de tipografia (usadas apenas se não houver específicas)
   const globalHeadingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
   const globalBodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
@@ -295,7 +301,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Calcular o estilo para margem superior
   const containerStyle = {
     marginTop: marginTop !== undefined ? `${marginTop}px` : undefined,
-    fontFamily: fontFamily
+    fontFamily: formatFontFamily(fontFamily)
   };
 
   return (
@@ -306,7 +312,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             className="font-medium" 
             style={{
               fontSize: `${titleFontSize}px`,
-              fontFamily: fontFamily,
+              fontFamily: formatFontFamily(fontFamily),
               lineHeight: String(lineHeight),
               fontStyle,
               fontWeight,
@@ -322,7 +328,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             className="text-muted-foreground" 
             style={{
               fontSize: `${descriptionFontSize}px`,
-              fontFamily: fontFamily,
+              fontFamily: formatFontFamily(fontFamily),
               lineHeight: String(lineHeight),
               fontStyle,
               fontWeight,
@@ -340,7 +346,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             className="text-muted-foreground" 
             style={{
               fontSize: `${descriptionFontSize}px`,
-              fontFamily: fontFamily,
+              fontFamily: formatFontFamily(fontFamily),
               lineHeight: String(lineHeight),
               fontStyle,
               fontWeight,
@@ -365,7 +371,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
               borderRadius: `${borderRadiusValue}px`,
               transition: "all 0.2s ease",
-              fontFamily: fontFamily
+              fontFamily: formatFontFamily(fontFamily)
             };
             
             // Prepare the indicator element (circle or square)
@@ -440,7 +446,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                           fontWeight,
                           textDecoration,
                           textTransform,
-                          fontFamily: fontFamily
+                          fontFamily: formatFontFamily(fontFamily)
                         }}
                       >
                         {option.text}
@@ -455,7 +461,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                             fontWeight,
                             textDecoration,
                             textTransform,
-                            fontFamily: fontFamily
+                            fontFamily: formatFontFamily(fontFamily)
                           }}
                         >
                           {option.description}
@@ -486,7 +492,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
               color: selectedOptions.length > 0 ? "white" : "#a0a0a0",
               borderRadius: `${borderRadiusValue}px`,
-              fontFamily: fontFamily,
+              fontFamily: formatFontFamily(fontFamily),
               fontSize: `${optionFontSize}px`
             }}
             onClick={handleContinue}

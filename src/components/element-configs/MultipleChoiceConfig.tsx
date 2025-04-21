@@ -453,6 +453,12 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
   
+  // Função para formatar corretamente nomes de fontes
+  const formatFontFamily = (font: string) => {
+    // Adicionar aspas apenas se o nome da fonte tiver espaço
+    return font.includes(' ') ? `"${font}"` : font;
+  };
+  
   const handleOptionSelectedStyleChange = (optionId: string, property: string, value: string) => {
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
@@ -619,7 +625,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
             <SelectContent>
               {FONT_OPTIONS.map(font => (
                 <SelectItem key={font.value} value={font.value}>
-                  <span style={{ fontFamily: font.value }}>{font.label}</span>
+                  <span style={{ fontFamily: formatFontFamily(font.value) }}>{font.label}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -660,7 +666,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
           <div className="p-2 border rounded-md bg-gray-50 overflow-hidden whitespace-nowrap text-ellipsis">
             <span 
               style={{ 
-                fontFamily: fontFamily,
+                fontFamily: formatFontFamily(fontFamily),
                 fontSize: `${titleFontSize}px`
               }}
             >
@@ -703,7 +709,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
           <div className="p-2 border rounded-md bg-gray-50">
             <span 
               style={{ 
-                fontFamily: fontFamily,
+                fontFamily: formatFontFamily(fontFamily),
                 fontSize: `${optionFontSize}px`
               }}
             >
@@ -746,7 +752,7 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
           <div className="p-2 border rounded-md bg-gray-50 text-gray-500">
             <span 
               style={{ 
-                fontFamily: fontFamily,
+                fontFamily: formatFontFamily(fontFamily),
                 fontSize: `${descriptionFontSize}px`
               }}
             >
