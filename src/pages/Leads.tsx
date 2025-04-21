@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useStore } from "@/utils/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1057,114 +1057,211 @@ const Leads = () => {
     await loadAllData(true);
   };
 
-  // Adicionar um novo componente isolado para o card de Queda mais frequente
+  // Modificar o componente DropoffRateCard para detectar dinamicamente o número máximo de etapas
   const DropoffRateCard = () => {
     const [dropoffData, setDropoffData] = useState({
       highestDropoffStep: 0,
       highestDropoffRate: 0,
       stepName: '',
-      isLoading: true
+      isLoading: true,
+      hasData: false
     });
     
-    useEffect(() => {
-      // Função isolada para calcular a taxa de abandono por etapa
-      const calculateDropoffRates = async () => {
-        try {
-          if (!currentFunnel?.id) return;
-          
+    // Usar useCallback para evitar recriações desnecessárias da função
+    const calculateDropoffRates = useCallback(async () => {
+      try {
+        if (!currentFunnel?.id) return;
+        
+        // Não mudar para loading se já temos dados, evita piscar durante atualizações
+        if (!dropoffData.hasData) {
           setDropoffData(prev => ({ ...prev, isLoading: true }));
-          
-          // Buscar todas as interações para contar usuários por etapa
-          const { data: interactions, error: interactionError } = await supabase
-            .from('funnel_step_interactions')
-            .select('session_id, step_number')
-            .eq('funnel_id', currentFunnel.id);
-          
-          if (interactionError) throw interactionError;
-          
-          // Buscar o número total de passos no funil
-          const { data: stepsData, error: stepsError } = await supabase
-            .from('steps')
-            .select('id, step_number')
-            .eq('funnel_id', currentFunnel.id);
-          
-          if (stepsError) throw stepsError;
-          
-          // Agrupar interações por etapa e contar usuários únicos
-          const stepUsers = {};
-          interactions?.forEach(interaction => {
-            const step = interaction.step_number;
-            if (!stepUsers[step]) {
-              stepUsers[step] = new Set();
-            }
-            stepUsers[step].add(interaction.session_id);
+        }
+        
+        // Buscar todas as interações para contar usuários por etapa
+        const { data: interactions, error: interactionError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id, step_number')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (interactionError) throw interactionError;
+        
+        // Buscar todas as sessões para contar total
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('funnel_access_logs')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (sessionsError) throw sessionsError;
+        
+        // Se não houver interações suficientes, não podemos calcular quedas
+        if (!interactions || interactions.length === 0) {
+          setDropoffData({
+            highestDropoffStep: 0,
+            highestDropoffRate: 0,
+            stepName: 'Sem dados suficientes',
+            isLoading: false,
+            hasData: true
           });
+          return;
+        }
+        
+        // Determinar dinamicamente o número máximo de etapas com base nas interações
+        const maxStepNumber = interactions.reduce((max, interaction) => 
+          Math.max(max, interaction.step_number), 0);
+        
+        console.log('Número máximo de etapas detectado:', maxStepNumber);
+        
+        // Contagem de sessões por etapa usando uma abordagem mais simples
+        const stepCounts: { step: number; count: number; name: string }[] = [];
+        
+        // Inicializar contagens para cada etapa (dinamicamente)
+        const sessionsByStep: Record<number, string[]> = {};
+        
+        // Primeiro, inicializar com base no número máximo de etapas detectado
+        for (let i = 1; i <= maxStepNumber; i++) {
+          sessionsByStep[i] = [];
+        }
+        
+        // Também buscar informações das etapas para nomes corretos
+        const { data: stepsData, error: stepsError } = await supabase
+          .from('steps')
+          .select('id, step_number, title')
+          .eq('funnel_id', currentFunnel.id)
+          .order('step_number', { ascending: true });
+        
+        if (stepsError) {
+          console.error('Erro ao buscar informações das etapas:', stepsError);
+        }
+        
+        // Mapear nomes das etapas a partir dos dados do banco
+        const dynamicStepNames: Record<number, string> = {};
+        stepsData?.forEach(step => {
+          if (step.step_number) {
+            dynamicStepNames[step.step_number] = step.title || `Etapa ${step.step_number}`;
+          }
+        });
+        
+        // Contar sessões únicas por etapa
+        interactions.forEach(interaction => {
+          const step = interaction.step_number;
+          const sessionId = interaction.session_id;
           
-          // Converter para contagens
-          const stepCounts = Object.keys(stepUsers).sort((a, b) => parseInt(a) - parseInt(b)).map(step => ({
-            step: parseInt(step),
-            count: stepUsers[step].size
-          }));
+          if (!sessionsByStep[step]) {
+            sessionsByStep[step] = [];
+          }
           
-          console.log('Contagem de usuários por etapa:', stepCounts);
+          if (!sessionsByStep[step].includes(sessionId)) {
+            sessionsByStep[step].push(sessionId);
+          }
+        });
+        
+        // Converter para o formato que precisamos
+        for (let step = 1; step <= maxStepNumber; step++) {
+          if (sessionsByStep[step]) {
+            // Usar nomes de etapas de várias fontes, priorizando dados do banco
+            const stepName = dynamicStepNames[step] || stepNames[step] || `Etapa ${step}`;
+            stepCounts.push({
+              step,
+              count: sessionsByStep[step].length,
+              name: stepName
+            });
+          }
+        }
+        
+        // Ordenar por número da etapa
+        stepCounts.sort((a, b) => a.step - b.step);
+        
+        console.log('Contagem de usuários por etapa (dinâmica):', stepCounts);
+        
+        // Contar sessões que não iniciaram o funil
+        const totalSessions = sessions?.length || 0;
+        const startedSessions = sessionsByStep[1]?.length || 0;
+        const notStartedCount = totalSessions - startedSessions;
+        
+        if (notStartedCount > 0) {
+          // Adicionar "Etapa 0" para sessões que não iniciaram
+          stepCounts.unshift({
+            step: 0,
+            count: notStartedCount,
+            name: "Não iniciaram"
+          });
+        }
+        
+        // Calcular taxas de abandono entre etapas
+        const dropoffRates = [];
+        
+        for (let i = 0; i < stepCounts.length - 1; i++) {
+          const currentStep = stepCounts[i];
+          const nextStep = stepCounts[i + 1];
           
-          // Calcular taxas de abandono entre etapas
-          const dropoffRates = [];
-          for (let i = 0; i < stepCounts.length - 1; i++) {
-            const currentStep = stepCounts[i];
-            const nextStep = stepCounts[i + 1];
-            
-            if (currentStep.count === 0) continue;
-            
-            const dropoffCount = currentStep.count - nextStep.count;
-            const dropoffRate = (dropoffCount / currentStep.count) * 100;
-            
+          if (currentStep.count === 0) continue;
+          
+          const dropoffCount = currentStep.count - nextStep.count;
+          const dropoffRate = (dropoffCount / currentStep.count) * 100;
+          
+          if (dropoffCount > 0) { // Registrar apenas quedas reais
             dropoffRates.push({
               step: currentStep.step,
+              stepName: currentStep.name,
               dropoffRate: dropoffRate,
               users: {
                 current: currentStep.count,
-                next: nextStep.count
+                next: nextStep.count,
+                diff: dropoffCount
               }
             });
           }
-          
-          console.log('Taxas de abandono por etapa:', dropoffRates);
-          
-          // Encontrar a etapa com maior taxa de abandono
-          if (dropoffRates.length === 0) {
-            setDropoffData({
-              highestDropoffStep: 0,
-              highestDropoffRate: 0,
-              stepName: 'Nenhuma etapa',
-              isLoading: false
-            });
-            return;
-          }
-          
-          const highestDropoff = dropoffRates.reduce((max, current) => 
-            current.dropoffRate > max.dropoffRate ? current : max, dropoffRates[0]);
-          
-          // Obter o nome da etapa com maior abandono
-          const stepName = stepNames[highestDropoff.step] || `Etapa ${highestDropoff.step}`;
-          
+        }
+        
+        console.log('Taxas de abandono por etapa (dinamicamente calculadas):', dropoffRates);
+        
+        // Encontrar a etapa com maior taxa de abandono
+        if (dropoffRates.length === 0) {
+          setDropoffData({
+            highestDropoffStep: 0,
+            highestDropoffRate: 0,
+            stepName: 'Sem quedas detectadas',
+            isLoading: false,
+            hasData: true
+          });
+          return;
+        }
+        
+        const highestDropoff = dropoffRates.reduce((max, current) => 
+          current.dropoffRate > max.dropoffRate ? current : max, dropoffRates[0]);
+        
+        // Atraso mínimo para evitar piscar durante atualizações frequentes
+        setTimeout(() => {
           setDropoffData({
             highestDropoffStep: highestDropoff.step,
             highestDropoffRate: highestDropoff.dropoffRate,
-            stepName: stepName,
-            isLoading: false
+            stepName: highestDropoff.stepName,
+            isLoading: false,
+            hasData: true
           });
-        } catch (error) {
-          console.error('Erro ao calcular taxas de abandono:', error);
-          setDropoffData(prev => ({ 
-            ...prev, 
-            isLoading: false 
-          }));
-        }
-      };
-      
+        }, 300);
+        
+      } catch (error) {
+        console.error('Erro ao calcular taxas de abandono:', error);
+        setDropoffData(prev => ({ 
+          ...prev, 
+          isLoading: false,
+          hasData: true,
+          stepName: 'Erro ao calcular'
+        }));
+      }
+    }, [currentFunnel?.id, stepNames, dropoffData.hasData]);
+    
+    useEffect(() => {
       calculateDropoffRates();
-    }, [currentFunnel?.id, lastUpdated, stepNames]); // Recalcular quando o funil mudar ou os dados forem atualizados
+      
+      // Configurar um intervalo para atualizar periodicamente, mas não com frequência demais
+      const intervalId = setInterval(() => {
+        calculateDropoffRates();
+      }, 15000); // Atualiza a cada 15 segundos
+      
+      return () => clearInterval(intervalId);
+    }, [currentFunnel?.id, lastUpdated, stepNames, calculateDropoffRates]);
     
     return (
       <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
@@ -1175,7 +1272,7 @@ const Leads = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {dropoffData.isLoading ? (
+          {dropoffData.isLoading && !dropoffData.hasData ? (
             <div className="animate-pulse">
               <div className="h-8 w-16 bg-gray-200 rounded"></div>
               <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
@@ -1191,7 +1288,7 @@ const Leads = () => {
                     </span>
                   </>
                 ) : (
-                  "Nenhuma queda significativa"
+                  "Sem quedas significativas"
                 )}
               </p>
               <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
@@ -1205,97 +1302,117 @@ const Leads = () => {
     );
   };
 
-  // Agora alterar a função renderMetricsCards para incluir o novo card e usar um grid de 5 colunas
-  const renderMetricsCards = () => {
-    // Componente isolado para calcular a taxa de interação sem afetar outras partes
-    const InteractionRateCard = () => {
-      const [interactionRate, setInteractionRate] = useState({
-        value: 0,
-        isLoading: true
-      });
-      
-      useEffect(() => {
-        // Função isolada para calcular a taxa de interação só para este card
-        const calculateInteractionRate = async () => {
-          try {
-            if (!currentFunnel?.id) return;
-            
-            setInteractionRate(prev => ({ ...prev, isLoading: true }));
-            
-            // Buscar o total de sessões
-            const { count: totalSessions, error: totalError } = await supabase
-              .from('funnel_access_logs')
-              .select('session_id', { count: 'exact', head: true })
-              .eq('funnel_id', currentFunnel.id);
-            
-            if (totalError) throw totalError;
-            
-            // Buscar sessões que interagiram
-            const { data: interactions, error: interactionError } = await supabase
-              .from('funnel_step_interactions')
-              .select('session_id')
-              .eq('funnel_id', currentFunnel.id);
-            
-            if (interactionError) throw interactionError;
-            
-            // Contar sessões únicas que interagiram
-            const uniqueInteractions = new Set();
-            interactions?.forEach(item => uniqueInteractions.add(item.session_id));
-            
-            // Calcular a taxa
-            const rate = totalSessions > 0 
-              ? (uniqueInteractions.size / totalSessions) * 100 
-              : 0;
-            
-            console.log('Taxa de interação calculada:', {
-              totalSessions,
-              interactingSessions: uniqueInteractions.size,
-              rate
-            });
-            
-            setInteractionRate({
-              value: rate,
-              isLoading: false
-            });
-          } catch (error) {
-            console.error('Erro ao calcular taxa de interação:', error);
-            setInteractionRate(prev => ({ ...prev, isLoading: false }));
-          }
-        };
+  // Modificar o componente InteractionRateCard para melhorar sincronização e evitar piscar
+  const InteractionRateCard = () => {
+    const [interactionRate, setInteractionRate] = useState({
+      value: 0,
+      isLoading: true,
+      hasData: false
+    });
+    
+    // Usar useCallback para evitar recriações desnecessárias da função
+    const calculateInteractionRate = useCallback(async () => {
+      try {
+        if (!currentFunnel?.id) return;
         
-        calculateInteractionRate();
-      }, [currentFunnel?.id, lastUpdated]); // Recalcular quando o funil mudar ou os dados forem atualizados
+        // Não mudar para loading se já temos dados, evita piscar durante atualizações
+        if (!interactionRate.hasData) {
+          setInteractionRate(prev => ({ ...prev, isLoading: true }));
+        }
+        
+        // Buscar o total de sessões
+        const { count: totalSessions, error: totalError } = await supabase
+          .from('funnel_access_logs')
+          .select('session_id', { count: 'exact', head: true })
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (totalError) throw totalError;
+        
+        // Buscar sessões que interagiram
+        const { data: interactions, error: interactionError } = await supabase
+          .from('funnel_step_interactions')
+          .select('session_id')
+          .eq('funnel_id', currentFunnel.id);
+        
+        if (interactionError) throw interactionError;
+        
+        // Contar sessões únicas que interagiram
+        const uniqueInteractions = new Set();
+        interactions?.forEach(item => uniqueInteractions.add(item.session_id));
+        
+        // Calcular a taxa
+        const rate = totalSessions > 0 
+          ? (uniqueInteractions.size / totalSessions) * 100 
+          : 0;
+        
+        console.log('Taxa de interação calculada:', {
+          totalSessions,
+          interactingSessions: uniqueInteractions.size,
+          rate
+        });
+        
+        // Atraso mínimo para evitar piscar durante atualizações frequentes
+        setTimeout(() => {
+          setInteractionRate({
+            value: rate,
+            isLoading: false,
+            hasData: true
+          });
+        }, 300);
+        
+      } catch (error) {
+        console.error('Erro ao calcular taxa de interação:', error);
+        setInteractionRate(prev => ({ 
+          ...prev, 
+          isLoading: false,
+          hasData: true
+        }));
+      }
+    }, [currentFunnel?.id, interactionRate.hasData]);
+    
+    useEffect(() => {
+      calculateInteractionRate();
       
-      return (
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MousePointerClick className="h-5 w-5 text-blue-600" />
-              <span>Taxa de Interação</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {interactionRate.isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-bold text-gray-800">
-                  {interactionRate.value.toFixed(1)}%
-                </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                  Visitantes que interagiram com o funil
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      );
-    };
+      // Configurar um intervalo para atualizar periodicamente, mas não com frequência demais
+      const intervalId = setInterval(() => {
+        calculateInteractionRate();
+      }, 15000); // Atualiza a cada 15 segundos
+      
+      return () => clearInterval(intervalId);
+    }, [currentFunnel?.id, lastUpdated, calculateInteractionRate]);
+    
+    return (
+      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MousePointerClick className="h-5 w-5 text-blue-600" />
+            <span>Taxa de Interação</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {interactionRate.isLoading && !interactionRate.hasData ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <p className="text-3xl font-bold text-gray-800">
+                {interactionRate.value.toFixed(1)}%
+              </p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
+                Visitantes que interagiram com o funil
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
+  // Modificar a função renderMetricsCards para usar os componentes atualizados
+  const renderMetricsCards = () => {
     return (
       <div className="grid grid-cols-5 gap-4">
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
@@ -1355,10 +1472,8 @@ const Leads = () => {
           </CardContent>
         </Card>
 
-        {/* Usar o componente isolado para a taxa de interação */}
+        {/* Usar os componentes isolados melhorados */}
         <InteractionRateCard />
-        
-        {/* Adicionar o novo card de Queda mais frequente */}
         <DropoffRateCard />
 
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
