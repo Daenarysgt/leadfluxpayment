@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 // Lista de fontes disponíveis
 const FONT_OPTIONS = [
@@ -53,6 +54,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
   const [titleFontSize, setTitleFontSize] = useState(element.content?.style?.titleFontSize || 20);
   const [optionFontSize, setOptionFontSize] = useState(element.content?.style?.optionFontSize || 16);
   const [descriptionFontSize, setDescriptionFontSize] = useState(element.content?.style?.descriptionFontSize || 14);
+  
+  // Novo estado para controlar o negrito das opções
+  const [optionsBold, setOptionsBold] = useState(element.content?.style?.optionsBold || false);
 
   // Get steps from the current funnel
   const steps = currentFunnel?.steps.map(step => ({
@@ -105,6 +109,9 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     setTitleFontSize(element.content?.style?.titleFontSize || 20);
     setOptionFontSize(element.content?.style?.optionFontSize || 16);
     setDescriptionFontSize(element.content?.style?.descriptionFontSize || 14);
+    
+    // Obter configuração de negrito para opções
+    setOptionsBold(element.content?.style?.optionsBold || false);
   }, [element]);
 
   // These ensure our handlers apply the changes immediately
@@ -578,6 +585,21 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  // Nova função para atualizar configuração de negrito das opções
+  const handleOptionsBoldChange = (value: boolean) => {
+    setOptionsBold(value);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        style: {
+          ...(element.content.style || {}),
+          optionsBold: value
+        }
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <TitleInput 
@@ -710,12 +732,23 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
             <span 
               style={{ 
                 fontFamily: formatFontFamily(fontFamily),
-                fontSize: `${optionFontSize}px`
+                fontSize: `${optionFontSize}px`,
+                fontWeight: optionsBold ? 'bold' : 'normal'
               }}
             >
               Exemplo de opção
             </span>
           </div>
+        </div>
+        
+        {/* Negrito para Opções */}
+        <div className="flex items-center justify-between space-y-0 pt-2">
+          <Label htmlFor="options-bold">Texto das opções em negrito</Label>
+          <Switch
+            id="options-bold"
+            checked={optionsBold}
+            onCheckedChange={handleOptionsBoldChange}
+          />
         </div>
         
         {/* Tamanho da Fonte das Descrições */}

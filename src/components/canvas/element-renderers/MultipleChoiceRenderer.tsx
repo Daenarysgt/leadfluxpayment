@@ -38,6 +38,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const optionFontSize = style.optionFontSize || 16;
   const descriptionFontSize = style.descriptionFontSize || 14;
   
+  // Obter configuração de negrito para opções
+  const optionsBold = style.optionsBold || false;
+  
   // Função auxiliar para garantir nome da fonte corretamente formatado
   const formatFontFamily = (font: string) => {
     // Adicionar aspas apenas se o nome da fonte tiver espaço
@@ -443,7 +446,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                           fontSize: `${optionFontSize}px`,
                           lineHeight: String(lineHeight),
                           fontStyle,
-                          fontWeight,
+                          fontWeight: optionsBold ? 'bold' : fontWeight,
                           textDecoration,
                           textTransform,
                           fontFamily: formatFontFamily(fontFamily)
