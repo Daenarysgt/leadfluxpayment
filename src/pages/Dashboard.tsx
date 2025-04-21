@@ -172,6 +172,9 @@ const Dashboard = () => {
       // Buscar dados usando o novo serviço otimizado
       const data = await dashboardService.getDashboardChartData(chartPeriod);
       
+      // Log detalhado para debug
+      console.log(`Dados do gráfico recebidos para ${chartPeriod}:`, JSON.stringify(data, null, 2));
+      
       // Verificar se temos dados válidos
       if (data.length > 0) {
         // Atualizar o estado de dados por período
@@ -212,6 +215,9 @@ const Dashboard = () => {
       
       // Usar o novo serviço otimizado para obter métricas dos cards
       const cardMetrics = await dashboardService.getDashboardCardMetrics();
+      
+      // Log detalhado para debug
+      console.log('Métricas dos cards recebidas:', JSON.stringify(cardMetrics, null, 2));
       
       // Atualizar o estado com as métricas obtidas diretamente do backend
       setMetrics({
