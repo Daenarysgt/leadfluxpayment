@@ -225,8 +225,8 @@ export const updateStepAction = (set: any, get: any) => (stepId: string, stepUpd
     };
     
     // Definir order_index apenas se tivermos o valor
-    if (updatedStep.position !== undefined) {
-      stepToUpdate.order_index = updatedStep.position;
+    if (updatedStep.order_index !== undefined) {
+      stepToUpdate.order_index = updatedStep.order_index;
     }
     
     console.log(`StepActions - Atualizando step ${stepId} com dados:`, JSON.stringify(stepToUpdate, null, 2));
@@ -549,7 +549,6 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         id: newStepId,
         title: duplicatedStep.title,
         funnel_id: currentFunnel.id,
-        position: duplicatedStep.position,
         order_index: duplicatedStep.order_index,
         created_at: formatDateForSupabase(),
         updated_at: formatDateForSupabase()
@@ -569,7 +568,7 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         .filter(step => step.id !== newStepId)
         .map(step => ({
           id: step.id,
-          position: step.position,
+          order_index: step.order_index,
           updated_at: formatDateForSupabase()
         }));
       
@@ -634,7 +633,7 @@ async function normalizeStepOrderIndexes(funnelId: string) {
     // Buscar todas as etapas do funil
     const { data: steps, error } = await supabase
       .from('steps')
-      .select('id, title, order_index, position')
+      .select('id, title, order_index')
       .eq('funnel_id', funnelId)
       .order('order_index');
     
@@ -647,20 +646,15 @@ async function normalizeStepOrderIndexes(funnelId: string) {
     if (!steps || steps.length === 0) return;
     
     console.log("Normalizando order_index das etapas:", 
-      steps.map(s => `${s.title} (${s.id}): order=${s.order_index}, pos=${s.position}`).join(', '));
+      steps.map(s => `${s.title} (${s.id}): order=${s.order_index}`).join(', '));
     
     // Ordenar as etapas primeiro para garantir consistência
     const sortedSteps = [...steps].sort((a, b) => {
       const orderA = a.order_index ?? 0;
       const orderB = b.order_index ?? 0;
       
-      // Se os order_index são iguais, ordenar por posição para consistência
+      // Se os order_index são iguais, ordenar por ID para consistência
       if (orderA === orderB) {
-        const posA = a.position ?? 0;
-        const posB = b.position ?? 0;
-        if (posA !== posB) {
-          return posA - posB;
-        }
         return a.id.localeCompare(b.id); // Última opção: ordenar por ID
       }
       
@@ -671,12 +665,11 @@ async function normalizeStepOrderIndexes(funnelId: string) {
     const updates = sortedSteps.map((step, index) => ({
       id: step.id,
       order_index: (index + 1) * 10, // Usar múltiplos de 10 para permitir inserções futuras
-      position: index, // Atualizar também a posição para refletir a ordem atual
       updated_at: formatDateForSupabase()
     }));
     
     console.log("Order_index normalizados:", 
-      updates.map(u => `${u.id}: order=${u.order_index}, pos=${u.position}`).join(', '));
+      updates.map(u => `${u.id}: order=${u.order_index}`).join(', '));
     
     // Atualizar todas as etapas com novos order_index
     const { error: updateError } = await supabase
@@ -774,7 +767,6 @@ export const reorderStepsAction = (set: any, get: any) => async (sourceIndex: nu
       const updates = updatedSteps.map(step => ({
         id: step.id,
         order_index: step.order_index,
-        position: step.position,
         updated_at: formatDateForSupabase()
       }));
       
