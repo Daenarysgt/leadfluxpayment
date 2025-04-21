@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StepNavigation from "./funnel-builder/StepNavigation";
@@ -16,7 +17,6 @@ const FunnelBuilder = () => {
     handleStepChange,
     handleAddStep,
     handleDeleteStep,
-    handleDuplicateStep,
     handleUpdateStepTitle,
     handleUpdateButtonText,
     handleAddQuestion,
@@ -70,7 +70,6 @@ const FunnelBuilder = () => {
               onStepChange={handleStepChange}
               onAddStep={handleAddStep}
               onDeleteStep={handleDeleteStep}
-              onDuplicateStep={handleDuplicateStep}
             />
             
             <StepSettings 

@@ -1,26 +1,11 @@
 import { useStore } from "@/utils/store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import StepItem from "./StepItem";
+import StepItem from "./sidebar/StepItem";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface StepItemProps {
-  step: {
-    id: string;
-    title: string;
-  };
-  index: number;
-  isActive: boolean;
-  onSelect: (index: number) => void;
-  onDelete: (index: number, e: React.MouseEvent) => void;
-  onEdit: (step: { id: string; title: string }, e: React.MouseEvent) => void;
-  onDuplicate: (index: number, e: React.MouseEvent) => void;
-}
 
 const StepsSidebar = () => {
-  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, duplicateStep, updateStep } = useStore();
-  const { toast } = useToast();
+  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep } = useStore();
 
   const handleStepClick = (index: number) => {
     setCurrentStep(index);
@@ -33,37 +18,8 @@ const StepsSidebar = () => {
 
   const handleStepEdit = (step: { id: string; title: string }, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Esta função não é mais necessária pois a edição ocorre diretamente no componente StepEditor
-    // que é renderizado quando isEditing é true no StepItem
-  };
-
-  const handleStepDuplicate = async (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    try {
-      // Primeiro mudar para o step que será duplicado
-      setCurrentStep(index);
-      
-      // Aguardar um momento para garantir que o state foi atualizado
-      setTimeout(async () => {
-        // Duplicar o step selecionado
-        const result = await duplicateStep();
-        
-        if (result) {
-          toast({
-            title: "Etapa duplicada",
-            description: `"${result.step.title}" foi criada com todo o seu conteúdo.`,
-          });
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Erro ao duplicar etapa:", error);
-      toast({
-        title: "Erro ao duplicar etapa",
-        description: "Ocorreu um problema ao duplicar a etapa. Por favor, tente novamente.",
-        variant: "destructive",
-      });
-    }
+    // Implementar edição do título do step
+    console.log('Editar step:', step);
   };
 
   const handleAddStep = () => {
@@ -89,7 +45,6 @@ const StepsSidebar = () => {
                 onSelect={handleStepClick}
                 onDelete={handleStepDelete}
                 onEdit={handleStepEdit}
-                onDuplicate={handleStepDuplicate}
               />
             ))}
           </div>

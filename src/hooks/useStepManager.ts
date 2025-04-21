@@ -8,8 +8,7 @@ export const useStepManager = () => {
     currentStep,
     setCurrentStep,
     addStep,
-    deleteStep,
-    duplicateStep
+    deleteStep
   } = useStore();
   
   const { toast } = useToast();
@@ -139,53 +138,12 @@ export const useStepManager = () => {
     });
   }, [currentFunnel, sortedSteps, deleteStep, toast]);
   
-  const handleDuplicateStep = useCallback(async (index: number, e: React.MouseEvent) => {
-    // Garantir que o evento não se propague
-    e.stopPropagation();
-    
-    if (!currentFunnel) return;
-    
-    // Obter o id do step a partir do índice na lista ordenada
-    const stepId = sortedSteps[index]?.id;
-    if (!stepId) return;
-    
-    // Encontrar o índice correspondente ao step na lista original
-    let stepIndex = currentFunnel.steps.findIndex(s => s.id === stepId);
-    if (stepIndex === -1) return;
-    
-    // Log para depurar
-    console.log(`useStepManager - Duplicando etapa no índice específico: ${stepIndex}`);
-    
-    try {
-      // Mudar para o step que será duplicado primeiro
-      setCurrentStep(stepIndex);
-      
-      // Duplicar o step selecionado
-      const result = await duplicateStep();
-      
-      if (result) {
-        toast({
-          title: "Etapa duplicada",
-          description: `"${result.step.title}" foi criada com todo o seu conteúdo.`,
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao duplicar etapa:", error);
-      toast({
-        title: "Erro ao duplicar etapa",
-        description: "Ocorreu um problema ao duplicar a etapa. Por favor, tente novamente.",
-        variant: "destructive",
-      });
-    }
-  }, [currentFunnel, sortedSteps, setCurrentStep, duplicateStep, toast]);
-  
   return {
     currentFunnel,
     currentStep,
     handleAddStep,
     handleSelectStep,
     handleDeleteStep,
-    handleDuplicateStep,
     isChangingStepRef,
     sortedSteps
   };
