@@ -446,26 +446,81 @@ const Leads = () => {
       }
       
       console.log("📊 Carregando métricas");
-      const funnelMetrics = await accessService.getFunnelMetrics(currentFunnel.id);
-      console.log("📊 Métricas retornadas:", funnelMetrics);
       
-      // Adicionar verificação para valores nulos ou indefinidos para evitar erros
-      const total = funnelMetrics?.total_sessions || 0;
-      const completion = funnelMetrics?.completion_rate || 0;
-      const interaction = funnelMetrics?.interaction_rate || 0;
+      // Obter todas as interações para o funil atual
+      const { data: interactions, error: interactionsError } = await supabase
+        .from('funnel_step_interactions')
+        .select('session_id, step_number')
+        .eq('funnel_id', currentFunnel.id);
+      
+      // Obter total de sessões
+      const { count: totalSessions, error: countError } = await supabase
+        .from('funnel_access_logs')
+        .select('session_id', { count: 'exact', head: true })
+        .eq('funnel_id', currentFunnel.id);
+      
+      // Obter total de passos no funil
+      const { data: stepsData, error: stepsError } = await supabase
+        .from('steps')
+        .select('id, step_number')
+        .eq('funnel_id', currentFunnel.id);
+      
+      if (interactionsError || countError || stepsError) {
+        console.error('Erro ao obter dados para métricas:', interactionsError || countError || stepsError);
+        throw new Error('Erro ao calcular métricas');
+      }
+      
+      // Calcular métricas
+      const totalSteps = stepsData?.length || 0;
+      const lastStepNumber = totalSteps > 0 ? Math.max(...stepsData.map(s => s.step_number)) : 0;
+      
+      // Agrupar interações por sessão e contar passos concluídos
+      const sessionSteps = {};
+      interactions?.forEach(interaction => {
+        if (!sessionSteps[interaction.session_id]) {
+          sessionSteps[interaction.session_id] = new Set();
+        }
+        sessionSteps[interaction.session_id].add(interaction.step_number);
+      });
+      
+      // Contar sessões que completaram o último passo
+      let completedSessions = 0;
+      let interactedSessions = 0;
+      
+      Object.keys(sessionSteps).forEach(sessionId => {
+        const stepsCompleted = sessionSteps[sessionId];
+        if (stepsCompleted.has(lastStepNumber)) {
+          completedSessions++;
+        }
+        if (stepsCompleted.size > 0) {
+          interactedSessions++;
+        }
+      });
+      
+      // Calcular taxas
+      const completionRate = totalSessions ? (completedSessions / totalSessions) * 100 : 0;
+      const interactionRate = totalSessions ? (interactedSessions / totalSessions) * 100 : 0;
+      
+      console.log("📊 Métricas calculadas manualmente:", {
+        totalSessions,
+        completedSessions,
+        interactedSessions,
+        completionRate,
+        interactionRate
+      });
       
       // Calcular leads de hoje baseado na taxa de interação
-      const todayLeads = Math.round((interaction * total) / 100);
+      const todayLeads = Math.round((interactionRate * totalSessions) / 100);
       
       const newMetrics = {
-        totalSessions: total,
-        completionRate: completion,
-        interactionRate: interaction,
-        todayLeads,
+        totalSessions: totalSessions || 0,
+        completionRate: completionRate || 0,
+        interactionRate: interactionRate || 0,
+        todayLeads: todayLeads || 0,
         loadingMetrics: false,
         mainSource: {
           name: selectedSource.name,
-          percentage: interaction
+          percentage: interactionRate || 0
         }
       };
       
@@ -481,14 +536,14 @@ const Leads = () => {
       
       // Usar valores anteriores ou fallbacks
       const fallbackMetrics = {
-        totalSessions: Math.max(10, metrics.totalSessions || 0),  // Usar valor anterior se disponível
-        completionRate: Math.max(5.5, metrics.completionRate || 0),
-        interactionRate: Math.max(8.2, metrics.interactionRate || 0),
-        todayLeads: Math.max(3, metrics.todayLeads || 0),
+        totalSessions: Math.max(1, metrics.totalSessions || 0),  // Usar valor anterior se disponível
+        completionRate: Math.max(0, metrics.completionRate || 0),
+        interactionRate: Math.max(0, metrics.interactionRate || 0),
+        todayLeads: Math.max(0, metrics.todayLeads || 0),
         loadingMetrics: false,
         mainSource: {
           name: selectedSource.name,
-          percentage: Math.max(8.2, metrics.mainSource.percentage || 0)
+          percentage: Math.max(0, metrics.mainSource.percentage || 0)
         }
       };
       
