@@ -13,12 +13,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
   
+  // Obter as configurações globais do funil, se disponíveis
+  const funnelSettings = element.previewProps?.funnel?.settings || {};
+  
   // Destructure configuration options with defaults
   const {
     allowMultipleSelection = false,
     indicatorType = "circle", // circle or square
     indicatorAlign = "left", // left or right
-    indicatorColor = "#8b5cf6", // Cor padrão roxa
+    indicatorColor = funnelSettings.primaryColor || "#8b5cf6", // Cor primária do funil ou padrão roxa
     indicatorIconColor = "#FFFFFF", // Cor padrão branca
     continueButtonText = "Continuar",
     helperText = "Selecione uma ou mais opções para avançar",
@@ -29,6 +32,21 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const style = content?.style || {};
   const marginTop = style.marginTop;
   
+  // Obter configurações globais de tipografia
+  const fontFamily = funnelSettings.fontFamily || 'Inter';
+  const headingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
+  const bodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
+  const lineHeight = funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5;
+  const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
+  const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
+  const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
+  const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
+  
+  // Obter configurações globais de layout
+  const borderRadiusValue = style.borderRadius !== undefined 
+    ? style.borderRadius 
+    : (funnelSettings.borderRadius ? parseInt(funnelSettings.borderRadius) : 8);
+
   // Reset selected options when element changes
   useEffect(() => {
     setSelectedOptions([]);
@@ -266,22 +284,60 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
 
   // Calcular o estilo para margem superior
   const containerStyle = {
-    marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
+    marginTop: marginTop !== undefined ? `${marginTop}px` : undefined,
+    fontFamily: fontFamily
   };
 
   return (
     <BaseElementRenderer {...props}>
       <div className="space-y-4" style={containerStyle}>
         {content.title && (
-          <h3 className="text-lg font-medium">{content.title}</h3>
+          <h3 
+            className="font-medium" 
+            style={{
+              fontSize: `${headingSize}px`,
+              fontFamily: fontFamily,
+              lineHeight: String(lineHeight),
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
+            }}
+          >
+            {content.title}
+          </h3>
         )}
         {content.description && (
-          <p className="text-sm text-muted-foreground">{content.description}</p>
+          <p 
+            className="text-muted-foreground" 
+            style={{
+              fontSize: `${bodySize}px`,
+              fontFamily: fontFamily,
+              lineHeight: String(lineHeight),
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
+            }}
+          >
+            {content.description}
+          </p>
         )}
         
         {/* Texto auxiliar para seleção múltipla (apenas se showHelperText for true) */}
         {allowMultipleSelection && showHelperText && helperText && (
-          <p className="text-sm text-muted-foreground">
+          <p 
+            className="text-muted-foreground" 
+            style={{
+              fontSize: `${bodySize - 2}px`,
+              fontFamily: fontFamily,
+              lineHeight: String(lineHeight),
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
+            }}
+          >
             {helperText}
           </p>
         )}
@@ -291,15 +347,15 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             // Prepare styles based on option configurations
             const optionStyle = option.style || {};
             const isSelected = selectedOptions.includes(option.id);
-            const borderRadius = content.style?.borderRadius || 8; // Default border radius
             
             // Inline styles for the option
             const styleObject = {
               backgroundColor: isSelected ? (optionStyle.selectedBackgroundColor || "#f5f3ff") : (optionStyle.backgroundColor || ""),
-              borderColor: isSelected ? (optionStyle.selectedBorderColor || "#8b5cf6") : (optionStyle.borderColor || ""),
+              borderColor: isSelected ? (optionStyle.selectedBorderColor || indicatorColor) : (optionStyle.borderColor || ""),
               color: isSelected ? (optionStyle.selectedTextColor || "#4c1d95") : (optionStyle.textColor || ""),
-              borderRadius: `${borderRadius}px`,
+              borderRadius: `${borderRadiusValue}px`,
               transition: "all 0.2s ease",
+              fontFamily: fontFamily
             };
             
             // Prepare the indicator element (circle or square)
@@ -365,9 +421,31 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                       <span className="mr-2 text-xl">{option.emoji}</span>
                     )}
                     <div>
-                      <span className="font-medium">{option.text}</span>
+                      <span 
+                        className="font-medium"
+                        style={{
+                          fontSize: `${bodySize}px`,
+                          lineHeight: String(lineHeight),
+                          fontStyle,
+                          fontWeight,
+                          textDecoration,
+                          textTransform
+                        }}
+                      >
+                        {option.text}
+                      </span>
                       {option.description && (
-                        <div className="text-sm text-muted-foreground mt-1">
+                        <div 
+                          className="text-muted-foreground mt-1"
+                          style={{
+                            fontSize: `${bodySize - 2}px`,
+                            lineHeight: String(lineHeight),
+                            fontStyle,
+                            fontWeight,
+                            textDecoration,
+                            textTransform
+                          }}
+                        >
                           {option.description}
                         </div>
                       )}
@@ -386,7 +464,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         {allowMultipleSelection && (
           <button 
             className={cn(
-              "w-full mt-4 py-3 px-4 rounded-lg font-medium transition-all",
+              "w-full mt-4 py-3 px-4 font-medium transition-all",
               selectedOptions.length > 0 
                 ? "cursor-pointer opacity-100" 
                 : "opacity-50 cursor-not-allowed",
@@ -394,7 +472,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             )}
             style={{
               backgroundColor: selectedOptions.length > 0 ? indicatorColor : "#f5f5f5", 
-              color: selectedOptions.length > 0 ? "white" : "#a0a0a0"
+              color: selectedOptions.length > 0 ? "white" : "#a0a0a0",
+              borderRadius: `${borderRadiusValue}px`,
+              fontFamily: fontFamily,
+              fontSize: `${bodySize}px`
             }}
             onClick={handleContinue}
             disabled={selectedOptions.length === 0 || isProcessingInteraction}

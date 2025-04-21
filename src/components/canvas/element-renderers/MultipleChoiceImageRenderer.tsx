@@ -12,6 +12,24 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { content, previewMode, previewProps } = element;
   const { setCurrentStep, currentFunnel } = useStore();
   
+  // Obter as configurações globais do funil, se disponíveis
+  const funnelSettings = element.previewProps?.funnel?.settings || {};
+  
+  // Obter configurações globais de tipografia
+  const fontFamily = funnelSettings.fontFamily || 'Inter';
+  const headingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
+  const bodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
+  const lineHeight = funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5;
+  const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
+  const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
+  const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
+  const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
+  
+  // Obter configurações globais de layout
+  const borderRadiusValue = content?.style?.borderRadius !== undefined 
+    ? content.style.borderRadius 
+    : (funnelSettings.borderRadius ? parseInt(funnelSettings.borderRadius) : 8);
+  
   // Define all hooks consistently at the top level
   const handleOptionClick = useCallback(async (option: any) => {
     console.log("MultipleChoiceImageRenderer - Opção clicada:", option);
@@ -166,14 +184,15 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const renderedOptions = useMemo(() => {
     return content?.options ? content.options.map((option) => {
       const optionStyle = option.style || {};
-      const backgroundColor = optionStyle.backgroundColor || "#0F172A";
+      const backgroundColor = optionStyle.backgroundColor || funnelSettings.primaryColor || "#0F172A";
       const aspectRatio = optionStyle.aspectRatio || "1:1";
       const ratio = getAspectRatioValue(aspectRatio);
       
       return (
         <div 
           key={option.id} 
-          className="rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-[1.03]"
+          className="overflow-hidden cursor-pointer transition-all hover:scale-[1.03]"
+          style={{ borderRadius: `${borderRadiusValue}px` }}
           onClick={() => handleOptionClick(option)}
         >
           <div className="relative">
@@ -208,7 +227,15 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             )}
             <div 
               className="p-3 flex justify-between items-center"
-              style={{ backgroundColor }}
+              style={{ 
+                backgroundColor,
+                fontFamily,
+                fontSize: `${bodySize}px`,
+                fontStyle,
+                fontWeight,
+                textDecoration,
+                textTransform
+              }}
             >
               <span className="text-white font-medium">{option.text}</span>
               <ChevronRight className="h-5 w-5 text-white" />
@@ -217,18 +244,32 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         </div>
       );
     }) : null;
-  }, [content?.options, getAspectRatioValue, handleOptionClick]);
+  }, [content?.options, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, borderRadiusValue, funnelSettings.primaryColor]);
   
   // Calcular o estilo para margem superior
   const containerStyle = {
-    marginTop: content?.marginTop ? `${content.marginTop}px` : undefined
+    marginTop: content?.marginTop ? `${content.marginTop}px` : undefined,
+    fontFamily
   };
   
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4" style={containerStyle}>
         {content?.title && (
-          <h2 className="text-xl font-semibold text-center mb-4">{content.title}</h2>
+          <h2 
+            className="font-semibold text-center mb-4"
+            style={{
+              fontSize: `${headingSize}px`,
+              fontFamily,
+              lineHeight: String(lineHeight),
+              fontStyle,
+              fontWeight,
+              textDecoration,
+              textTransform
+            }}
+          >
+            {content.title}
+          </h2>
         )}
         <div className="grid grid-cols-2 gap-4">
           {renderedOptions}
