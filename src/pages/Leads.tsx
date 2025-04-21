@@ -9,7 +9,7 @@ import {
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
   ArrowUpRight, MousePointerClick, ClipboardList,
-  CheckCircle
+  CheckCircle, Activity
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -1793,7 +1793,102 @@ const Leads = () => {
     }
   }, [currentFunnel?.id]);
 
-  // Função para renderMetricsCards modificada para incluir o card de visitantes ativos
+  // Componente interno para o card de Status do Funil
+  const FunnelStatusCard = () => {
+    // Cálculo da taxa de conversão atual
+    const calculateConversionRate = () => {
+      if (metrics.loadingMetrics) return 0;
+      
+      // Usar a taxa de conversão das métricas se disponível
+      if (metrics.completionRate > 0) {
+        return metrics.completionRate;
+      }
+      
+      // Calcular com base nos leads que completaram o último passo
+      if (leads.length > 0 && stepMetrics.length > 0) {
+        const lastStepNumber = Math.max(...stepMetrics.map(step => step.step_number));
+        const completedLeads = leads.filter(lead => 
+          Object.keys(lead.interactions).some(key => parseInt(key) === lastStepNumber)
+        ).length;
+        
+        return (completedLeads / leads.length) * 100;
+      }
+      
+      return 0;
+    };
+    
+    const conversionRate = calculateConversionRate();
+    
+    // Determinar o status do funil com base na taxa de conversão
+    const getStatus = () => {
+      if (conversionRate > 40) {
+        return {
+          color: "text-green-600",
+          bgColor: "bg-green-600",
+          bgLight: "bg-green-100",
+          borderColor: "border-green-300",
+          icon: "🟢",
+          text: "Funil saudável",
+          description: "Ótima taxa de conversão"
+        };
+      } else if (conversionRate >= 20) {
+        return {
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-500",
+          bgLight: "bg-yellow-100",
+          borderColor: "border-yellow-300",
+          icon: "🟡",
+          text: "Conversão regular",
+          description: "Taxa de conversão mediana"
+        };
+      } else {
+        return {
+          color: "text-red-600",
+          bgColor: "bg-red-600",
+          bgLight: "bg-red-100",
+          borderColor: "border-red-300",
+          icon: "🔴",
+          text: "Performance baixa",
+          description: "Taxa de conversão abaixo do ideal"
+        };
+      }
+    };
+    
+    const status = getStatus();
+    
+    return (
+      <Card className={`bg-white border-none shadow-sm hover:shadow-md transition-shadow ${status.borderColor} border-l-4`}>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Activity className={`h-5 w-5 ${status.color}`} />
+            <span>Status geral do funil</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {metrics.loadingMetrics ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-4 h-4 rounded-full ${status.bgColor}`}></div>
+                <p className={`text-2xl font-bold ${status.color}`}>
+                  {status.text}
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Baseado na taxa de conversão atual
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Modificar o renderMetricsCards para incluir o novo card
   const renderMetricsCards = () => {
     return (
       <div className="grid grid-cols-6 gap-4">
@@ -1885,6 +1980,9 @@ const Leads = () => {
         
         {/* Card de visitantes ativos */}
         <ActiveLeadsCard />
+        
+        {/* Novo card de Status do Funil */}
+        <FunnelStatusCard />
         
         <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
