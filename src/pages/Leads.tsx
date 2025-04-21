@@ -1206,57 +1206,37 @@ const Leads = () => {
   // Componente do card de visitantes ativos
   const ActiveLeadsCard = () => {
     return (
-      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <span className="h-5 w-5 text-red-500">🔥</span>
-            <span>Visitantes em tempo real</span>
-            
-            {/* Adicionar ícone de informação com tooltip */}
-            <div 
-              className="relative flex items-center ml-1 cursor-help text-gray-400 hover:text-gray-600" 
-              title="Contabiliza visitantes com interação nos últimos 5 minutos. Períodos de inatividade superiores são considerados como abandono."
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {activeVisitors.loading && !activeVisitors.hasData ? (
-            <div className="animate-pulse">
-              <div className="h-8 w-16 bg-gray-200 rounded"></div>
-              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <p className="text-3xl font-bold text-gray-800">
-                  {activeVisitors.count}
-                </p>
-                {activeVisitors.count > 0 && (
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                {activeVisitors.count === 0 ? (
-                  "Nenhum visitante ativo no momento"
-                ) : activeVisitors.count === 1 ? (
-                  "1 visitante ativo agora"
-                ) : (
-                  `${activeVisitors.count} visitantes ativos agora`
-                )}
+      <CardContent className="pt-3">
+        {activeVisitors.loading && !activeVisitors.hasData ? (
+          <div className="animate-pulse">
+            <div className="h-8 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-bold bg-gradient-to-r from-red-500 to-rose-600 bg-clip-text text-transparent">
+                {activeVisitors.count}
               </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+              {activeVisitors.count > 0 && (
+                <span className="relative flex h-3 w-3 mt-1">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              {activeVisitors.count === 0 ? (
+                "Nenhum visitante ativo no momento"
+              ) : activeVisitors.count === 1 ? (
+                "1 visitante ativo agora"
+              ) : (
+                `${activeVisitors.count} visitantes ativos agora`
+              )}
+            </p>
+          </>
+        )}
+      </CardContent>
     );
   };
 
@@ -1340,32 +1320,24 @@ const Leads = () => {
     }, [currentFunnel?.id, lastUpdated, calculateInteractionRate]);
     
     return (
-      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <MousePointerClick className="h-5 w-5 text-blue-600" />
-            <span>Taxa de Interação</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {interactionRate.isLoading && !interactionRate.hasData ? (
-            <div className="animate-pulse">
-              <div className="h-8 w-16 bg-gray-200 rounded"></div>
-              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-            </div>
-          ) : (
-            <>
-              <p className="text-3xl font-bold text-gray-800">
-                {interactionRate.value.toFixed(1)}%
-              </p>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <span className="inline-block h-3 w-3 bg-blue-500 rounded-full"></span>
-                Visitantes que interagiram com o funil
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <CardContent className="pt-3">
+        {interactionRate.isLoading && !interactionRate.hasData ? (
+          <div className="animate-pulse">
+            <div className="h-8 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+          </div>
+        ) : (
+          <>
+            <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">
+              {interactionRate.value.toFixed(1)}%
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="inline-block h-2.5 w-2.5 bg-blue-500 rounded-full"></span>
+              Visitantes que interagiram com o funil
+            </p>
+          </>
+        )}
+      </CardContent>
     );
   };
   
@@ -1616,41 +1588,33 @@ const Leads = () => {
     }, [currentFunnel?.id, lastUpdated, stepNames, calculateDropoffRates]);
     
     return (
-      <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <span className="h-5 w-5 text-amber-500">📉</span>
-            <span>Queda mais frequente</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {dropoffData.isLoading && !dropoffData.hasData ? (
-            <div className="animate-pulse">
-              <div className="h-8 w-16 bg-gray-200 rounded"></div>
-              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-            </div>
-          ) : (
-            <>
-              <p className="text-2xl font-bold text-gray-800">
-                {dropoffData.highestDropoffRate > 0 ? (
-                  <>
-                    {dropoffData.stepName}
-                    <span className="text-amber-500 ml-1">
-                      ({dropoffData.highestDropoffRate.toFixed(1)}%)
-                    </span>
-                  </>
-                ) : (
-                  "Sem quedas significativas"
-                )}
-              </p>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <span className="inline-block h-3 w-3 bg-amber-500 rounded-full"></span>
-                Etapa com maior taxa de abandono
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <CardContent className="pt-3">
+        {dropoffData.isLoading && !dropoffData.hasData ? (
+          <div className="animate-pulse">
+            <div className="h-8 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+          </div>
+        ) : (
+          <>
+            <p className="text-2xl font-bold">
+              {dropoffData.highestDropoffRate > 0 ? (
+                <>
+                  <span className="text-amber-600">Step {dropoffData.highestDropoffStep}</span>
+                  <span className="text-amber-500 ml-1 text-xl">
+                    ({dropoffData.highestDropoffRate.toFixed(1)}%)
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-500">Sem quedas significativas</span>
+              )}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <span className="inline-block h-2.5 w-2.5 bg-amber-500 rounded-full"></span>
+              Etapa com maior taxa de abandono
+            </p>
+          </>
+        )}
+      </CardContent>
     );
   };
 
@@ -1821,6 +1785,7 @@ const Leads = () => {
         if (currentConversionRate > 40) {
           return {
             color: "text-green-600",
+            textGradient: "from-green-600 to-emerald-600",
             bgColor: "bg-green-600",
             bgLight: "bg-green-100",
             borderColor: "border-green-300",
@@ -1831,6 +1796,7 @@ const Leads = () => {
         } else if (currentConversionRate >= 20) {
           return {
             color: "text-yellow-600",
+            textGradient: "from-amber-500 to-yellow-600",
             bgColor: "bg-yellow-500",
             bgLight: "bg-yellow-100",
             borderColor: "border-yellow-300",
@@ -1841,6 +1807,7 @@ const Leads = () => {
         } else {
           return {
             color: "text-red-600",
+            textGradient: "from-red-600 to-rose-600",
             bgColor: "bg-red-600",
             bgLight: "bg-red-100",
             borderColor: "border-red-300",
@@ -1854,47 +1821,41 @@ const Leads = () => {
       const status = getStatus();
       
       return (
-        <Card className={`bg-white border-none shadow-sm hover:shadow-md transition-shadow ${status.borderColor} border-l-4`}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className={`h-5 w-5 ${status.color}`} />
-              <span>Status geral do funil</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-4 h-4 rounded-full ${status.bgColor}`}></div>
-                  <p className={`text-2xl font-bold ${status.color}`}>
-                    {status.text}
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Baseado na taxa de conversão atual
+        <CardContent className="pt-3">
+          {metrics.loadingMetrics ? (
+            <div className="animate-pulse">
+              <div className="h-8 w-16 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${status.bgColor}`}></div>
+                <p className={`text-2xl font-bold bg-gradient-to-r ${status.textGradient} bg-clip-text text-transparent`}>
+                  {status.text}
                 </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 ml-5">
+                Baseado na taxa de conversão atual
+              </p>
+            </>
+          )}
+        </CardContent>
       );
     };
     
     return (
       <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-purple-700" />
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-blue-50 to-indigo-100">
+                <Users className="h-4 w-4 text-blue-700" />
+              </div>
               <span>Total de Leads</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-3">
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
                 <div className="h-8 w-16 bg-gray-200 rounded"></div>
@@ -1902,8 +1863,8 @@ const Leads = () => {
               </div>
             ) : (
               <>
-                <p className="text-3xl font-bold text-gray-800">{leads.length}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <p className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">{leads.length}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
                   <span className="text-green-500">Atualizado</span>
                 </p>
@@ -1912,15 +1873,17 @@ const Leads = () => {
           </CardContent>
         </Card>
 
-        {/* Novo card para Fluxos Completos */}
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+        {/* Card para Fluxos Completos */}
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-green-50 to-emerald-100">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
               <span>Fluxos Completos</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-3">
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
                 <div className="h-8 w-16 bg-gray-200 rounded"></div>
@@ -1928,26 +1891,26 @@ const Leads = () => {
               </div>
             ) : (
               <>
-                <p className="text-3xl font-bold text-gray-800">{metrics.completedFlows}</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <span className="inline-block h-3 w-3 bg-green-500 rounded-full"></span>
-                  Finalizaram todo o funil
+                <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{metrics.completedFlows}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <span className="inline-block h-2.5 w-2.5 bg-green-500 rounded-full"></span>
+                  <span>Finalizaram todo o funil</span>
                 </p>
               </>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                <span className="h-2.5 w-2.5 rounded-full bg-green-600"></span>
-              </span>
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-purple-50 to-purple-100">
+                <div className="h-3 w-3 rounded-full bg-purple-600"></div>
+              </div>
               <span>Taxa de Conversão</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-3">
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
                 <div className="h-8 w-16 bg-gray-200 rounded"></div>
@@ -1956,10 +1919,10 @@ const Leads = () => {
             ) : (
               <>
                 {/* Usar a taxa de conversão calculada de forma centralizada */}
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   {currentConversionRate.toFixed(1)}%
                 </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
                   <span className="text-green-500">Atualizado</span>
                 </p>
@@ -1969,25 +1932,80 @@ const Leads = () => {
         </Card>
         
         {/* Status geral do funil com a taxa compartilhada */}
-        <FunnelStatusCardWithRate />
+        <Card className={`bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden`}>
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-teal-50 to-teal-100">
+                <Activity className="h-4 w-4 text-teal-600" />
+              </div>
+              <span>Status geral do funil</span>
+            </CardTitle>
+          </CardHeader>
+          <FunnelStatusCardWithRate />
+        </Card>
         
         {/* Segunda linha de cards */}
-        <InteractionRateCard />
-        <DropoffRateCard />
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-blue-50 to-sky-100">
+                <MousePointerClick className="h-4 w-4 text-blue-600" />
+              </div>
+              <span>Taxa de Interação</span>
+            </CardTitle>
+          </CardHeader>
+          <InteractionRateCard />
+        </Card>
+        
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-amber-100">
+                <span className="text-amber-600 text-sm">📉</span>
+              </div>
+              <span>Queda mais frequente</span>
+            </CardTitle>
+          </CardHeader>
+          <DropoffRateCard />
+        </Card>
         
         {/* Card de visitantes ativos */}
-        <ActiveLeadsCard />
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-red-50 to-rose-100">
+                <span className="text-red-600 text-sm">🔥</span>
+              </div>
+              <span>Visitantes em tempo real</span>
+              
+              {/* Adicionar ícone de informação com tooltip */}
+              <div 
+                className="relative flex items-center ml-1 cursor-help text-gray-400 hover:text-gray-600" 
+                title="Contabiliza visitantes com interação nos últimos 5 minutos. Períodos de inatividade superiores são considerados como abandono."
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <ActiveLeadsCard />
+        </Card>
         
-        <Card className="bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <span className={`h-5 w-5 flex items-center justify-center ${selectedSource.color}`}>
-                {selectedSource.icon}
-              </span>
+        <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+          <CardHeader className="pb-2 border-b border-gray-50">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-gray-50 to-gray-100">
+                <span className={`h-4 w-4 flex items-center justify-center ${selectedSource.color}`}>
+                  {selectedSource.icon}
+                </span>
+              </div>
               <span>Origem Principal</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-3">
             {metrics.loadingMetrics ? (
               <div className="animate-pulse">
                 <div className="h-8 w-16 bg-gray-200 rounded"></div>
@@ -1997,9 +2015,9 @@ const Leads = () => {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-auto p-0 font-bold text-3xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
-                      <span className={selectedSource.color}>{selectedSource.icon}</span>
-                      {selectedSource.name}
+                    <Button variant="ghost" className="h-auto p-0 font-bold text-2xl text-gray-800 hover:bg-transparent hover:text-gray-600 flex items-center gap-2">
+                      <span className={`h-5 w-5 ${selectedSource.color}`}>{selectedSource.icon}</span>
+                      <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{selectedSource.name}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[200px]">
@@ -2015,7 +2033,7 @@ const Leads = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {leads.length > 0 ? '100.0' : '0.0'}% dos visitantes interagiram
                 </p>
               </>
