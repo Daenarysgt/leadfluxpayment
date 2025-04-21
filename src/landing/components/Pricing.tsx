@@ -26,6 +26,50 @@ interface Plan {
   backendId: string;
 }
 
+// Features para cada tipo de plano
+const planFeatures = {
+  basic: [
+    'Até 3 funis',
+    'Até 5 mil leads na conta',
+    'Componentes interativos',
+    'Domínio próprio',
+    'Pixel e Scripts de trackeamento',
+    'Gestão e downloads dos leads'
+  ],
+  pro: [
+    'Até 6 funis',
+    'Até 10 mil leads na conta',
+    'Componentes interativos',
+    'Webhook',
+    'Domínio próprio',
+    'Pixel e Scripts de trackeamento',
+    'Gestão e downloads dos leads'
+  ],
+  elite: [
+    'Até 12 funis',
+    'Até 25 mil leads na conta',
+    'Componentes interativos',
+    'Webhook',
+    'Domínio próprio',
+    'Pixel e Scripts de trackeamento',
+    'Gestão e downloads dos leads',
+    'Compartilhamento de funis',
+    'Edição compartilhada'
+  ],
+  scale: [
+    'Até 30 funis',
+    'Até 100 mil leads na conta',
+    'Componentes interativos',
+    'Webhook',
+    'Domínio próprio',
+    'Pixel e Scripts de trackeamento',
+    'Gestão e downloads dos leads',
+    'Suporte com video chamadas',
+    'Compartilhamento de funis',
+    'Edição compartilhada'
+  ]
+};
+
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,11 +119,14 @@ export default function Pricing() {
           
           console.log(`📋 Mapeando plano: ${plan.name} -> ID: ${backendId}`);
           
+          // Usar as features predefinidas com base no backendId
+          const features = planFeatures[backendId as keyof typeof planFeatures] || [];
+          
           return {
             ...plan,
             backendId, // Adicionar ID para o backend
             is_popular: plan.name.toLowerCase().includes('pro'),
-            features: Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
+            features: features // Usar as features fixas em vez de buscar do banco
           };
         }) || [];
         
