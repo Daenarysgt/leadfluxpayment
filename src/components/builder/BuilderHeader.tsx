@@ -41,6 +41,7 @@ const BuilderHeader = ({
           variant="outline" 
           size="sm" 
           className="ml-2 h-8 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700"
+          onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSd77-W498hNrHq799UaKNrsWRzK7rVfTNAUHA1XxPd7xcC7aA/viewform?usp=dialog', '_blank', 'noopener,noreferrer')}
         >
           Solicitar nova função
         </Button>
