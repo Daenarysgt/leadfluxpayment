@@ -21,7 +21,7 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
   
   return (
-    <div className="h-full overflow-auto flex items-center justify-center" 
+    <div className="w-full flex items-center justify-center" 
          style={{ 
            backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
            backgroundImage: hasBackgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
@@ -29,7 +29,9 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
                            currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
            backgroundPosition: 'center',
            backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-           backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+           backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll',
+           minHeight: '100%',
+           paddingBottom: '3rem'
          }}>
       <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
         <FunnelPreview 

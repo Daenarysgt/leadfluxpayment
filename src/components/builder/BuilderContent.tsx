@@ -46,7 +46,11 @@ const BuilderContent = ({
         
         <ResizablePanel defaultSize={selectedElement ? 40 : 70}>
           {previewActive ? (
-            <BuilderPreview isMobile={viewMode === 'mobile'} />
+            <ScrollArea className="h-[calc(100vh-64px)]">
+              <div className="p-6">
+                <BuilderPreview isMobile={viewMode === 'mobile'} />
+              </div>
+            </ScrollArea>
           ) : (
             <ScrollArea className="h-[calc(100vh-64px)]">
               <div className="p-6">

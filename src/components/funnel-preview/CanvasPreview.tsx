@@ -161,7 +161,11 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   return (
     <div 
       className={containerClass}
-      style={containerStyles}
+      style={{
+        ...containerStyles,
+        minHeight: 'max-content',
+        paddingBottom: '2rem'
+      }}
     >
       {canvasElements.map((element, index) => {
         console.log("CanvasPreview - Processing element:", element.id, element.type);
