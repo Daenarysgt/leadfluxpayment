@@ -149,7 +149,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
   };
 
   return (
-    <div>
+    <div className="pb-10">
       <Tabs defaultValue="content">
         <TabsList className="grid grid-cols-3 mb-4">
           <TabsTrigger value="content">Conteúdo</TabsTrigger>
@@ -274,7 +274,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
           </div>
         </TabsContent>
         
-        <TabsContent value="data" className="space-y-4">
+        <TabsContent value="data" className="space-y-4 pb-16">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Dados do Gráfico</h3>
@@ -291,7 +291,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
             </div>
             
             {chartData.length > 0 ? (
-              <ScrollArea className="h-[350px] border rounded-md">
+              <ScrollArea className="h-[400px] border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -498,7 +498,7 @@ const GraphicsConfig = ({ element, onUpdate }: GraphicsConfigProps) => {
                   </Button>
                 </div>
                 
-                <ScrollArea className="h-[250px] border rounded-md">
+                <ScrollArea className="h-[300px] border rounded-md">
                   <div className="p-3 space-y-3">
                     {chartData.map((item, index) => (
                       <div key={index} className="flex items-center gap-3 p-2 border rounded-md bg-gray-50">
