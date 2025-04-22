@@ -1,107 +1,165 @@
-import React, { memo, useEffect, useRef } from "react";
-import { ElementRendererProps } from "@/types/canvasTypes";
-import ElementFactory from "./element-renderers/ElementFactory";
+import React from "react";
+import { cn } from "@/lib/utils";
+import { CanvasElement } from "@/types/canvasTypes";
+import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
+import { Trash2, Copy, ChevronUp, ChevronDown, Move, Grip } from "lucide-react";
+import { adjustElementsForConsistentDisplay } from '@/components/canvas/SharedCanvasRenderer';
 
-// Enhanced comparison function to determine if props changed
-const areEqual = (prevProps: ElementRendererProps, nextProps: ElementRendererProps) => {
-  // Always re-render when element is selected or deselected
-  if (prevProps.isSelected !== nextProps.isSelected) {
-    return false;
-  }
-  
-  // Always re-render when dragging state changes
-  if (prevProps.isDragging !== nextProps.isDragging) {
-    return false;
-  }
-  
-  // Always re-render when the element ID changes
-  if (prevProps.element.id !== nextProps.element.id) {
-    return false;
-  }
-  
-  // Deep comparison of content properties to detect any changes
-  const prevContent = JSON.stringify(prevProps.element.content);
-  const nextContent = JSON.stringify(nextProps.element.content);
-  
-  if (prevContent !== nextContent) {
-    return false;
-  }
-  
-  // Compare any other properties that might have changed
-  if (prevProps.element.type !== nextProps.element.type) {
-    return false;
-  }
-  
-  // Also check for previewMode changes
-  if (prevProps.element.previewMode !== nextProps.element.previewMode) {
-    return false;
-  }
-  
-  return true;
-};
+interface CanvasElementRendererProps {
+  element: CanvasElement;
+  isSelected: boolean;
+  isDragging: boolean;
+  onSelect: (id: string) => void;
+  onRemove: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onDragStart?: (id: string) => void;
+  onDragEnd?: () => void;
+  index: number;
+  totalElements: number;
+}
 
-const CanvasElementRenderer = (props: ElementRendererProps) => {
-  const { element, onDragStart, onDragEnd } = props;
-  const prevElement = useRef(element);
+const CanvasElementRenderer = ({
+  element,
+  isSelected,
+  isDragging,
+  onSelect,
+  onRemove,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  onDragStart,
+  onDragEnd,
+  index,
+  totalElements
+}: CanvasElementRendererProps) => {
+  // Determine if we're on mobile based on window width
+  const isMobile = window.innerWidth <= 768;
   
-  // Use element ID as key instead of dynamic key to maintain component identity
-  const stableKey = `element-${element.id}`;
+  // Adjust element positioning for consistent display on mobile
+  const adjustedElements = adjustElementsForConsistentDisplay([element], isMobile);
+  const adjustedElement = adjustedElements[0];
   
-  // Log when the component receives different content
-  useEffect(() => {
-    if (prevElement.current && prevElement.current.id === element.id) {
-      const prevContent = JSON.stringify(prevElement.current.content);
-      const currentContent = JSON.stringify(element.content);
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (onDragStart) {
+      // Set data for the drag operation
+      e.dataTransfer.setData("elementId", element.id);
+      e.dataTransfer.effectAllowed = "move";
       
-      if (prevContent !== currentContent) {
-        console.log(`CanvasElementRenderer - Element ${element.id} content changed`);
-      }
-    }
-    
-    prevElement.current = {...element};
-  }, [element]);
-  
-  // Handler para permitir a propagação de eventos de drag over
-  const handleDragOver = (e: React.DragEvent) => {
-    // Previne o comportamento padrão para permitir soltar
-    e.preventDefault();
-    
-    // Permite que o evento se propague para os elementos pais
-    // para que a funcionalidade de CanvasDropZone funcione corretamente
-    if (e.dataTransfer.types.includes("componentType")) {
-      e.stopPropagation();
-      
-      // Encontrar o elemento pai mais próximo com a classe do CanvasDropZone
-      let parent = e.currentTarget.parentElement;
-      while (parent) {
-        if (parent.classList.contains("canvas-drop-zone")) {
-          // Simular um evento de dragover no elemento pai
-          const newEvent = new DragEvent('dragover', {
-            bubbles: true,
-            cancelable: true,
-            dataTransfer: e.dataTransfer
-          });
-          parent.dispatchEvent(newEvent);
-          break;
-        }
-        parent = parent.parentElement;
-      }
+      // Add a slight delay to ensure the drag effect is visible
+      setTimeout(() => {
+        onDragStart(element.id);
+      }, 0);
     }
   };
   
-  console.log(`CanvasElementRenderer - Rendering element: ${element.id}, type: ${element.type}`);
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (onDragEnd) {
+      onDragEnd();
+    }
+  };
   
   return (
-    <div 
-      className="w-full"
-      onDragOver={handleDragOver}
+    <div
+      className={cn(
+        "relative group transition-all",
+        isSelected ? "outline outline-2 outline-violet-500 rounded-sm" : "outline-none hover:outline-dashed hover:outline-1 hover:outline-gray-300 rounded-sm",
+        isDragging && "opacity-50 outline outline-2 outline-blue-300"
+      )}
+      onClick={() => onSelect(element.id)}
+      draggable={!!onDragStart}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
+      {/* Handle para arrastar o elemento */}
+      {onDragStart && (
+        <div 
+          className={cn(
+            "absolute top-0 left-0 bg-white/80 rounded-br-md z-10 opacity-0 group-hover:opacity-100 transition-opacity",
+            isSelected && "opacity-100"
+          )}
+          onMouseDown={(e) => {
+            // Garantir que o clique no handle não interfira na seleção
+            e.stopPropagation();
+          }}
+        >
+          <div className="p-1 text-gray-600 cursor-grab active:cursor-grabbing">
+            <Grip className="h-4 w-4" />
+          </div>
+        </div>
+      )}
+      
+      {/* Elemento atual */}
       <ElementFactory 
-        key={stableKey} 
-        {...props}
+        element={adjustedElement}
+        onSelect={() => onSelect(element.id)}
+        isSelected={isSelected}
+        isDragging={isDragging}
+        onRemove={() => onRemove(element.id)}
+        index={index}
+        totalElements={totalElements}
+        onDragStart={null}
+        onDragEnd={null}
       />
+      
+      {/* Barra de ações do elemento */}
+      {isSelected && (
+        <div className="absolute -top-8 right-0 flex items-center space-x-1 bg-white shadow-md rounded-md border p-1 z-20">
+          {onMoveUp && index > 0 && (
+            <button 
+              className="text-gray-600 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100"
+              title="Mover para cima"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveUp(element.id);
+              }}
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+          )}
+          
+          {onMoveDown && index < totalElements - 1 && (
+            <button 
+              className="text-gray-600 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100"
+              title="Mover para baixo"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveDown(element.id);
+              }}
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          )}
+          
+          {onDuplicate && (
+            <button 
+              className="text-gray-600 hover:text-gray-900 p-1 rounded-md hover:bg-gray-100"
+              title="Duplicar elemento"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(element.id);
+              }}
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
+          
+          <button 
+            className="text-red-600 hover:text-red-700 p-1 rounded-md hover:bg-red-50"
+            title="Remover elemento"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(element.id);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
-export default memo(CanvasElementRenderer, areEqual);
+export default CanvasElementRenderer;

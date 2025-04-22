@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { BuilderCanvasProps, CanvasElement } from "@/types/canvasTypes";
 import { useCanvasElements } from "@/hooks/useCanvasElements";
-import CanvasElementRenderer from "@/components/canvas/CanvasElementRenderer";
 import CanvasDropZone from "@/components/canvas/CanvasDropZone";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/utils/store";
 import ProgressBar from "@/components/funnel-preview/ProgressBar";
+import SharedCanvasRenderer, { adjustElementsForConsistentDisplay } from "@/components/canvas/SharedCanvasRenderer";
 
 const BuilderCanvas = ({ 
   isMobile, 
@@ -24,37 +24,6 @@ const BuilderCanvas = ({
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
   
-  // Função para ajustar os elementos para renderização mais próxima da pré-visualização
-  const adjustElementsForConsistentDisplay = (elementsToAdjust: CanvasElement[]): CanvasElement[] => {
-    // Clone os elementos para não modificar o original
-    const adjustedElements = JSON.parse(JSON.stringify(elementsToAdjust));
-    
-    return adjustedElements.map((element: CanvasElement) => {
-      const adjustedElement = { ...element };
-      
-      // Para dispositivos móveis, modificar as posições e dimensões como no CanvasPreview
-      if (isMobile) {
-        // Assegurar que elementos com position tenham left=0 para evitar deslocamento
-        if (adjustedElement.position) {
-          adjustedElement.position = {
-            ...adjustedElement.position,
-            x: 0 // Forçar alinhamento à esquerda como no CanvasPreview
-          };
-        }
-        
-        // Assegurar largura máxima para caber na tela
-        if (adjustedElement.dimensions) {
-          adjustedElement.dimensions = {
-            ...adjustedElement.dimensions,
-            width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
-          };
-        }
-      }
-      
-      return adjustedElement;
-    });
-  };
-  
   const { 
     elements, 
     addElement, 
@@ -64,9 +33,6 @@ const BuilderCanvas = ({
     moveElementDown,
     reorderElements
   } = useCanvasElements(initialElements, onElementsChange, elementUpdates, selectedElementId);
-  
-  // Aplicar o ajuste aos elementos
-  const displayElements = adjustElementsForConsistentDisplay(elements);
   
   // Define all callback hooks consistently at the top level
   const handleDrop = useCallback((componentType: string) => {
@@ -409,13 +375,12 @@ const BuilderCanvas = ({
             />
           </div>
         )}
-        {displayElements.map((element, index) => {
-          // Create a unique key that forces re-render when elements or selections change
-          const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
-          
-          return (
+        
+        {/* Renderizar elementos usando o componente compartilhado */}
+        <div className="relative">
+          {elements.map((element, index) => (
             <div 
-              key={key} 
+              key={`wrapper-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`}
               className={cn(
                 "relative transition-all",
                 dropTargetId === element.id && "border-2 border-violet-500 rounded-md shadow-lg"
@@ -427,9 +392,11 @@ const BuilderCanvas = ({
               }}
               onDrop={handleElementDrop}
             >
-              <CanvasElementRenderer
-                element={element}
-                isSelected={element.id === selectedElementId}
+              <SharedCanvasRenderer
+                canvasElements={[element]}
+                isMobile={isMobile}
+                isBuilderMode={true}
+                selectedElementId={selectedElementId}
                 onSelect={handleElementSelect}
                 onRemove={handleElementRemove}
                 onDuplicate={handleElementDuplicate}
@@ -438,12 +405,17 @@ const BuilderCanvas = ({
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 isDragging={element.id === draggedElementId}
-                index={index}
-                totalElements={elements.length}
               />
             </div>
-          );
-        })}
+          ))}
+          
+          {/* Mensagem para canvas vazio */}
+          {isCanvasEmpty && (
+            <div className="text-center py-20 text-gray-500">
+              Arraste componentes para aqui
+            </div>
+          )}
+        </div>
       </div>
     </CanvasDropZone>
   );

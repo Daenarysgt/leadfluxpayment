@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasElement } from "@/types/canvasTypes";
-import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import { Funnel } from '@/utils/types';
 import { accessService } from '@/services/accessService';
+import SharedCanvasRenderer from '@/components/canvas/SharedCanvasRenderer';
 
 interface CanvasPreviewProps {
   canvasElements: CanvasElement[];
@@ -90,156 +90,15 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     }, 100);
   };
   
-  const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
-  const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
-  const contentStyle = 'transparent'; // Força estilo sempre como transparent
-  
-  // Determinar o estilo baseado na configuração e tipo de dispositivo
-  let containerStyles: React.CSSProperties = {
-    backgroundColor: 'transparent',
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    transition: 'all 0.3s ease',
-    borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
-    margin: isMobile ? '0 auto' : '0 auto',
-    position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
-    width: isMobile ? '100%' : 'auto',
-  };
-
-  // Classes condicionais para desktop e mobile
-  const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
-    : "w-full mx-auto min-h-[300px] rounded-lg";
-  
-  // Adicionar logs para monitorar eventos de clique e registros de interação
-
-  // Melhorar a função handleNextStep para garantir que interações sejam registradas
-  const handleNextStep = (event: React.MouseEvent) => {
-    // Evitar comportamento padrão do botão
-    event.preventDefault();
-    
-    console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
-    // Obter o ID do botão ou gerar um ID padrão
-    const buttonId = event.currentTarget.id || `btn-step-${activeStep+1}`;
-    
-    // Em ambientes de produção (não preview), registrar a interação
-    if (window.location.pathname.includes('/f/')) {
-      try {
-        console.log(`Tentando registrar interação para step ${activeStep+1} em ambiente de produção`);
-        const sessionId = window.sessionStorage.getItem('funnel_session_id');
-        const funnelId = funnel?.id;
-        
-        if (funnelId && sessionId) {
-          accessService.registerStepInteraction(
-            funnelId,
-            activeStep+1,
-            sessionId,
-            'click',
-            null,
-            buttonId
-          ).then(() => {
-            console.log('Interação registrada com sucesso no modo público');
-          }).catch(err => {
-            console.error('Erro ao registrar interação no modo público:', err);
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao tentar registrar interação:', error);
-      }
-    }
-    
-    // Avançar para o próximo passo
-    if (onStepChange) {
-      const nextStep = activeStep + 1;
-      console.log(`Alterando para o passo ${nextStep}`);
-      onStepChange(nextStep);
-    }
-  };
-  
   return (
-    <div 
-      className={containerClass}
-      style={{
-        ...containerStyles,
-        minHeight: 'max-content',
-        paddingBottom: '2rem'
-      }}
-    >
-      {canvasElements.map((element, index) => {
-        console.log("CanvasPreview - Processing element:", element.id, element.type);
-        
-        // Ajustar a posição dos elementos em dispositivos móveis
-        const adjustedElement = { ...element };
-        
-        // Para dispositivos móveis, modificar as posições e dimensões
-        if (isMobile) {
-          // Assegurar que elementos com position tenham left=0 para evitar deslocamento
-          if (adjustedElement.position) {
-            adjustedElement.position = {
-              ...adjustedElement.position,
-              x: 0 // Forçar alinhamento à esquerda
-            };
-          }
-          
-          // Assegurar largura máxima para caber na tela
-          if (adjustedElement.dimensions) {
-            adjustedElement.dimensions = {
-              ...adjustedElement.dimensions,
-              width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
-            };
-          }
-        }
-        
-        // Add preview properties to the element for navigation
-        const elementWithPreviewProps = {
-          ...adjustedElement,
-          previewMode: true,
-          previewProps: {
-            activeStep,
-            onStepChange: handleStepChange,
-            funnel,
-            isMobile
-          }
-        };
-        
-        // Adicionar classes específicas para telas móveis aos elementos
-        const elementWrapperClass = isMobile ? "w-full mobile-element" : "w-full";
-        
-        // Estilos específicos para o wrapper do elemento
-        const elementWrapperStyle: React.CSSProperties = isMobile ? {
-          position: 'relative',
-          left: '0',
-          right: '0',
-          margin: '0 auto',
-          width: '100%',
-          padding: '0',
-          transform: 'none'
-        } : {};
-        
-        return (
-          <div 
-            key={element.id} 
-            className={elementWrapperClass}
-            style={elementWrapperStyle}
-          >
-            <ElementFactory 
-              element={elementWithPreviewProps}
-              onSelect={() => {}} 
-              isSelected={false} 
-              isDragging={false}
-              onRemove={() => {}}
-              index={index}
-              totalElements={canvasElements.length}
-              // Pass null for drag functions to disable drag in preview
-              onDragStart={null}
-              onDragEnd={null}
-            />
-          </div>
-        );
-      })}
-    </div>
+    <SharedCanvasRenderer
+      canvasElements={canvasElements}
+      isMobile={isMobile}
+      isBuilderMode={false}
+      activeStep={activeStep}
+      onStepChange={handleStepChange}
+      funnel={funnel}
+    />
   );
 };
 
