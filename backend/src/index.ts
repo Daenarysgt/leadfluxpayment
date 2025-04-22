@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import funnelRoutes from './routes/funnel.routes';
 import paymentRoutes from './routes/payment.routes';
 import { auth } from './middleware/auth';
+import { paymentAuth } from './middleware/payment-auth';
 import Stripe from 'stripe';
 import { supabase } from './config/supabase';
 
@@ -260,8 +261,36 @@ async function handleInvoicePaid(invoice: any) {
 // Middleware para as demais rotas
 app.use(express.json());
 
-// Routes
-app.use('/api/funnels', funnelRoutes);
+// Rotas
+app.use('/api/funnels', auth, funnelRoutes);
+
+// Rotas de pagamento que não precisam verificar assinatura ativa
+app.use('/api/payment/create-checkout-session', paymentAuth, (req, res, next) => {
+  req.url = '/create-checkout-session';
+  next();
+}, paymentRoutes);
+
+app.use('/api/payment/subscription', paymentAuth, (req, res, next) => {
+  req.url = '/subscription';
+  next();
+}, paymentRoutes);
+
+app.use('/api/payment/cancel-subscription', paymentAuth, (req, res, next) => {
+  req.url = '/cancel-subscription';
+  next();
+}, paymentRoutes);
+
+app.use('/api/payment/verify-session', paymentAuth, (req, res, next) => {
+  // Preserva os parâmetros da URL original
+  next();
+}, paymentRoutes);
+
+app.use('/api/payment/create-customer-portal-session', paymentAuth, (req, res, next) => {
+  req.url = '/create-customer-portal-session';
+  next();
+}, paymentRoutes);
+
+// Demais rotas de pagamento necessitam de assinatura ativa
 app.use('/api/payment', auth, paymentRoutes);
 
 // Health check

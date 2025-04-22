@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-export const auth = async (
+export const paymentAuth = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -36,25 +36,7 @@ export const auth = async (
       return;
     }
 
-    // Verificar se o usuário tem assinatura ativa
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-    
-    // Se não houver assinatura ativa, bloquear acesso
-    if (subError || !subscription) {
-      console.log(`❌ Usuário ${user.id} sem assinatura ativa tentando acessar`);
-      res.status(403).json({ 
-        error: 'Assinatura necessária', 
-        code: 'SUBSCRIPTION_REQUIRED'
-      });
-      return;
-    }
-
-    // Adiciona o usuário ao objeto da requisição usando nossa interface
+    // Adiciona o usuário ao objeto da requisição sem verificar assinatura
     const requestUser: RequestUser = {
       id: user.id,
       email: user.email || '',
@@ -63,7 +45,7 @@ export const auth = async (
     req.user = requestUser;
     next();
   } catch (err) {
-    console.error('Erro no middleware de autenticação:', err);
+    console.error('Erro no middleware de autenticação para pagamento:', err);
     res.status(500).json({ error: 'Erro interno no servidor' });
   }
 }; 

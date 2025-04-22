@@ -22,6 +22,19 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
         try {
           console.log('🔍 Verificando assinatura do usuário...');
           
+          // Verificar se o usuário está bloqueado devido à assinatura cancelada
+          try {
+            const isBlocked = await paymentService.checkSubscriptionBlocked();
+            if (isBlocked) {
+              console.log('❌ Assinatura bloqueada - redirecionando para página de expiração');
+              navigate('/subscription/expired');
+              return;
+            }
+          } catch (blockCheckError) {
+            console.error('❌ Erro ao verificar bloqueio de assinatura:', blockCheckError);
+            // Continuar com a verificação normal
+          }
+          
           // NOVO: Verificação direta no banco de dados via Supabase
           try {
             console.log('🔍 Tentando verificação direta no banco...');
