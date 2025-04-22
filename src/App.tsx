@@ -31,7 +31,6 @@ import Account from '@/pages/Account';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import TermsOfService from '@/pages/TermsOfService';
 import { useNavigate } from 'react-router-dom';
-import SubscriptionExpired from './pages/SubscriptionExpired';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -151,7 +150,6 @@ const App = () => {
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/canceled" element={<PaymentCanceled />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/subscription/expired" element={<SubscriptionExpired />} />
                 
                 {/* Rotas Protegidas */}
                 <Route

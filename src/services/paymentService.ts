@@ -544,51 +544,5 @@ export const paymentService = {
       console.error('Erro ao executar diagnóstico de assinatura:', error);
       throw error;
     }
-  },
-
-  /**
-   * Verifica se o usuário está com acesso bloqueado por assinatura cancelada/expirada
-   */
-  async checkSubscriptionBlocked(): Promise<boolean> {
-    try {
-      // Primeiro tenta obter a assinatura do usuário
-      const subscription = await this.getCurrentSubscription(1, 1000); // Uma tentativa, com timeout mais rápido
-      
-      // Se não conseguir obter assinatura, podemos assumir que está bloqueado
-      if (!subscription) {
-        console.log('❌ Assinatura não encontrada - acesso bloqueado');
-        return true;
-      }
-      
-      // Se tiver assinatura ativa, não está bloqueado
-      if (subscription.status === 'active') {
-        console.log('✅ Assinatura ativa - acesso liberado');
-        return false;
-      }
-      
-      // Se chegou aqui, tem uma assinatura mas não está ativa
-      console.log('❌ Assinatura não ativa - acesso bloqueado');
-      return true;
-    } catch (error: any) {
-      // Verificar se o erro é por causa de assinatura
-      if (error.response && 
-          error.response.status === 403 && 
-          error.response.data.code === 'SUBSCRIPTION_REQUIRED') {
-        console.log('❌ Erro 403 específico de assinatura - acesso bloqueado');
-        return true;
-      }
-      
-      // Para outros erros, vamos verificar o localStorage como fallback
-      const localStatus = localStorage.getItem('subscription_status');
-      if (localStatus === 'active') {
-        // Se temos dados locais indicando que está ativo, damos o benefício da dúvida
-        console.log('⚠️ Erro ao verificar assinatura, mas localStorage indica ativo');
-        return false;
-      }
-      
-      // Por segurança, assumimos bloqueado se não conseguir verificar
-      console.log('❌ Erro ao verificar status da assinatura - assumindo bloqueado');
-      return true;
-    }
   }
 }; 

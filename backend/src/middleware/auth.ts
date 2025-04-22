@@ -36,24 +36,6 @@ export const auth = async (
       return;
     }
 
-    // Verificar se o usuário tem assinatura ativa
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-    
-    // Se não houver assinatura ativa, bloquear acesso
-    if (subError || !subscription) {
-      console.log(`❌ Usuário ${user.id} sem assinatura ativa tentando acessar`);
-      res.status(403).json({ 
-        error: 'Assinatura necessária', 
-        code: 'SUBSCRIPTION_REQUIRED'
-      });
-      return;
-    }
-
     // Adiciona o usuário ao objeto da requisição usando nossa interface
     const requestUser: RequestUser = {
       id: user.id,
