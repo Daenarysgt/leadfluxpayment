@@ -24,6 +24,37 @@ const BuilderCanvas = ({
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
   
+  // Função para ajustar os elementos para renderização mais próxima da pré-visualização
+  const adjustElementsForConsistentDisplay = (elementsToAdjust: CanvasElement[]): CanvasElement[] => {
+    // Clone os elementos para não modificar o original
+    const adjustedElements = JSON.parse(JSON.stringify(elementsToAdjust));
+    
+    return adjustedElements.map((element: CanvasElement) => {
+      const adjustedElement = { ...element };
+      
+      // Para dispositivos móveis, modificar as posições e dimensões como no CanvasPreview
+      if (isMobile) {
+        // Assegurar que elementos com position tenham left=0 para evitar deslocamento
+        if (adjustedElement.position) {
+          adjustedElement.position = {
+            ...adjustedElement.position,
+            x: 0 // Forçar alinhamento à esquerda como no CanvasPreview
+          };
+        }
+        
+        // Assegurar largura máxima para caber na tela
+        if (adjustedElement.dimensions) {
+          adjustedElement.dimensions = {
+            ...adjustedElement.dimensions,
+            width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
+          };
+        }
+      }
+      
+      return adjustedElement;
+    });
+  };
+  
   const { 
     elements, 
     addElement, 
@@ -33,6 +64,9 @@ const BuilderCanvas = ({
     moveElementDown,
     reorderElements
   } = useCanvasElements(initialElements, onElementsChange, elementUpdates, selectedElementId);
+  
+  // Aplicar o ajuste aos elementos
+  const displayElements = adjustElementsForConsistentDisplay(elements);
   
   // Define all callback hooks consistently at the top level
   const handleDrop = useCallback((componentType: string) => {
@@ -288,7 +322,7 @@ const BuilderCanvas = ({
     }
   }, [elementUpdates]);
   
-  // Determine if the canvas is truly empty
+  // Verificar se o canvas está vazio
   const isCanvasEmpty = elements.length === 0;
   
   // Função para validar o formato do logotipo
@@ -375,7 +409,7 @@ const BuilderCanvas = ({
             />
           </div>
         )}
-        {elements.map((element, index) => {
+        {displayElements.map((element, index) => {
           // Create a unique key that forces re-render when elements or selections change
           const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
           

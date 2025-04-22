@@ -82,7 +82,7 @@ const BaseElementRenderer = ({
   }, []);
 
   const baseElementClasses = cn(
-    "w-full rounded-md mb-4 border-2 relative group",
+    "w-full rounded-md mb-2 border-2 relative group",
     isSelected ? "border-violet-500" : "border-transparent",
     isDragging && "opacity-50 border-dashed border-violet-400",
     dropTarget && !isDragging && "border-violet-500 bg-violet-50/30 shadow-sm",
@@ -300,12 +300,19 @@ const BaseElementRenderer = ({
           data-element-id={element.id}
           data-element-index={index}
           data-element-type={element.type}
+          style={{
+            // Aplicar estilos consistentes com CanvasPreview
+            marginBottom: isPreviewMode ? '0px' : '0.5rem',
+            transition: 'all 0.2s ease',
+            // Converter para um estilo mais próximo da pré-visualização quando editando
+            ...(element.content?.marginTop && { marginTop: `${element.content.marginTop}px` })
+          }}
         >
           {/* Conteúdo real do elemento */}
           <div className={cn(
             "relative",
-            // Adicionar padding no modo construtor para garantir área clicável mínima
-            !isPreviewMode && "p-2 min-h-[60px]"
+            // Padding reduzido para se aproximar da visualização final
+            !isPreviewMode && "py-1 px-2 min-h-[40px]"
           )}>
             {children}
           </div>
