@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, ExternalLink, Users } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -37,6 +37,13 @@ const BuilderHeader = ({
         <h1 className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">LeadFlux</h1>
         <Separator orientation="vertical" className="h-5 mx-1" />
         <span className="text-sm text-gray-600">{funnelName}</span>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-2 h-8 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700"
+        >
+          Solicitar nova função
+        </Button>
       </div>
 
       <div className="flex items-center gap-3">
@@ -103,16 +110,6 @@ const BuilderHeader = ({
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 bg-black text-white border-black hover:bg-gray-900"
-          onClick={onOpenFullPreview}
-        >
-          <ExternalLink className="h-4 w-4" />
-          Abrir Prévia
-        </Button>
         
         <Button 
           variant={previewActive ? "default" : "outline"}
