@@ -321,7 +321,9 @@ const BaseElementRenderer = ({
           {!isPreviewMode && (
             <div 
               className={cn(
-                "absolute inset-0 cursor-pointer z-10 transition-all duration-150",
+                "absolute inset-0 cursor-pointer transition-all duration-150",
+                // Para accordion, ajustar o z-index para permitir cliques no ícone dropdown
+                element.type === "accordion" ? "z-0" : "z-10",
                 isSelected 
                   ? "bg-violet-500/10 border-2 border-violet-500" 
                   : isHovering 
@@ -330,6 +332,21 @@ const BaseElementRenderer = ({
               )}
               onClick={(e) => {
                 e.stopPropagation();
+                // Se for accordion, verificar se o clique foi na área do ícone dropdown (direita)
+                if (element.type === "accordion") {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  // Aumentar a área de clique ignorada no lado direito para permitir interação com ícone
+                  if (clickX > rect.width - 100) {
+                    return; // Não selecionar, permitir que o clique passe para o ícone
+                  }
+                  
+                  // Também não ativar o clique em elementos internos que têm interação própria
+                  const target = e.target as HTMLElement;
+                  if (target.closest('.cursor-pointer') && target !== e.currentTarget) {
+                    return;
+                  }
+                }
                 onSelect(element.id);
               }}
             >

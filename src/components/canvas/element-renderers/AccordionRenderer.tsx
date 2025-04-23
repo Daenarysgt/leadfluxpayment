@@ -79,6 +79,7 @@ const AccordionRenderer = (props: ElementRendererProps) => {
       <div 
         className="w-full space-y-2"
         style={containerStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Título do Accordion (opcional) */}
         {content?.title && (
@@ -102,18 +103,32 @@ const AccordionRenderer = (props: ElementRendererProps) => {
           >
             {/* Cabeçalho do item (sempre visível) */}
             <div 
-              className="flex items-center justify-between p-4 cursor-pointer relative"
-              onClick={() => toggleItem(index)}
+              className="flex items-center justify-between p-3 cursor-pointer border-b border-gray-200"
+              onClick={(e) => {
+                // Evita que o clique cause seleção do elemento
+                e.stopPropagation();
+                // Alternância do accordion
+                toggleItem(index);
+              }}
+              role="button"
+              aria-expanded={!!expandedItems[index]}
             >
-              <h4 style={getTitleStyle(item)}>
-                {item.title || `Item ${index + 1}`}
-              </h4>
-              {/* Wrapper para o ícone com z-index elevado */}
+              <div className="font-medium text-sm">
+                {item.title}
+              </div>
               <div 
-                className="relative z-10 cursor-pointer" 
-                onClick={(e) => handleIconClick(e, index)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-all"
+                style={{zIndex: 30}} // Aumentado para garantir interatividade
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleItem(index);
+                }}
               >
-                {renderIcon(index)}
+                {expandedItems[index] ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
               </div>
             </div>
             
@@ -125,6 +140,7 @@ const AccordionRenderer = (props: ElementRendererProps) => {
                   content?.displayStyle === "faq" ? "border-t" : ""
                 )}
                 style={getContentStyle(item)}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="prose max-w-none">
                   {item.content || "Conteúdo do item"}
