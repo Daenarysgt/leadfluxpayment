@@ -143,16 +143,6 @@ const PublicFunnel = () => {
       await accessService.updateProgress(funnel.id, index + 1, sessionId);
       console.log(`Progresso atualizado para passo ${index+1}`);
       
-      // Registrar também interação com este passo específico
-      await accessService.registerStepInteraction(
-        funnel.id,
-        index + 1,
-        sessionId,
-        'click',
-        null,
-        funnel.steps[index]?.canvasElements?.[0]?.buttonId || `btn-step-${index+1}`
-      );
-      
       // Se chegou na última etapa, registrar como conversão
       if (index === funnel.steps.length - 1) {
         console.log("Última etapa alcançada, registrando conversão");

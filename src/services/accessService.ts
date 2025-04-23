@@ -181,6 +181,12 @@ export const accessService = {
     button_id: string | null = null
   ): Promise<void> {
     try {
+      // NOVA VALIDAÇÃO: Bloquear interações automáticas do tipo 'click' com button_id no formato "btn-step-X"
+      if (interactionType === 'click' && button_id && /^btn-step-\d+$/.test(button_id)) {
+        console.log('Ignorando registro automático de interação com button_id:', button_id);
+        return; // Sai da função sem registrar a interação
+      }
+      
       // Usar sessionId fornecido ou o currentSessionId
       const activeSessionId = sessionId || currentSessionId;
       
