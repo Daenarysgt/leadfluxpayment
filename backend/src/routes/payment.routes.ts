@@ -1164,12 +1164,15 @@ async function handleSubscriptionDeleted(subscription: any) {
       user_id: existingSubscription.user_id
     });
 
+    // Usar timestamp Unix como número inteiro para consistência
+    const now = Math.floor(Date.now() / 1000);
+
     // Atualizar o status da assinatura para 'canceled'
     const { error: updateError } = await supabase
       .from('subscriptions')
       .update({
         status: 'canceled',
-        updated_at: new Date().toISOString(),
+        updated_at: now,  // Usando timestamp Unix em vez de ISO string
         cancel_at_period_end: subscription.cancel_at_period_end || false
       })
       .eq('subscription_id', subscription.id);
@@ -1189,15 +1192,24 @@ async function handleSubscriptionDeleted(subscription: any) {
     if (verifyError) {
       console.error('❌ Erro ao verificar atualização:', verifyError);
     } else if (verifySubscription.status !== 'canceled') {
-      console.error('⚠️ Status não foi atualizado corretamente');
+      console.error('⚠️ Status não foi atualizado corretamente, tentando novamente');
       // Tentar atualizar novamente
       await supabase
         .from('subscriptions')
         .update({
           status: 'canceled',
-          updated_at: new Date().toISOString()
+          updated_at: now  // Usando timestamp Unix em vez de ISO string
         })
         .eq('subscription_id', subscription.id);
+        
+      // Verificar novamente após a segunda tentativa
+      const { data: finalCheck } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('subscription_id', subscription.id)
+        .single();
+        
+      console.log('🔄 Status após segunda tentativa:', finalCheck?.status);
     }
 
     console.log('✅ Assinatura marcada como cancelada com sucesso');
@@ -1546,6 +1558,200 @@ router.get('/verify-stripe-subscription/:subscriptionId', async (req, res) => {
   } catch (error: any) {
     console.error('❌ Erro ao processar verificação de assinatura:', error);
     return res.status(500).json({ error: 'Erro interno ao verificar assinatura' });
+  }
+});
+
+// Nova rota para sincronizar assinaturas canceladas no Stripe mas não atualizadas no banco
+router.post('/admin/sync-canceled-subscriptions', async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Verificar autenticação
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Verificar permissão administrativa
+    const { data: userRole } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = userRole?.role === 'admin';
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Permissão negada. Apenas administradores podem executar esta ação.' });
+    }
+
+    console.log('🔄 Iniciando sincronização de assinaturas canceladas...');
+
+    // Buscar todas as assinaturas que não estão marcadas como canceladas no banco
+    const { data: activeSubscriptions, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .not('status', 'eq', 'canceled');
+
+    if (fetchError) {
+      console.error('❌ Erro ao buscar assinaturas ativas:', fetchError);
+      return res.status(500).json({ error: 'Erro ao buscar assinaturas do banco de dados' });
+    }
+
+    if (!activeSubscriptions || activeSubscriptions.length === 0) {
+      return res.json({ message: 'Nenhuma assinatura ativa encontrada para verificar.' });
+    }
+
+    console.log(`🔍 Encontradas ${activeSubscriptions.length} assinaturas para verificar`);
+
+    // Resultados da operação
+    const results = {
+      total: activeSubscriptions.length,
+      processados: 0,
+      atualizados: 0,
+      erros: 0,
+      detalhes: [] as any[]
+    };
+
+    // Verificar cada assinatura no Stripe
+    for (const subscription of activeSubscriptions) {
+      results.processados++;
+      
+      try {
+        // Verificar se o ID da assinatura é válido
+        if (!subscription.subscription_id || !subscription.subscription_id.startsWith('sub_')) {
+          results.detalhes.push({
+            id: subscription.id,
+            status: 'ignorado',
+            motivo: 'ID de assinatura inválido ou ausente'
+          });
+          continue;
+        }
+
+        console.log(`🔍 Verificando assinatura ${subscription.subscription_id} no Stripe...`);
+        
+        try {
+          // Tentar buscar a assinatura no Stripe
+          const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscription_id);
+          
+          // Se a assinatura estiver cancelada no Stripe mas não no banco
+          if (stripeSubscription.status === 'canceled' && subscription.status !== 'canceled') {
+            console.log(`⚠️ Assinatura ${subscription.subscription_id} está cancelada no Stripe mas não no banco`);
+            
+            // Usar timestamp Unix para consistência
+            const now = Math.floor(Date.now() / 1000);
+            
+            // Atualizar no banco de dados
+            const { error: updateError } = await supabase
+              .from('subscriptions')
+              .update({
+                status: 'canceled',
+                updated_at: now,
+                cancel_at_period_end: stripeSubscription.cancel_at_period_end || false
+              })
+              .eq('id', subscription.id);
+            
+            if (updateError) {
+              console.error(`❌ Erro ao atualizar assinatura ${subscription.id}:`, updateError);
+              results.erros++;
+              results.detalhes.push({
+                id: subscription.id,
+                subscription_id: subscription.subscription_id,
+                status: 'erro',
+                motivo: updateError.message
+              });
+            } else {
+              console.log(`✅ Assinatura ${subscription.id} atualizada para 'canceled'`);
+              results.atualizados++;
+              results.detalhes.push({
+                id: subscription.id,
+                subscription_id: subscription.subscription_id,
+                status: 'atualizado',
+                de: subscription.status,
+                para: 'canceled'
+              });
+            }
+          } else {
+            // Assinatura está sincronizada ou não está cancelada no Stripe
+            results.detalhes.push({
+              id: subscription.id,
+              subscription_id: subscription.subscription_id,
+              status: 'sincronizado',
+              stripeStatus: stripeSubscription.status,
+              dbStatus: subscription.status
+            });
+          }
+        } catch (stripeError: any) {
+          // Se o erro for "recurso não encontrado", provavelmente a assinatura foi excluída no Stripe
+          if (stripeError.code === 'resource_missing') {
+            console.log(`⚠️ Assinatura ${subscription.subscription_id} não encontrada no Stripe, marcando como cancelada`);
+            
+            // Usar timestamp Unix para consistência
+            const now = Math.floor(Date.now() / 1000);
+            
+            // Atualizar no banco de dados como cancelada
+            const { error: updateError } = await supabase
+              .from('subscriptions')
+              .update({
+                status: 'canceled',
+                updated_at: now
+              })
+              .eq('id', subscription.id);
+            
+            if (updateError) {
+              console.error(`❌ Erro ao atualizar assinatura ${subscription.id}:`, updateError);
+              results.erros++;
+              results.detalhes.push({
+                id: subscription.id,
+                subscription_id: subscription.subscription_id,
+                status: 'erro',
+                motivo: updateError.message
+              });
+            } else {
+              console.log(`✅ Assinatura ${subscription.id} marcada como 'canceled' (não encontrada no Stripe)`);
+              results.atualizados++;
+              results.detalhes.push({
+                id: subscription.id,
+                subscription_id: subscription.subscription_id,
+                status: 'atualizado',
+                de: subscription.status,
+                para: 'canceled',
+                motivo: 'Não encontrada no Stripe'
+              });
+            }
+          } else {
+            // Outro erro do Stripe
+            console.error(`❌ Erro ao verificar assinatura ${subscription.subscription_id} no Stripe:`, stripeError.message);
+            results.erros++;
+            results.detalhes.push({
+              id: subscription.id,
+              subscription_id: subscription.subscription_id,
+              status: 'erro',
+              motivo: `Erro Stripe: ${stripeError.message}`
+            });
+          }
+        }
+      } catch (error: any) {
+        console.error(`❌ Erro geral ao processar assinatura ${subscription.id}:`, error);
+        results.erros++;
+        results.detalhes.push({
+          id: subscription.id,
+          status: 'erro',
+          motivo: `Erro geral: ${error.message}`
+        });
+      }
+    }
+
+    console.log('✅ Sincronização concluída');
+    return res.json({
+      success: true,
+      resultados: results
+    });
+  } catch (error: any) {
+    console.error('❌ Erro ao sincronizar assinaturas canceladas:', error);
+    return res.status(500).json({ 
+      error: 'Erro ao sincronizar assinaturas canceladas', 
+      message: error.message 
+    });
   }
 });
 
