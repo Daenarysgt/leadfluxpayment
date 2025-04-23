@@ -65,8 +65,9 @@ const AccordionRenderer = (props: ElementRendererProps) => {
     toggleItem(index);
   };
   
-  // Debug - Log das configurações
-  console.log('Accordion content:', content);
+  // Log para debug
+  console.log("AccordionRenderer props:", props);
+  console.log("AccordionRenderer content:", content);
   
   return (
     <BaseElementRenderer {...props}>

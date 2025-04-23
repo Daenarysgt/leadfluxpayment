@@ -60,14 +60,15 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
     const newItems = [...items, {
       title: `Item ${items.length + 1}`,
       content: "Conteúdo do item",
-      titleColor: content.defaultTitleColor || "#000000",
-      contentColor: content.defaultContentColor || "#666666",
-      titleSize: content.defaultTitleSize || 16,
-      contentSize: content.defaultContentSize || 14,
+      titleColor: "#000000",
+      contentColor: "#666666",
+      contentBackgroundColor: "#ffffff",
+      titleSize: 16,
+      contentSize: 14,
       titleBold: false,
       titleItalic: false,
-      backgroundColor: content.defaultBackgroundColor || "#f9fafb",
-      borderColor: content.defaultBorderColor || "#e5e7eb"
+      backgroundColor: "#f9fafb",
+      borderColor: "#e5e7eb"
     }];
     
     handleContentUpdate({ items: newItems });
@@ -314,12 +315,12 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         <input
                           type="color"
                           id="title-color"
-                          value={currentItem.titleColor || content.defaultTitleColor || "#000000"}
+                          value={currentItem.titleColor || "#000000"}
                           onChange={(e) => updateItem(currentItemIndex, { titleColor: e.target.value })}
                           className="w-10 h-10 rounded cursor-pointer"
                         />
                         <Input
-                          value={currentItem.titleColor || content.defaultTitleColor || "#000000"}
+                          value={currentItem.titleColor || "#000000"}
                           onChange={(e) => updateItem(currentItemIndex, { titleColor: e.target.value })}
                           className="flex-1"
                         />
@@ -332,12 +333,12 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         <input
                           type="color"
                           id="content-color"
-                          value={currentItem.contentColor || content.defaultContentColor || "#666666"}
+                          value={currentItem.contentColor || "#666666"}
                           onChange={(e) => updateItem(currentItemIndex, { contentColor: e.target.value })}
                           className="w-10 h-10 rounded cursor-pointer"
                         />
                         <Input
-                          value={currentItem.contentColor || content.defaultContentColor || "#666666"}
+                          value={currentItem.contentColor || "#666666"}
                           onChange={(e) => updateItem(currentItemIndex, { contentColor: e.target.value })}
                           className="flex-1"
                         />
@@ -347,17 +348,17 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="item-bg-color">Cor de fundo</Label>
+                      <Label htmlFor="item-bg-color">Cor de fundo do cabeçalho</Label>
                       <div className="flex space-x-2">
                         <input
                           type="color"
                           id="item-bg-color"
-                          value={currentItem.backgroundColor || content.defaultBackgroundColor || "#f9fafb"}
+                          value={currentItem.backgroundColor || "#f9fafb"}
                           onChange={(e) => updateItem(currentItemIndex, { backgroundColor: e.target.value })}
                           className="w-10 h-10 rounded cursor-pointer"
                         />
                         <Input
-                          value={currentItem.backgroundColor || content.defaultBackgroundColor || "#f9fafb"}
+                          value={currentItem.backgroundColor || "#f9fafb"}
                           onChange={(e) => updateItem(currentItemIndex, { backgroundColor: e.target.value })}
                           className="flex-1"
                         />
@@ -370,13 +371,33 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         <input
                           type="color"
                           id="item-border-color"
-                          value={currentItem.borderColor || content.defaultBorderColor || "#e5e7eb"}
+                          value={currentItem.borderColor || "#e5e7eb"}
                           onChange={(e) => updateItem(currentItemIndex, { borderColor: e.target.value })}
                           className="w-10 h-10 rounded cursor-pointer"
                         />
                         <Input
-                          value={currentItem.borderColor || content.defaultBorderColor || "#e5e7eb"}
+                          value={currentItem.borderColor || "#e5e7eb"}
                           onChange={(e) => updateItem(currentItemIndex, { borderColor: e.target.value })}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="content-bg-color">Cor de fundo do conteúdo</Label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="color"
+                          id="content-bg-color"
+                          value={currentItem.contentBackgroundColor || "#ffffff"}
+                          onChange={(e) => updateItem(currentItemIndex, { contentBackgroundColor: e.target.value })}
+                          className="w-10 h-10 rounded cursor-pointer"
+                        />
+                        <Input
+                          value={currentItem.contentBackgroundColor || "#ffffff"}
+                          onChange={(e) => updateItem(currentItemIndex, { contentBackgroundColor: e.target.value })}
                           className="flex-1"
                         />
                       </div>
@@ -388,7 +409,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                       <div className="flex justify-between items-center">
                         <Label htmlFor="title-size">Tamanho do título</Label>
                         <span className="text-xs text-muted-foreground">
-                          {currentItem.titleSize || content.defaultTitleSize || 16}px
+                          {currentItem.titleSize || 16}px
                         </span>
                       </div>
                       <Slider
@@ -396,7 +417,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         min={12}
                         max={24}
                         step={1}
-                        value={[currentItem.titleSize || content.defaultTitleSize || 16]}
+                        value={[currentItem.titleSize || 16]}
                         onValueChange={(values) => updateItem(currentItemIndex, { titleSize: values[0] })}
                       />
                     </div>
@@ -405,7 +426,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                       <div className="flex justify-between items-center">
                         <Label htmlFor="content-size">Tamanho do conteúdo</Label>
                         <span className="text-xs text-muted-foreground">
-                          {currentItem.contentSize || content.defaultContentSize || 14}px
+                          {currentItem.contentSize || 14}px
                         </span>
                       </div>
                       <Slider
@@ -413,7 +434,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         min={10}
                         max={20}
                         step={1}
-                        value={[currentItem.contentSize || content.defaultContentSize || 14]}
+                        value={[currentItem.contentSize || 14]}
                         onValueChange={(values) => updateItem(currentItemIndex, { contentSize: values[0] })}
                       />
                     </div>
@@ -442,121 +463,6 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
         {/* Aba de Estilo */}
         <TabsContent value="estilo" className="space-y-4 pt-4">
           <div className="space-y-6">
-            {/* Cores padrão para títulos e conteúdos */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="default-title-color">Cor padrão dos títulos</Label>
-                <div className="flex space-x-2">
-                  <input
-                    type="color"
-                    id="default-title-color"
-                    value={content.defaultTitleColor || "#000000"}
-                    onChange={(e) => handleContentUpdate({ defaultTitleColor: e.target.value })}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                  <Input
-                    value={content.defaultTitleColor || "#000000"}
-                    onChange={(e) => handleContentUpdate({ defaultTitleColor: e.target.value })}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="default-content-color">Cor padrão dos conteúdos</Label>
-                <div className="flex space-x-2">
-                  <input
-                    type="color"
-                    id="default-content-color"
-                    value={content.defaultContentColor || "#666666"}
-                    onChange={(e) => handleContentUpdate({ defaultContentColor: e.target.value })}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                  <Input
-                    value={content.defaultContentColor || "#666666"}
-                    onChange={(e) => handleContentUpdate({ defaultContentColor: e.target.value })}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Cores padrão para fundos e bordas */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="default-bg-color">Cor padrão de fundo</Label>
-                <div className="flex space-x-2">
-                  <input
-                    type="color"
-                    id="default-bg-color"
-                    value={content.defaultBackgroundColor || "#f9fafb"}
-                    onChange={(e) => handleContentUpdate({ defaultBackgroundColor: e.target.value })}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                  <Input
-                    value={content.defaultBackgroundColor || "#f9fafb"}
-                    onChange={(e) => handleContentUpdate({ defaultBackgroundColor: e.target.value })}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="default-border-color">Cor padrão da borda</Label>
-                <div className="flex space-x-2">
-                  <input
-                    type="color"
-                    id="default-border-color"
-                    value={content.defaultBorderColor || "#e5e7eb"}
-                    onChange={(e) => handleContentUpdate({ defaultBorderColor: e.target.value })}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                  <Input
-                    value={content.defaultBorderColor || "#e5e7eb"}
-                    onChange={(e) => handleContentUpdate({ defaultBorderColor: e.target.value })}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Tamanhos padrão */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="default-title-size">Tamanho padrão dos títulos</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {content.defaultTitleSize || 16}px
-                  </span>
-                </div>
-                <Slider
-                  id="default-title-size"
-                  min={12}
-                  max={24}
-                  step={1}
-                  value={[content.defaultTitleSize || 16]}
-                  onValueChange={(values) => handleContentUpdate({ defaultTitleSize: values[0] })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="default-content-size">Tamanho padrão dos conteúdos</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {content.defaultContentSize || 14}px
-                  </span>
-                </div>
-                <Slider
-                  id="default-content-size"
-                  min={10}
-                  max={20}
-                  step={1}
-                  value={[content.defaultContentSize || 14]}
-                  onValueChange={(values) => handleContentUpdate({ defaultContentSize: values[0] })}
-                />
-              </div>
-            </div>
-            
             {/* Cores dos ícones */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -565,16 +471,16 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                   <input
                     type="color"
                     id="active-icon-color"
-                    value={content.activeIconColor || "#3b82f6"}
-                    onChange={(e) => handleContentUpdate({ activeIconColor: e.target.value })}
+                    value={content.corDoIconeExpandido || "#3b82f6"}
+                    onChange={(e) => handleContentUpdate({ corDoIconeExpandido: e.target.value })}
                     className="w-10 h-10 rounded cursor-pointer"
                   />
                   <Input
-                    value={content.activeIconColor || "#3b82f6"}
-                    onChange={(e) => handleContentUpdate({ activeIconColor: e.target.value })}
+                    value={content.corDoIconeExpandido || "#3b82f6"}
+                    onChange={(e) => handleContentUpdate({ corDoIconeExpandido: e.target.value })}
                     className="flex-1"
                   />
-                  <ChevronUp className="h-5 w-5 ml-2" style={{ color: content.activeIconColor || "#3b82f6" }} />
+                  <ChevronUp className="h-5 w-5 ml-2" style={{ color: content.corDoIconeExpandido || "#3b82f6" }} />
                 </div>
               </div>
               
@@ -584,18 +490,36 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                   <input
                     type="color"
                     id="inactive-icon-color"
-                    value={content.inactiveIconColor || "#64748b"}
-                    onChange={(e) => handleContentUpdate({ inactiveIconColor: e.target.value })}
+                    value={content.corDoIconeRecolhido || "#64748b"}
+                    onChange={(e) => handleContentUpdate({ corDoIconeRecolhido: e.target.value })}
                     className="w-10 h-10 rounded cursor-pointer"
                   />
                   <Input
-                    value={content.inactiveIconColor || "#64748b"}
-                    onChange={(e) => handleContentUpdate({ inactiveIconColor: e.target.value })}
+                    value={content.corDoIconeRecolhido || "#64748b"}
+                    onChange={(e) => handleContentUpdate({ corDoIconeRecolhido: e.target.value })}
                     className="flex-1"
                   />
-                  <ChevronDown className="h-5 w-5 ml-2" style={{ color: content.inactiveIconColor || "#64748b" }} />
+                  <ChevronDown className="h-5 w-5 ml-2" style={{ color: content.corDoIconeRecolhido || "#64748b" }} />
                 </div>
               </div>
+            </div>
+            
+            {/* Arredondamento das bordas */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="border-radius">Arredondamento das bordas</Label>
+                <span className="text-xs text-muted-foreground">
+                  {content.borderRadius || 6}px
+                </span>
+              </div>
+              <Slider
+                id="border-radius"
+                min={0}
+                max={20}
+                step={1}
+                value={[content.borderRadius || 6]}
+                onValueChange={(values) => handleContentUpdate({ borderRadius: values[0] })}
+              />
             </div>
             
             {/* Margem superior */}
