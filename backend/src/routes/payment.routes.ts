@@ -1269,4 +1269,114 @@ router.get('/plan-limits', async (req, res) => {
   }
 });
 
+// Rota administrativa para cancelar manualmente uma assinatura (útil para testes e correções)
+router.post('/admin/cancel-subscription', async (req, res) => {
+  try {
+    const user = req.user;
+    const { subscription_id, user_id } = req.body;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Verificar se o ID da assinatura foi fornecido
+    if (!subscription_id && !user_id) {
+      return res.status(400).json({ error: 'É necessário fornecer subscription_id ou user_id' });
+    }
+
+    console.log('🛠️ Tentativa de cancelamento manual de assinatura:', {
+      requestedBy: user.id,
+      subscription_id,
+      user_id
+    });
+
+    // Verificar se é o mesmo usuário ou se tem permissão administrativa
+    // Essa verificação deve ser adaptada conforme suas regras de autorização
+    const { data: userRole } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const isAdmin = userRole?.role === 'admin';
+    
+    if (!isAdmin && user_id && user_id !== user.id) {
+      return res.status(403).json({ error: 'Sem permissão para cancelar assinatura de outro usuário' });
+    }
+
+    // Se user_id for fornecido, buscar a assinatura ativa do usuário
+    let query = supabase
+      .from('subscriptions')
+      .select('*');
+
+    if (subscription_id) {
+      query = query.eq('subscription_id', subscription_id);
+    } else if (user_id) {
+      query = query.eq('user_id', user_id).eq('status', 'active');
+    }
+
+    const { data: subscriptions, error: queryError } = await query;
+
+    if (queryError) {
+      console.error('❌ Erro ao buscar assinatura:', queryError);
+      return res.status(500).json({ error: 'Erro ao buscar assinatura' });
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    // Iterar sobre todas as assinaturas encontradas
+    const results = [];
+    for (const sub of subscriptions) {
+      // Atualizar o status da assinatura no banco de dados
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'canceled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sub.id);
+
+      if (updateError) {
+        console.error(`❌ Erro ao cancelar assinatura ${sub.id}:`, updateError);
+        results.push({
+          subscription_id: sub.subscription_id,
+          status: 'error',
+          message: updateError.message
+        });
+      } else {
+        console.log(`✅ Assinatura ${sub.id} cancelada com sucesso`);
+        results.push({
+          subscription_id: sub.subscription_id,
+          status: 'canceled',
+          message: 'Assinatura cancelada com sucesso'
+        });
+
+        // Se fornecido subscription_id do Stripe, tentar cancelar também no Stripe
+        if (sub.subscription_id && sub.subscription_id.startsWith('sub_')) {
+          try {
+            await stripe.subscriptions.update(sub.subscription_id, {
+              cancel_at_period_end: true
+            });
+            console.log(`✅ Assinatura ${sub.subscription_id} marcada para cancelamento no Stripe`);
+          } catch (stripeError: any) {
+            console.error(`⚠️ Erro ao cancelar assinatura no Stripe: ${stripeError.message}`);
+            // Não falhar a operação se o cancelamento no Stripe falhar
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Operação de cancelamento processada',
+      results
+    });
+  } catch (error: any) {
+    console.error('❌ Erro ao cancelar assinatura manualmente:', error);
+    res.status(500).json({ error: 'Erro ao cancelar assinatura: ' + error.message });
+  }
+});
+
 export default router; 

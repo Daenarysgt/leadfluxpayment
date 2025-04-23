@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CreditCard, Calendar, Check, AlertCircle } from 'lucide-react';
+import { Loader2, CreditCard, Calendar, Check, AlertCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { paymentService } from '@/services/paymentService';
@@ -19,6 +19,11 @@ function AccountPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [cancelSubscriptionLoading, setCancelSubscriptionLoading] = useState(false);
+  const [checkCancelledLoading, setCheckCancelledLoading] = useState(false);
+  const [cancelledSubscription, setCancelledSubscription] = useState<any>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -39,8 +44,22 @@ function AccountPage() {
       }
     };
 
-    fetchSubscription();
-  }, []);
+    if (user) {
+      loadSubscription();
+    }
+  }, [user]);
+
+  const loadSubscription = async () => {
+    setSubscriptionLoading(true);
+    try {
+      const sub = await paymentService.getCurrentSubscription();
+      setSubscription(sub);
+    } catch (error) {
+      console.error('Erro ao carregar assinatura:', error);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
 
   const handleManageSubscription = async () => {
     try {
@@ -55,6 +74,64 @@ function AccountPage() {
         description: 'Não foi possível acessar o portal de gerenciamento da assinatura.',
       });
       setIsRedirecting(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Tem certeza que deseja cancelar sua assinatura?')) {
+      return;
+    }
+
+    setCancelSubscriptionLoading(true);
+    try {
+      await paymentService.cancelSubscription();
+      toast({
+        title: "Assinatura cancelada",
+        description: "Sua assinatura foi cancelada com sucesso. Você ainda pode usar o sistema até o fim do período atual.",
+      });
+      setTimeout(() => {
+        loadSubscription();
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao cancelar assinatura:', error);
+      toast({
+        title: "Erro ao cancelar assinatura",
+        description: "Ocorreu um problema ao tentar cancelar sua assinatura. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setCancelSubscriptionLoading(false);
+    }
+  };
+
+  const handleCheckCancelledSubscription = async () => {
+    setCheckCancelledLoading(true);
+    try {
+      const cancelledSub = await paymentService.checkCanceledSubscription();
+      setCancelledSubscription(cancelledSub);
+      
+      if (cancelledSub) {
+        toast({
+          title: "Assinatura cancelada encontrada",
+          description: `Assinatura do plano ${cancelledSub.planId} cancelada em ${cancelledSub.canceledAt.toLocaleDateString()}`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Nenhuma assinatura cancelada",
+          description: "Não foi encontrada nenhuma assinatura cancelada para sua conta.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao verificar assinaturas canceladas:', error);
+      toast({
+        title: "Erro ao verificar assinaturas",
+        description: "Ocorreu um problema ao verificar assinaturas canceladas.",
+        variant: "destructive"
+      });
+    } finally {
+      setCheckCancelledLoading(false);
     }
   };
 
@@ -173,9 +250,80 @@ function AccountPage() {
                 )}
                 Gerenciar assinatura
               </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={handleCheckCancelledSubscription}
+                disabled={checkCancelledLoading}
+              >
+                {checkCancelledLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ShieldAlert className="mr-2 h-4 w-4" />
+                )}
+                Verificar Cancelamento
+              </Button>
             </CardFooter>
           )}
         </Card>
+      </div>
+      
+      {/* Área de assinaturas canceladas */}
+      {cancelledSubscription && (
+        <Card className="mb-8 border-yellow-300 bg-yellow-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-yellow-800">Assinatura Cancelada Encontrada</CardTitle>
+            <CardDescription className="text-yellow-700">
+              Os seguintes dados de uma assinatura cancelada foram encontrados no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-medium text-sm text-yellow-700">ID da Assinatura</p>
+                  <p className="font-medium text-yellow-900">{cancelledSubscription.id}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-yellow-700">Plano</p>
+                  <p className="font-medium text-yellow-900">{cancelledSubscription.planId.toUpperCase()}</p>
+                </div>
+              </div>
+              <div>
+                <p className="font-medium text-sm text-yellow-700">Data de Cancelamento</p>
+                <p className="font-medium text-yellow-900">
+                  {cancelledSubscription.canceledAt.toLocaleDateString('pt-BR')} às {cancelledSubscription.canceledAt.toLocaleTimeString('pt-BR')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto bg-white"
+              onClick={() => setCancelledSubscription(null)}
+            >
+              Esconder esta informação
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+      
+      <div className="flex justify-between">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/dashboard')}
+        >
+          Voltar ao Dashboard
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/diagnostic')}
+        >
+          Diagnóstico de Assinatura
+        </Button>
       </div>
     </div>
   );

@@ -31,6 +31,7 @@ import Account from '@/pages/Account';
 import DiagnosticPage from '@/pages/DiagnosticPage';
 import TermsOfService from '@/pages/TermsOfService';
 import { useNavigate } from 'react-router-dom';
+import ManualCancellationPage from '@/pages/payment/ManualCancellation';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -150,6 +151,14 @@ const App = () => {
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/canceled" element={<PaymentCanceled />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route 
+                  path="/payment/manual-cancellation" 
+                  element={
+                    <ProtectedRoute>
+                      <ManualCancellationPage />
+                    </ProtectedRoute>
+                  } 
+                />
                 
                 {/* Rotas Protegidas */}
                 <Route

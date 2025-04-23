@@ -149,7 +149,7 @@ export default function DiagnosticPage() {
             variant="outline" 
             size="sm"
             onClick={handleRefresh} 
-            className="ml-auto p-2"
+            className="ml-auto p-2 mr-2"
             disabled={refreshing}
           >
             {refreshing ? (
@@ -157,6 +157,13 @@ export default function DiagnosticPage() {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => navigate('/payment/manual-cancellation')}
+          >
+            Cancelamento Manual
           </Button>
         </div>
         

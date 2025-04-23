@@ -592,10 +592,17 @@ export const paymentService = {
         updatedAt: canceledSubscription.updated_at
       });
       
+      // Corrigir a conversão do timestamp
+      // Se updated_at já for uma string ISO, usamos diretamente
+      // Se for um timestamp Unix, multiplicamos por 1000 para converter para milissegundos
+      const canceledAt = typeof canceledSubscription.updated_at === 'number' 
+        ? new Date(canceledSubscription.updated_at * 1000) 
+        : new Date(canceledSubscription.updated_at);
+      
       return {
         id: canceledSubscription.subscription_id,
         planId: canceledSubscription.plan_id,
-        canceledAt: new Date(canceledSubscription.updated_at * 1000)
+        canceledAt: canceledAt
       };
     } catch (error) {
       console.error('❌ Erro ao verificar assinaturas canceladas:', error);

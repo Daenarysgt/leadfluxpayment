@@ -175,25 +175,72 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   try {
-    console.log('Processando exclusão de assinatura:', subscription.id);
+    console.log('🚫 Processando exclusão de assinatura:', subscription.id);
+    console.log('📊 Detalhes da assinatura cancelada:', {
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    });
+
+    // Verificar se a assinatura existe no banco de dados antes de atualizar
+    const { data: existingSubscription, error: checkError } = await supabase
+      .from('subscriptions')
+      .select('id, status, subscription_id')
+      .eq('subscription_id', subscription.id)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Erro ao verificar existência da assinatura:', checkError);
+    }
+
+    if (existingSubscription) {
+      console.log('✅ Assinatura encontrada no banco de dados:', {
+        id: existingSubscription.id,
+        currentStatus: existingSubscription.status,
+      });
+    } else {
+      console.warn('⚠️ Assinatura não encontrada no banco de dados, criando registro de cancelamento');
+    }
 
     // Atualizar a assinatura como cancelada no banco de dados
     const { data, error } = await supabase
       .from('subscriptions')
-      .update({
+      .upsert({
+        subscription_id: subscription.id,
         status: 'canceled',
-        updated_at: new Date().toISOString()
-      })
-      .eq('subscription_id', subscription.id);
+        updated_at: new Date().toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+      }, {
+        onConflict: 'subscription_id',
+        ignoreDuplicates: false
+      });
 
     if (error) {
-      console.error('Erro ao marcar assinatura como cancelada:', error);
+      console.error('❌ Erro ao marcar assinatura como cancelada:', error);
       return;
     }
 
-    console.log('Assinatura marcada como cancelada com sucesso:', subscription.id);
+    console.log('✅ Assinatura marcada como cancelada com sucesso:', subscription.id);
+    
+    // Buscar a assinatura atualizada para confirmar que o status foi alterado
+    const { data: updatedSubscription, error: verifyError } = await supabase
+      .from('subscriptions')
+      .select('id, status, subscription_id, updated_at')
+      .eq('subscription_id', subscription.id)
+      .single();
+      
+    if (verifyError) {
+      console.error('❌ Erro ao verificar atualização da assinatura:', verifyError);
+    } else {
+      console.log('✅ Confirmação de atualização da assinatura:', {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        updatedAt: updatedSubscription.updated_at
+      });
+    }
   } catch (error) {
-    console.error('Erro ao processar exclusão de assinatura:', error);
+    console.error('❌ Erro ao processar exclusão de assinatura:', error);
     throw error;
   }
 }
