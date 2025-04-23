@@ -25,8 +25,8 @@ export default function Hero() {
               Acompanhe métricas em tempo real e tome decisões baseadas em dados.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Link
-                to="/register"
+              <a
+                href="#pricing"
                 className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-base px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <svg 
@@ -43,7 +43,7 @@ export default function Hero() {
                   />
                 </svg>
                 Ver Planos
-              </Link>
+              </a>
               <Link
                 to="#demo"
                 className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 border-2 border-transparent hover:border-purple-600 text-base px-6 py-3 rounded-lg transition-all duration-200"
