@@ -448,20 +448,20 @@ export const accessService = {
   },
   
   /**
-   * Obter estatísticas de acesso para um funil
+   * Obter estatísticas precisas de acesso para um funil
    */
   async getFunnelStats(funnelId: string): Promise<{ views: number; conversions: number }> {
     try {
-      // Contar visualizações
-      const { count: viewsCount, error: viewsError } = await supabase
+      // Contar sessões únicas (views)
+      const { data: sessions, error: viewsError } = await supabase
         .from('funnel_access_logs')
-        .select('id', { count: 'exact', head: true })
+        .select('session_id')
         .eq('funnel_id', funnelId);
       
-      // Contar conversões
-      const { count: conversionsCount, error: conversionsError } = await supabase
+      // Contar sessões que são conversões
+      const { data: conversions, error: conversionsError } = await supabase
         .from('funnel_access_logs')
-        .select('id', { count: 'exact', head: true })
+        .select('session_id')
         .eq('funnel_id', funnelId)
         .eq('is_conversion', true);
       
@@ -470,9 +470,19 @@ export const accessService = {
         return { views: 0, conversions: 0 };
       }
       
+      // Contar sessões únicas
+      const uniqueSessions = new Set();
+      sessions?.forEach(session => uniqueSessions.add(session.session_id));
+      
+      // Contar conversões únicas
+      const uniqueConversions = new Set();
+      conversions?.forEach(session => uniqueConversions.add(session.session_id));
+      
+      console.log(`Estatísticas do funil: ${uniqueSessions.size} sessões únicas, ${uniqueConversions.size} conversões únicas`);
+      
       return {
-        views: viewsCount || 0,
-        conversions: conversionsCount || 0
+        views: uniqueSessions.size || 0,
+        conversions: uniqueConversions.size || 0
       };
     } catch (error) {
       console.error('Erro ao obter estatísticas:', error);

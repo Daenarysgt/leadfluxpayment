@@ -9,7 +9,7 @@ import {
   ArrowLeft, ChevronLeft, Download, Search, Users, 
   Mail, Phone, Calendar, Filter, MoreHorizontal,
   ArrowUpRight, MousePointerClick, ClipboardList,
-  CheckCircle, Activity, TrendingDown, Flame
+  CheckCircle, Activity, TrendingDown, Flame, Check
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
@@ -296,23 +296,7 @@ const Leads = () => {
 
   useEffect(() => {
     if (currentFunnel?.id) {
-      // Aplicação imediata do "FIX" para as métricas
-      if (!metricsForceLoaded.current) {
-        // Forçar carregamento de métricas com um timer
-        setTimeout(() => {
-          setMetrics(prev => ({
-            ...prev,
-            loadingMetrics: false,
-            totalSessions: prev.totalSessions || 10,
-            completionRate: prev.completionRate || 5.5,
-            interactionRate: prev.interactionRate || 8.2,
-            todayLeads: prev.todayLeads || 3
-          }));
-          metricsForceLoaded.current = true;
-          console.log("⭐ Métricas forçadas aplicadas como fallback");
-        }, 2000);
-      }
-
+      // Remover o código de fallback que força valores de métricas
       // Carrega dados iniciais de forma unificada
       loadAllData();
       
@@ -334,7 +318,7 @@ const Leads = () => {
           }
         )
         .subscribe();
-
+      
       // Subscription para atualizações em tempo real na tabela funnel_step_interactions
       const interactionsSubscription = supabase
         .channel(`funnel-interactions-${currentFunnel.id}`)
@@ -385,7 +369,7 @@ const Leads = () => {
         clearInterval(intervalId);
       };
     }
-  }, [currentFunnel?.id, selectedPeriod]);
+  }, [currentFunnel?.id]);
 
   // Nova função unificada para carregar todos os dados de forma consistente
   const loadAllData = async (showLoading = true) => {
@@ -464,23 +448,20 @@ const Leads = () => {
       const completion = funnelMetrics?.completion_rate || 0;
       const interaction = funnelMetrics?.interaction_rate || 0;
       
-      // Calcular leads de hoje baseado na taxa de interação
-      const todayLeads = Math.round((interaction * total) / 100);
-      
-      // Carregar contagem de fluxos completos
-      const completedFlows = await calculateCompletedFlows() || 0;
+      // Carregar contagem de fluxos completos diretamente da API
+      const { conversions } = await accessService.getFunnelStats(currentFunnel.id);
       
       const newMetrics = {
         totalSessions: total,
         completionRate: completion,
         interactionRate: interaction,
-        todayLeads,
+        todayLeads: Math.round((interaction * total) / 100),
         loadingMetrics: false,
         mainSource: {
           name: selectedSource.name,
           percentage: interaction
         },
-        completedFlows // Adicionar fluxos completos às métricas
+        completedFlows: conversions // Usar o valor real de conversões do backend
       };
       
       console.log("📊 Métricas processadas:", newMetrics);
@@ -1694,89 +1675,34 @@ const Leads = () => {
     }
   };
 
-  // Nova função para calcular fluxos completos
-  const calculateCompletedFlows = useCallback(async () => {
-    try {
-      if (!currentFunnel?.id) return;
-      
-      console.log('Calculando número de fluxos completos...');
-      
-      // Encontrar qual é a última etapa do funil
-      let lastStepNumber = 0;
-      
-      // Tentar obter a última etapa do funil a partir do currentFunnel
-      if (currentFunnel.steps && currentFunnel.steps.length > 0) {
-        // Encontrar o maior order_index que representa a última etapa
-        lastStepNumber = Math.max(...currentFunnel.steps.map(s => s.order_index || 0));
-        console.log('Última etapa do funil identificada:', lastStepNumber);
-      } else {
-        // Se não tiver no currentFunnel, buscar do banco de dados
-        const { data: stepsData, error: stepsError } = await supabase
-          .from('steps')
-          .select('order_index')
-          .eq('funnel_id', currentFunnel.id)
-          .order('order_index', { ascending: false })
-          .limit(1);
-          
-        if (stepsError) {
-          console.error('Erro ao buscar última etapa:', stepsError);
-        } else if (stepsData && stepsData.length > 0) {
-          lastStepNumber = stepsData[0].order_index;
-          console.log('Última etapa do funil (do banco):', lastStepNumber);
-        }
-      }
-      
-      if (lastStepNumber === 0) {
-        console.warn('Não foi possível identificar a última etapa do funil');
-        return 0;
-      }
-      
-      // Buscar todas sessões que tiveram interação na última etapa
-      const { data: completedSessions, error: sessionsError } = await supabase
-        .from('funnel_step_interactions')
-        .select('session_id')
-        .eq('funnel_id', currentFunnel.id)
-        .eq('step_number', lastStepNumber);
-        
-      if (sessionsError) {
-        console.error('Erro ao buscar sessões que completaram o funil:', sessionsError);
-        return 0;
-      }
-      
-      // Contar sessões únicas
-      const uniqueCompletedSessions = new Set();
-      completedSessions?.forEach(session => uniqueCompletedSessions.add(session.session_id));
-      
-      const completedCount = uniqueCompletedSessions.size;
-      console.log(`Encontrados ${completedCount} fluxos completos`);
-      
-      return completedCount;
-    } catch (error) {
-      console.error('Erro ao calcular fluxos completos:', error);
-      return 0;
-    }
-  }, [currentFunnel?.id]);
+  // Componente de Fluxos Completos
+  const CompletedFlowsCard = () => {
+    return (
+      <CardContent className="pt-3">
+        {metrics.loadingMetrics ? (
+          <div className="animate-pulse">
+            <div className="h-8 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
+          </div>
+        ) : (
+          <>
+            <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              {metrics.completedFlows}
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <ArrowUpRight className="h-3 w-3 text-green-500" />
+              <span className="text-green-500">Atualizado</span>
+            </p>
+          </>
+        )}
+      </CardContent>
+    );
+  };
 
   // Modificar o renderMetricsCards para incluir o novo card e garantir consistência
   const renderMetricsCards = () => {
-    // Calcular a taxa de conversão uma vez só e usar em ambos os cards para garantir consistência
-    const calculateCurrentConversionRate = () => {
-      if (leads.length > 0 && stepMetrics.length > 0) {
-        // Usar a lógica do card Taxa de Conversão
-        const lastStepNumber = Math.max(...stepMetrics.map(step => step.step_number));
-        const completedLeads = leads.filter(lead => 
-          Object.keys(lead.interactions).some(key => parseInt(key) === lastStepNumber || parseInt(key) === stepMetrics.length)
-        ).length;
-        
-        return (completedLeads / leads.length) * 100;
-      }
-      
-      // Fallback para a métrica de completionRate
-      return metrics.completionRate;
-    };
-    
-    // Calcular uma vez só para garantir o mesmo valor em ambos os cards
-    const currentConversionRate = calculateCurrentConversionRate();
+    // Usar diretamente a taxa de conversão do backend
+    const currentConversionRate = metrics.completionRate;
     
     // Componente de Status do Funil com a taxa de conversão compartilhada
     const FunnelStatusCardWithRate = () => {
@@ -1849,8 +1775,8 @@ const Leads = () => {
         <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-blue-50 to-indigo-100">
-                <Users className="h-4 w-4 text-blue-700" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-indigo-50 to-indigo-100">
+                <Users className="h-4 w-4 text-indigo-600" />
               </div>
               <span>Total de Leads</span>
             </CardTitle>
@@ -1863,7 +1789,7 @@ const Leads = () => {
               </div>
             ) : (
               <>
-                <p className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">{leads.length}</p>
+                <p className="text-3xl font-bold">{metrics.totalSessions}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <ArrowUpRight className="h-3 w-3 text-green-500" />
                   <span className="text-green-500">Atualizado</span>
@@ -1872,35 +1798,19 @@ const Leads = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Card para Fluxos Completos */}
+        
         <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-green-50 to-emerald-100">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100">
+                <Check className="h-4 w-4 text-emerald-600" />
               </div>
               <span>Fluxos Completos</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-3">
-            {metrics.loadingMetrics ? (
-              <div className="animate-pulse">
-                <div className="h-8 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded mt-1"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{metrics.completedFlows}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <span className="inline-block h-2.5 w-2.5 bg-green-500 rounded-full"></span>
-                  <span>Finalizaram todo o funil</span>
-                </p>
-              </>
-            )}
-          </CardContent>
+          <CompletedFlowsCard />
         </Card>
-
+        
         <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -1918,7 +1828,7 @@ const Leads = () => {
               </div>
             ) : (
               <>
-                {/* Usar a taxa de conversão calculada de forma centralizada */}
+                {/* Usar a taxa de conversão do backend diretamente */}
                 <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   {currentConversionRate.toFixed(1)}%
                 </p>
