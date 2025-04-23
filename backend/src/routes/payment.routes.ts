@@ -4,6 +4,7 @@ import { PLANS } from '../config/plans';
 import { supabase } from '../config/supabase';
 import { supabaseAdmin } from '../config/supabaseAdmin';
 import { PLAN_LIMITS } from '../config/plans';
+import express from 'express';
 
 interface RequestUser {
   id: string;
@@ -19,6 +20,11 @@ declare global {
 }
 
 const router = Router();
+
+// Configuração especial para processar o corpo da requisição raw para webhooks
+// Esta rota precisa ser definida antes de app.use(express.json())
+router.use('/webhook', express.raw({ type: 'application/json' }));
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil'
 });
@@ -776,12 +782,36 @@ router.get('/verify-session/:sessionId', async (req, res) => {
 // Webhook do Stripe para processar eventos de pagamento
 router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
+  const eventId = `evt_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
   
   console.log('🔔 WEBHOOK RECEBIDO - Headers:', JSON.stringify(req.headers));
-  console.log('�� WEBHOOK RECEBIDO - Body tipo:', typeof req.body);
+  console.log('🔔 WEBHOOK RECEBIDO - Body tipo:', typeof req.body);
+  
+  // Criar um registro inicial na tabela de logs
+  try {
+    await supabaseAdmin.from('webhook_logs').insert({
+      event_id: eventId,
+      event_type: 'pending',
+      payload: { headers: req.headers },
+      success: false
+    });
+  } catch (logError) {
+    console.error('❌ WEBHOOK: Erro ao registrar log inicial:', logError);
+  }
   
   if (!sig) {
     console.error('❌ WEBHOOK: Assinatura do webhook ausente');
+    
+    // Registrar o erro
+    try {
+      await supabaseAdmin.from('webhook_logs').update({
+        error: 'Assinatura do webhook ausente',
+        success: false
+      }).eq('event_id', eventId);
+    } catch (logError) {
+      console.error('❌ WEBHOOK: Erro ao atualizar log de erro:', logError);
+    }
+    
     return res.status(400).json({ error: 'Assinatura do webhook ausente' });
   }
 
@@ -791,18 +821,57 @@ router.post('/webhook', async (req, res) => {
     // Verificar a assinatura do webhook usando a chave secreta de webhook
     console.log('🔍 WEBHOOK: Tentando verificar assinatura com secret:', process.env.STRIPE_WEBHOOK_SECRET ? 'Configurado' : 'NÃO CONFIGURADO');
     
+    // O corpo da requisição já deve estar no formato raw devido ao middleware
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
+    
+    // Atualizar o registro de log com os detalhes do evento
+    const eventType = event.type;
+    const actualEventId = event.id;
+    const payload = event.data.object;
+    
+    // Extrair o ID da assinatura de forma segura, dependendo do tipo de evento
+    let subscriptionId = 'unknown';
+    if (eventType.includes('subscription')) {
+      subscriptionId = (payload as any).id || 'unknown';
+    } else if (eventType.includes('checkout.session')) {
+      subscriptionId = (payload as any).subscription || 'unknown';
+    } else if (eventType.includes('invoice')) {
+      subscriptionId = (payload as any).subscription || 'unknown';
+    }
+    
+    console.log(`✅ WEBHOOK: Evento recebido: ${eventType}, ID: ${actualEventId}`);
+    console.log(`📋 WEBHOOK: Dados do evento:`, JSON.stringify(payload).substring(0, 200) + '...');
+    
+    // Atualizar o log com os detalhes corretos do evento
+    try {
+      await supabaseAdmin.from('webhook_logs').update({
+        event_id: actualEventId,
+        event_type: eventType,
+        subscription_id: subscriptionId,
+        payload: payload,
+      }).eq('event_id', eventId);
+    } catch (logError) {
+      console.error('❌ WEBHOOK: Erro ao atualizar log com detalhes do evento:', logError);
+    }
   } catch (err: any) {
     console.error(`❌ WEBHOOK: Erro na assinatura do webhook: ${err.message}`);
+    
+    // Registrar o erro
+    try {
+      await supabaseAdmin.from('webhook_logs').update({
+        error: `Erro na assinatura: ${err.message}`,
+        success: false
+      }).eq('event_id', eventId);
+    } catch (logError) {
+      console.error('❌ WEBHOOK: Erro ao atualizar log de erro de assinatura:', logError);
+    }
+    
     return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
   }
-
-  console.log(`✅ WEBHOOK: Evento recebido: ${event.type}, ID: ${event.id}`);
-  console.log(`📋 WEBHOOK: Dados do evento:`, JSON.stringify(event.data.object).substring(0, 200) + '...');
 
   // Processar eventos específicos
   try {
@@ -829,6 +898,7 @@ router.post('/webhook', async (req, res) => {
           console.log('✅ WEBHOOK: Evento de cancelamento processado com sucesso');
         } catch (cancelError) {
           console.error('❌ WEBHOOK: Erro ao processar cancelamento:', cancelError);
+          throw cancelError; // Repassar o erro para ser registrado
         }
         
         break;
@@ -836,10 +906,30 @@ router.post('/webhook', async (req, res) => {
         console.log(`⚠️ WEBHOOK: Evento não tratado: ${event.type}`);
     }
 
+    // Atualizar o log com sucesso
+    try {
+      await supabaseAdmin.from('webhook_logs').update({
+        success: true
+      }).eq('event_id', event.id);
+    } catch (logError) {
+      console.error('❌ WEBHOOK: Erro ao atualizar log de sucesso:', logError);
+    }
+
     console.log('✅ WEBHOOK: Processamento concluído com sucesso');
     res.json({ received: true });
   } catch (error: any) {
     console.error(`❌ WEBHOOK: Erro ao processar webhook: ${error.message}`, error);
+    
+    // Registrar o erro
+    try {
+      await supabaseAdmin.from('webhook_logs').update({
+        error: `Erro ao processar: ${error.message}`,
+        success: false
+      }).eq('event_id', event.id || eventId);
+    } catch (logError) {
+      console.error('❌ WEBHOOK: Erro ao atualizar log de erro de processamento:', logError);
+    }
+    
     res.status(500).json({ error: 'Erro ao processar webhook' });
   }
 });
@@ -1203,7 +1293,7 @@ async function handleSubscriptionDeleted(subscription: any) {
         status: 'canceled',
         updated_at: Math.floor(Date.now() / 1000)
       })
-      .eq('subscription_id', subscription.subscription_id);
+      .eq('subscription_id', subscription.id);
     
     if (updateError) {
       console.error(`❌ WEBHOOK HANDLER: Erro ao atualizar com supabaseAdmin:`, updateError);
