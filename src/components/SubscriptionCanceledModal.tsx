@@ -14,6 +14,7 @@ import { PLANS } from '@/config/plans';
 import { toast } from '@/components/ui/use-toast';
 import { paymentService } from '@/services/paymentService';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SubscriptionCanceledModalProps {
   open: boolean;
@@ -27,6 +28,13 @@ const DEFAULT_PRICES = {
   elite: { monthly: 297, annual: 237 },
   scale: { monthly: 497, annual: 397 }
 };
+
+// Componente de check para features
+const CheckIcon = () => (
+  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
 
 export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCanceledModalProps) {
   const [loading, setLoading] = useState(false);
@@ -139,10 +147,13 @@ export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCa
     return interval === 'month' ? price.monthly : price.annual;
   };
 
+  // Verificar se um plano é popular
+  const isPlanPopular = (planId: string) => planId === 'pro';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md md:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="mb-2">
           <div className="flex items-center justify-center mb-4 text-amber-500">
             <AlertOctagon size={50} />
           </div>
@@ -153,66 +164,109 @@ export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCa
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <div className="mb-6">
-            <div className="flex justify-center space-x-2 mb-6">
-              <Button
-                variant={billingInterval === 'month' ? "default" : "outline"}
-                onClick={() => setBillingInterval('month')}
-                className="relative"
-              >
-                Mensal
-                {billingInterval === 'month' && (
-                  <span className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3">
-                    <CheckCircle className="h-4 w-4 text-white fill-green-500 stroke-white" />
-                  </span>
-                )}
-              </Button>
-              <Button
-                variant={billingInterval === 'year' ? "default" : "outline"}
-                onClick={() => setBillingInterval('year')}
-                className="relative"
-              >
-                Anual
-                {billingInterval === 'year' && (
-                  <span className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3">
-                    <CheckCircle className="h-4 w-4 text-white fill-green-500 stroke-white" />
-                  </span>
-                )}
-                <span className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4">
-                  <span className="bg-green-500 text-white text-[10px] font-medium px-1 py-0.5 rounded-sm">
-                    -20%
-                  </span>
-                </span>
-              </Button>
-            </div>
+        <div className="py-2">
+          {/* Billing Switch com animação */}
+          <motion.div 
+            className="mt-4 flex items-center justify-center gap-3 mb-8"
+            whileHover={{ scale: 1.02 }}
+          >
+            <button
+              onClick={() => setBillingInterval('year')}
+              className={`px-4 py-2 rounded-l-lg transition-all duration-300 ${
+                billingInterval === 'year' 
+                  ? 'bg-black text-white scale-105' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              Anual <span className="text-blue-400 ml-1">-20%</span>
+            </button>
+            <button
+              onClick={() => setBillingInterval('month')}
+              className={`px-4 py-2 rounded-r-lg transition-all duration-300 ${
+                billingInterval === 'month' 
+                  ? 'bg-black text-white scale-105' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              Mensal
+            </button>
+          </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {PLANS.map((plan) => (
-                <div 
-                  key={plan.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                    selectedPlan?.id === plan.id 
-                      ? 'border-primary bg-primary/5 shadow-md' 
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  }`}
-                  onClick={() => setSelectedPlan(plan)}
-                >
-                  <h3 className="font-medium">{plan.name}</h3>
-                  <div className="mt-2 mb-3">
-                    <span className="text-2xl font-bold">
-                      {`R$${getPlanPrice(plan.id, billingInterval).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                    </span>
-                    <span className="text-gray-500">/{billingInterval === 'month' ? 'mês' : 'mês'}</span>
-                  </div>
-                  <p className="text-sm text-gray-500">{plan.description}</p>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <AnimatePresence>
+              {PLANS.map((plan, index) => {
+                const isPopular = isPlanPopular(plan.id);
+                return (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    className={`rounded-xl p-4 flex flex-col h-full transition-all duration-300 cursor-pointer ${
+                      isPopular
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white ring-4 ring-purple-600 ring-opacity-20'
+                        : 'bg-white border border-gray-200'
+                    } ${selectedPlan?.id === plan.id ? 'ring-2 ring-blue-500' : ''}`}
+                    onClick={() => setSelectedPlan(plan)}
+                  >
+                    <div>
+                      <h3 className={`text-lg font-medium ${isPopular ? 'text-white' : 'text-gray-900'}`}>
+                        {plan.name}
+                        {isPopular && (
+                          <span className="ml-2 inline-block px-2 py-0.5 text-xs bg-black rounded-full text-white">
+                            destaque
+                          </span>
+                        )}
+                      </h3>
+                      <p className={`mt-1 text-sm ${isPopular ? 'text-gray-100' : 'text-gray-500'}`}>
+                        {plan.description}
+                      </p>
+                      
+                      {billingInterval === 'year' && (
+                        <p className={`mt-1 text-sm line-through ${isPopular ? 'text-gray-200' : 'text-gray-400'}`}>
+                          {`R$${(getPlanPrice(plan.id, 'month') * 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                        </p>
+                      )}
+                      
+                      <div className={`mt-2 ${isPopular ? 'text-white' : 'text-gray-900'}`}>
+                        <span className="text-2xl font-bold whitespace-nowrap">
+                          R${getPlanPrice(plan.id, billingInterval).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-sm font-medium">/{billingInterval === 'month' ? 'mês' : 'ano'}</span>
+                      </div>
+                    </div>
+
+                    <ul className="mt-4 space-y-2 flex-grow">
+                      {plan.features.slice(0, 4).map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <div className={`flex-shrink-0 ${
+                            isPopular 
+                              ? 'text-white' 
+                              : 'text-black'
+                          }`}>
+                            <CheckIcon />
+                          </div>
+                          <p className={`text-xs ${isPopular ? 'text-gray-100' : 'text-gray-500'}`}>
+                            {feature}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {selectedPlan?.id === plan.id && (
+                      <div className="mt-4 bg-blue-100 text-blue-800 rounded-lg py-1 px-2 text-xs font-medium text-center">
+                        Plano selecionado
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-4">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-4 mt-6">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
@@ -223,9 +277,17 @@ export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCa
           <Button 
             onClick={handleNavigateToCheckout} 
             disabled={loading}
-            className="sm:w-auto w-full"
+            className="sm:w-auto w-full bg-black hover:bg-gray-800 text-white"
           >
-            {loading ? "Processando..." : "Reativar assinatura"}
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processando...
+              </div>
+            ) : "Reativar assinatura"}
           </Button>
         </DialogFooter>
       </DialogContent>
