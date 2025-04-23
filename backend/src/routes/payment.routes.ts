@@ -1258,8 +1258,26 @@ async function handleSubscriptionDeleted(subscription: any) {
   }));
   
   try {
-    // 1. Verificar se a assinatura existe no banco de dados - USANDO SUPABASE ADMIN
-    console.log(`🔍 WEBHOOK HANDLER: Buscando assinatura ${subscription.id} no banco de dados com supabaseAdmin`);
+    // 1. Tentativa inicial com supabaseAdmin (service_role, ignora RLS)
+    console.log(`🔄 WEBHOOK HANDLER: Atualizando diretamente via supabaseAdmin (service_role)`);
+    const { error: directUpdateError } = await supabaseAdmin
+      .from('subscriptions')
+      .update({ 
+        status: 'canceled',
+        updated_at: Math.floor(Date.now() / 1000),
+        cancel_at_period_end: true
+      })
+      .eq('subscription_id', subscription.id);
+    
+    if (directUpdateError) {
+      console.error(`❌ WEBHOOK HANDLER: Erro na atualização direta:`, directUpdateError);
+    } else {
+      console.log(`✅ WEBHOOK HANDLER: Atualização direta bem-sucedida!`);
+      return;
+    }
+    
+    // 2. Se a atualização direta falhar, pesquisar primeiro
+    console.log(`🔍 WEBHOOK HANDLER: Buscando assinatura ${subscription.id} no banco de dados`);
     const { data: existingSubscription, error: findError } = await supabaseAdmin
       .from('subscriptions')
       .select('id, subscription_id, status, user_id')
@@ -1271,6 +1289,23 @@ async function handleSubscriptionDeleted(subscription: any) {
       if (findError.code === 'PGRST116') {
         console.log(`⚠️ WEBHOOK HANDLER: Assinatura ${subscription.id} não encontrada no banco de dados`);
       }
+      
+      // TENTATIVA ALTERNATIVA - SQL DIRETO
+      console.log(`🔄 WEBHOOK HANDLER: Tentativa alternativa - SQL direto`);
+      try {
+        const sqlResult = await supabaseAdmin.rpc('execute_sql', { 
+          sql_query: `UPDATE subscriptions SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)}, cancel_at_period_end = true WHERE subscription_id = '${subscription.id}'` 
+        });
+        
+        if (sqlResult.error) {
+          console.error(`❌ WEBHOOK HANDLER: Erro na execução SQL:`, sqlResult.error);
+        } else {
+          console.log(`✅ WEBHOOK HANDLER: Execução SQL bem-sucedida`);
+        }
+      } catch (sqlError) {
+        console.error(`❌ WEBHOOK HANDLER: Erro ao executar SQL:`, sqlError);
+      }
+      
       return;
     }
     
@@ -1285,49 +1320,35 @@ async function handleSubscriptionDeleted(subscription: any) {
       user_id: existingSubscription.user_id
     });
     
-    // 2. Atualizar usando supabaseAdmin (com service_role key que ignora RLS)
-    console.log(`🔄 WEBHOOK HANDLER: Atualizando via supabaseAdmin (service_role, ignora RLS)`);
+    // 3. Atualizar usando supabaseAdmin com ID específico
+    console.log(`🔄 WEBHOOK HANDLER: Atualizando via ID específico`);
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({ 
         status: 'canceled',
-        updated_at: Math.floor(Date.now() / 1000)
+        updated_at: Math.floor(Date.now() / 1000),
+        cancel_at_period_end: true
       })
-      .eq('subscription_id', subscription.id);
+      .eq('id', existingSubscription.id);
     
     if (updateError) {
-      console.error(`❌ WEBHOOK HANDLER: Erro ao atualizar com supabaseAdmin:`, updateError);
-      
-      // TENTATIVA ADICIONAL - SQL DIRETO
-      console.log(`🔄 WEBHOOK HANDLER: Tentativa alternativa - SQL direto via RPC`);
-      try {
-        const updateQuery = `UPDATE subscriptions SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)} WHERE subscription_id = '${subscription.id}'`;
-        const { error: rpcError } = await supabaseAdmin.rpc('execute_sql', { sql_query: updateQuery });
-        
-        if (rpcError) {
-          console.error(`❌ WEBHOOK HANDLER: Erro na tentativa com SQL direto:`, rpcError);
-        } else {
-          console.log(`✅ WEBHOOK HANDLER: Atualização com SQL direto bem-sucedida`);
-        }
-      } catch (sqlError) {
-        console.error(`❌ WEBHOOK HANDLER: Erro ao executar SQL direto:`, sqlError);
-      }
+      console.error(`❌ WEBHOOK HANDLER: Erro ao atualizar com ID específico:`, updateError);
     } else {
-      console.log(`✅ WEBHOOK HANDLER: Atualização bem-sucedida com supabaseAdmin`);
+      console.log(`✅ WEBHOOK HANDLER: Atualização com ID específico bem-sucedida`);
     }
     
-    // 3. Verificar se a atualização funcionou
+    // 4. Verificar se a atualização funcionou
     console.log(`🔍 WEBHOOK HANDLER: Verificando resultado da atualização`);
     const { data: verifyResult, error: verifyError } = await supabaseAdmin
       .from('subscriptions')
-      .select('status')
+      .select('status, cancel_at_period_end')
       .eq('subscription_id', subscription.id)
       .single();
     
     if (verifyError) {
       console.error(`❌ WEBHOOK HANDLER: Erro ao verificar atualização:`, verifyError);
     } else {
-      console.log(`📊 WEBHOOK HANDLER: Status após atualização:`, verifyResult?.status);
+      console.log(`📊 WEBHOOK HANDLER: Status após atualização:`, verifyResult);
       
       if (verifyResult?.status === 'canceled') {
         console.log(`✅ WEBHOOK HANDLER: Assinatura cancelada com sucesso!`);
@@ -1864,6 +1885,191 @@ router.post('/admin/sync-canceled-subscriptions', async (req, res) => {
       error: 'Erro ao sincronizar assinaturas canceladas', 
       message: error.message 
     });
+  }
+});
+
+// Rota para diagnosticar problemas com assinaturas
+router.get('/diagnose-subscription/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+    
+    console.log(`🔍 Verificando assinatura do usuário ${userId}...`);
+    
+    // 1. Verificar assinatura no banco de dados
+    const { data: dbSubscription, error: dbError } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    // Definir o tipo de diagnóstico aqui
+    interface DiagnosticResult {
+      userId: string;
+      databaseSubscription: {
+        exists: boolean;
+        data: any | null;
+        error: { code: string; message: string } | null;
+      };
+      stripeSubscription: {
+        exists: boolean;
+        data: any | null;
+        error: { code: string; message: string } | null;
+        timestampDetails?: {
+          current_period_start_type: string;
+          current_period_end_type: string;
+          current_period_start_value: number;
+          current_period_end_value: number;
+        };
+      };
+      conclusion: string;
+      timestampSync: boolean;
+      timestampIssues: string[];
+    }
+    
+    let diagnosticResult: DiagnosticResult = {
+      userId,
+      databaseSubscription: {
+        exists: !!dbSubscription,
+        data: dbSubscription,
+        error: dbError ? { code: dbError.code, message: dbError.message } : null
+      },
+      stripeSubscription: {
+        exists: false,
+        data: null,
+        error: null
+      },
+      conclusion: '',
+      timestampSync: true,
+      timestampIssues: []
+    };
+    
+    // 2. Se existir no banco, verificar no Stripe
+    if (dbSubscription && dbSubscription.subscription_id) {
+      try {
+        const stripeSubscription = await stripe.subscriptions.retrieve(
+          dbSubscription.subscription_id
+        );
+        
+        // Obter os valores dos timestamps do objeto Stripe (que podem estar em diferentes formatos)
+        const stripeStart = (stripeSubscription as any).current_period_start || null;
+        const stripeEnd = (stripeSubscription as any).current_period_end || null;
+        
+        diagnosticResult.stripeSubscription = {
+          exists: true,
+          data: stripeSubscription,
+          error: null,
+          timestampDetails: {
+            current_period_start_type: typeof stripeStart,
+            current_period_end_type: typeof stripeEnd,
+            current_period_start_value: stripeStart,
+            current_period_end_value: stripeEnd
+          }
+        };
+        
+        // Verificar sincronização de status
+        if (dbSubscription.status !== stripeSubscription.status) {
+          diagnosticResult.conclusion += `Status não sincronizado: DB=${dbSubscription.status}, Stripe=${stripeSubscription.status}. `;
+          
+          // Tentar corrigir automaticamente se a assinatura está cancelada no Stripe mas não no banco
+          if (stripeSubscription.status === 'canceled' && dbSubscription.status !== 'canceled') {
+            try {
+              console.log(`🔄 Corrigindo status da assinatura para canceled...`);
+              await supabaseAdmin
+                .from('subscriptions')
+                .update({
+                  status: 'canceled',
+                  updated_at: Math.floor(Date.now() / 1000),
+                  cancel_at_period_end: (stripeSubscription as any).cancel_at_period_end || false
+                })
+                .eq('subscription_id', dbSubscription.subscription_id);
+              
+              diagnosticResult.conclusion += `Status corrigido para 'canceled' automaticamente. `;
+            } catch (fixError) {
+              diagnosticResult.conclusion += `Falha ao corrigir status: ${fixError}. `;
+            }
+          }
+        }
+        
+        // Verificar sincronização de timestamps
+        const dbStart = dbSubscription.current_period_start;
+        const dbEnd = dbSubscription.current_period_end;
+        
+        if (stripeStart && dbStart && stripeStart !== dbStart) {
+          diagnosticResult.timestampSync = false;
+          diagnosticResult.timestampIssues.push(`Período inicial não sincronizado: DB=${dbStart}, Stripe=${stripeStart}`);
+        }
+        
+        if (stripeEnd && dbEnd && stripeEnd !== dbEnd) {
+          diagnosticResult.timestampSync = false;
+          diagnosticResult.timestampIssues.push(`Período final não sincronizado: DB=${dbEnd}, Stripe=${stripeEnd}`);
+        }
+        
+        if (!diagnosticResult.timestampSync) {
+          diagnosticResult.conclusion += "Timestamps não sincronizados entre banco e Stripe. ";
+          
+          // Tentar corrigir timestamps automaticamente
+          try {
+            console.log(`🔄 Corrigindo timestamps da assinatura...`);
+            await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                current_period_start: stripeStart,
+                current_period_end: stripeEnd,
+                updated_at: Math.floor(Date.now() / 1000)
+              })
+              .eq('subscription_id', dbSubscription.subscription_id);
+            
+            diagnosticResult.conclusion += `Timestamps corrigidos automaticamente. `;
+          } catch (fixError) {
+            diagnosticResult.conclusion += `Falha ao corrigir timestamps: ${fixError}. `;
+          }
+        }
+        
+      } catch (stripeError: any) {
+        diagnosticResult.stripeSubscription.error = {
+          code: stripeError.code || 'unknown',
+          message: stripeError.message
+        };
+        
+        diagnosticResult.conclusion += `Erro ao consultar assinatura no Stripe: ${stripeError.message}. `;
+        
+        // Se a assinatura não existe no Stripe mas existe no banco, marcar como cancelada
+        if (stripeError.code === 'resource_missing') {
+          diagnosticResult.conclusion += "Assinatura existe no banco mas não no Stripe. ";
+          
+          try {
+            console.log(`🔄 Assinatura não existe no Stripe, marcando como cancelada no banco...`);
+            await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                status: 'canceled',
+                updated_at: Math.floor(Date.now() / 1000)
+              })
+              .eq('subscription_id', dbSubscription.subscription_id);
+            
+            diagnosticResult.conclusion += `Assinatura marcada como cancelada no banco. `;
+          } catch (fixError) {
+            diagnosticResult.conclusion += `Falha ao marcar assinatura como cancelada: ${fixError}. `;
+          }
+        }
+      }
+    } else {
+      diagnosticResult.conclusion += "Assinatura não encontrada no banco de dados. ";
+    }
+    
+    if (diagnosticResult.conclusion === '') {
+      diagnosticResult.conclusion = "Assinatura em estado consistente, nenhum problema detectado.";
+    }
+    
+    console.log(`📊 Diagnóstico de assinatura para ${userId}:`, diagnosticResult.conclusion);
+    res.json(diagnosticResult);
+  } catch (error: any) {
+    console.error('❌ Erro ao diagnosticar assinatura:', error);
+    res.status(500).json({ error: 'Erro ao diagnosticar assinatura: ' + error.message });
   }
 });
 

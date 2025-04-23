@@ -6,6 +6,7 @@ import paymentRoutes from './routes/payment.routes';
 import { auth } from './middleware/auth';
 import Stripe from 'stripe';
 import { supabase } from './config/supabase';
+import { supabaseAdmin } from './config/supabaseAdmin';
 
 dotenv.config();
 
@@ -34,8 +35,8 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
     }
 
     // Inserir log na tabela webhook_logs
+    let eventId = `evt_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     try {
-      const eventId = `evt_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       await supabase.from('webhook_logs').insert({
         event_id: eventId,
         event_type: 'pending.signature_check',
@@ -56,6 +57,7 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
       );
       
       console.log(`✅ Webhook verificado com sucesso: ${event.type}`);
+      eventId = event.id;
       
       // Verificar se o evento é um cancelamento de assinatura
       if (event.type === 'customer.subscription.deleted') {
@@ -75,22 +77,90 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
           console.error('❌ Erro ao registrar log de evento:', logError);
         }
         
-        // Atualizar diretamente o status da assinatura para 'canceled'
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .update({
-            status: 'canceled',
-            updated_at: Math.floor(Date.now() / 1000),
-            cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
-          })
-          .eq('subscription_id', subscription.id);
+        // Tentativa 1: Atualizar diretamente o status da assinatura para 'canceled'
+        console.log(`🔄 Tentativa 1: Atualização direta da assinatura para canceled`);
+        let success = false;
         
-        if (error) {
-          console.error('❌ Erro ao atualizar status da assinatura:', error);
-          return res.status(500).json({ error: 'Erro ao processar cancelamento' });
+        try {
+          const { data, error } = await supabase
+            .from('subscriptions')
+            .update({
+              status: 'canceled',
+              updated_at: Math.floor(Date.now() / 1000),
+              cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
+            })
+            .eq('subscription_id', subscription.id);
+          
+          if (error) {
+            console.error('❌ Erro na Tentativa 1:', error);
+          } else {
+            console.log('✅ Tentativa 1 bem-sucedida!');
+            success = true;
+          }
+        } catch (updateError) {
+          console.error('❌ Exceção na Tentativa 1:', updateError);
         }
         
-        console.log('✅ Assinatura cancelada com sucesso:', subscription.id);
+        // Tentativa 2: Usar supabaseAdmin se a primeira tentativa falhar
+        if (!success) {
+          console.log(`🔄 Tentativa 2: Usando supabaseAdmin para atualizar assinatura`);
+          try {
+            const { data, error } = await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                status: 'canceled',
+                updated_at: Math.floor(Date.now() / 1000),
+                cancel_at_period_end: (subscription as any).cancel_at_period_end || false,
+              })
+              .eq('subscription_id', subscription.id);
+            
+            if (error) {
+              console.error('❌ Erro na Tentativa 2:', error);
+            } else {
+              console.log('✅ Tentativa 2 bem-sucedida!');
+              success = true;
+            }
+          } catch (adminError) {
+            console.error('❌ Exceção na Tentativa 2:', adminError);
+          }
+        }
+        
+        // Tentativa 3: SQL direto via RPC se as outras tentativas falharem
+        if (!success) {
+          console.log(`🔄 Tentativa 3: SQL direto via RPC`);
+          try {
+            const updateQuery = `UPDATE subscriptions SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)}, cancel_at_period_end = true WHERE subscription_id = '${subscription.id}'`;
+            const { error: rpcError } = await supabaseAdmin.rpc('execute_sql', { sql_query: updateQuery });
+            
+            if (rpcError) {
+              console.error('❌ Erro na Tentativa 3:', rpcError);
+            } else {
+              console.log('✅ Tentativa 3 bem-sucedida!');
+              success = true;
+            }
+          } catch (sqlError) {
+            console.error('❌ Exceção na Tentativa 3:', sqlError);
+          }
+        }
+        
+        // Verificar se a assinatura foi cancelada
+        try {
+          const { data: verify, error: verifyError } = await supabaseAdmin
+            .from('subscriptions')
+            .select('status')
+            .eq('subscription_id', subscription.id)
+            .single();
+          
+          if (verifyError) {
+            console.error('❌ Erro ao verificar cancelamento:', verifyError);
+          } else if (verify?.status === 'canceled') {
+            console.log('✅ Assinatura cancelada com sucesso:', subscription.id);
+          } else {
+            console.error('⚠️ Falha no cancelamento da assinatura. Status atual:', verify?.status);
+          }
+        } catch (verifyError) {
+          console.error('❌ Exceção ao verificar cancelamento:', verifyError);
+        }
       } else {
         console.log(`⚠️ Tipo de evento não tratado diretamente: ${event.type}`);
       }
@@ -99,6 +169,17 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
       return res.json({ received: true });
     } catch (err: any) {
       console.error(`❌ Erro na verificação do webhook: ${err.message}`);
+      
+      // Registrar o erro
+      try {
+        await supabase.from('webhook_logs').update({
+          error: `Erro na verificação: ${err.message}`,
+          success: false
+        }).eq('event_id', eventId);
+      } catch (logError) {
+        console.error('❌ Erro ao registrar falha na verificação:', logError);
+      }
+      
       return res.status(400).json({ error: `Webhook inválido: ${err.message}` });
     }
   } catch (error: any) {
