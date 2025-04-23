@@ -21,22 +21,22 @@ const AccordionRenderer = (props: ElementRendererProps) => {
   
   // Estilos para títulos, respostas e ícones
   const getTitleStyle = (item: any) => ({
-    color: item.titleColor || content?.defaultTitleColor || "#000000",
+    color: item.titleColor || content?.corPadraoDosTitulos || "#000000",
     fontWeight: item.titleBold ? "bold" : "normal",
     fontStyle: item.titleItalic ? "italic" : "normal",
-    fontSize: `${item.titleSize || content?.defaultTitleSize || 16}px`,
+    fontSize: `${item.titleSize || content?.tamanhoTitulos || 16}px`,
   });
   
   const getContentStyle = (item: any) => ({
-    color: item.contentColor || content?.defaultContentColor || "#666666",
-    fontSize: `${item.contentSize || content?.defaultContentSize || 14}px`,
+    color: item.contentColor || content?.corPadraoConteudos || "#666666",
+    fontSize: `${item.contentSize || content?.tamanhoConteudos || 14}px`,
     lineHeight: 1.5
   });
   
   // Função para obter estilos de borda e fundo para itens
   const getItemContainerStyle = (item: any) => ({
-    backgroundColor: item.backgroundColor || content?.defaultBackgroundColor || (content?.displayStyle === "faq" ? "transparent" : "#f9fafb"),
-    borderColor: item.borderColor || content?.defaultBorderColor || "#e5e7eb",
+    backgroundColor: item.backgroundColor || content?.corPadraoDeFundo || (content?.displayStyle === "faq" ? "transparent" : "#f9fafb"),
+    borderColor: item.borderColor || content?.corPadraoDaBorda || "#e5e7eb",
   });
   
   // Função para alternar a expansão de um item
@@ -59,8 +59,8 @@ const AccordionRenderer = (props: ElementRendererProps) => {
   const getIconColor = (index: number) => {
     const isExpanded = expandedItems[index];
     return isExpanded 
-      ? content?.iconExpandedColor || "#3b82f6" // Cor quando expandido
-      : content?.iconCollapsedColor || "#64748b"; // Cor quando recolhido
+      ? content?.corDoIconeExpandido || "#3b82f6" // Cor quando expandido
+      : content?.corDoIconeRecolhido || "#64748b"; // Cor quando recolhido
   };
   
   // Manipulador de clique específico para o ícone
@@ -68,6 +68,9 @@ const AccordionRenderer = (props: ElementRendererProps) => {
     e.stopPropagation(); // Impede a propagação do evento
     toggleItem(index);
   };
+  
+  // Debug - Log das configurações
+  console.log('Accordion content:', content);
   
   return (
     <BaseElementRenderer {...props}>
@@ -125,12 +128,12 @@ const AccordionRenderer = (props: ElementRendererProps) => {
                 {expandedItems[index] ? (
                   <ChevronUp 
                     className="h-4 w-4" 
-                    style={{color: content?.iconExpandedColor || content?.corIconeExpandido || "#3b82f6"}}
+                    style={{color: content?.corDoIconeExpandido || "#3b82f6"}}
                   />
                 ) : (
                   <ChevronDown 
                     className="h-4 w-4" 
-                    style={{color: content?.iconCollapsedColor || content?.corIconeRecolhido || "#64748b"}}
+                    style={{color: content?.corDoIconeRecolhido || "#64748b"}}
                   />
                 )}
               </div>
