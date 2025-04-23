@@ -1165,9 +1165,9 @@ async function handleSubscriptionDeleted(subscription: any) {
     // Primeira tentativa: atualizar APENAS o status (o trigger cuidará do updated_at)
     console.log('🔄 Tentando atualizar o status para canceled');
     const { error: updateError } = await supabase
-      .from('subscriptions')
+    .from('subscriptions')
       .update({ 
-        status: 'canceled',
+      status: 'canceled',
         // Não definimos updated_at, o trigger se encarregará disso
       })
       .eq('subscription_id', subscription.id);
