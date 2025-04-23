@@ -65,7 +65,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             Number(activeStep + 1),
             null,
             'choice',
-            interactionValue
+            interactionValue,
+            `choice-option-${option.id}` // Usar formato de ID que não será bloqueado
           );
           
           console.log(`Interação da imagem registrada com sucesso: "${interactionValue}" na etapa ${activeStep + 1}`);

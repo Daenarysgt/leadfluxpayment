@@ -128,7 +128,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               null, // usar sessionId atual
               'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
               selection, // Usar o texto completo da opção
-              option.id // IMPORTANTE: Passar o ID do botão/opção
+              `choice-option-${option.id}` // Usar formato de ID que não será bloqueado
             );
             
             // Aguardar explicitamente a conclusão
