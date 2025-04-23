@@ -776,7 +776,11 @@ router.get('/verify-session/:sessionId', async (req, res) => {
 router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   
+  console.log('🔔 WEBHOOK RECEBIDO - Headers:', JSON.stringify(req.headers));
+  console.log('🔔 WEBHOOK RECEBIDO - Corpo:', typeof req.body === 'string' ? req.body.substring(0, 100) + '...' : 'Corpo não é string');
+  
   if (!sig) {
+    console.error('❌ WEBHOOK: Assinatura do webhook ausente');
     return res.status(400).json({ error: 'Assinatura do webhook ausente' });
   }
 
@@ -790,34 +794,40 @@ router.post('/webhook', async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
+    console.error(`❌ WEBHOOK: Erro na assinatura do webhook: ${err.message}`);
     return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
   }
 
-  console.log(`✅ Webhook recebido: ${event.type}`);
+  console.log(`✅ WEBHOOK: Evento recebido: ${event.type}, ID: ${event.id}`);
+  console.log(`📋 WEBHOOK: Dados do evento:`, JSON.stringify(event.data.object).substring(0, 200) + '...');
 
   // Processar eventos específicos
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('🔄 WEBHOOK: Processando checkout.session.completed');
         await handleCheckoutCompleted(event.data.object);
         break;
       case 'invoice.paid':
+        console.log('🔄 WEBHOOK: Processando invoice.paid');
         await handleInvoicePaid(event.data.object);
         break;
       case 'customer.subscription.updated':
+        console.log('🔄 WEBHOOK: Processando customer.subscription.updated');
         await handleSubscriptionUpdated(event.data.object);
         break;
       case 'customer.subscription.deleted':
+        console.log('🔄 WEBHOOK: Processando customer.subscription.deleted - ID:', event.data.object.id);
         await handleSubscriptionDeleted(event.data.object);
         break;
       default:
-        console.log(`⚠️ Evento não tratado: ${event.type}`);
+        console.log(`⚠️ WEBHOOK: Evento não tratado: ${event.type}`);
     }
 
+    console.log('✅ WEBHOOK: Processamento concluído com sucesso');
     res.json({ received: true });
   } catch (error: any) {
-    console.error(`❌ Erro ao processar webhook: ${error.message}`);
+    console.error(`❌ WEBHOOK: Erro ao processar webhook: ${error.message}`, error);
     res.status(500).json({ error: 'Erro ao processar webhook' });
   }
 });
@@ -1138,53 +1148,103 @@ async function handleSubscriptionUpdated(subscription: any) {
 }
 
 async function handleSubscriptionDeleted(subscription: any) {
-  console.log('❌ Assinatura cancelada, atualizando status...');
-  console.log('📋 Dados do evento:', {
+  console.log('❌ WEBHOOK HANDLER: Início de processamento de cancelamento de assinatura');
+  console.log('📋 WEBHOOK HANDLER: Dados do evento:', JSON.stringify({
     subscriptionId: subscription.id,
-    status: subscription.status
-  });
+    status: subscription.status,
+    customer: subscription.customer
+  }));
   
   try {
-    console.log('🔄 Usando função SQL direta para garantir atualização');
-    
-    // Chamar a função SQL que desativa triggers temporariamente para garantir a atualização
-    const { data, error } = await supabase.rpc('direct_update_subscription_status', {
-      sub_id: subscription.id,
-      new_status: 'canceled'
-    });
-    
-    if (error) {
-      console.error('❌ Erro ao executar função SQL direta:', error);
-    } else {
-      console.log('✅ Função SQL executada com sucesso:', data);
-    }
-    
-    // Verificar se a atualização funcionou
-    const { data: checkResult, error: checkError } = await supabase
+    // 1. Verificar se a assinatura existe no banco de dados
+    console.log(`🔍 WEBHOOK HANDLER: Buscando assinatura ${subscription.id} no banco de dados`);
+    const { data: existingSubscription, error: findError } = await supabase
       .from('subscriptions')
-      .select('status, updated_at')
+      .select('id, subscription_id, status, user_id')
       .eq('subscription_id', subscription.id)
       .single();
     
-    if (checkError) {
-      console.error('❌ Erro ao verificar resultado:', checkError);
-    } else {
-      console.log('🔍 Status atual após atualização:', {
-        status: checkResult?.status,
-        updated_at: checkResult?.updated_at,
-        updated_at_date: checkResult?.updated_at ? new Date(checkResult.updated_at * 1000).toISOString() : null
-      });
-      
-      if (checkResult?.status !== 'canceled') {
-        console.log('⚠️ ALERTA: Status ainda não está como canceled após todas as tentativas!');
-      } else {
-        console.log('✅ Status atualizado com sucesso para canceled!');
+    if (findError) {
+      console.error(`❌ WEBHOOK HANDLER: Erro ao buscar assinatura:`, findError);
+      if (findError.code === 'PGRST116') {
+        console.log(`⚠️ WEBHOOK HANDLER: Assinatura ${subscription.id} não encontrada no banco de dados`);
       }
+      return;
     }
     
-    console.log('✅ Processo de cancelamento de assinatura concluído');
+    if (!existingSubscription) {
+      console.log(`⚠️ WEBHOOK HANDLER: Assinatura ${subscription.id} não encontrada no banco de dados (resultado vazio)`);
+      return;
+    }
+    
+    console.log(`✅ WEBHOOK HANDLER: Assinatura encontrada no banco:`, {
+      id: existingSubscription.id,
+      status: existingSubscription.status,
+      user_id: existingSubscription.user_id
+    });
+    
+    // 2. Tentativa 1: UPDATE direto via API Supabase
+    console.log(`🔄 WEBHOOK HANDLER: Tentativa 1 - Atualizando via API Supabase`);
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({ status: 'canceled' })
+      .eq('id', existingSubscription.id);
+    
+    if (updateError) {
+      console.error(`❌ WEBHOOK HANDLER: Erro na Tentativa 1:`, updateError);
+    } else {
+      console.log(`✅ WEBHOOK HANDLER: Tentativa 1 bem-sucedida`);
+    }
+    
+    // 3. Verificar se a atualização funcionou
+    console.log(`🔍 WEBHOOK HANDLER: Verificando resultado da atualização`);
+    const { data: verifyResult, error: verifyError } = await supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('id', existingSubscription.id)
+      .single();
+    
+    if (verifyError) {
+      console.error(`❌ WEBHOOK HANDLER: Erro ao verificar atualização:`, verifyError);
+    } else {
+      console.log(`📊 WEBHOOK HANDLER: Status após primeira tentativa:`, verifyResult?.status);
+    }
+    
+    // 4. Se a primeira tentativa falhou, tentar com SQL bruto
+    if (!verifyResult || verifyResult.status !== 'canceled') {
+      console.log(`🔄 WEBHOOK HANDLER: Tentativa 2 - SQL bruto via cliente Supabase`);
+      
+      const updateQuery = `
+        UPDATE subscriptions 
+        SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)} 
+        WHERE id = '${existingSubscription.id}'
+      `;
+      
+      console.log(`📝 WEBHOOK HANDLER: Executando query:`, updateQuery);
+      
+      const { error: sqlError } = await supabase.rpc('execute_sql', { 
+        sql_query: updateQuery 
+      });
+      
+      if (sqlError) {
+        console.error(`❌ WEBHOOK HANDLER: Erro na Tentativa 2:`, sqlError);
+      } else {
+        console.log(`✅ WEBHOOK HANDLER: Tentativa 2 bem-sucedida`);
+      }
+      
+      // Verificar novamente
+      const { data: finalCheck } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('id', existingSubscription.id)
+        .single();
+      
+      console.log(`📊 WEBHOOK HANDLER: Status final:`, finalCheck?.status);
+    }
+    
+    console.log(`✅ WEBHOOK HANDLER: Processamento de cancelamento de assinatura concluído`);
   } catch (error) {
-    console.error('❌ Erro geral ao processar cancelamento:', error);
+    console.error(`❌ WEBHOOK HANDLER: Erro geral ao processar cancelamento:`, error);
   }
 }
 
