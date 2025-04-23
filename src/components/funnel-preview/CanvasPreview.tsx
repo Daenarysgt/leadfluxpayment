@@ -60,13 +60,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     console.log(`CanvasPreview - Navegando da etapa ${activeStep} para etapa ${index}`);
     
     try {
-      // Registrar interação do usuário com o funil para a etapa ATUAL
-      await accessService.registerStepInteraction(
-        funnel.id,
-        activeStep + 1, // Usar activeStep em vez de index para registrar a etapa atual
-        sessionId,
-        'click'
-      );
+      // Removemos o registro automático de interação 'click' aqui
+      // Agora apenas atualizamos o progresso sem registrar interações falsas
       
       // Se chegou na última etapa
       if (index === funnel.steps.length - 1) {
@@ -121,34 +116,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     event.preventDefault();
     
     console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
-    // Obter o ID do botão ou gerar um ID padrão
-    const buttonId = event.currentTarget.id || `btn-step-${activeStep+1}`;
     
-    // Em ambientes de produção (não preview), registrar a interação
-    if (window.location.pathname.includes('/f/')) {
-      try {
-        console.log(`Tentando registrar interação para step ${activeStep+1} em ambiente de produção`);
-        const sessionId = window.sessionStorage.getItem('funnel_session_id');
-        const funnelId = funnel?.id;
-        
-        if (funnelId && sessionId) {
-          accessService.registerStepInteraction(
-            funnelId,
-            activeStep+1,
-            sessionId,
-            'click',
-            null,
-            buttonId
-          ).then(() => {
-            console.log('Interação registrada com sucesso no modo público');
-          }).catch(err => {
-            console.error('Erro ao registrar interação no modo público:', err);
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao tentar registrar interação:', error);
-      }
-    }
+    // Removemos o registro automático de interação aqui
+    // As interações devem ser registradas apenas quando o usuário realmente interage com elementos
     
     // Avançar para o próximo passo
     if (onStepChange) {
