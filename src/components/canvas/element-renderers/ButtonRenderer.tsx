@@ -195,16 +195,10 @@ const ButtonRenderer = (props: ElementRendererProps) => {
             console.log("Is last step?", isLastStep);
             
             if (isLastStep) {
-              // Se for o último step, registrar o clique e marcar como conversão
-              console.log("Registrando conversão para o funil:", funnel.id);
+              // Se for o último step, apenas marcar como conversão sem registrar interação falsa
+              console.log("Último passo - marcando como conversão para o funil:", funnel.id);
               try {
-                // Registrar o clique do botão
-                await accessService.registerStepInteraction(
-                  funnel.id,
-                  Number(activeStep + 1),
-                  null,
-                  'click'
-                );
+                // Remover o registro automático de clique do botão
                 // Marcar como conversão
                 await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
                 console.log("Conversão registrada com sucesso!");
@@ -243,16 +237,10 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               console.log("Is last step (specific)?", isLastStep);
               
               if (isLastStep) {
-                // Se for o último step, registrar o clique e marcar como conversão
-                console.log("Registrando conversão para o funil (specific):", funnel.id);
+                // Se for o último step, apenas marcar como conversão sem registrar interação falsa
+                console.log("Último passo específico - marcando como conversão para o funil:", funnel.id);
                 try {
-                  // Registrar o clique do botão
-                  await accessService.registerStepInteraction(
-                    funnel.id,
-                    Number(stepIndex + 1),
-                    null,
-                    'click'
-                  );
+                  // Remover o registro automático de clique do botão
                   // Marcar como conversão
                   await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
                   console.log("Conversão registrada com sucesso (specific)!");

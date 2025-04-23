@@ -59,6 +59,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           const interactionValue = option.text || option.value || "Nova opção";
           console.log("Registrando interação com valor:", interactionValue, "para funil:", funnel.id, "etapa:", activeStep + 1);
           
+          // Registrar apenas uma única interação do tipo 'choice' para a opção selecionada pelo usuário
           await accessService.registerStepInteraction(
             funnel.id,
             Number(activeStep + 1),
@@ -69,11 +70,11 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           
           console.log(`Interação da imagem registrada com sucesso: "${interactionValue}" na etapa ${activeStep + 1}`);
           
-          // Executar a navegação baseada no tipo
+          // Executar a navegação baseada no tipo, sem registrar interações adicionais
           if (navigationType === "next") {
             console.log("Navegação para próxima etapa. Atual:", activeStep, "Total:", funnel.steps.length);
             if (funnel && activeStep < funnel.steps.length - 1) {
-              // Atualizar progresso antes de mudar de step
+              // Apenas atualizar o progresso sem registrar interações adicionais
               console.log("Atualizando progresso para etapa:", activeStep + 1);
               await accessService.updateProgress(funnel.id, Number(activeStep + 1), null);
               
@@ -81,7 +82,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
               console.log("Navegando para próxima etapa:", activeStep + 1);
               setTimeout(() => onStepChange(activeStep + 1), 100);
             } else if (funnel && activeStep === funnel.steps.length - 1) {
-              // Se for o último step, marcar como conversão
+              // Se for o último step, marcar como conversão (sem registrar interações adicionais)
               console.log("Última etapa - marcando como conversão");
               await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
             }
@@ -93,12 +94,12 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
               console.log("Índice da etapa encontrado:", stepIndex, "de total:", funnel.steps.length);
               
               if (stepIndex !== -1) {
-                // Atualizar progresso antes de mudar de step
+                // Apenas atualizar o progresso sem registrar interações adicionais
                 console.log("Atualizando progresso para etapa específica:", stepIndex + 1);
                 await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null);
                 
                 if (stepIndex === funnel.steps.length - 1) {
-                  // Se for o último step, marcar como conversão
+                  // Se for o último step, marcar como conversão (sem registrar interações adicionais)
                   console.log("Última etapa (específica) - marcando como conversão");
                   await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
                 }

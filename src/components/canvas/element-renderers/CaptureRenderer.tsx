@@ -114,10 +114,10 @@ const CaptureRenderer = (props: ElementRendererProps) => {
             console.log("Is last step?", isLastStep);
             
             if (isLastStep) {
-              // Se for o último step, registrar o clique e marcar como conversão
+              // Se for o último step, registrar apenas o envio do formulário e marcar como conversão
               console.log("Registrando conversão para o funil:", funnel.id);
               try {
-                // Registrar o clique do botão
+                // Registrar o envio do formulário - isso faz sentido manter pois é uma interação real
                 await accessService.registerStepInteraction(
                   funnel.id,
                   Number(activeStep + 1),
@@ -144,10 +144,10 @@ const CaptureRenderer = (props: ElementRendererProps) => {
               console.log("Is last step (specific)?", isLastStep);
               
               if (isLastStep) {
-                // Se for o último step, registrar o clique e marcar como conversão
+                // Se for o último step, registrar apenas o envio do formulário e marcar como conversão
                 console.log("Registrando conversão para o funil (specific):", funnel.id);
                 try {
-                  // Registrar o clique do botão
+                  // Registrar o envio do formulário - isso faz sentido manter pois é uma interação real
                   await accessService.registerStepInteraction(
                     funnel.id,
                     Number(stepIndex + 1),
