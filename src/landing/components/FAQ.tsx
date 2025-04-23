@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 const faqs = [
   {
-    question: "Como funciona o período gratuito?",
-    answer: "Você tem 14 dias para testar todas as funcionalidades do LeadFlux sem compromisso. Não é necessário cartão de crédito para começar."
+    question: "Posso usar o meu domínio na LeadFlux?",
+    answer: "LeadFlux é a plataforma digital que coloca você no controle da sua estratégia online. Com uma interface simples e poderosa você cria páginas e funis de conversão totalmente personalizados, sem complicação. Ideal para quem quer transformar cliques em resultados reais — seja você um empreendedor, infoprodutor ou empresa em crescimento.."
   },
   {
     question: "Posso cancelar a qualquer momento?",
@@ -18,8 +18,13 @@ const faqs = [
     answer: "Sim, oferecemos suporte técnico por email, chat e WhatsApp. Nossa equipe está disponível em horário comercial para ajudar você."
   },
   {
-    question: "Como funciona a integração com outras ferramentas?",
-    answer: "O LeadFlux possui integrações nativas com as principais ferramentas do mercado. Também oferecemos uma API robusta para integrações customizadas."
+    question: "Como posso começar a usar a Leadflux?",
+    answer: "Para começar com o Leadflux, basta criar sua conta e escolher o plano ideal para o seu negócio. Logo após o registro, você terá acesso imediato ao nosso editor intuitivo e aos modelos otimizados para construir funis de alta conversão em poucos minutos"
+  },
+
+  {
+    question: "Por que os funis de vendas são essenciais para quem quer vender mais?",
+    answer: "Os funis de vendas são fundamentais para transformar visitantes em clientes de forma estratégica. Eles conduzem o usuário por um caminho pensado para cada etapa da jornada de compra — desde o primeiro clique até a decisão final. Com eles, você consegue segmentar o público certo, nutrir seus leads com conteúdo relevante e maximizar suas conversões com muito mais eficiência."
   }
 ];
 
