@@ -353,29 +353,20 @@ export const accessService = {
         console.log('Progresso atualizado com sucesso:', data);
       }
 
-      // Registrar também uma interação neste passo específico
-      try {
-        await this.registerStepInteraction(
-          funnelId,
-          stepNumber,
-          activeSessionId,
-          'click' // tipo padrão de interação
-        );
-        
-        // Se for conversão, registrar no funnel_flow_events também
-        if (isConversion) {
-          const { error: flowError } = await supabase
-            .rpc('register_flow_complete', {
-              p_funnel_id: funnelId,
-              p_session_id: activeSessionId
-            });
-            
-          if (flowError) {
-            console.error('Erro ao registrar conclusão de fluxo:', flowError);
-          }
+      // Não registrar interação automática ao apenas atualizar o progresso
+      // Essa interação deve ser registrada apenas quando o usuário realmente interage com a etapa
+      
+      // Se for conversão, registrar no funnel_flow_events também
+      if (isConversion) {
+        const { error: flowError } = await supabase
+          .rpc('register_flow_complete', {
+            p_funnel_id: funnelId,
+            p_session_id: activeSessionId
+          });
+          
+        if (flowError) {
+          console.error('Erro ao registrar conclusão de fluxo:', flowError);
         }
-      } catch (regErr) {
-        console.error('Erro ao registrar interação complementar:', regErr);
       }
     } catch (error) {
       console.error('Error updating progress:', error);
