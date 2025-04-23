@@ -59,6 +59,7 @@ import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { funnelService } from '@/services/funnelService';
 import ProfileModal from '@/components/ProfileModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { TestCanceledSubscription } from '@/components/TestCanceledSubscription';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -479,6 +480,7 @@ const Dashboard = () => {
               >
                 <User className="h-5 w-5 text-primary" />
               </Button>
+              <TestCanceledSubscription />
               <Button 
                 variant="outline" 
                 onClick={handleOpenNewFunnelDialog}

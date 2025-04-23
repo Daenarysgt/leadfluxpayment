@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { SubscriptionCanceledModal } from './SubscriptionCanceledModal';
 
 export const withSubscription = (WrappedComponent: React.ComponentType) => {
   return (props: any) => {
@@ -12,6 +13,8 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [noSubscription, setNoSubscription] = useState(false);
+    const [hasCanceledSubscription, setHasCanceledSubscription] = useState(false);
+    const [showCanceledModal, setShowCanceledModal] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -21,6 +24,23 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
       const checkSubscription = async () => {
         try {
           console.log('🔍 Verificando assinatura do usuário...');
+          
+          // Verificar se tem assinatura cancelada
+          try {
+            const canceledSubscription = await paymentService.checkCanceledSubscription();
+            if (canceledSubscription) {
+              console.log('⚠️ Assinatura cancelada encontrada, exibindo modal');
+              if (isMounted) {
+                setHasCanceledSubscription(true);
+                setShowCanceledModal(true);
+                setIsLoading(false);
+                return; // Não seguir com outras verificações
+              }
+            }
+          } catch (cancelCheckError) {
+            console.error('❌ Erro ao verificar assinatura cancelada:', cancelCheckError);
+            // Continuar com as verificações normais
+          }
           
           // NOVO: Verificação direta no banco de dados via Supabase
           try {
@@ -243,6 +263,29 @@ export const withSubscription = (WrappedComponent: React.ComponentType) => {
             <p className="text-gray-600">Verificando sua assinatura...</p>
           </div>
         </div>
+      );
+    }
+    
+    // Exibir o modal de assinatura cancelada se necessário
+    if (hasCanceledSubscription) {
+      return (
+        <>
+          <SubscriptionCanceledModal 
+            open={showCanceledModal} 
+            onOpenChange={setShowCanceledModal} 
+          />
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-md">
+              <h2 className="text-xl font-bold mb-4">Sua assinatura foi cancelada</h2>
+              <p className="text-gray-600 mb-6">
+                Para continuar usando o LeadFlux, você precisa reativar sua assinatura.
+              </p>
+              <Button onClick={() => setShowCanceledModal(true)}>
+                Reativar Assinatura
+              </Button>
+            </div>
+          </div>
+        </>
       );
     }
     

@@ -544,5 +544,62 @@ export const paymentService = {
       console.error('Erro ao executar diagnóstico de assinatura:', error);
       throw error;
     }
+  },
+
+  /**
+   * Verifica se o usuário tem uma assinatura cancelada
+   * Retorna os detalhes da assinatura cancelada ou null se não houver
+   */
+  async checkCanceledSubscription(): Promise<{
+    id: string;
+    planId: string;
+    canceledAt: Date;
+  } | null> {
+    try {
+      console.log('🔍 Verificando se há assinaturas canceladas...');
+      
+      // Obter o usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('❌ Usuário não autenticado');
+        return null;
+      }
+      
+      // Buscar assinaturas canceladas do usuário
+      const { data: canceledSubscriptions, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'canceled')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('❌ Erro ao verificar assinaturas canceladas:', error);
+        return null;
+      }
+      
+      if (!canceledSubscriptions || canceledSubscriptions.length === 0) {
+        console.log('✅ Nenhuma assinatura cancelada encontrada');
+        return null;
+      }
+      
+      const canceledSubscription = canceledSubscriptions[0];
+      console.log('⚠️ Assinatura cancelada encontrada:', {
+        id: canceledSubscription.id,
+        planId: canceledSubscription.plan_id,
+        updatedAt: canceledSubscription.updated_at
+      });
+      
+      return {
+        id: canceledSubscription.subscription_id,
+        planId: canceledSubscription.plan_id,
+        canceledAt: new Date(canceledSubscription.updated_at * 1000)
+      };
+    } catch (error) {
+      console.error('❌ Erro ao verificar assinaturas canceladas:', error);
+      return null;
+    }
   }
 }; 
