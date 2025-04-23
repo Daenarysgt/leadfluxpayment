@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
@@ -13,19 +13,84 @@ import { AlertOctagon, CheckCircle } from "lucide-react";
 import { PLANS } from '@/config/plans';
 import { toast } from '@/components/ui/use-toast';
 import { paymentService } from '@/services/paymentService';
+import { supabase } from '@/lib/supabase';
 
 interface SubscriptionCanceledModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+// Preços padrão para cada plano (caso não consiga carregar do banco)
+const DEFAULT_PRICES = {
+  basic: { monthly: 97, annual: 77 },
+  pro: { monthly: 197, annual: 157 },
+  elite: { monthly: 297, annual: 237 },
+  scale: { monthly: 497, annual: 397 }
+};
+
 export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCanceledModalProps) {
   const [loading, setLoading] = useState(false);
+  const [planPrices, setPlanPrices] = useState<Record<string, { monthly: number, annual: number }>>(DEFAULT_PRICES);
+  const [loadingPrices, setLoadingPrices] = useState(true);
   const navigate = useNavigate();
   
   // Estado para armazenar plano e intervalo selecionados
   const [selectedPlan, setSelectedPlan] = useState(PLANS.find(plan => plan.id === 'pro'));
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+
+  // Carrega os preços dos planos do banco de dados
+  useEffect(() => {
+    const fetchPlanPrices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .order('price_monthly');
+        
+        if (error) {
+          console.error('Erro ao buscar preços:', error);
+          return;
+        }
+        
+        // Mapear os dados para o formato esperado
+        if (data && data.length > 0) {
+          const priceMap: Record<string, { monthly: number, annual: number }> = {};
+          
+          data.forEach(plan => {
+            // Determinar o ID do plano baseado no nome
+            let backendId = 'basic'; // valor padrão
+            const planName = plan.name.toLowerCase();
+            
+            if (planName.includes('basic')) {
+              backendId = 'basic';
+            } 
+            else if (planName.includes('pro')) {
+              backendId = 'pro';
+            }
+            else if (planName.includes('elite')) {
+              backendId = 'elite';
+            }
+            else if (planName.includes('scale') || planName.includes('enterprise')) {
+              backendId = 'scale';
+            }
+            
+            priceMap[backendId] = {
+              monthly: plan.price_monthly || DEFAULT_PRICES[backendId as keyof typeof DEFAULT_PRICES].monthly,
+              annual: plan.price_annual || DEFAULT_PRICES[backendId as keyof typeof DEFAULT_PRICES].annual
+            };
+          });
+          
+          setPlanPrices(priceMap);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar preços dos planos:', err);
+      } finally {
+        setLoadingPrices(false);
+      }
+    };
+    
+    fetchPlanPrices();
+  }, []);
 
   const handleNavigateToCheckout = async () => {
     if (!selectedPlan) return;
@@ -58,6 +123,20 @@ export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCa
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para pegar o preço correto do plano
+  const getPlanPrice = (planId: string, interval: 'month' | 'year') => {
+    const defaultPrice = DEFAULT_PRICES[planId as keyof typeof DEFAULT_PRICES];
+    const price = planPrices[planId];
+    
+    if (!price) {
+      return interval === 'month' 
+        ? defaultPrice?.monthly || 97 
+        : defaultPrice?.annual || 77;
+    }
+    
+    return interval === 'month' ? price.monthly : price.annual;
   };
 
   return (
@@ -122,9 +201,7 @@ export function SubscriptionCanceledModal({ open, onOpenChange }: SubscriptionCa
                   <h3 className="font-medium">{plan.name}</h3>
                   <div className="mt-2 mb-3">
                     <span className="text-2xl font-bold">
-                      {billingInterval === 'month' 
-                        ? `R$${(plan.monthlyPriceId.includes('trial') ? 0 : 97)}`
-                        : `R$${(plan.annualPriceId.includes('trial') ? 0 : 77)}`}
+                      {`R$${getPlanPrice(plan.id, billingInterval).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     </span>
                     <span className="text-gray-500">/{billingInterval === 'month' ? 'mês' : 'mês'}</span>
                   </div>
