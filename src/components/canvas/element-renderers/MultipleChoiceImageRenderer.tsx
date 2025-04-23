@@ -79,7 +79,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
               
               // Pequeno atraso para garantir que as operações do banco de dados foram concluídas
               console.log("Navegando para próxima etapa:", activeStep + 1);
-              setTimeout(() => onStepChange(activeStep + 1), 200);
+              setTimeout(() => onStepChange(activeStep + 1), 100);
             } else if (funnel && activeStep === funnel.steps.length - 1) {
               // Se for o último step, marcar como conversão
               console.log("Última etapa - marcando como conversão");
@@ -105,7 +105,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                 
                 // Navegar com um pequeno atraso
                 console.log("Navegando para etapa específica:", stepIndex);
-                setTimeout(() => onStepChange(stepIndex), 200);
+                setTimeout(() => onStepChange(stepIndex), 100);
               } else {
                 console.error("Etapa não encontrada com ID:", option.navigation.stepId);
               }

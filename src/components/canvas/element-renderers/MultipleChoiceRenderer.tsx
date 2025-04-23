@@ -137,19 +137,19 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             // Log para confirmar que os dados foram salvos
             console.log(`Interação registrada com sucesso para opção: "${selection}" (ID: ${option.id}) na etapa ${activeStep + 1}`);
             
-            // MODIFICAÇÃO: Adicionamos um atraso para garantir que os dados sejam persistidos
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // MODIFICAÇÃO: Reduzimos o atraso para melhorar a experiência do usuário
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             // Verificar tipo de navegação e executar ação correspondente
             if (navigationType === "next") {
               console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
               if (activeStep < funnel.steps.length - 1) {
                 console.log("Navegando para a próxima etapa:", activeStep + 1);
-                // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+                // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
                 setTimeout(() => {
                   onStepChange(activeStep + 1);
                   setIsProcessingInteraction(false);
-                }, 500);
+                }, 150);
               } else if (activeStep === funnel.steps.length - 1) {
                 // Se for o último step, marcar como conversão
                 console.log("Última etapa - marcando como conversão");
@@ -171,16 +171,16 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   setTimeout(() => {
                     onStepChange(stepIndex);
                     setIsProcessingInteraction(false);
-                  }, 500);
+                  }, 150);
                 } else {
                   // Atualizar o progresso para a etapa específica
                   await accessService.updateProgress(funnel.id, stepIndex + 1, null);
                   
-                  // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+                  // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
                   setTimeout(() => {
                     onStepChange(stepIndex);
                     setIsProcessingInteraction(false);
-                  }, 500);
+                  }, 150);
                 }
               } else {
                 console.error("Etapa não encontrada com ID:", option.navigation.stepId);
@@ -193,11 +193,11 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
               await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
               console.log("Redirecionando para URL externa");
               
-              // MODIFICAÇÃO: Aumentamos o delay para garantir persistência
+              // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
               setTimeout(() => {
                 window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
                 setIsProcessingInteraction(false);
-              }, 500);
+              }, 150);
             }
           } catch (error) {
             console.error("Erro durante a navegação:", error);
