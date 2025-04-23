@@ -55,17 +55,12 @@ const AccordionRenderer = (props: ElementRendererProps) => {
     }
   };
   
-  // Função para renderizar um ícone baseado em se o item está expandido ou não
-  const renderIcon = (index: number) => {
+  // Função para obter a cor do ícone com base no estado expandido
+  const getIconColor = (index: number) => {
     const isExpanded = expandedItems[index];
-    const activeColor = content?.activeIconColor || "#3b82f6"; // Azul padrão quando expandido
-    const inactiveColor = content?.inactiveIconColor || "#64748b"; // Cinza padrão quando não expandido
-    
-    return isExpanded ? (
-      <ChevronUp color={activeColor} size={20} />
-    ) : (
-      <ChevronDown color={inactiveColor} size={20} />
-    );
+    return isExpanded 
+      ? content?.iconExpandedColor || "#3b82f6" // Cor quando expandido
+      : content?.iconCollapsedColor || "#64748b"; // Cor quando recolhido
   };
   
   // Manipulador de clique específico para o ícone
@@ -113,7 +108,10 @@ const AccordionRenderer = (props: ElementRendererProps) => {
               role="button"
               aria-expanded={!!expandedItems[index]}
             >
-              <div className="font-medium text-sm">
+              <div 
+                className="font-medium text-sm"
+                style={getTitleStyle(item)}
+              >
                 {item.title}
               </div>
               <div 
@@ -125,9 +123,15 @@ const AccordionRenderer = (props: ElementRendererProps) => {
                 }}
               >
                 {expandedItems[index] ? (
-                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                  <ChevronUp 
+                    className="h-4 w-4" 
+                    style={{color: content?.iconExpandedColor || content?.corIconeExpandido || "#3b82f6"}}
+                  />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                  <ChevronDown 
+                    className="h-4 w-4" 
+                    style={{color: content?.iconCollapsedColor || content?.corIconeRecolhido || "#64748b"}}
+                  />
                 )}
               </div>
             </div>
