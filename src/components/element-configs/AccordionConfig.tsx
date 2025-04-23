@@ -64,7 +64,10 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
       contentColor: content.defaultContentColor || "#666666",
       titleSize: content.defaultTitleSize || 16,
       contentSize: content.defaultContentSize || 14,
-      titleBold: false
+      titleBold: false,
+      titleItalic: false,
+      backgroundColor: content.defaultBackgroundColor || "#f9fafb",
+      borderColor: content.defaultBorderColor || "#e5e7eb"
     }];
     
     handleContentUpdate({ items: newItems });
@@ -116,7 +119,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
   };
   
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 pb-24">
       <div>
         <h3 className="text-lg font-medium">Configurar Accordion</h3>
         <p className="text-sm text-muted-foreground">

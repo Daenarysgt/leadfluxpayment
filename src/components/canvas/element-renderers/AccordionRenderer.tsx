@@ -30,6 +30,7 @@ const AccordionRenderer = (props: ElementRendererProps) => {
   const getContentStyle = (item: any) => ({
     color: item.contentColor || content?.defaultContentColor || "#666666",
     fontSize: `${item.contentSize || content?.defaultContentSize || 14}px`,
+    lineHeight: 1.5
   });
   
   // Função para obter estilos de borda e fundo para itens
@@ -67,6 +68,12 @@ const AccordionRenderer = (props: ElementRendererProps) => {
     );
   };
   
+  // Manipulador de clique específico para o ícone
+  const handleIconClick = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation(); // Impede a propagação do evento
+    toggleItem(index);
+  };
+  
   return (
     <BaseElementRenderer {...props}>
       <div 
@@ -95,13 +102,19 @@ const AccordionRenderer = (props: ElementRendererProps) => {
           >
             {/* Cabeçalho do item (sempre visível) */}
             <div 
-              className="flex items-center justify-between p-4 cursor-pointer"
+              className="flex items-center justify-between p-4 cursor-pointer relative"
               onClick={() => toggleItem(index)}
             >
               <h4 style={getTitleStyle(item)}>
                 {item.title || `Item ${index + 1}`}
               </h4>
-              {renderIcon(index)}
+              {/* Wrapper para o ícone com z-index elevado */}
+              <div 
+                className="relative z-10 cursor-pointer" 
+                onClick={(e) => handleIconClick(e, index)}
+              >
+                {renderIcon(index)}
+              </div>
             </div>
             
             {/* Conteúdo do item (visível apenas quando expandido) */}
