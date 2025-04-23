@@ -256,7 +256,7 @@ router.get('/subscription', async (req, res) => {
               current_period_end: stripeEnd,
               updated_at: now
             })
-            .eq('id', subscription.id);
+            .eq('subscription_id', subscription.subscription_id);
           
           // Converte o timestamp para ISO para a resposta
           const currentPeriodEnd = new Date(stripeEnd * 1000).toISOString();
@@ -1203,7 +1203,7 @@ async function handleSubscriptionDeleted(subscription: any) {
         status: 'canceled',
         updated_at: Math.floor(Date.now() / 1000)
       })
-      .eq('id', existingSubscription.id);
+      .eq('subscription_id', subscription.subscription_id);
     
     if (updateError) {
       console.error(`❌ WEBHOOK HANDLER: Erro ao atualizar com supabaseAdmin:`, updateError);
@@ -1211,7 +1211,7 @@ async function handleSubscriptionDeleted(subscription: any) {
       // TENTATIVA ADICIONAL - SQL DIRETO
       console.log(`🔄 WEBHOOK HANDLER: Tentativa alternativa - SQL direto via RPC`);
       try {
-        const updateQuery = `UPDATE subscriptions SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)} WHERE id = '${existingSubscription.id}'`;
+        const updateQuery = `UPDATE subscriptions SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)} WHERE subscription_id = '${subscription.id}'`;
         const { error: rpcError } = await supabaseAdmin.rpc('execute_sql', { sql_query: updateQuery });
         
         if (rpcError) {
@@ -1231,7 +1231,7 @@ async function handleSubscriptionDeleted(subscription: any) {
     const { data: verifyResult, error: verifyError } = await supabaseAdmin
       .from('subscriptions')
       .select('status')
-      .eq('id', existingSubscription.id)
+      .eq('subscription_id', subscription.id)
       .single();
     
     if (verifyError) {
@@ -1329,7 +1329,7 @@ router.post('/cancel-subscription', async (req, res) => {
         status: 'canceled',
         updated_at: new Date().toISOString()
       })
-      .eq('id', subscription.id);
+      .eq('subscription_id', subscription.subscription_id);
 
     if (updateError) {
       console.error('❌ Erro ao cancelar assinatura:', updateError);
@@ -1492,7 +1492,7 @@ router.post('/admin/cancel-subscription', async (req, res) => {
           status: 'canceled',
           updated_at: new Date().toISOString()
         })
-        .eq('id', sub.id);
+        .eq('subscription_id', sub.subscription_id);
 
       if (updateError) {
         console.error(`❌ Erro ao cancelar assinatura ${sub.id}:`, updateError);

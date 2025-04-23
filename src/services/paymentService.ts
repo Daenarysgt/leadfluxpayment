@@ -245,7 +245,7 @@ export const paymentService = {
                         status: 'canceled',
                         updated_at: Math.floor(Date.now() / 1000)
                       })
-                      .eq('id', subscription.id);
+                      .eq('subscription_id', subscription.id);
                     
                     if (updateError) {
                       console.error('❌ Erro ao atualizar status da assinatura:', updateError);

@@ -77,7 +77,7 @@ async function main() {
             current_period_end,
             updated_at: Math.floor(Date.now() / 1000)
           })
-          .eq('id', subscription.id);
+          .eq('subscription_id', subscription.subscription_id);
           
         if (updateError) {
           throw new Error(`Erro ao atualizar: ${updateError.message}`);
@@ -103,7 +103,7 @@ async function main() {
             current_period_end: end,
             updated_at: Math.floor(Date.now() / 1000)
           })
-          .eq('id', subscription.id);
+          .eq('subscription_id', subscription.subscription_id);
           
         if (updateError) {
           throw new Error(`Erro ao atualizar: ${updateError.message}`);
