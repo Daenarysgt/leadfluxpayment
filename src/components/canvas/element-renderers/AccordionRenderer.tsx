@@ -23,6 +23,7 @@ const AccordionRenderer = (props: ElementRendererProps) => {
   const getTitleStyle = (item: any) => ({
     color: item.titleColor || content?.defaultTitleColor || "#000000",
     fontWeight: item.titleBold ? "bold" : "normal",
+    fontStyle: item.titleItalic ? "italic" : "normal",
     fontSize: `${item.titleSize || content?.defaultTitleSize || 16}px`,
   });
   
@@ -31,12 +32,26 @@ const AccordionRenderer = (props: ElementRendererProps) => {
     fontSize: `${item.contentSize || content?.defaultContentSize || 14}px`,
   });
   
+  // Função para obter estilos de borda e fundo para itens
+  const getItemContainerStyle = (item: any) => ({
+    backgroundColor: item.backgroundColor || content?.defaultBackgroundColor || (content?.displayStyle === "faq" ? "transparent" : "#f9fafb"),
+    borderColor: item.borderColor || content?.defaultBorderColor || "#e5e7eb",
+  });
+  
   // Função para alternar a expansão de um item
   const toggleItem = (index: number) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
+    // Se não permite múltiplos itens abertos, fechamos todos os outros
+    if (!content?.allowMultiple) {
+      const newState: Record<number, boolean> = {};
+      newState[index] = !expandedItems[index];
+      setExpandedItems(newState);
+    } else {
+      // Se permite múltiplos, apenas alteramos o estado do item clicado
+      setExpandedItems(prev => ({
+        ...prev,
+        [index]: !prev[index]
+      }));
+    }
   };
   
   // Função para renderizar um ícone baseado em se o item está expandido ou não
@@ -74,8 +89,9 @@ const AccordionRenderer = (props: ElementRendererProps) => {
             key={index} 
             className={cn(
               "border rounded-md overflow-hidden",
-              content?.displayStyle === "faq" ? "border-gray-200" : "bg-gray-50 border-transparent"
+              content?.displayStyle === "faq" ? "border-gray-200" : ""
             )}
+            style={getItemContainerStyle(item)}
           >
             {/* Cabeçalho do item (sempre visível) */}
             <div 

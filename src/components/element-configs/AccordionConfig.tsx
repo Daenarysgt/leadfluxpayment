@@ -163,7 +163,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                 <SelectValue placeholder="Selecione o estilo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Padrão (como na imagem)</SelectItem>
+                <SelectItem value="default">Padrão</SelectItem>
                 <SelectItem value="faq">FAQ (Perguntas Frequentes)</SelectItem>
               </SelectContent>
             </Select>
@@ -270,7 +270,7 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         onChange={(e) => updateItem(currentItemIndex, { title: e.target.value })}
                         placeholder="Título do item"
                       />
-                      <ToggleGroup type="single" variant="outline">
+                      <ToggleGroup type="multiple" variant="outline">
                         <ToggleGroupItem
                           value="bold"
                           aria-label="Negrito"
@@ -279,6 +279,15 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                           onClick={() => updateItem(currentItemIndex, { titleBold: !currentItem.titleBold })}
                         >
                           <Bold className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="italic"
+                          aria-label="Itálico"
+                          className="h-9 w-9 p-0"
+                          data-state={currentItem.titleItalic ? "on" : "off"}
+                          onClick={() => updateItem(currentItemIndex, { titleItalic: !currentItem.titleItalic })}
+                        >
+                          <span className="italic font-serif text-sm">I</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -327,6 +336,44 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                         <Input
                           value={currentItem.contentColor || content.defaultContentColor || "#666666"}
                           onChange={(e) => updateItem(currentItemIndex, { contentColor: e.target.value })}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="item-bg-color">Cor de fundo</Label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="color"
+                          id="item-bg-color"
+                          value={currentItem.backgroundColor || content.defaultBackgroundColor || "#f9fafb"}
+                          onChange={(e) => updateItem(currentItemIndex, { backgroundColor: e.target.value })}
+                          className="w-10 h-10 rounded cursor-pointer"
+                        />
+                        <Input
+                          value={currentItem.backgroundColor || content.defaultBackgroundColor || "#f9fafb"}
+                          onChange={(e) => updateItem(currentItemIndex, { backgroundColor: e.target.value })}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="item-border-color">Cor da borda</Label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="color"
+                          id="item-border-color"
+                          value={currentItem.borderColor || content.defaultBorderColor || "#e5e7eb"}
+                          onChange={(e) => updateItem(currentItemIndex, { borderColor: e.target.value })}
+                          className="w-10 h-10 rounded cursor-pointer"
+                        />
+                        <Input
+                          value={currentItem.borderColor || content.defaultBorderColor || "#e5e7eb"}
+                          onChange={(e) => updateItem(currentItemIndex, { borderColor: e.target.value })}
                           className="flex-1"
                         />
                       </div>
@@ -425,6 +472,45 @@ const AccordionConfig = ({ element, onUpdate }: AccordionConfigProps) => {
                   <Input
                     value={content.defaultContentColor || "#666666"}
                     onChange={(e) => handleContentUpdate({ defaultContentColor: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Cores padrão para fundos e bordas */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="default-bg-color">Cor padrão de fundo</Label>
+                <div className="flex space-x-2">
+                  <input
+                    type="color"
+                    id="default-bg-color"
+                    value={content.defaultBackgroundColor || "#f9fafb"}
+                    onChange={(e) => handleContentUpdate({ defaultBackgroundColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={content.defaultBackgroundColor || "#f9fafb"}
+                    onChange={(e) => handleContentUpdate({ defaultBackgroundColor: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="default-border-color">Cor padrão da borda</Label>
+                <div className="flex space-x-2">
+                  <input
+                    type="color"
+                    id="default-border-color"
+                    value={content.defaultBorderColor || "#e5e7eb"}
+                    onChange={(e) => handleContentUpdate({ defaultBorderColor: e.target.value })}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                  <Input
+                    value={content.defaultBorderColor || "#e5e7eb"}
+                    onChange={(e) => handleContentUpdate({ defaultBorderColor: e.target.value })}
                     className="flex-1"
                   />
                 </div>
