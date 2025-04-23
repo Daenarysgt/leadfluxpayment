@@ -197,7 +197,8 @@ export const paymentService = {
           .from('subscriptions')
           .select('*')
           .eq('user_id', user.id)
-          .eq('status', 'active');
+          .order('created_at', { ascending: false })
+          .limit(1);
         
         if (!subError && subscriptions && subscriptions.length > 0) {
           const subscription = subscriptions[0];
@@ -208,9 +209,58 @@ export const paymentService = {
             status: subscription.status,
             plan_id: subscription.plan_id,
             current_period_end: subscription.current_period_end,
+            subscription_id: subscription.subscription_id,
             valid: subscription.current_period_end > now,
             now: now
           });
+
+          // NOVO: Verificar status no Stripe para assinaturas consideradas ativas
+          if (subscription.status === 'active' && subscription.subscription_id) {
+            try {
+              // Obter token de autenticação
+              const { data: { session } } = await supabase.auth.getSession();
+              
+              if (session && session.access_token) {
+                // Verificar status real da assinatura no Stripe via API
+                const response = await axios.get(
+                  `${API_URL}/payment/verify-stripe-subscription/${subscription.subscription_id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${session.access_token}`
+                    }
+                  }
+                );
+                
+                if (response.data && response.data.stripeStatus) {
+                  console.log('🔄 Status verificado no Stripe:', response.data.stripeStatus);
+                  
+                  // Se o status no Stripe for diferente do banco, atualizar
+                  if (response.data.stripeStatus === 'canceled' && subscription.status !== 'canceled') {
+                    console.log('⚠️ Assinatura cancelada no Stripe, mas ativa no banco. Atualizando...');
+                    
+                    // Atualizar status no banco de dados
+                    const { error: updateError } = await supabase
+                      .from('subscriptions')
+                      .update({
+                        status: 'canceled',
+                        updated_at: Math.floor(Date.now() / 1000)
+                      })
+                      .eq('id', subscription.id);
+                    
+                    if (updateError) {
+                      console.error('❌ Erro ao atualizar status da assinatura:', updateError);
+                    } else {
+                      console.log('✅ Status da assinatura atualizado para canceled');
+                      subscription.status = 'canceled';
+                    }
+                  }
+                }
+              }
+            } catch (stripeCheckError) {
+              console.error('❌ Erro ao verificar status no Stripe:', stripeCheckError);
+              // Continuar com os dados do banco mesmo se falhar a verificação no Stripe
+            }
+          }
           
           // Verificar se ainda está válida - considerar válida se status for 'active'
           if (subscription.status === 'active') {
@@ -229,11 +279,29 @@ export const paymentService = {
               currentPeriodEnd: new Date(subscription.current_period_end * 1000),
               cancelAtPeriodEnd: subscription.cancel_at_period_end || false
             };
+          } else if (subscription.status === 'canceled') {
+            console.log('⚠️ Assinatura cancelada encontrada');
+            
+            // Limpar localStorage se houver dados de assinatura ativa
+            if (localStatus === 'active') {
+              localStorage.removeItem('subscription_status');
+              localStorage.removeItem('subscription_planId');
+              localStorage.removeItem('subscription_activated_at');
+              sessionStorage.removeItem('subscription_status_backup');
+              sessionStorage.removeItem('subscription_planId_backup');
+            }
+            
+            return {
+              planId: subscription.plan_id,
+              status: 'canceled',
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: true
+            };
           } else {
-            console.log('⚠️ Assinatura encontrada diretamente, mas período expirado. Continuando verificação...');
+            console.log('⚠️ Assinatura encontrada com status diferente de active/canceled:', subscription.status);
           }
         } else {
-          console.log('ℹ️ Nenhuma assinatura ativa encontrada via verificação direta no paymentService');
+          console.log('ℹ️ Nenhuma assinatura encontrada via verificação direta no paymentService');
         }
       }
     } catch (directCheckError) {

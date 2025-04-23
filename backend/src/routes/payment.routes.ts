@@ -1379,4 +1379,64 @@ router.post('/admin/cancel-subscription', async (req, res) => {
   }
 });
 
+// Nova rota para verificar o status de uma assinatura no Stripe
+router.get('/verify-stripe-subscription/:subscriptionId', async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    if (!subscriptionId) {
+      return res.status(400).json({ error: 'ID da assinatura não fornecido' });
+    }
+
+    console.log(`🔍 Verificando status da assinatura ${subscriptionId} no Stripe...`);
+
+    try {
+      // Buscar assinatura do usuário no banco de dados
+      const { data: subscription, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('subscription_id', subscriptionId)
+        .eq('user_id', user.id)
+        .single();
+
+      // Verificar se o usuário tem permissão para acessar esta assinatura
+      if (error || !subscription) {
+        console.error('❌ Assinatura não encontrada ou não pertence ao usuário:', error);
+        return res.status(404).json({ error: 'Assinatura não encontrada' });
+      }
+
+      // Buscar status atual no Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      
+      console.log(`✅ Status da assinatura no Stripe: ${stripeSubscription.status}`);
+      
+      return res.json({
+        stripeStatus: stripeSubscription.status,
+        dbStatus: subscription.status,
+        subscriptionId
+      });
+    } catch (stripeError: any) {
+      console.error('❌ Erro ao verificar assinatura no Stripe:', stripeError.message);
+      
+      // Se o erro for "assinatura não encontrada", pode ter sido excluída no Stripe
+      if (stripeError.code === 'resource_missing') {
+        return res.json({
+          stripeStatus: 'canceled',
+          error: 'Assinatura não encontrada no Stripe (provavelmente cancelada)'
+        });
+      }
+      
+      return res.status(500).json({ error: `Erro ao verificar assinatura: ${stripeError.message}` });
+    }
+  } catch (error: any) {
+    console.error('❌ Erro ao processar verificação de assinatura:', error);
+    return res.status(500).json({ error: 'Erro interno ao verificar assinatura' });
+  }
+});
+
 export default router; 
