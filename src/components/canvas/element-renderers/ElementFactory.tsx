@@ -23,7 +23,8 @@ import {
   GenericElementRenderer,
   PriceRenderer,
   NotesRenderer,
-  TimerRenderer
+  TimerRenderer,
+  AccordionRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -99,6 +100,9 @@ const ElementFactory = (props: ElementRendererProps) => {
       
     case ComponentType.Timer:
       return <TimerRenderer {...props} />;
+    
+    case ComponentType.Accordion:
+      return <AccordionRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

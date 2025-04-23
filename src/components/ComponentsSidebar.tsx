@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ComponentType } from "@/utils/types";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ import {
   MessageSquareQuote, 
   Sliders, 
   StickyNote, 
-  Type
+  Type,
+  ChevronDown
 } from "lucide-react";
 
 const ComponentsSidebar = () => {
@@ -34,6 +34,7 @@ const ComponentsSidebar = () => {
     { id: ComponentType.Loading, name: "Loading", icon: Loader2 },
     { id: ComponentType.Cartesian, name: "Cartesiano", icon: Box },
     { id: ComponentType.Spacer, name: "Espaço", icon: AlignCenter },
+    { id: ComponentType.Accordion, name: "Acordeão", icon: ChevronDown },
   ];
   
   const handleDragStart = (e: React.DragEvent, componentType: string) => {
@@ -62,7 +63,7 @@ const ComponentsSidebar = () => {
               return (
                 <Button
                   key={component.id}
-                  variant={activeComponent === component.id ? "secondary" : "ghost"}
+                  variant={activeComponent === component.id ? "default" : "ghost"}
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => setActiveComponent(component.id)}
@@ -81,7 +82,7 @@ const ComponentsSidebar = () => {
               return (
                 <Button
                   key={component.id}
-                  variant={activeComponent === component.id ? "secondary" : "ghost"}
+                  variant={activeComponent === component.id ? "default" : "ghost"}
                   size="sm"
                   className="w-full justify-start"
                   onClick={() => setActiveComponent(component.id)}
@@ -102,6 +103,15 @@ const ComponentsSidebar = () => {
           <h3 className="font-medium mb-2">Texto</h3>
           <p className="text-muted-foreground text-sm">
             Arraste este componente para adicionar texto ao seu funil.
+          </p>
+        </div>
+      )}
+      
+      {!isCollapsed && activeComponent === ComponentType.Accordion && (
+        <div className="p-4 border-t">
+          <h3 className="font-medium mb-2">Acordeão</h3>
+          <p className="text-muted-foreground text-sm">
+            Arraste este componente para adicionar um acordeão expansível ao seu funil.
           </p>
         </div>
       )}

@@ -23,6 +23,7 @@ import PriceRenderer from './PriceRenderer';
 import GenericElementRenderer from './GenericElementRenderer';
 import NotesRenderer from './NotesRenderer';
 import TimerRenderer from './TimerRenderer';
+import AccordionRenderer from './AccordionRenderer';
 
 // Export all renderers
 export {
@@ -48,7 +49,8 @@ export {
   PriceRenderer,
   GenericElementRenderer,
   NotesRenderer,
-  TimerRenderer
+  TimerRenderer,
+  AccordionRenderer
 };
 
 // Export ElementFactory as default
