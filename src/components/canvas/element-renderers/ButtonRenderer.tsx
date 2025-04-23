@@ -187,6 +187,22 @@ const ButtonRenderer = (props: ElementRendererProps) => {
         return;
       }
       
+      // Registrar a interação de clique em TODOS os casos de navegação
+      try {
+        // Registrar o clique do botão com um ID que não será bloqueado
+        await accessService.registerStepInteraction(
+          funnel.id,
+          Number(activeStep + 1),
+          null,
+          'click',
+          buttonText, // Usar o texto do botão como valor da interação
+          `button-click-${element.id}` // ID que não segue o padrão bloqueado
+        );
+        console.log("Interação de clique registrada com sucesso para o botão:", buttonText);
+      } catch (clickError) {
+        console.error("Erro ao registrar interação de clique:", clickError);
+      }
+      
       switch (navigation.type) {
         case "next":
           console.log("Preview mode: Navigate to next step");
@@ -198,16 +214,6 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               // Se for o último step, apenas marcar como conversão sem registrar interação falsa
               console.log("Último passo - marcando como conversão para o funil:", funnel.id);
               try {
-                // Registrar o clique do botão com um ID que não será bloqueado
-                await accessService.registerStepInteraction(
-                  funnel.id,
-                  Number(activeStep + 1),
-                  null,
-                  'click',
-                  buttonText, // Usar o texto do botão como valor da interação
-                  `button-click-${activeStep+1}` // ID que não segue o padrão bloqueado
-                );
-                
                 // Marcar como conversão
                 await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
                 console.log("Conversão registrada com sucesso!");
@@ -249,16 +255,6 @@ const ButtonRenderer = (props: ElementRendererProps) => {
                 // Se for o último step, apenas marcar como conversão sem registrar interação falsa
                 console.log("Último passo específico - marcando como conversão para o funil:", funnel.id);
                 try {
-                  // Registrar o clique do botão com um ID que não será bloqueado
-                  await accessService.registerStepInteraction(
-                    funnel.id,
-                    Number(stepIndex + 1),
-                    null,
-                    'click',
-                    buttonText, // Usar o texto do botão como valor da interação
-                    `button-click-${stepIndex+1}` // ID que não segue o padrão bloqueado
-                  );
-                  
                   // Marcar como conversão
                   await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
                   console.log("Conversão registrada com sucesso (specific)!");
@@ -274,16 +270,6 @@ const ButtonRenderer = (props: ElementRendererProps) => {
                 }
               } else {
                 console.log("Executando navegação para o índice de etapa:", stepIndex);
-                
-                // Registrar o clique do botão com um ID que não será bloqueado
-                await accessService.registerStepInteraction(
-                  funnel.id,
-                  Number(activeStep + 1),
-                  null,
-                  'click',
-                  buttonText, // Usar o texto do botão como valor da interação
-                  `button-click-${activeStep+1}` // ID que não segue o padrão bloqueado
-                );
                 
                 setTimeout(() => {
                   onStepChange(stepIndex);
