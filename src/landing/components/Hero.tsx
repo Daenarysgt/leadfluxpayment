@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import DashboardImage from '../../assets/dashboard-leads.jpg';
+import DashboardImage from '../../assets/leadsflux.png';
 
 export default function Hero() {
   return (
