@@ -19,10 +19,68 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 app.use(cors());
 
 // Configuração especial para webhook do Stripe
-// A rota /webhook/stripe precisa receber o corpo da requisição como raw
+// A rota /api/payment/webhook/stripe precisa receber o corpo da requisição como raw
 // O Stripe usa esta configuração para verificar a assinatura
 app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   console.log('📩 Webhook do Stripe recebido');
+  const sig = req.headers['stripe-signature'];
+  
+  if (!sig) {
+    console.error('❌ Webhook sem assinatura - recusado');
+    return res.status(400).json({ error: 'Assinatura do webhook não fornecida' });
+  }
+
+  let event;
+
+  try {
+    // Verifica a assinatura do webhook
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+    console.log(`✅ Webhook verificado com sucesso: ${event.type}`);
+  } catch (err: any) {
+    console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
+    return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
+  }
+
+  // Processa o evento de acordo com o tipo
+  try {
+    console.log(`🔄 Processando evento: ${event.type}`);
+    switch (event.type) {
+      case 'checkout.session.completed':
+        console.log(`💳 Checkout completado, ID: ${event.data.object.id}`);
+        await handleCheckoutCompleted(event.data.object);
+        break;
+      case 'customer.subscription.updated':
+        console.log(`📝 Assinatura atualizada, ID: ${event.data.object.id}`);
+        await handleSubscriptionUpdated(event.data.object);
+        break;
+      case 'customer.subscription.deleted':
+        console.log(`❌ Assinatura cancelada, ID: ${event.data.object.id}`);
+        await handleSubscriptionDeleted(event.data.object);
+        break;
+      case 'invoice.paid':
+        console.log(`💰 Fatura paga, ID: ${event.data.object.id}`);
+        await handleInvoicePaid(event.data.object);
+        break;
+      default:
+        console.log(`⏩ Evento não processado: ${event.type}`);
+    }
+
+    // Responde ao Stripe para confirmar o recebimento
+    console.log('✅ Evento processado com sucesso');
+    return res.json({ received: true });
+  } catch (error) {
+    console.error('❌ Erro ao processar evento webhook:', error);
+    return res.status(500).json({ error: 'Erro ao processar evento webhook' });
+  }
+});
+
+// Nova rota para receber webhooks diretamente no caminho /webhook/stripe
+app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  console.log('📩 Webhook do Stripe recebido em /webhook/stripe');
   const sig = req.headers['stripe-signature'];
   
   if (!sig) {
