@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Stripe from 'stripe';
 import { PLANS } from '../config/plans';
 import { supabase } from '../config/supabase';
+import { supabaseAdmin } from '../config/supabaseAdmin';
 import { PLAN_LIMITS } from '../config/plans';
 
 interface RequestUser {
@@ -1183,22 +1184,25 @@ async function handleSubscriptionDeleted(subscription: any) {
       user_id: existingSubscription.user_id
     });
     
-    // 2. Tentativa 1: UPDATE direto via API Supabase
-    console.log(`🔄 WEBHOOK HANDLER: Tentativa 1 - Atualizando via API Supabase`);
-    const { error: updateError } = await supabase
+    // 2. Atualizar usando supabaseAdmin (com service_role key que ignora RLS)
+    console.log(`🔄 WEBHOOK HANDLER: Atualizando via supabaseAdmin (service_role, ignora RLS)`);
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
-      .update({ status: 'canceled' })
+      .update({ 
+        status: 'canceled',
+        updated_at: Math.floor(Date.now() / 1000)
+      })
       .eq('id', existingSubscription.id);
     
     if (updateError) {
-      console.error(`❌ WEBHOOK HANDLER: Erro na Tentativa 1:`, updateError);
+      console.error(`❌ WEBHOOK HANDLER: Erro ao atualizar com supabaseAdmin:`, updateError);
     } else {
-      console.log(`✅ WEBHOOK HANDLER: Tentativa 1 bem-sucedida`);
+      console.log(`✅ WEBHOOK HANDLER: Atualização bem-sucedida com supabaseAdmin`);
     }
     
     // 3. Verificar se a atualização funcionou
     console.log(`🔍 WEBHOOK HANDLER: Verificando resultado da atualização`);
-    const { data: verifyResult, error: verifyError } = await supabase
+    const { data: verifyResult, error: verifyError } = await supabaseAdmin
       .from('subscriptions')
       .select('status')
       .eq('id', existingSubscription.id)
@@ -1207,39 +1211,13 @@ async function handleSubscriptionDeleted(subscription: any) {
     if (verifyError) {
       console.error(`❌ WEBHOOK HANDLER: Erro ao verificar atualização:`, verifyError);
     } else {
-      console.log(`📊 WEBHOOK HANDLER: Status após primeira tentativa:`, verifyResult?.status);
-    }
-    
-    // 4. Se a primeira tentativa falhou, tentar com SQL bruto
-    if (!verifyResult || verifyResult.status !== 'canceled') {
-      console.log(`🔄 WEBHOOK HANDLER: Tentativa 2 - SQL bruto via cliente Supabase`);
+      console.log(`📊 WEBHOOK HANDLER: Status após atualização:`, verifyResult?.status);
       
-      const updateQuery = `
-        UPDATE subscriptions 
-        SET status = 'canceled', updated_at = ${Math.floor(Date.now() / 1000)} 
-        WHERE id = '${existingSubscription.id}'
-      `;
-      
-      console.log(`📝 WEBHOOK HANDLER: Executando query:`, updateQuery);
-      
-      const { error: sqlError } = await supabase.rpc('execute_sql', { 
-        sql_query: updateQuery 
-      });
-      
-      if (sqlError) {
-        console.error(`❌ WEBHOOK HANDLER: Erro na Tentativa 2:`, sqlError);
+      if (verifyResult?.status === 'canceled') {
+        console.log(`✅ WEBHOOK HANDLER: Assinatura cancelada com sucesso!`);
       } else {
-        console.log(`✅ WEBHOOK HANDLER: Tentativa 2 bem-sucedida`);
+        console.log(`⚠️ WEBHOOK HANDLER: Falha ao atualizar status para canceled`);
       }
-      
-      // Verificar novamente
-      const { data: finalCheck } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('id', existingSubscription.id)
-        .single();
-      
-      console.log(`📊 WEBHOOK HANDLER: Status final:`, finalCheck?.status);
     }
     
     console.log(`✅ WEBHOOK HANDLER: Processamento de cancelamento de assinatura concluído`);
