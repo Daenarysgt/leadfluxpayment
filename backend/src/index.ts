@@ -22,7 +22,9 @@ app.use(cors());
 // A rota /api/payment/webhook/stripe precisa receber o corpo da requisição como raw
 // O Stripe usa esta configuração para verificar a assinatura
 app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  console.log('📩 Webhook do Stripe recebido');
+  console.log('📩 Webhook do Stripe recebido em /api/payment/webhook/stripe');
+  console.log('📝 Headers:', JSON.stringify(req.headers));
+  
   const sig = req.headers['stripe-signature'];
   
   if (!sig) {
@@ -40,6 +42,7 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
       process.env.STRIPE_WEBHOOK_SECRET!
     );
     console.log(`✅ Webhook verificado com sucesso: ${event.type}`);
+    console.log(`📋 Payload do evento: ${JSON.stringify(event.data.object)}`);
   } catch (err: any) {
     console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
     return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
@@ -59,6 +62,7 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
         break;
       case 'customer.subscription.deleted':
         console.log(`❌ Assinatura cancelada, ID: ${event.data.object.id}`);
+        console.log(`📊 Status da assinatura: ${(event.data.object as any).status}`);
         await handleSubscriptionDeleted(event.data.object);
         break;
       case 'invoice.paid':
@@ -81,6 +85,8 @@ app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }
 // Nova rota para receber webhooks diretamente no caminho /webhook/stripe
 app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
   console.log('📩 Webhook do Stripe recebido em /webhook/stripe');
+  console.log('📝 Headers:', JSON.stringify(req.headers));
+  
   const sig = req.headers['stripe-signature'];
   
   if (!sig) {
@@ -98,6 +104,7 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
       process.env.STRIPE_WEBHOOK_SECRET!
     );
     console.log(`✅ Webhook verificado com sucesso: ${event.type}`);
+    console.log(`📋 Payload do evento: ${JSON.stringify(event.data.object)}`);
   } catch (err: any) {
     console.error(`❌ Erro na assinatura do webhook: ${err.message}`);
     return res.status(400).json({ error: `Assinatura do webhook inválida: ${err.message}` });
@@ -117,6 +124,7 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (re
         break;
       case 'customer.subscription.deleted':
         console.log(`❌ Assinatura cancelada, ID: ${event.data.object.id}`);
+        console.log(`📊 Status da assinatura: ${(event.data.object as any).status}`);
         await handleSubscriptionDeleted(event.data.object);
         break;
       case 'invoice.paid':
@@ -244,7 +252,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     // Verificar se a assinatura existe no banco de dados antes de atualizar
     const { data: existingSubscription, error: checkError } = await supabase
       .from('subscriptions')
-      .select('id, status, subscription_id')
+      .select('id, status, subscription_id, user_id')
       .eq('subscription_id', subscription.id)
       .single();
 
@@ -256,35 +264,56 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       console.log('✅ Assinatura encontrada no banco de dados:', {
         id: existingSubscription.id,
         currentStatus: existingSubscription.status,
+        user_id: existingSubscription.user_id
       });
     } else {
       console.warn('⚠️ Assinatura não encontrada no banco de dados, criando registro de cancelamento');
     }
 
-    // Atualizar a assinatura como cancelada no banco de dados
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .upsert({
-        subscription_id: subscription.id,
-        status: 'canceled',
-        updated_at: new Date().toISOString(),
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      }, {
-        onConflict: 'subscription_id',
-        ignoreDuplicates: false
-      });
+    // IMPORTANTE: Atualizar diretamente usando UPDATE em vez de UPSERT
+    // para garantir que o status seja definido como 'canceled'
+    if (existingSubscription) {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'canceled',
+          updated_at: new Date().toISOString(),
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        })
+        .eq('subscription_id', subscription.id);
+      
+      if (error) {
+        console.error('❌ Erro ao marcar assinatura como cancelada (UPDATE):', error);
+        return;
+      }
+      
+      console.log('✅ Assinatura atualizada para cancelada com sucesso:', subscription.id);
+    } else {
+      // Só use upsert se a assinatura não existir
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .upsert({
+          subscription_id: subscription.id,
+          status: 'canceled',
+          updated_at: new Date().toISOString(),
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        }, {
+          onConflict: 'subscription_id',
+          ignoreDuplicates: false
+        });
 
-    if (error) {
-      console.error('❌ Erro ao marcar assinatura como cancelada:', error);
-      return;
+      if (error) {
+        console.error('❌ Erro ao marcar assinatura como cancelada (UPSERT):', error);
+        return;
+      }
+      
+      console.log('✅ Assinatura criada como cancelada com sucesso:', subscription.id);
     }
-
-    console.log('✅ Assinatura marcada como cancelada com sucesso:', subscription.id);
     
     // Buscar a assinatura atualizada para confirmar que o status foi alterado
     const { data: updatedSubscription, error: verifyError } = await supabase
       .from('subscriptions')
-      .select('id, status, subscription_id, updated_at')
+      .select('id, status, subscription_id, updated_at, user_id')
       .eq('subscription_id', subscription.id)
       .single();
       
@@ -294,8 +323,46 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       console.log('✅ Confirmação de atualização da assinatura:', {
         id: updatedSubscription.id,
         status: updatedSubscription.status,
+        user_id: updatedSubscription.user_id,
         updatedAt: updatedSubscription.updated_at
       });
+      
+      // Verificar se o status realmente foi alterado para 'canceled'
+      if (updatedSubscription.status !== 'canceled') {
+        console.error('⚠️ ALERTA: Status da assinatura não foi alterado para canceled!', {
+          subscriptionId: subscription.id,
+          expectedStatus: 'canceled',
+          actualStatus: updatedSubscription.status
+        });
+        
+        // Tentar atualizar novamente com força bruta - última tentativa
+        try {
+          const { error: forceError } = await supabase
+            .from('subscriptions')
+            .update({
+              status: 'canceled',
+              updated_at: new Date().toISOString(),
+            })
+            .match({ subscription_id: subscription.id });
+          
+          if (forceError) {
+            console.error('❌ Erro na última tentativa de cancelamento:', forceError);
+          } else {
+            console.log('✅ Força bruta: Assinatura marcada como cancelada');
+            
+            // Verificar novamente
+            const { data: finalCheck } = await supabase
+              .from('subscriptions')
+              .select('status')
+              .eq('subscription_id', subscription.id)
+              .single();
+              
+            console.log(`🔍 Status final da assinatura: ${finalCheck?.status || 'desconhecido'}`);
+          }
+        } catch (lastError) {
+          console.error('💥 Erro fatal na última tentativa de cancelamento:', lastError);
+        }
+      }
     }
   } catch (error) {
     console.error('❌ Erro ao processar exclusão de assinatura:', error);
@@ -306,6 +373,15 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleInvoicePaid(invoice: any) {
   try {
     console.log('💰 Processando fatura paga:', invoice.id);
+    console.log('📊 Detalhes da fatura:', {
+      invoiceId: invoice.id,
+      status: invoice.status,
+      subscriptionId: invoice.subscription,
+      customerId: invoice.customer,
+      total: invoice.total / 100, // Convertendo para a moeda base
+      paid: invoice.paid,
+      paidAt: invoice.status_transitions?.paid_at ? new Date(invoice.status_transitions.paid_at * 1000) : null
+    });
     
     // Verificar se a fatura está relacionada a uma assinatura
     if (!invoice.subscription) {
@@ -314,6 +390,28 @@ async function handleInvoicePaid(invoice: any) {
     }
     
     const subscriptionId = invoice.subscription as string;
+    
+    // Verificar se a assinatura existe no banco de dados antes de atualizar
+    const { data: existingSubscription, error: checkError } = await supabase
+      .from('subscriptions')
+      .select('id, status, subscription_id, user_id')
+      .eq('subscription_id', subscriptionId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Erro ao verificar existência da assinatura:', checkError);
+    }
+    
+    if (existingSubscription) {
+      console.log('✅ Assinatura encontrada no banco de dados:', {
+        id: existingSubscription.id,
+        currentStatus: existingSubscription.status,
+        user_id: existingSubscription.user_id
+      });
+    } else {
+      console.warn('⚠️ Assinatura não encontrada no banco de dados, impossível atualizar o status');
+      return;
+    }
     
     // Atualizar o status da assinatura para 'active' no banco de dados
     const { data, error } = await supabase
@@ -330,6 +428,52 @@ async function handleInvoicePaid(invoice: any) {
     }
     
     console.log('✅ Status da assinatura atualizado para ativo após pagamento:', subscriptionId);
+    
+    // Verificar se a atualização foi aplicada corretamente
+    const { data: updatedSubscription, error: verifyError } = await supabase
+      .from('subscriptions')
+      .select('id, status, subscription_id, updated_at, user_id')
+      .eq('subscription_id', subscriptionId)
+      .single();
+      
+    if (verifyError) {
+      console.error('❌ Erro ao verificar atualização da assinatura após pagamento:', verifyError);
+    } else {
+      console.log('✅ Confirmação de atualização da assinatura após pagamento:', {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        user_id: updatedSubscription.user_id,
+        updatedAt: updatedSubscription.updated_at
+      });
+      
+      // Verificar se o status foi devidamente atualizado para 'active'
+      if (updatedSubscription.status !== 'active') {
+        console.error('⚠️ ALERTA: Status da assinatura não foi atualizado para active após pagamento!', {
+          subscriptionId: subscriptionId,
+          expectedStatus: 'active',
+          actualStatus: updatedSubscription.status
+        });
+        
+        // Tentar atualizar novamente
+        try {
+          const { error: forceError } = await supabase
+            .from('subscriptions')
+            .update({
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            })
+            .match({ subscription_id: subscriptionId });
+          
+          if (forceError) {
+            console.error('❌ Erro na tentativa de forçar atualização:', forceError);
+          } else {
+            console.log('✅ Força bruta: Assinatura marcada como ativa após pagamento');
+          }
+        } catch (lastError) {
+          console.error('💥 Erro fatal na tentativa de ativar assinatura:', lastError);
+        }
+      }
+    }
     
     // Opcional: Registrar a fatura no banco de dados se necessário
     const { error: invoiceError } = await supabase
