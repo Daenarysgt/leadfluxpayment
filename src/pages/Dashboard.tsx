@@ -480,16 +480,18 @@ const Dashboard = () => {
               >
                 <User className="h-5 w-5 text-primary" />
               </Button>
-              <TestCanceledSubscription />
-              <Button 
-                variant="outline" 
-                onClick={handleOpenNewFunnelDialog}
-                className="rounded-full shadow-sm hover:shadow-md transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-blue-100"
-                disabled={!canCreateFunnel()}
-              >
-                <Plus className="h-4 w-4 mr-2 text-primary" />
-                Novo Funil
-              </Button>
+              <div className="flex items-center gap-2 ml-auto">
+                <Button 
+                  variant="outline"
+                  onClick={handleOpenNewFunnelDialog}
+                  className="rounded-full shadow-sm hover:shadow-md transition-all hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-blue-100"
+                  disabled={!canCreateFunnel()}
+                >
+                  <Plus className="h-4 w-4 mr-2 text-primary" />
+                  Novo Funil
+                </Button>
+                <TestCanceledSubscription />
+              </div>
             </div>
           </div>
         </div>
