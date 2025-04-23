@@ -149,9 +149,14 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     setImageFile(file);
     
     try {
-      // Redimensionar a imagem antes de converter para base64
-      const resizedFile = await resizeImage(file);
-      const base64Image = await convertToBase64(resizedFile);
+      // Verificar se é um GIF
+      const isGif = file.type === 'image/gif';
+      
+      // Se for GIF, convertemos diretamente para base64 sem redimensionar
+      // Se não for GIF, procedemos com o redimensionamento normal
+      const base64Image = isGif 
+        ? await convertToBase64(file)
+        : await convertToBase64(await resizeImage(file));
       
       // Get image dimensions
       const img = new Image();
@@ -173,7 +178,8 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
             imageUrl: base64Image,
             width: img.width,
             height: img.height,
-            fileName: file.name
+            fileName: file.name,
+            isAnimatedGif: isGif // Adicionar flag para identificar GIFs animados
           }
         });
         
@@ -181,7 +187,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
         
         toast({
           title: "Imagem carregada",
-          description: `${file.name} (${img.width}x${img.height})`,
+          description: `${file.name} (${img.width}x${img.height})${isGif ? " - GIF animado" : ""}`,
         });
       };
       

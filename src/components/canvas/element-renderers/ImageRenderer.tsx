@@ -20,6 +20,11 @@ const ImageRenderer = (props: ElementRendererProps) => {
   
   // Get aspect ratio value based on the content
   const aspectRatio = useMemo(() => {
+    // Para GIFs animados, não aplicamos aspect ratio para manter a animação intacta
+    if (content?.isAnimatedGif) {
+      return undefined;
+    }
+    
     const getAspectRatioValue = (ratio?: string) => {
       switch (ratio) {
         case "1:1": return 1;
@@ -31,7 +36,7 @@ const ImageRenderer = (props: ElementRendererProps) => {
       }
     };
     return getAspectRatioValue(content?.aspectRatio);
-  }, [content?.aspectRatio]);
+  }, [content?.aspectRatio, content?.isAnimatedGif]);
   
   // Calcular o estilo para margem superior e bordas arredondadas
   const containerStyle = {
@@ -49,7 +54,15 @@ const ImageRenderer = (props: ElementRendererProps) => {
     <BaseElementRenderer {...props}>
       <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
         {content?.imageUrl ? (
-          content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
+          // Se for um GIF animado, evitar usar AspectRatio para não quebrar a animação
+          content?.isAnimatedGif ? (
+            <img 
+              src={content.imageUrl} 
+              alt={content.altText || "Imagem"}
+              className="max-w-full object-contain"
+              style={imageStyle}
+            />
+          ) : content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
             <div className="w-full max-w-full" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
               <AspectRatio ratio={aspectRatio}>
                 <img 
