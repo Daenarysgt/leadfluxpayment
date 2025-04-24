@@ -302,9 +302,13 @@ const BaseElementRenderer = ({
           data-element-type={element.type}
           style={{
             // Aplicar estilos consistentes entre modo de edição e pré-visualização
-            marginBottom: "1rem",
+            marginBottom: "1rem", // Garantir margem consistente entre elementos
             marginTop: element.content?.marginTop ? `${element.content.marginTop}px` : "0px",
-            transition: 'all 0.2s ease'
+            padding: "0", // Remover padding para evitar discrepâncias
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            boxSizing: 'border-box',
+            width: '100%'
           }}
         >
           {/* Conteúdo real do elemento */}

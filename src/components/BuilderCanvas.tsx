@@ -42,11 +42,11 @@ const BuilderCanvas = ({
           };
         }
         
-        // Assegurar largura máxima para caber na tela
+        // Assegurar largura máxima para caber na tela de dispositivos móveis padrão
         if (adjustedElement.dimensions) {
           adjustedElement.dimensions = {
             ...adjustedElement.dimensions,
-            width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
+            width: 360 - 16 // Usar uma largura fixa de 360px com um pequeno espaçamento
           };
         }
       }
@@ -60,6 +60,16 @@ const BuilderCanvas = ({
       // Remover qualquer padding adicional que possa existir somente no builder
       if (adjustedElement.style?.padding) {
         adjustedElement.style.padding = '0px';
+      }
+      
+      // Garantir que elementos com margens negativas sejam tratados corretamente
+      if (adjustedElement.content.marginTop && adjustedElement.content.marginTop < 0) {
+        adjustedElement.content.marginTop = 0;
+      }
+      
+      // Assegurar que o alinhamento de texto é consistente
+      if (adjustedElement.style?.textAlign && !adjustedElement.content.textAlign) {
+        adjustedElement.content.textAlign = adjustedElement.style.textAlign;
       }
       
       return adjustedElement;
@@ -371,12 +381,18 @@ const BuilderCanvas = ({
         ref={canvasRef}
         className={cn(
           "w-full mx-auto pb-20 rounded-lg relative", 
-          isMobile ? "max-w-[375px]" : "max-w-[600px]",
+          isMobile ? "max-w-[360px]" : "max-w-[600px]",
           isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}
         style={{
           backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          padding: '0', // Garantir que não haja padding adicional no builder
+          overflow: 'hidden', // Evitar conteúdo que exceda o limite
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}

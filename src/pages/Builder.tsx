@@ -163,6 +163,23 @@ const Builder = () => {
         min-height: calc(100vh - 57px) !important;
         overflow-y: auto !important;
       }
+      
+      /* Garantir que não haja transformações que causem inconsistência visual */
+      .canvas-container, 
+      [class*="builder-canvas"],
+      [class*="BuilderCanvas"] {
+        transform: none !important;
+        transform-origin: center !important;
+        transform-style: flat !important;
+      }
+      
+      /* Garantir renderização precisa dos elementos */
+      .canvas-element, 
+      [data-element-id] {
+        backface-visibility: hidden;
+        -webkit-font-smoothing: antialiased;
+        transform: translateZ(0);
+      }
     `;
     
     // Adicionar ao head

@@ -99,6 +99,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     margin: '0 auto',
     position: 'relative',
     width: isMobile ? '100%' : 'auto',
+    maxWidth: isMobile ? '360px' : '600px', // Mesma largura usada no builder
+    overflow: 'hidden',
   };
 
   // Classes condicionais para desktop e mobile
@@ -132,7 +134,11 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '2rem'
+        paddingBottom: '2rem',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
       }}
     >
       {canvasElements.map((element, index) => {
@@ -152,11 +158,11 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
             };
           }
           
-          // Assegurar largura máxima para caber na tela
+          // Assegurar largura máxima para caber na tela usando o mesmo valor fixo do builder
           if (adjustedElement.dimensions) {
             adjustedElement.dimensions = {
               ...adjustedElement.dimensions,
-              width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
+              width: 360 - 16 // Usar a mesma largura fixa de 360px menos um pequeno espaçamento
             };
           }
           
@@ -168,6 +174,16 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
           // Remover qualquer padding adicional
           if (adjustedElement.style?.padding) {
             adjustedElement.style.padding = '0px';
+          }
+          
+          // Garantir que elementos com margens negativas sejam tratados corretamente
+          if (adjustedElement.content.marginTop && adjustedElement.content.marginTop < 0) {
+            adjustedElement.content.marginTop = 0;
+          }
+          
+          // Assegurar que o alinhamento de texto é consistente
+          if (adjustedElement.style?.textAlign && !adjustedElement.content.textAlign) {
+            adjustedElement.content.textAlign = adjustedElement.style.textAlign;
           }
         }
         
@@ -190,12 +206,18 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         const elementWrapperStyle: React.CSSProperties = isMobile ? {
           position: 'relative',
           left: '0',
-          right: '0',
           margin: '0 auto',
           width: '100%',
           padding: '0',
-          transform: 'none'
-        } : {};
+          transform: 'none',
+          marginBottom: '1rem', // Mesmo valor usado no BaseElementRenderer
+        } : {
+          position: 'relative',
+          margin: '0 auto',
+          width: '100%',
+          padding: '0',
+          marginBottom: '1rem', // Mesmo valor usado no BaseElementRenderer
+        };
         
         return (
           <div 
