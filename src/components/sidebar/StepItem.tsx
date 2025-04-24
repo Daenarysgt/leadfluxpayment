@@ -25,6 +25,11 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
     setIsEditing(true);
   };
 
+  const handleDuplicateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDuplicate(index, e);
+  };
+
   if (isEditing) {
     return (
       <div 
@@ -91,7 +96,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           variant="ghost"
           size="sm"
           className="h-7 w-7 text-gray-500 hover:text-violet-600"
-          onClick={(e) => onDuplicate(index, e)}
+          onClick={handleDuplicateClick}
           title="Duplicar etapa"
         >
           <Copy className="h-3.5 w-3.5" />

@@ -156,22 +156,32 @@ export const useStepManager = () => {
     
     console.log(`useStepManager - Duplicando etapa no índice: ${stepIndex}, ID: ${stepId}`);
     
-    // Chamar a função de duplicação
-    duplicateStep(stepIndex)
-      .then(() => {
-        toast({
-          title: "Etapa duplicada",
-          description: "Uma cópia da etapa foi criada com sucesso.",
+    try {
+      // Chamar a função de duplicação
+      duplicateStep(stepIndex)
+        .then((newStepId) => {
+          toast({
+            title: "Etapa duplicada",
+            description: "Uma cópia da etapa foi criada com sucesso.",
+          });
+          console.log(`Nova etapa criada com ID: ${newStepId}`);
+        })
+        .catch((error) => {
+          console.error("Erro ao duplicar etapa:", error);
+          toast({
+            title: "Erro ao duplicar etapa",
+            description: "Não foi possível duplicar a etapa. Tente novamente.",
+            variant: "destructive"
+          });
         });
-      })
-      .catch((error) => {
-        console.error("Erro ao duplicar etapa:", error);
-        toast({
-          title: "Erro ao duplicar etapa",
-          description: "Não foi possível duplicar a etapa. Tente novamente.",
-          variant: "destructive"
-        });
+    } catch (error) {
+      console.error("Erro ao iniciar duplicação:", error);
+      toast({
+        title: "Erro ao duplicar etapa",
+        description: "Não foi possível iniciar o processo de duplicação. Tente novamente.",
+        variant: "destructive"
       });
+    }
   }, [currentFunnel, sortedSteps, duplicateStep, toast]);
   
   return {
