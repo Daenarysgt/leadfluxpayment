@@ -82,7 +82,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       <div className="flex items-center w-full p-2 pr-1">
         {/* Drag handle e número */}
         <div 
-          className="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 mr-2"
+          className="drag-handle flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 mr-1.5"
           {...attributes}
           {...listeners}
         >
@@ -90,7 +90,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         </div>
         
         <div className={`
-          flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-2
+          flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-1.5
           ${isActive 
             ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
             : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-blue-600/10 group-hover:via-purple-500/10 group-hover:to-purple-600/10 group-hover:text-violet-700'
@@ -100,19 +100,19 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           {index + 1}
         </div>
         
-        {/* Conteúdo principal: título e botões lado a lado */}
-        <div className="flex items-center justify-between w-full min-w-0">
-          {/* Título com largura limitada */}
+        {/* Conteúdo: título e botões juntos */}
+        <div className="flex items-center min-w-0 flex-grow">
+          {/* Título mais compacto */}
           <span className={`
-            font-medium truncate max-w-[160px]
+            font-medium truncate max-w-[110px]
             ${isActive ? 'text-violet-900' : 'text-gray-700'}
           `} title={step.title}>
             {step.title}
           </span>
           
-          {/* Botões de ação logo após o título - agora com menos espaço entre eles */}
+          {/* Botões de ação conectados ao título sem gap */}
           <div className={`
-            flex items-center gap-0 flex-shrink-0 ml-1
+            flex items-center flex-shrink-0 ml-0
             ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
             transition-opacity duration-200
           `}>
