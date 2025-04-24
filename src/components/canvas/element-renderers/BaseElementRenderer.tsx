@@ -317,16 +317,43 @@ const BaseElementRenderer = ({
           {!isPreviewMode && (
             <div 
               className={cn(
-                "absolute inset-0 cursor-pointer transition-all duration-150 pointer-events-none",
+                "absolute inset-0 cursor-pointer transition-all duration-150",
                 // Para accordion, ajustar o z-index para permitir cliques no ícone dropdown
                 element.type === "accordion" ? "z-0" : "z-10",
                 isSelected 
-                  ? "bg-violet-500/5" 
+                  ? "bg-violet-500/10 outline outline-2 outline-violet-500" 
                   : isHovering 
-                    ? "bg-violet-500/5" 
-                    : dropTarget ? "bg-violet-100/40" : "bg-transparent"
+                    ? "bg-violet-100/40 outline outline-1 outline-dashed outline-violet-400/80" 
+                    : dropTarget ? "bg-violet-100/40 outline outline-2 outline-violet-500" : "bg-transparent outline-none"
               )}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Se for accordion, verificar se o clique foi na área do ícone dropdown (direita)
+                if (element.type === "accordion") {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  // Aumentar a área de clique ignorada no lado direito para permitir interação com ícone
+                  if (clickX > rect.width - 100) {
+                    return; // Não selecionar, permitir que o clique passe para o ícone
+                  }
+                  
+                  // Também não ativar o clique em elementos internos que têm interação própria
+                  const target = e.target as HTMLElement;
+                  if (target.closest('.cursor-pointer') && target !== e.currentTarget) {
+                    return;
+                  }
+                }
+                onSelect(element.id);
+              }}
             >
+              {/* Indicador de elemento editável */}
+              {!isSelected && isHovering && !dropTarget && (
+                <div className="absolute top-2 right-2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+                  <Edit className="h-3 w-3" />
+                  <span>Editar</span>
+                </div>
+              )}
+
               {/* Indicador de drop */}
               {dropTarget && !isDragging && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -424,14 +451,6 @@ const BaseElementRenderer = ({
               >
                 <Trash className="h-3.5 w-3.5 text-red-500" />
               </button>
-            </div>
-          )}
-          
-          {/* Indicador de elemento editável (fora do espaço de conteúdo) */}
-          {!isSelected && isHovering && !dropTarget && !isPreviewMode && (
-            <div className="absolute -right-16 top-1/2 -translate-y-1/2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
-              <Edit className="h-3 w-3" />
-              <span>Editar</span>
             </div>
           )}
         </div>
