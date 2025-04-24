@@ -17,6 +17,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   // Adicionar estado para capturar dados do formulário
   const [formFields, setFormFields] = useState<Record<string, string>>({});
   
+  // Verificar se estamos em modo mobile
+  const isMobile = previewMode && (previewProps as any)?.isMobile;
+  
   // Obter os valores do formulário na página
   useEffect(() => {
     if (!previewMode || !previewProps?.funnel) return;
@@ -243,7 +246,13 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         textAlign,
         display: "flex",
         justifyContent: textAlign === "center" ? "center" : (textAlign === "right" ? "flex-end" : "flex-start"),
-        alignItems: "center"
+        alignItems: "center",
+        // Estilos adicionais para garantir que o texto sempre apareça, especialmente em mobile
+        position: "relative",
+        width: "100%",
+        color: "white", // Garantir que o texto seja visível
+        padding: "8px",
+        zIndex: 5
       };
       
       // Aplicar diferentes estilos com base na escolha do usuário
@@ -304,8 +313,12 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       return (
         <div 
           key={option.id} 
-          className={`overflow-hidden cursor-pointer transition-all hover:scale-[1.03] ${card3DClass}`}
-          style={cardStyle}
+          className={`relative overflow-hidden cursor-pointer transition-all hover:scale-[1.03] ${card3DClass}`}
+          style={{
+            ...cardStyle,
+            // Garantir que no mobile a altura mínima seja suficiente
+            minHeight: isMobile ? "120px" : "auto",
+          }}
           onClick={() => handleOptionClick(option)}
         >
           <div className="relative">
@@ -350,15 +363,17 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                 )}
               </div>
             )}
-            <div className="p-3" style={textStyle}>
-              <span className="text-white font-medium flex-grow">{option.text}</span>
-              {showArrows && <ChevronRight className="h-5 w-5 text-white ml-2" />}
+            
+            {/* Barra de texto com opção - Ajuste para garantir visibilidade em mobile */}
+            <div className="absolute bottom-0 left-0 right-0 p-3" style={textStyle}>
+              <span className="text-inherit font-medium flex-grow">{option.text}</span>
+              {showArrows && <ChevronRight className="h-5 w-5 text-inherit ml-2" />}
             </div>
           </div>
         </div>
       );
     }) : null;
-  }, [content?.options, content?.showArrows, content?.optionStyle, content?.borderRadius, content?.showBorders, content?.borderColor, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, funnelSettings.primaryColor]);
+  }, [content?.options, content?.showArrows, content?.optionStyle, content?.borderRadius, content?.showBorders, content?.borderColor, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, funnelSettings.primaryColor, isMobile]);
   
   // Calcular o estilo para margem superior
   const containerStyle = {
@@ -385,12 +400,12 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className="grid grid-cols-2 gap-4">
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
           {renderedOptions}
         </div>
       </div>
       
-      {/* Adicionar estilos CSS para o efeito 3D */}
+      {/* Adicionar estilos CSS para o efeito 3D e compatibilidade mobile */}
       <style dangerouslySetInnerHTML={{
         __html: `
         .option-3d {
@@ -400,6 +415,13 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         .option-3d:hover {
           transform: perspective(1000px) rotateX(5deg) scale(1.03);
           box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        /* Estilos adicionais para garantir a visibilidade em dispositivos móveis */
+        @media (max-width: 768px) {
+          .grid-cols-1 > div {
+            margin-bottom: 16px;
+          }
         }
       `}} />
       
