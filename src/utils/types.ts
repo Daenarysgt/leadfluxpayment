@@ -197,7 +197,6 @@ export interface MultipleChoiceOption {
     textColor?: string;
     selectedTextColor?: string;
     aspectRatio?: "1:1" | "16:9" | "9:16" | "4:3" | "original";
-    imagePosition?: number;
     textAlign?: 'left' | 'center' | 'right';
   };
   navigation?: Navigation;
@@ -224,4 +223,7 @@ export interface MultipleChoiceContent {
   showArrows?: boolean;
   optionStyle?: 'default' | 'flat' | '3d' | 'neumorphism' | 'glass';
   marginTop?: number;
+  borderRadius?: number;
+  showBorders?: boolean;
+  borderColor?: string;
 }

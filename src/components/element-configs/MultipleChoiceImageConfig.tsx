@@ -27,14 +27,18 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
   // Estado para controlar o carregamento de imagens
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   
-  // Novo estado para posição vertical da imagem
-  const [imagePositions, setImagePositions] = useState<Record<string, number>>({});
   // Novo estado para alinhamento de texto
   const [textAlignments, setTextAlignments] = useState<Record<string, string>>({});
   // Novo estado para controle de setas
   const [showArrows, setShowArrows] = useState(element.content?.showArrows !== false);
   // Novo estado para estilo de opções
   const [optionStyle, setOptionStyle] = useState(element.content?.optionStyle || "default");
+  // Novo estado para arredondamento global
+  const [borderRadius, setBorderRadius] = useState(element.content?.borderRadius || 4);
+  // Novo estado para bordas dos cards
+  const [showBorders, setShowBorders] = useState(element.content?.showBorders || false);
+  // Novo estado para cor da borda
+  const [borderColor, setBorderColor] = useState(element.content?.borderColor || "#e2e8f0");
   
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
@@ -43,17 +47,14 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
 
   // Inicializar estados com base nas opções existentes
   useEffect(() => {
-    const initialImagePositions: Record<string, number> = {};
     const initialTextAlignments: Record<string, string> = {};
     
     if (element.content?.options) {
       element.content.options.forEach((option: any) => {
-        initialImagePositions[option.id] = option.style?.imagePosition || 0;
         initialTextAlignments[option.id] = option.style?.textAlign || "left";
       });
     }
     
-    setImagePositions(initialImagePositions);
     setTextAlignments(initialTextAlignments);
   }, [element.content?.options]);
 
@@ -490,40 +491,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     }, 500); // Pequeno atraso para garantir que todas as atualizações foram processadas
   };
 
-  // Novo manipulador para posicionamento de imagem
-  const handleImagePositionChange = (optionId: string, direction: 'up' | 'down') => {
-    const currentPosition = imagePositions[optionId] || 0;
-    const newPosition = direction === 'up' ? currentPosition - 10 : currentPosition + 10;
-    
-    // Atualizar o estado local
-    setImagePositions({
-      ...imagePositions,
-      [optionId]: newPosition
-    });
-    
-    // Atualizar a opção no elemento
-    const updatedOptions = element.content.options.map((option: any) => {
-      if (option.id === optionId) {
-        return {
-          ...option,
-          style: {
-            ...(option.style || {}),
-            imagePosition: newPosition
-          }
-        };
-      }
-      return option;
-    });
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        options: updatedOptions
-      }
-    });
-  };
-  
-  // Novo manipulador para alinhamento de texto
+  // Manipulador para alinhamento de texto
   const handleTextAlignChange = (optionId: string, align: 'left' | 'center' | 'right') => {
     // Atualizar o estado local
     setTextAlignments({
@@ -574,6 +542,44 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
       content: {
         ...element.content,
         optionStyle: style
+      }
+    });
+  };
+
+  // Manipulador para alterar o arredondamento global
+  const handleBorderRadiusChange = (value: number[]) => {
+    const newRadius = value[0];
+    setBorderRadius(newRadius);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        borderRadius: newRadius
+      }
+    });
+  };
+  
+  // Manipulador para mostrar/esconder bordas
+  const handleShowBordersToggle = () => {
+    const newShowBorders = !showBorders;
+    setShowBorders(newShowBorders);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        showBorders: newShowBorders
+      }
+    });
+  };
+  
+  // Manipulador para a cor da borda
+  const handleBorderColorChange = (color: string) => {
+    setBorderColor(color);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        borderColor: color
       }
     });
   };
@@ -637,32 +643,6 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
               Imagem armazenada no Supabase Storage ✓
             </div>
           )}
-        </div>
-
-        {/* Controles para posicionamento da imagem */}
-        <div className="space-y-2">
-          <Label>Posição da imagem (vertical)</Label>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleImagePositionChange(option.id, 'up')}
-              title="Mover imagem para cima"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-            <div className="flex-1 text-xs text-center">
-              {imagePositions[option.id] || 0}px
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleImagePositionChange(option.id, 'down')}
-              title="Mover imagem para baixo"
-            >
-              <ArrowDown className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
 
         {/* Controles para alinhamento de texto */}
@@ -850,6 +830,52 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                 <div className="w-10 text-center text-xs">
                   {marginTop}px
                 </div>
+              </div>
+            </div>
+
+            {/* Controle de arredondamento global */}
+            <div className="space-y-2">
+              <Label htmlFor="border-radius">Arredondamento dos cantos</Label>
+              <div className="flex items-center space-x-2">
+                <Slider
+                  id="border-radius"
+                  value={[borderRadius]}
+                  min={0}
+                  max={20}
+                  step={1}
+                  onValueChange={handleBorderRadiusChange}
+                  className="flex-1"
+                />
+                <div className="w-10 text-center text-xs">
+                  {borderRadius}px
+                </div>
+              </div>
+            </div>
+
+            {/* Controle de bordas */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-borders">Mostrar bordas</Label>
+                <Switch
+                  id="show-borders"
+                  checked={showBorders}
+                  onCheckedChange={handleShowBordersToggle}
+                />
+              </div>
+              {showBorders && (
+                <div className="mt-2">
+                  <Label htmlFor="border-color">Cor da borda</Label>
+                  <Input
+                    id="border-color"
+                    type="color"
+                    value={borderColor}
+                    onChange={(e) => handleBorderColorChange(e.target.value)}
+                    className="h-8 w-full"
+                  />
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground">
+                Adiciona ou remove bordas em todos os cards de opção
               </div>
             </div>
 

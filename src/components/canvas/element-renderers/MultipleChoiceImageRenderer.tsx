@@ -210,25 +210,27 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       const ratio = getAspectRatioValue(aspectRatio);
       
       // Novas propriedades
-      const imagePosition = optionStyle.imagePosition || 0;
       const textAlign = optionStyle.textAlign || "left";
       const showArrows = content.showArrows !== false;
       const elementStyle = content.optionStyle || "default";
       
+      // Bordas e arredondamento global
+      const globalBorderRadius = content.borderRadius || 4;
+      const showBorders = content.showBorders || false;
+      const borderColor = content.borderColor || "#e2e8f0";
+      
       // Estilos CSS com base no tipo de estilo selecionado
       let cardStyle: React.CSSProperties = { 
-        borderRadius: `${borderRadiusValue}px`,
+        borderRadius: `${globalBorderRadius}px`,
       };
       
-      // Estilo específico para a imagem (não para o container)
-      let imageStyle: React.CSSProperties = {
-        transform: `translateY(${imagePosition}px)`,
-        position: "relative",
-        zIndex: 1
-      };
-      
-      // O container da imagem mantém posição normal
-      let imageContainerStyle: React.CSSProperties = {};
+      // Adicionar bordas se estiverem ativadas
+      if (showBorders) {
+        cardStyle = {
+          ...cardStyle,
+          border: `1px solid ${borderColor}`
+        };
+      }
       
       let textStyle: React.CSSProperties = {
         backgroundColor,
@@ -250,7 +252,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           cardStyle = {
             ...cardStyle,
             boxShadow: "none",
-            border: "1px solid #ddd",
+            border: showBorders ? `1px solid ${borderColor}` : "1px solid #ddd",
           };
           break;
           
@@ -258,12 +260,11 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           cardStyle = {
             ...cardStyle,
             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-            border: "1px solid rgba(0, 0, 0, 0.1)",
+            border: showBorders ? `1px solid ${borderColor}` : "1px solid rgba(0, 0, 0, 0.1)",
             transition: "transform 0.2s, box-shadow 0.2s",
             position: "relative",
             overflow: "hidden",
           };
-          // Adicionar classe para efeito 3D no hover via className ao invés de style
           break;
           
         case "neumorphism":
@@ -271,7 +272,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             ...cardStyle,
             backgroundColor: "#f0f0f3",
             boxShadow: "10px 10px 20px #d1d1d1, -10px -10px 20px #ffffff",
-            border: "none"
+            border: showBorders ? `1px solid ${borderColor}` : "none"
           };
           textStyle = {
             ...textStyle,
@@ -285,7 +286,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             ...cardStyle,
             backgroundColor: "rgba(255, 255, 255, 0.25)",
             backdropFilter: "blur(4px)",
-            border: "1px solid rgba(255, 255, 255, 0.18)",
+            border: showBorders ? `1px solid ${borderColor}` : "1px solid rgba(255, 255, 255, 0.18)",
             boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)"
           };
           break;
@@ -307,7 +308,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           style={cardStyle}
           onClick={() => handleOptionClick(option)}
         >
-          <div className="relative" style={imageContainerStyle}>
+          <div className="relative">
             {aspectRatio !== "original" && ratio ? (
               <AspectRatio ratio={ratio} className="w-full">
                 {option.image ? (
@@ -315,7 +316,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="h-full w-full object-cover" 
-                    style={imageStyle}
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
                       // Substituir por placeholder em caso de erro
@@ -324,7 +324,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gray-200 flex items-center justify-center" style={imageStyle}>
+                  <div className="h-full w-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400">Sem imagem</span>
                   </div>
                 )}
@@ -336,7 +336,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="w-full object-contain" 
-                    style={imageStyle}
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
                       // Substituir por placeholder em caso de erro
@@ -345,7 +344,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center" style={imageStyle}>
+                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400">Sem imagem</span>
                   </div>
                 )}
@@ -359,7 +358,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         </div>
       );
     }) : null;
-  }, [content?.options, content?.showArrows, content?.optionStyle, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, borderRadiusValue, funnelSettings.primaryColor]);
+  }, [content?.options, content?.showArrows, content?.optionStyle, content?.borderRadius, content?.showBorders, content?.borderColor, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, funnelSettings.primaryColor]);
   
   // Calcular o estilo para margem superior
   const containerStyle = {
