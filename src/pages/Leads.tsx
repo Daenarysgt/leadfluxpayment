@@ -382,10 +382,10 @@ const Leads = () => {
       
       // Fazer todas as chamadas em paralelo
       const [metricsPromise, leadsPromise, stepMetricsPromise, formDataPromise, stepNamesPromise] = await Promise.allSettled([
-        loadMetrics(false),
+        loadMetrics(true), // Alterado para true para atualizar o estado diretamente
         loadLeads(),
         loadStepMetrics(),
-        loadFormData(), // Garantir que é carregado junto com os outros dados
+        loadFormData(),
         loadStepNames()
       ]);
       
