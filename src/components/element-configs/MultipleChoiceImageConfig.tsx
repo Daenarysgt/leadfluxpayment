@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/utils/store";
 import TitleInput from "./multiple-choice/TitleInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Upload, Link, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, Upload, Link, X, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/lib/supabase";
+import { Switch } from "@/components/ui/switch";
 
 interface MultipleChoiceImageConfigProps {
   element: any;
@@ -464,6 +465,94 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     }, 500); // Pequeno atraso para garantir que todas as atualizações foram processadas
   };
 
+  const handleOptionImagePositionChange = (optionId: string, position: number) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            imagePosition: position 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
+  const handleOptionTextAlignChange = (optionId: string, align: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            textAlign: align 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
+  const handleOptionShowArrowChange = (optionId: string, showArrow: boolean) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            showArrow 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
+  const handleOptionCardStyleChange = (optionId: string, style: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            cardStyle: style 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="content">
@@ -575,6 +664,92 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                         <Label htmlFor={`aspect-4-3-${option.id}`}>4:3</Label>
                       </div>
                     </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Posição Vertical da Imagem</Label>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOptionImagePositionChange(option.id, (option.style?.imagePosition || 0) - 5)}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOptionImagePositionChange(option.id, (option.style?.imagePosition || 0) + 5)}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <div className="flex-1">
+                        <Slider
+                          min={-100}
+                          max={100}
+                          step={1}
+                          value={[option.style?.imagePosition || 0]}
+                          onValueChange={(value) => handleOptionImagePositionChange(option.id, value[0])}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-500 w-10 text-right">{option.style?.imagePosition || 0}px</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Alinhamento do Texto</Label>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant={option.style?.textAlign === "left" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleOptionTextAlignChange(option.id, "left")}
+                      >
+                        <AlignLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={option.style?.textAlign === "center" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleOptionTextAlignChange(option.id, "center")}
+                      >
+                        <AlignCenter className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={option.style?.textAlign === "right" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleOptionTextAlignChange(option.id, "right")}
+                      >
+                        <AlignRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Exibir Seta de Navegação</Label>
+                      <Switch
+                        checked={option.style?.showArrow !== false}
+                        onCheckedChange={(checked) => handleOptionShowArrowChange(option.id, checked)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Estilo da Opção</Label>
+                    <Select
+                      value={option.style?.cardStyle || "default"}
+                      onValueChange={(value) => handleOptionCardStyleChange(option.id, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o estilo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Padrão</SelectItem>
+                        <SelectItem value="flat">Plano</SelectItem>
+                        <SelectItem value="3d">3D</SelectItem>
+                        <SelectItem value="neumorphism">Neumorfismo</SelectItem>
+                        <SelectItem value="glass">Vidro</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
