@@ -4,60 +4,121 @@ import { useStore } from "@/utils/store";
 import { ChevronRight, ImageIcon } from "lucide-react";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content, previewMode, previewProps } = element;
   const { setCurrentStep, currentFunnel } = useStore();
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
   
-  // Obter as configurações globais do funil, se disponíveis
-  const funnelSettings = element.previewProps?.funnel?.settings || {};
+  // Adicionar estado para capturar dados do formulário
+  const [formFields, setFormFields] = useState<Record<string, string>>({});
   
-  // Obter configurações globais de tipografia
-  const fontFamily = funnelSettings.fontFamily || 'Inter';
-  const headingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
-  const bodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
-  const lineHeight = funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5;
-  const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
-  const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
-  const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
-  const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
+  // Obter os valores do formulário na página
+  useEffect(() => {
+    if (!previewMode || !previewProps?.funnel) return;
+    
+    // Buscar todos os inputs visíveis na página
+    const captureInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
+    
+    // Monitorar mudanças nesses campos
+    const handleInputChange = () => {
+      const updatedFormFields: Record<string, string> = {};
+      
+      captureInputs.forEach((input: HTMLInputElement) => {
+        // Se o input tiver um valor, associar ao tipo de campo
+        if (input.value.trim()) {
+          // Identificar o tipo de campo pelo placeholder ou atributos
+          let fieldType = 'text';
+          if (input.type === 'email') fieldType = 'email';
+          if (input.type === 'tel') fieldType = 'phone';
+          
+          // Tentar identificar pelo placeholder
+          const placeholder = input.placeholder.toLowerCase();
+          if (placeholder.includes('email')) fieldType = 'email';
+          if (placeholder.includes('telefone') || placeholder.includes('whatsapp') || placeholder.includes('celular')) fieldType = 'phone';
+          if (placeholder.includes('nome')) fieldType = 'name';
+          
+          updatedFormFields[fieldType] = input.value;
+        }
+      });
+      
+      setFormFields(updatedFormFields);
+    };
+    
+    // Adicionar event listeners para todos os inputs
+    captureInputs.forEach(input => {
+      input.addEventListener('input', handleInputChange);
+      // Capturar valores iniciais
+      if ((input as HTMLInputElement).value) {
+        handleInputChange();
+      }
+    });
+    
+    // Cleanup
+    return () => {
+      captureInputs.forEach(input => {
+        input.removeEventListener('input', handleInputChange);
+      });
+    };
+  }, [previewMode, previewProps]);
   
-  // Obter configurações globais de layout
-  const borderRadiusValue = content?.style?.borderRadius !== undefined 
-    ? content.style.borderRadius 
-    : (funnelSettings.borderRadius ? parseInt(funnelSettings.borderRadius) : 8);
+  // Obter configurações visuais do tema do funil, se houver
+  const funnelSettings = previewProps?.funnel?.settings || {};
+  
+  // Estilo visual a partir das configurações
+  const headingSize = content?.style?.headingSize || 20;
+  const bodySize = content?.style?.bodySize || 16;
+  const fontFamily = content?.style?.fontFamily || funnelSettings.fontFamily || "Inter";
+  const lineHeight = content?.style?.lineHeight || 1.5;
+  const fontStyle = content?.style?.fontStyle || "normal";
+  const fontWeight = content?.style?.fontWeight || 400;
+  const textDecoration = content?.style?.textDecoration || "none";
+  const textTransform = content?.style?.textTransform || "none";
+  
+  // Arredondar bordas
+  const borderRadiusValue = content?.style?.borderRadius || 4;
   
   // Define all hooks consistently at the top level
   const handleOptionClick = useCallback(async (option: any) => {
     console.log("MultipleChoiceImageRenderer - Opção clicada:", option);
     
-    if (!option.navigation) {
-      console.warn("Opção sem configuração de navegação:", option.text);
+    if (isProcessingInteraction) {
+      console.log("Já existe uma interação em processamento. Aguardando...");
       return;
     }
     
-    const navigationType = option.navigation.type;
-    console.log("Tipo de navegação:", navigationType, "Configuração completa:", option.navigation);
+    setIsProcessingInteraction(true);
+    setSelectedOption(option.id);
     
-    // Se for tipo "none", não realiza navegação
-    if (navigationType === "none") {
-      console.log("Navegação do tipo 'none' - nenhuma ação será executada");
-      return;
-    }
-    
-    // Handle navigation differently based on preview mode
-    if (previewMode && previewProps) {
-      try {
+    try {
+      // Se estamos no modo de preview, tentamos lidar com a navegação
+      if (previewMode && previewProps) {
         const { activeStep, onStepChange, funnel } = previewProps;
-        console.log("Preview props:", { activeStep, funnel: funnel?.id, totalSteps: funnel?.steps?.length });
         
         // Registrar a interação com o valor selecionado
         if (funnel) {
           const interactionValue = option.text || option.value || "Nova opção";
           console.log("Registrando interação com valor:", interactionValue, "para funil:", funnel.id, "etapa:", activeStep + 1);
+          
+          // Verificar se há dados do formulário para salvar
+          if (Object.keys(formFields).length > 0) {
+            console.log('Dados do formulário detectados para salvar:', formFields);
+            try {
+              // Salvar os dados do formulário
+              await accessService.saveCaptureFormData(
+                funnel.id,
+                null, // sessionId será preenchido pelo serviço
+                formFields
+              );
+              console.log('Dados do formulário salvos com sucesso junto com a escolha de opção');
+            } catch (formError) {
+              console.error("Erro ao salvar dados do formulário:", formError);
+            }
+          }
           
           // Registrar apenas uma única interação do tipo 'choice' para a opção selecionada pelo usuário
           await accessService.registerStepInteraction(
@@ -71,98 +132,56 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           
           console.log(`Interação da imagem registrada com sucesso: "${interactionValue}" na etapa ${activeStep + 1}`);
           
-          // Executar a navegação baseada no tipo, sem registrar interações adicionais
-          if (navigationType === "next") {
-            console.log("Navegação para próxima etapa. Atual:", activeStep, "Total:", funnel.steps.length);
-            if (funnel && activeStep < funnel.steps.length - 1) {
-              // Apenas atualizar o progresso sem registrar interações adicionais
-              console.log("Atualizando progresso para etapa:", activeStep + 1);
-              await accessService.updateProgress(funnel.id, Number(activeStep + 1), null);
-              
-              // Pequeno atraso para garantir que as operações do banco de dados foram concluídas
-              console.log("Navegando para próxima etapa:", activeStep + 1);
-              setTimeout(() => onStepChange(activeStep + 1), 100);
-            } else if (funnel && activeStep === funnel.steps.length - 1) {
-              // Se for o último step, marcar como conversão (sem registrar interações adicionais)
-              console.log("Última etapa - marcando como conversão");
-              await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-            }
-          }
-          else if (navigationType === "step" && option.navigation.stepId) {
-            console.log("Navegação para etapa específica:", option.navigation.stepId);
-            if (funnel) {
-              const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
-              console.log("Índice da etapa encontrado:", stepIndex, "de total:", funnel.steps.length);
-              
-              if (stepIndex !== -1) {
-                // Apenas atualizar o progresso sem registrar interações adicionais
-                console.log("Atualizando progresso para etapa específica:", stepIndex + 1);
-                await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null);
-                
-                if (stepIndex === funnel.steps.length - 1) {
-                  // Se for o último step, marcar como conversão (sem registrar interações adicionais)
-                  console.log("Última etapa (específica) - marcando como conversão");
-                  await accessService.updateProgress(funnel.id, Number(stepIndex + 1), null, true);
-                }
-                
-                // Navegar com um pequeno atraso
-                console.log("Navegando para etapa específica:", stepIndex);
-                setTimeout(() => onStepChange(stepIndex), 100);
-              } else {
-                console.error("Etapa não encontrada com ID:", option.navigation.stepId);
-              }
-            }
-          }
-          else if (navigationType === "url" && option.navigation.url) {
-            console.log("Navegação para URL externa:", option.navigation.url);
-            if (funnel) {
-              // Marcar como conversão antes de redirecionar
-              console.log("Marcando como conversão antes de redirecionar");
-              await accessService.updateProgress(funnel.id, Number(activeStep + 1), null, true);
-            }
+          // Verificar se a opção tem configuração de navegação
+          if (option.navigation) {
+            console.log("Opção tem navegação configurada:", option.navigation);
             
-            // Abrir a URL
-            console.log("Redirecionando para:", option.navigation.url, "Nova aba:", option.navigation.openInNewTab);
-            window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-          }
-        } else {
-          console.warn("Objeto funnel não disponível em previewProps");
-        }
-      } catch (error) {
-        console.error("Erro durante navegação com imagem:", error);
-      }
-    } else {
-      // Regular builder mode navigation
-      console.log("Modo Canvas - navegação simulada apenas");
-      
-      if (navigationType === "next") {
-        console.log("Navegar para próxima etapa (modo canvas)");
-        if (currentFunnel) {
-          const currentStepIndex = currentFunnel.steps.findIndex(step => 
-            step.canvasElements.some(el => el.id === element.id)
-          );
-          if (currentStepIndex !== -1 && currentStepIndex < currentFunnel.steps.length - 1) {
-            setCurrentStep(currentStepIndex + 1);
-          }
-        }
-      }
-      else if (navigationType === "step" && option.navigation.stepId) {
-        console.log("Navegar para etapa específica (modo canvas):", option.navigation.stepId);
-        if (currentFunnel) {
-          const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
-          if (stepIndex !== -1) {
-            setCurrentStep(stepIndex);
+            // Executa a navegação com base no tipo
+            switch (option.navigation.type) {
+              case "next":
+                // Ir para o próximo passo
+                if (activeStep < funnel.steps.length - 1) {
+                  onStepChange(activeStep + 1);
+                }
+                break;
+              case "step":
+                // Ir para um passo específico
+                if (option.navigation.stepId) {
+                  const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
+                  if (stepIndex !== -1) {
+                    onStepChange(stepIndex);
+                  }
+                }
+                break;
+              case "url":
+                // Navegar para uma URL externa
+                if (option.navigation.url) {
+                  window.open(option.navigation.url, "_blank");
+                }
+                break;
+              default:
+                // Caso "none" ou desconhecido, não faz navegação
+                console.log("Sem navegação configurada ou tipo desconhecido");
+                break;
+            }
           } else {
-            console.error("Step ID not found:", option.navigation.stepId);
+            // Comportamento padrão quando não há navegação configurada é ir para o próximo passo
+            console.log("Sem navegação configurada, indo para o próximo passo por padrão");
+            if (activeStep < funnel.steps.length - 1) {
+              onStepChange(activeStep + 1);
+            }
           }
         }
       }
-      else if (navigationType === "url" && option.navigation.url) {
-        console.log("Abrir URL externa (modo canvas):", option.navigation.url);
-        window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-      }
+    } catch (error) {
+      console.error("Erro ao processar a interação:", error);
+    } finally {
+      // Adicionar um pequeno delay antes de resetar para evitar cliques acidentais duplicados
+      setTimeout(() => {
+        setIsProcessingInteraction(false);
+      }, 300);
     }
-  }, [setCurrentStep, currentFunnel, element.id, previewMode, previewProps]);
+  }, [previewMode, previewProps, isProcessingInteraction, formFields]);
 
   // Function to get the aspect ratio value - memoized
   const getAspectRatioValue = useCallback((aspectRatio: string | undefined): number | undefined => {

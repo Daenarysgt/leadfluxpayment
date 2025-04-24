@@ -13,7 +13,10 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
   
-  // Obter as configurações globais do funil, se disponíveis
+  // Adicionar estado para capturar dados do formulário
+  const [formFields, setFormFields] = useState<Record<string, string>>({});
+  
+  // Obter configurações globais do funil, se disponíveis
   const funnelSettings = element.previewProps?.funnel?.settings || {};
   
   // Destructure configuration options with defaults
@@ -42,33 +45,61 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Obter configuração de negrito para opções
   const optionsBold = style.optionsBold || false;
   
-  // Obter configuração de estilo visual das opções
+  // Obter configurações de estilo das opções
   const optionsStyle = style.optionsStyle || 'flat';
   
-  // Função auxiliar para garantir nome da fonte corretamente formatado
-  const formatFontFamily = (font: string) => {
-    // Adicionar aspas apenas se o nome da fonte tiver espaço
-    return font.includes(' ') ? `"${font}"` : font;
-  };
+  // Get border radius configuration
+  const borderRadiusRaw = style.borderRadius !== undefined ? style.borderRadius : (funnelSettings.borderRadius || 8);
+  const borderRadiusValue = typeof borderRadiusRaw === 'string' ? parseInt(borderRadiusRaw) : borderRadiusRaw;
   
-  // Obter configurações globais de tipografia (usadas apenas se não houver específicas)
-  const globalHeadingSize = funnelSettings.headingSize ? parseInt(funnelSettings.headingSize) : 24;
-  const globalBodySize = funnelSettings.bodySize ? parseInt(funnelSettings.bodySize) : 16;
-  const lineHeight = funnelSettings.lineHeight ? parseFloat(funnelSettings.lineHeight) : 1.5;
-  const fontStyle = funnelSettings.textItalic ? 'italic' : 'normal';
-  const fontWeight = funnelSettings.textBold ? 'bold' : 'normal';
-  const textDecoration = funnelSettings.textUnderline ? 'underline' : 'none';
-  const textTransform = funnelSettings.textUppercase ? 'uppercase' : 'none';
-  
-  // Obter configurações globais de layout
-  const borderRadiusValue = style.borderRadius !== undefined 
-    ? style.borderRadius 
-    : (funnelSettings.borderRadius ? parseInt(funnelSettings.borderRadius) : 8);
-
-  // Reset selected options when element changes
+  // Obter os valores do formulário na página
   useEffect(() => {
-    setSelectedOptions([]);
-  }, [element.id]);
+    if (!previewMode || !previewProps?.funnel) return;
+    
+    // Buscar todos os inputs visíveis na página
+    const captureInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
+    
+    // Monitorar mudanças nesses campos
+    const handleInputChange = () => {
+      const updatedFormFields: Record<string, string> = {};
+      
+      captureInputs.forEach((input: HTMLInputElement) => {
+        // Se o input tiver um valor, associar ao tipo de campo
+        if (input.value.trim()) {
+          // Identificar o tipo de campo pelo placeholder ou atributos
+          let fieldType = 'text';
+          if (input.type === 'email') fieldType = 'email';
+          if (input.type === 'tel') fieldType = 'phone';
+          
+          // Tentar identificar pelo placeholder
+          const placeholder = input.placeholder.toLowerCase();
+          if (placeholder.includes('email')) fieldType = 'email';
+          if (placeholder.includes('telefone') || placeholder.includes('whatsapp') || placeholder.includes('celular')) fieldType = 'phone';
+          if (placeholder.includes('nome')) fieldType = 'name';
+          
+          updatedFormFields[fieldType] = input.value;
+        }
+      });
+      
+      setFormFields(updatedFormFields);
+    };
+    
+    // Adicionar event listeners para todos os inputs
+    captureInputs.forEach(input => {
+      input.addEventListener('input', handleInputChange);
+      // Capturar valores iniciais
+      if ((input as HTMLInputElement).value) {
+        handleInputChange();
+      }
+    });
+    
+    // Cleanup
+    return () => {
+      captureInputs.forEach(input => {
+        input.removeEventListener('input', handleInputChange);
+      });
+    };
+  }, [previewMode, previewProps]);
   
   // Função para executar a navegação com base na opção selecionada
   const executeNavigation = useCallback(async (optionId: string) => {
@@ -117,6 +148,22 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             console.log("Garantindo que a sessão existe atualizando o progresso primeiro");
             await accessService.updateProgress(funnel.id, activeStep + 1, null);
             
+            // Verificar se há dados do formulário para salvar
+            if (Object.keys(formFields).length > 0) {
+              console.log('Dados do formulário detectados para salvar:', formFields);
+              try {
+                // Salvar os dados do formulário
+                await accessService.saveCaptureFormData(
+                  funnel.id,
+                  null, // sessionId será preenchido pelo serviço
+                  formFields
+                );
+                console.log('Dados do formulário salvos com sucesso junto com a escolha de opção');
+              } catch (formError) {
+                console.error("Erro ao salvar dados do formulário:", formError);
+              }
+            }
+            
             // Depois registrar a interação de escolha
             const selection = option.text || option.value;
             console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
@@ -140,99 +187,99 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             // MODIFICAÇÃO: Reduzimos o atraso para melhorar a experiência do usuário
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Verificar tipo de navegação e executar ação correspondente
-            if (navigationType === "next") {
-              console.log("Preview mode: Navigate to next step", "Current:", activeStep, "Total:", funnel.steps.length);
-              if (activeStep < funnel.steps.length - 1) {
-                console.log("Navegando para a próxima etapa:", activeStep + 1);
-                // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
-                setTimeout(() => {
+            switch (navigationType) {
+              case "next":
+                // Navegar para a próxima etapa
+                if (activeStep < funnel.steps.length - 1) {
+                  console.log("Navegando para próxima etapa:", activeStep + 1);
                   onStepChange(activeStep + 1);
-                  setIsProcessingInteraction(false);
-                }, 150);
-              } else if (activeStep === funnel.steps.length - 1) {
-                // Se for o último step, marcar como conversão
-                console.log("Última etapa - marcando como conversão");
-                await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-                setIsProcessingInteraction(false);
-              }
-            }
-            else if (navigationType === "step" && option.navigation.stepId) {
-              console.log("Preview mode: Navigate to specific step:", option.navigation.stepId);
-              const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
-              console.log("Found step index:", stepIndex, "from total steps:", funnel.steps.length);
-              
-              if (stepIndex !== -1) {
-                if (stepIndex === funnel.steps.length - 1) {
-                  // Se for o último step, marcar como conversão
-                  console.log("Última etapa (específica) - marcando como conversão");
-                  await accessService.updateProgress(funnel.id, stepIndex + 1, null, true);
-                  // Adicionamos a navegação mesmo para a última etapa
-                  setTimeout(() => {
-                    onStepChange(stepIndex);
-                    setIsProcessingInteraction(false);
-                  }, 150);
                 } else {
-                  // Atualizar o progresso para a etapa específica
-                  await accessService.updateProgress(funnel.id, stepIndex + 1, null);
-                  
-                  // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
-                  setTimeout(() => {
-                    onStepChange(stepIndex);
-                    setIsProcessingInteraction(false);
-                  }, 150);
+                  console.log("Já está na última etapa, não é possível avançar");
                 }
-              } else {
-                console.error("Etapa não encontrada com ID:", option.navigation.stepId);
-                setIsProcessingInteraction(false);
-              }
-            }
-            else if (navigationType === "url" && option.navigation.url) {
-              console.log("Preview mode: Open external URL:", option.navigation.url);
-              // Marcar como conversão antes de redirecionar
-              await accessService.updateProgress(funnel.id, activeStep + 1, null, true);
-              console.log("Redirecionando para URL externa");
-              
-              // MODIFICAÇÃO: Reduzimos o delay para melhorar a experiência do usuário
-              setTimeout(() => {
-                window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-                setIsProcessingInteraction(false);
-              }, 150);
+                break;
+                
+              case "step":
+                // Navegar para uma etapa específica
+                if (option.navigation.stepId) {
+                  const targetIndex = funnel.steps.findIndex(s => s.id === option.navigation.stepId);
+                  if (targetIndex !== -1) {
+                    console.log("Navegando para etapa específica:", targetIndex);
+                    onStepChange(targetIndex);
+                  } else {
+                    console.error("Etapa de destino não encontrada:", option.navigation.stepId);
+                  }
+                }
+                break;
+                
+              case "url":
+                // Navegar para uma URL externa
+                if (option.navigation.url) {
+                  console.log("Navegando para URL externa:", option.navigation.url);
+                  window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+                }
+                break;
+                
+              default:
+                console.log("Tipo de navegação desconhecido ou não implementado:", navigationType);
+                break;
             }
           } catch (error) {
-            console.error("Erro durante a navegação:", error);
-            setIsProcessingInteraction(false);
+            console.error("Erro durante execução da navegação:", error);
           }
         } else {
-          console.warn("No funnel object available in preview props");
+          console.error("Objeto funnel não disponível em previewProps");
+        }
+      }
+      // When in canvas mode (not in preview)
+      else if (currentFunnel) {
+        console.log("Executando navegação no modo canvas (editor)");
+        
+        // Determine the current step index
+        const currentStepIndex = currentFunnel.steps.findIndex(step => 
+          step.canvasElements.some(el => el.id === element.id)
+        );
+        
+        if (currentStepIndex === -1) {
+          console.error("Não foi possível encontrar o índice do passo atual");
           setIsProcessingInteraction(false);
+          return;
         }
-      } else {
-        // Handle navigation in canvas mode
-        console.log("Modo Canvas - navegação simulada apenas");
-        if (navigationType === "next") {
-          if (currentFunnel && currentStep < currentFunnel.steps.length - 1) {
-            setCurrentStep(currentStep + 1);
-          }
-        }
-        else if (navigationType === "step" && option.navigation.stepId) {
-          if (currentFunnel) {
-            const stepIndex = currentFunnel.steps.findIndex(step => step.id === option.navigation.stepId);
-            if (stepIndex !== -1) {
-              setCurrentStep(stepIndex);
+        
+        switch (navigationType) {
+          case "next":
+            // Navegar para o próximo passo no editor
+            if (currentStepIndex < currentFunnel.steps.length - 1) {
+              console.log("Navegando para o próximo passo no editor:", currentStepIndex + 1);
+              setCurrentStep(currentStepIndex + 1);
             }
-          }
+            break;
+            
+          case "step":
+            // Navegar para um passo específico no editor
+            if (option.navigation.stepId) {
+              const targetIndex = currentFunnel.steps.findIndex(s => s.id === option.navigation.stepId);
+              if (targetIndex !== -1) {
+                console.log("Navegando para passo específico no editor:", targetIndex);
+                setCurrentStep(targetIndex);
+              }
+            }
+            break;
+            
+          case "url":
+            // No editor, apenas mostrar um alerta sobre a navegação externa
+            if (option.navigation.url) {
+              console.log("No editor, a navegação para URL externa seria:", option.navigation.url);
+              // Não vamos abrir a URL de fato no modo editor
+            }
+            break;
         }
-        else if (navigationType === "url" && option.navigation.url) {
-          window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-        }
-        setIsProcessingInteraction(false);
       }
     } catch (error) {
       console.error("Erro durante executeNavigation:", error);
+    } finally {
       setIsProcessingInteraction(false);
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, isProcessingInteraction]);
+  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, isProcessingInteraction, formFields]);
   
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option, "Allow multiple:", allowMultipleSelection);
@@ -272,302 +319,191 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     }
   }, [allowMultipleSelection, executeNavigation]);
   
-  const handleContinue = useCallback(async () => {
-    // Exit if no options selected
-    if (selectedOptions.length === 0) return;
+  const handleContinue = useCallback(() => {
+    console.log("MultipleChoiceRenderer - Continue button clicked with selections:", selectedOptions);
     
-    const selectedOptionsData = content.options.filter((opt: any) => 
-      selectedOptions.includes(opt.id)
-    );
-    
-    // Find the first selected option with navigation
-    const navigationOption = selectedOptionsData.find((opt: any) => opt.navigation);
-    
-    if (!navigationOption) {
-      console.log("Nenhuma opção com navegação configurada encontrada. Criando navegação padrão para próxima etapa.");
-      
-      // CORREÇÃO: Se nenhuma opção tiver navegação, usar a primeira opção selecionada
-      // e criar uma navegação padrão para ela
-      if (selectedOptionsData.length > 0) {
-        const firstOption = selectedOptionsData[0];
-        
-        // Criar objeto de navegação temporário para a opção
-        firstOption.navigation = { type: "next" };
-        
-        // Executar navegação com a configuração padrão
-        executeNavigation(firstOption.id);
-      }
-      
+    if (selectedOptions.length === 0) {
+      console.log("Nenhuma opção selecionada, ignorando");
       return;
     }
     
-    // Executar a navegação padrão para múltipla seleção (botão continuar)
-    executeNavigation(navigationOption.id);
-  }, [selectedOptions, content?.options, executeNavigation]);
-
+    // No modo de seleção múltipla, navegamos apenas quando o botão é clicado
+    if (allowMultipleSelection && selectedOptions.length > 0) {
+      // Obter a última opção selecionada para navegação
+      const lastSelectedId = selectedOptions[selectedOptions.length - 1];
+      executeNavigation(lastSelectedId);
+    }
+  }, [selectedOptions, allowMultipleSelection, executeNavigation]);
+  
+  // Definir o estilo dos indicadores
+  const getIndicatorStyle = () => {
+    const baseStyle = {
+      width: indicatorType === 'circle' ? '24px' : '20px',
+      height: indicatorType === 'circle' ? '24px' : '20px',
+      backgroundColor: 'transparent',
+      borderRadius: indicatorType === 'circle' ? '50%' : '4px',
+      border: `2px solid ${indicatorColor}`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    };
+    
+    return baseStyle;
+  };
+  
+  // Obter o estilo para um indicador selecionado
+  const getSelectedIndicatorStyle = () => {
+    return {
+      ...getIndicatorStyle(),
+      backgroundColor: indicatorColor,
+      border: `2px solid ${indicatorColor}`
+    };
+  };
+  
+  // Definir o estilo das opções com base na configuração
+  const getOptionStyle = (isSelected: boolean) => {
+    let optionStyle: React.CSSProperties = {
+      border: `1px solid ${isSelected ? indicatorColor : '#e2e8f0'}`,
+      borderRadius: `${borderRadiusValue}px`,
+      padding: '10px 16px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: indicatorAlign === 'left' ? 'flex-start' : 'space-between',
+      gap: '12px',
+      backgroundColor: isSelected ? `${indicatorColor}10` : 'white',
+      fontFamily: formatFontFamily(fontFamily),
+      fontSize: `${optionFontSize}px`,
+      fontWeight: optionsBold ? 'bold' : 'normal'
+    };
+    
+    // Aplicar estilos adicionais com base no estilo de opção
+    switch (optionsStyle) {
+      case '3d':
+        optionStyle = {
+          ...optionStyle,
+          boxShadow: isSelected ? `0 4px 6px -1px ${indicatorColor}40` : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          transform: isSelected ? 'translateY(-2px)' : 'none'
+        };
+        break;
+      case 'neumorphism':
+        optionStyle = {
+          ...optionStyle,
+          backgroundColor: '#f0f0f0',
+          boxShadow: isSelected 
+            ? `inset 3px 3px 6px rgba(0,0,0,0.2), inset -3px -3px 6px rgba(255,255,255,0.7), 0 0 0 2px ${indicatorColor}`
+            : '3px 3px 6px rgba(0,0,0,0.2), -3px -3px 6px rgba(255,255,255,0.7)',
+          border: 'none'
+        };
+        break;
+      case 'glassmorphism':
+        optionStyle = {
+          ...optionStyle,
+          backgroundColor: isSelected ? `${indicatorColor}20` : 'rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(7px)',
+          border: isSelected ? `1px solid ${indicatorColor}60` : '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        };
+        break;
+    }
+    
+    return optionStyle;
+  };
+  
+  // Função auxiliar para formatar nome de fonte
+  const formatFontFamily = (font: string) => {
+    return font.includes(' ') && !font.includes(',') && !font.includes('"') ? `"${font}"` : font;
+  };
+  
   // Calcular o estilo para margem superior
   const containerStyle = {
     marginTop: marginTop !== undefined ? `${marginTop}px` : undefined,
     fontFamily: formatFontFamily(fontFamily)
   };
-
-  // Função para aplicar os estilos avançados de opções
-  const getAdvancedOptionStyles = (isSelected: boolean, optionStyle: any) => {
-    // Valores base para todos os estilos
-    const baseStyles: any = {
-      backgroundColor: isSelected 
-        ? (optionStyle.selectedBackgroundColor || "#f5f3ff") 
-        : (optionStyle.backgroundColor || ""),
-      borderColor: isSelected 
-        ? (optionStyle.selectedBorderColor || indicatorColor) 
-        : (optionStyle.borderColor || ""),
-      color: isSelected 
-        ? (optionStyle.selectedTextColor || "#4c1d95") 
-        : (optionStyle.textColor || ""),
-      borderRadius: `${borderRadiusValue}px`,
-      transition: "all 0.2s ease",
-      fontFamily: formatFontFamily(fontFamily)
-    };
-    
-    // Aplicar estilos adicionais com base no valor de optionsStyle
-    switch (optionsStyle) {
-      case '3d':
-        return {
-          ...baseStyles,
-          boxShadow: isSelected
-            ? `0 4px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.2), inset 0 0 0 1px ${
-                optionStyle.selectedBorderColor || indicatorColor
-              }`
-            : '0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.15)',
-          transform: isSelected ? 'translateY(-2px)' : 'none'
-        };
-        
-      case 'neumorphism':
-        // Para neumorfismo, usar cores mais claras
-        const bgColor = isSelected 
-          ? (optionStyle.selectedBackgroundColor || "#f0f0f0") 
-          : (optionStyle.backgroundColor || "#f0f0f0");
-          
-        return {
-          ...baseStyles,
-          backgroundColor: bgColor,
-          border: 'none',
-          boxShadow: isSelected
-            ? `inset 3px 3px 6px rgba(0,0,0,0.15), 
-               inset -3px -3px 6px rgba(255,255,255,0.8), 
-               0 0 0 2px ${optionStyle.selectedBorderColor || indicatorColor}`
-            : '5px 5px 10px rgba(0,0,0,0.1), -5px -5px 10px rgba(255,255,255,0.8)'
-        };
-        
-      case 'glassmorphism':
-        return {
-          ...baseStyles,
-          backgroundColor: isSelected
-            ? `rgba(${hexToRgb(optionStyle.selectedBackgroundColor || "#f5f3ff")}, 0.75)`
-            : 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          border: isSelected
-            ? `1px solid ${optionStyle.selectedBorderColor || indicatorColor}`
-            : '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-        };
-        
-      default: // 'flat'
-        return baseStyles;
-    }
-  };
-
-  // Função auxiliar para converter hex para rgb (necessário para glassmorphism)
-  const hexToRgb = (hex: string) => {
-    // Remover o '#' se existir
-    hex = hex.replace('#', '');
-    
-    // Verificar formatos válidos de hex
-    if (hex.length !== 3 && hex.length !== 6) {
-      return '255, 255, 255'; // Branco por padrão
-    }
-    
-    // Expandir formato curto (3 dígitos)
-    if (hex.length === 3) {
-      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
-    
-    // Converter para RGB
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    
-    return `${r}, ${g}, ${b}`;
-  };
-
+  
   return (
     <BaseElementRenderer {...props}>
-      <div className="space-y-4" style={containerStyle}>
-        {content.title && (
-          <h3 
-            className="font-medium" 
+      <div className="p-4" style={containerStyle}>
+        {content?.title && (
+          <h2 
+            className={cn(
+              "font-medium mb-4",
+              style.titleAlignment === "center" ? "text-center" : 
+              style.titleAlignment === "right" ? "text-right" : "text-left"
+            )}
             style={{
               fontSize: `${titleFontSize}px`,
-              fontFamily: formatFontFamily(fontFamily),
-              lineHeight: String(lineHeight),
-              fontStyle,
-              fontWeight,
-              textDecoration,
-              textTransform
+              fontFamily: formatFontFamily(fontFamily)
             }}
           >
             {content.title}
-          </h3>
+          </h2>
         )}
-        {content.description && (
+        
+        {content?.description && (
           <p 
-            className="text-muted-foreground" 
+            className={cn(
+              "mb-4 text-muted-foreground",
+              style.titleAlignment === "center" ? "text-center" : 
+              style.titleAlignment === "right" ? "text-right" : "text-left"
+            )}
             style={{
               fontSize: `${descriptionFontSize}px`,
-              fontFamily: formatFontFamily(fontFamily),
-              lineHeight: String(lineHeight),
-              fontStyle,
-              fontWeight,
-              textDecoration,
-              textTransform
+              fontFamily: formatFontFamily(fontFamily)
             }}
           >
             {content.description}
           </p>
         )}
         
-        {/* Texto auxiliar para seleção múltipla (apenas se showHelperText for true) */}
-        {allowMultipleSelection && showHelperText && helperText && (
+        <div className="space-y-3">
+          {content?.options?.map((option: any) => {
+            const isSelected = selectedOptions.includes(option.id);
+            const shouldShowIndicator = showIndicators;
+            
+            return (
+              <div 
+                key={option.id}
+                style={getOptionStyle(isSelected)}
+                className="group"
+                onClick={() => handleOptionClick(option)}
+                role="button"
+                tabIndex={0}
+              >
+                {/* Indicador à esquerda */}
+                {shouldShowIndicator && indicatorAlign === 'left' && (
+                  <div style={isSelected ? getSelectedIndicatorStyle() : getIndicatorStyle()}>
+                    {isSelected && <Check className="h-3 w-3" style={{ color: indicatorIconColor }} />}
+                  </div>
+                )}
+                
+                <span className="flex-1">{option.text}</span>
+                
+                {/* Indicador à direita */}
+                {shouldShowIndicator && indicatorAlign === 'right' && (
+                  <div style={isSelected ? getSelectedIndicatorStyle() : getIndicatorStyle()}>
+                    {isSelected && <Check className="h-3 w-3" style={{ color: indicatorIconColor }} />}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {showHelperText && allowMultipleSelection && (
           <p 
-            className="text-muted-foreground" 
+            className="mt-2 text-sm text-muted-foreground"
             style={{
               fontSize: `${descriptionFontSize}px`,
-              fontFamily: formatFontFamily(fontFamily),
-              lineHeight: String(lineHeight),
-              fontStyle,
-              fontWeight,
-              textDecoration,
-              textTransform
+              fontFamily: formatFontFamily(fontFamily)
             }}
           >
             {helperText}
           </p>
         )}
         
-        <div className="space-y-2">
-          {content.options?.map((option: any) => {
-            // Prepare styles based on option configurations
-            const optionStyle = option.style || {};
-            const isSelected = selectedOptions.includes(option.id);
-            
-            // Aplicar estilos avançados baseados na seleção de estilo
-            const styleObject = getAdvancedOptionStyles(isSelected, optionStyle);
-            
-            // Prepare the indicator element (circle or square)
-            const renderIndicator = () => {
-              if (indicatorType === "square") {
-                return (
-                  <div className={cn(
-                    "w-5 h-5 flex items-center justify-center border-2",
-                    isSelected 
-                      ? "" 
-                      : "border-gray-300 bg-white"
-                  )}
-                  style={{ 
-                    borderRadius: "4px",
-                    backgroundColor: isSelected ? indicatorColor : undefined,
-                    borderColor: isSelected ? indicatorColor : undefined
-                  }}>
-                    {isSelected && (
-                      <Check className="h-3.5 w-3.5" style={{ color: indicatorIconColor }} />
-                    )}
-                  </div>
-                );
-              } else {
-                return (
-                  <div className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center",
-                    isSelected 
-                      ? "" 
-                      : "border-gray-300 bg-white"
-                  )}
-                  style={{
-                    backgroundColor: isSelected ? indicatorColor : undefined,
-                    borderColor: isSelected ? indicatorColor : undefined
-                  }}>
-                    {isSelected && (
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: indicatorIconColor }} />
-                    )}
-                  </div>
-                );
-              }
-            };
-            
-            return (
-              <div
-                key={option.id}
-                className={cn(
-                  "p-4 border cursor-pointer transition-all duration-200",
-                  isSelected && "border-violet-500",
-                  isProcessingInteraction && "opacity-70 pointer-events-none"
-                )}
-                style={{
-                  ...styleObject,
-                  borderColor: isSelected ? indicatorColor : styleObject.borderColor
-                }}
-                onClick={() => handleOptionClick(option)}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Posicionamento condicional do indicador */}
-                  {showIndicators && indicatorAlign === "left" && renderIndicator()}
-                  
-                  <div className="flex-1 flex items-center">
-                    {option.emoji && (
-                      <span className="mr-3 text-2xl" style={{ fontSize: '1.75rem' }}>{option.emoji}</span>
-                    )}
-                    <div>
-                      <span 
-                        className="font-medium"
-                        style={{
-                          fontSize: `${optionFontSize}px`,
-                          lineHeight: String(lineHeight),
-                          fontStyle,
-                          fontWeight: optionsBold ? 'bold' : fontWeight,
-                          textDecoration,
-                          textTransform,
-                          fontFamily: formatFontFamily(fontFamily)
-                        }}
-                      >
-                        {option.text}
-                      </span>
-                      {option.description && (
-                        <div 
-                          className="text-muted-foreground mt-1"
-                          style={{
-                            fontSize: `${descriptionFontSize}px`,
-                            lineHeight: String(lineHeight),
-                            fontStyle,
-                            fontWeight,
-                            textDecoration,
-                            textTransform,
-                            fontFamily: formatFontFamily(fontFamily)
-                          }}
-                        >
-                          {option.description}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Indicador à direita quando configurado */}
-                  {showIndicators && indicatorAlign === "right" && renderIndicator()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        
-        {/* Botão de continuar para seleção múltipla - mostrado apenas quando múltipla seleção estiver ativada */}
         {allowMultipleSelection && (
           <button 
             className={cn(
