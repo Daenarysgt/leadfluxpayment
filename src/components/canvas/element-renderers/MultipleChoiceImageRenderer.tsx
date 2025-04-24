@@ -224,6 +224,12 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="h-full w-full object-cover" 
+                    onError={(e) => {
+                      console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
+                      // Substituir por placeholder em caso de erro
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="h-full w-full bg-gray-200 flex items-center justify-center">
@@ -238,6 +244,12 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="w-full object-contain" 
+                    onError={(e) => {
+                      console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
+                      // Substituir por placeholder em caso de erro
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="h-40 w-full bg-gray-200 flex items-center justify-center">

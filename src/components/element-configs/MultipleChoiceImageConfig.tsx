@@ -18,7 +18,7 @@ interface MultipleChoiceImageConfigProps {
 }
 
 const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageConfigProps) => {
-  const { currentFunnel } = useStore();
+  const { currentFunnel, setCanvasElements, currentStep } = useStore();
   
   // Estado para armazenar a margem superior
   const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
@@ -85,6 +85,8 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
           let width = img.width;
           let height = img.height;
           
+          console.log(`MultipleChoiceImageConfig - Redimensionando imagem original: ${width}x${height}`);
+          
           // Calcular as novas dimensões mantendo a proporção
           if (width > maxWidth) {
             height = Math.round(height * (maxWidth / width));
@@ -96,14 +98,29 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
             height = maxHeight;
           }
           
+          console.log(`MultipleChoiceImageConfig - Nova dimensão: ${width}x${height}`);
+          
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          if (!ctx) {
+            reject(new Error('Falha ao obter contexto do canvas'));
+            return;
+          }
           
-          // Converter para blob
+          // Melhoria da qualidade de renderização
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          
+          // Desenhar imagem no canvas
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Determinar o tipo de saída com base no tipo original
+          const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          
+          // Converter para blob com qualidade adequada
           canvas.toBlob((blob) => {
             if (!blob) {
               reject(new Error('Falha ao redimensionar imagem'));
@@ -112,12 +129,13 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
             
             // Criar novo arquivo a partir do blob
             const resizedFile = new File([blob], file.name, {
-              type: file.type,
+              type: outputType,
               lastModified: Date.now(),
             });
             
+            console.log(`MultipleChoiceImageConfig - Imagem redimensionada: ${resizedFile.size} bytes`);
             resolve(resizedFile);
-          }, file.type);
+          }, outputType, outputType === 'image/jpeg' ? 0.92 : undefined);
         };
         img.onerror = () => {
           reject(new Error('Erro ao carregar imagem para redimensionamento'));
@@ -130,12 +148,108 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
   // Função para processar o upload de arquivo
   const handleFileUpload = async (optionId: string, file: File) => {
     try {
-      // Redimensionar a imagem antes de converter para base64
-      const resizedFile = await resizeImage(file);
-      const base64Image = await convertToBase64(resizedFile);
+      console.log(`MultipleChoiceImageConfig - Processando upload de imagem para opção ${optionId}`);
+      
+      // Determinando o tipo de arquivo
+      const isJpeg = file.type === 'image/jpeg' || file.type === 'image/jpg';
+      const isPng = file.type === 'image/png';
+      const isGif = file.type === 'image/gif';
+      
+      let base64Image;
+      
+      if (isGif) {
+        // Para GIFs, não redimensionamos para preservar a animação, mas comprimimos
+        console.log("MultipleChoiceImageConfig - Convertendo GIF para base64, reduzindo tamanho");
+        // Redimensionar para reduzir tamanho mesmo sendo GIF
+        const resizedFile = await resizeImage(file, 400, 300);
+        base64Image = await convertToBase64(resizedFile);
+      } else {
+        // Para outros tipos de imagem, redimensionamos para otimizar
+        console.log(`MultipleChoiceImageConfig - Redimensionando imagem: ${file.type}, tamanho: ${file.size} bytes`);
+        
+        // Reduzir tamanho máximo para reduzir peso total
+        const resizedFile = await resizeImage(file, 800, 600);
+        
+        // Converter com qualidade reduzida
+        const canvas = document.createElement('canvas');
+        const img = new Image();
+        
+        // Criamos uma Promise manualmente para aguardar o carregamento da imagem
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = URL.createObjectURL(resizedFile);
+        });
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, img.width, img.height);
+        
+        // Use melhor qualidade para JPEG, ou PNG para transparência
+        if (isPng) {
+          base64Image = canvas.toDataURL('image/png');
+        } else {
+          // Reduzir qualidade para JPEG para diminuir tamanho
+          base64Image = canvas.toDataURL('image/jpeg', 0.7); // Reduzir qualidade de 0.92 para 0.7
+        }
+        
+        // Liberar o URL objeto
+        URL.revokeObjectURL(img.src);
+      }
+      
+      const maxBase64Length = 50000; // Aproximadamente 37KB
+      if (base64Image && base64Image.length > maxBase64Length) {
+        console.log(`MultipleChoiceImageConfig - Imagem muito grande (${base64Image.length} caracteres), comprimindo mais`);
+        
+        // Comprimir mais se a imagem ainda for muito grande
+        const tempImg = new Image();
+        tempImg.src = base64Image;
+        
+        await new Promise((resolve) => {
+          tempImg.onload = resolve;
+        });
+        
+        const tempCanvas = document.createElement('canvas');
+        // Reduzir ainda mais as dimensões para grandes imagens
+        const scaleFactor = Math.sqrt(maxBase64Length / base64Image.length) * 0.9;
+        tempCanvas.width = tempImg.width * scaleFactor;
+        tempCanvas.height = tempImg.height * scaleFactor;
+        
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx?.drawImage(tempImg, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        if (isPng) {
+          base64Image = tempCanvas.toDataURL('image/png');
+        } else {
+          base64Image = tempCanvas.toDataURL('image/jpeg', 0.6);
+        }
+      }
+      
+      console.log(`MultipleChoiceImageConfig - Imagem processada: tamanho final ${base64Image.length} caracteres`);
+      
+      // Atualizar option com a imagem processada
       handleOptionImageChange(optionId, base64Image);
+      
+      // Garantir a persistência imediatamente
+      const updatedOptions = element.content.options.map((option: any) => 
+        option.id === optionId ? { ...option, image: base64Image } : option
+      );
+      
+      // Atualizar todo o elemento com as opções atualizadas
+      onUpdate({
+        content: {
+          ...element.content,
+          options: updatedOptions
+        }
+      });
+      
+      // Forçar sincronização com o banco de dados
+      forceCanvasSynchronization();
+      
+      console.log(`MultipleChoiceImageConfig - Imagem salva com sucesso para opção ${optionId}`);
     } catch (error) {
-      console.error("Erro ao processar imagem:", error);
+      console.error("MultipleChoiceImageConfig - Erro ao processar imagem:", error);
     }
   };
 
@@ -255,6 +369,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     const newOption = {
       id: crypto.randomUUID(),
       text: "Nova opção",
+      image: "/placeholder.svg",
       style: {
         backgroundColor: "#0F172A",
         aspectRatio: "1:1"
@@ -264,6 +379,8 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
       },
       value: "Nova opção"
     };
+    
+    console.log("MultipleChoiceImageConfig - Adicionando nova opção com imagem placeholder");
     
     onUpdate({
       content: {
@@ -295,6 +412,34 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
         marginTop: value[0]
       }
     });
+  };
+
+  // Função para forçar a sincronização com o banco de dados
+  const forceCanvasSynchronization = () => {
+    if (!currentFunnel || currentStep === undefined || currentStep < 0) return;
+    
+    const stepId = currentFunnel.steps[currentStep]?.id;
+    if (!stepId) return;
+    
+    // Buscar todos os elementos atuais do canvas para o step atual
+    setTimeout(() => {
+      try {
+        // Encontrar o elemento atualizado na lista de elementos do canvas
+        const allCanvasElements = currentFunnel.steps[currentStep].canvasElements || [];
+        
+        // Encontrar o elemento atual que estamos editando
+        const updatedElements = allCanvasElements.map(canvasEl => 
+          canvasEl.id === element.id ? { ...canvasEl, content: element.content } : canvasEl
+        );
+        
+        console.log(`MultipleChoiceImageConfig - Forçando sincronização do step ${stepId} com ${updatedElements.length} elementos`);
+        
+        // Forçar persistência no banco de dados
+        setCanvasElements(stepId, updatedElements);
+      } catch (error) {
+        console.error("MultipleChoiceImageConfig - Erro ao forçar sincronização:", error);
+      }
+    }, 500); // Pequeno atraso para garantir que todas as atualizações foram processadas
   };
 
   return (
