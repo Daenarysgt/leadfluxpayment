@@ -592,47 +592,60 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         
         let canvasElementsArray = [];
         try {
-          const { data: originalCanvasElements, error: fetchError } = await supabase
-            .from('canvas_elements')
-            .select('*')
-            .eq('step_id', stepToClone.id);
+          // Verificar se os elementos do canvas estão armazenados na própria tabela steps
+          // como um campo JSON (canvas_elements) em vez de uma tabela separada
+          const { data: stepWithElements, error: fetchStepError } = await supabase
+            .from('steps')
+            .select('canvas_elements')
+            .eq('id', stepToClone.id)
+            .single();
           
-          if (fetchError) {
-            console.error(`StepActions - Erro ao buscar elementos do canvas da etapa original:`, fetchError);
-          } else {
-            const elementsCount = originalCanvasElements?.length || 0;
+          if (fetchStepError) {
+            console.error(`StepActions - Erro ao buscar elementos do canvas do step:`, fetchStepError);
+          } else if (stepWithElements && stepWithElements.canvas_elements) {
+            console.log(`StepActions - Encontrados elementos do canvas armazenados no campo JSON do step`);
+            
+            // Se os elementos existem como um campo JSON na tabela steps
+            const originalElements = Array.isArray(stepWithElements.canvas_elements) 
+              ? stepWithElements.canvas_elements 
+              : [];
+            
+            const elementsCount = originalElements.length;
             console.log(`StepActions - Encontrados ${elementsCount} elementos do canvas para duplicar`);
             
-            // 3. Se encontrou elementos, duplicá-los para a nova etapa
-            if (originalCanvasElements && originalCanvasElements.length > 0) {
-              // Mapear os elementos originais para novos elementos com IDs únicos
-              const newCanvasElements = originalCanvasElements.map(element => {
-                // Garantir que cada propriedade esteja definida para evitar erros
+            if (elementsCount > 0) {
+              // Clonar elementos com novos IDs
+              const newCanvasElements = originalElements.map(element => {
                 const safeElement = { ...element };
                 return {
                   ...safeElement,
                   id: generateValidUUID(),
-                  step_id: newStepId, // Associar ao novo step
+                  step_id: newStepId,
                   created_at: now,
                   updated_at: now
                 };
               });
               
-              console.log(`StepActions - Inserindo ${newCanvasElements.length} novos elementos do canvas`);
+              console.log(`StepActions - Atualizando ${newCanvasElements.length} elementos do canvas no novo step`);
               
-              // Inserir os novos elementos do canvas
-              const { data: insertedElements, error: insertError } = await supabase
-                .from('canvas_elements')
-                .insert(newCanvasElements)
-                .select();
+              // Atualizar o step recém-criado com os novos elementos clonados
+              const { error: updateError } = await supabase
+                .from('steps')
+                .update({ 
+                  canvas_elements: newCanvasElements,
+                  updated_at: now
+                })
+                .eq('id', newStepId);
               
-              if (insertError) {
-                console.error(`StepActions - Erro ao inserir novos elementos do canvas:`, insertError);
+              if (updateError) {
+                console.error(`StepActions - Erro ao atualizar elementos do canvas no novo step:`, updateError);
               } else {
-                console.log(`StepActions - Elementos do canvas duplicados com sucesso`);
-                canvasElementsArray = insertedElements || [];
+                console.log(`StepActions - Elementos do canvas duplicados com sucesso no campo JSON`);
+                canvasElementsArray = newCanvasElements;
               }
             }
+          } else {
+            console.log(`StepActions - Step não possui elementos do canvas ou está em formato não reconhecido`);
           }
         } catch (canvasError) {
           console.error(`StepActions - Exceção ao processar elementos do canvas:`, canvasError);
