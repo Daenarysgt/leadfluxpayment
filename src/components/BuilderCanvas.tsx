@@ -51,6 +51,17 @@ const BuilderCanvas = ({
         }
       }
       
+      // Aplicar os mesmos ajustes de margem que a pré-visualização usa
+      // Isso garante consistência visual entre o builder e a visualização final
+      if (!adjustedElement.content) {
+        adjustedElement.content = {};
+      }
+      
+      // Remover qualquer padding adicional que possa existir somente no builder
+      if (adjustedElement.style?.padding) {
+        adjustedElement.style.padding = '0px';
+      }
+      
       return adjustedElement;
     });
   };

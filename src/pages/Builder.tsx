@@ -113,7 +113,7 @@ const Builder = () => {
     const styleElement = document.createElement('style');
     styleElement.id = 'builder-zoom-fix';
     
-    // CSS que garante o zoom de 90% e evita espaços vazios
+    // CSS que garante o preenchimento correto da tela sem aplicar zoom que cause inconsistências visuais
     styleElement.innerHTML = `
       html, body {
         margin: 0 !important;
@@ -124,15 +124,13 @@ const Builder = () => {
       }
       
       #root {
-        transform: scale(0.90);
-        transform-origin: 0 0;
-        width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
-        height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+        width: 100vw !important;
+        height: 100vh !important;
       }
       
       /* Ajustes para resolver o espaço no rodapé */
       .flex.flex-col.h-screen {
-        min-height: 111.12vh !important;
+        min-height: 100vh !important;
         display: flex !important;
         flex-direction: column !important;
       }
@@ -141,8 +139,8 @@ const Builder = () => {
       .flex.flex-col.h-screen > div:nth-child(2) {
         flex: 1 !important;
         display: flex !important;
-        min-height: calc(111.12vh - 57px) !important;
-        height: calc(111.12vh - 57px) !important;
+        min-height: calc(100vh - 57px) !important;
+        height: calc(100vh - 57px) !important;
         overflow: hidden !important;
       }
       
@@ -154,15 +152,15 @@ const Builder = () => {
       [class*="elements-panel"],
       [class*="steps-panel"] {
         height: 100% !important;
-        min-height: calc(111.12vh - 57px) !important;
+        min-height: calc(100vh - 57px) !important;
         max-height: none !important;
         overflow-y: auto !important;
       }
       
       /* Forçar todos os paineis a irem até o fim da tela */
       .flex.flex-col.h-screen > div:nth-child(2) > div {
-        height: calc(111.12vh - 57px) !important;
-        min-height: calc(111.12vh - 57px) !important;
+        height: calc(100vh - 57px) !important;
+        min-height: calc(100vh - 57px) !important;
         overflow-y: auto !important;
       }
     `;
@@ -177,8 +175,8 @@ const Builder = () => {
       
       if (container) {
         // Ajustar o container principal
-        container.style.height = 'calc(111.12vh - 57px)';
-        container.style.minHeight = 'calc(111.12vh - 57px)';
+        container.style.height = 'calc(100vh - 57px)';
+        container.style.minHeight = 'calc(100vh - 57px)';
         container.style.display = 'flex';
         container.style.flexDirection = 'row';
         container.style.overflow = 'hidden';
@@ -186,8 +184,8 @@ const Builder = () => {
         // Ajustar todos os filhos diretos (painéis)
         Array.from(container.children).forEach((panel: Element) => {
           const panelElement = panel as HTMLElement;
-          panelElement.style.height = 'calc(111.12vh - 57px)';
-          panelElement.style.minHeight = 'calc(111.12vh - 57px)';
+          panelElement.style.height = 'calc(100vh - 57px)';
+          panelElement.style.minHeight = 'calc(100vh - 57px)';
           panelElement.style.overflowY = 'auto';
         });
       }

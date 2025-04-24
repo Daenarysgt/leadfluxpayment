@@ -95,11 +95,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
-    margin: isMobile ? '0 auto' : '0 auto',
+    padding: '0', // Remover padding para consistência com o editor
+    margin: '0 auto',
     position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
   };
 
@@ -144,6 +142,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         const adjustedElement = { ...element };
         
         // Para dispositivos móveis, modificar as posições e dimensões
+        // usando exatamente a mesma lógica do BuilderCanvas
         if (isMobile) {
           // Assegurar que elementos com position tenham left=0 para evitar deslocamento
           if (adjustedElement.position) {
@@ -159,6 +158,16 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
               ...adjustedElement.dimensions,
               width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
             };
+          }
+          
+          // Ajustes adicionais para garantir consistência total com o BuilderCanvas
+          if (!adjustedElement.content) {
+            adjustedElement.content = {};
+          }
+          
+          // Remover qualquer padding adicional
+          if (adjustedElement.style?.padding) {
+            adjustedElement.style.padding = '0px';
           }
         }
         
