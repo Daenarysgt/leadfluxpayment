@@ -11,7 +11,7 @@ interface StepsDatabaseAdapter {
 
 // Interface para hooks da aplicação
 interface LeadfluxAppHooks {
-  preventCanvasReload: () => void;
+  preventCanvasReload: (stepId?: string) => void;
 }
 
 declare global {

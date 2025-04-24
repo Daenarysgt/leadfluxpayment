@@ -48,6 +48,14 @@ const Builder = () => {
   const [zoomScale] = useState(0.9); // 90% de zoom
 
   // Registrar hooks globais para permitir comunicação com outras partes da aplicação
+  // Inicializado imediatamente para garantir que está disponível antes da duplicação
+  // @ts-ignore - Definido dinamicamente
+  window.LEADFLUX_APP_HOOKS = {
+    ...window.LEADFLUX_APP_HOOKS,
+    preventCanvasReload: preventNextReload
+  };
+  
+  // Manter referência atualizada quando o hook mudar
   useEffect(() => {
     // @ts-ignore - Definido dinamicamente
     window.LEADFLUX_APP_HOOKS = {

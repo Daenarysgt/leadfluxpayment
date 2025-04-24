@@ -734,11 +734,36 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         console.log(`StepActions - Processados ${processedCanvasElements.length} elementos para o novo step`);
       }
       
+      // IMPORTANTE: Pré-carregar os dados do canvas no cache local do getCanvasElements
+      // Isso evita uma nova busca ao banco quando setCurrentStep for chamado
+      // @ts-ignore - Propriedade dinâmica
+      if (window.preloadedCanvasElements === undefined) {
+        // @ts-ignore - Propriedade dinâmica
+        window.preloadedCanvasElements = {};
+      }
+      
+      // Armazenar os elementos processados no cache temporário usando o step_id como chave
+      // @ts-ignore - Propriedade dinâmica
+      window.preloadedCanvasElements[newStepId] = [...processedCanvasElements];
+      console.log(`StepActions - Pré-carregados ${processedCanvasElements.length} elementos no cache temporário para step ${newStepId}`);
+      
+      // Notificar o Builder para prevenir recarregamento de elementos - ANTES de atualizar o estado
+      try {
+        // @ts-ignore - Propriedade dinâmica
+        if (window.LEADFLUX_APP_HOOKS && window.LEADFLUX_APP_HOOKS.preventCanvasReload) {
+          // @ts-ignore - Propriedade dinâmica
+          window.LEADFLUX_APP_HOOKS.preventCanvasReload(newStepId);
+          console.log(`StepActions - Notificado Builder para prevenir recarregamento para step ${newStepId}`);
+        }
+      } catch (hookError) {
+        console.error(`StepActions - Erro ao acessar hooks da aplicação:`, hookError);
+      }
+      
       // Atualizar o estado com os dados completos do banco
       const finalStep = {
         ...newStep,
         ...persistResult.newStepData,
-        canvasElements: processedCanvasElements
+        canvasElements: processedCanvasElements // Garantir que canvasElements está definido
       };
       
       console.log(`StepActions - Atualizando estado com ${processedCanvasElements.length} elementos do canvas`);
@@ -756,17 +781,7 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           steps: updatedStepsWithElements
         };
         
-        // IMPORTANTE: Pré-carregar os dados do canvas no cache local do getCanvasElements
-        // Isso evita uma nova busca ao banco quando setCurrentStep for chamado
-        if (window.preloadedCanvasElements === undefined) {
-          window.preloadedCanvasElements = {};
-        }
-        
-        // Armazenar os elementos processados no cache temporário usando o step_id como chave
-        window.preloadedCanvasElements[newStepId] = [...processedCanvasElements];
-        console.log(`StepActions - Pré-carregados ${processedCanvasElements.length} elementos no cache temporário para step ${newStepId}`);
-        
-        // Importante: primeiro atualize o funnel e DEPOIS mude o step atual
+        // Importante: primeiro atualize o funnel COMPLETO com os canvasElements já incluídos
         set((state) => ({
           currentFunnel: finalFunnel,
           funnels: state.funnels.map((funnel) => 
@@ -774,22 +789,9 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           )
         }));
         
-        // Notificar o Builder para prevenir recarregamento de elementos
-        // Importante: Isso só funcionará se o Builder já estiver montado
-        try {
-          // @ts-ignore - Propriedade dinâmica
-          if (window.LEADFLUX_APP_HOOKS && window.LEADFLUX_APP_HOOKS.preventCanvasReload) {
-            // @ts-ignore - Propriedade dinâmica
-            window.LEADFLUX_APP_HOOKS.preventCanvasReload();
-            console.log(`StepActions - Notificado Builder para prevenir recarregamento`);
-          }
-        } catch (hookError) {
-          console.error(`StepActions - Erro ao acessar hooks da aplicação:`, hookError);
-        }
-        
-        // Aguardar o próximo ciclo de renderização antes de mudar o step atual
-        // Isso dá tempo para o estado do funnel ser atualizado completamente
+        // Aguardar o próximo ciclo para garantir que o estado do funnel foi atualizado
         setTimeout(() => {
+          // Define o step atual para o novo step
           set({ currentStep: newStepIndex });
           console.log(`StepActions - Estado atualizado com elementos do canvas para o step ${newStepId} e currentStep definido para ${newStepIndex}`);
         }, 50);

@@ -230,7 +230,7 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
   }
   
   try {
-    // Verificar se há elementos pré-carregados no cache temporário
+    // PRIORIDADE 1: Verificar se há elementos pré-carregados no cache temporário
     // @ts-ignore - Propriedade dinâmica
     if (window.preloadedCanvasElements && window.preloadedCanvasElements[stepId]) {
       // @ts-ignore - Propriedade dinâmica
@@ -244,9 +244,15 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
       return JSON.parse(JSON.stringify(cachedElements)); // Return deep copy
     }
     
-    // Se não há elementos no cache, continuar com o fluxo normal
+    // PRIORIDADE 2: Verificar se o objeto step já tem os elementos no state
+    if (step.canvasElements && Array.isArray(step.canvasElements) && step.canvasElements.length > 0) {
+      console.log(`Store - Usando ${step.canvasElements.length} elementos existentes no state do step ${stepId}`);
+      return JSON.parse(JSON.stringify(step.canvasElements)); // Return deep copy
+    }
     
-    // Primeiro, tentar buscar elementos da tabela canvas_elements
+    // Se não há elementos no cache ou no state, continuar com o fluxo normal buscando do banco
+    
+    // PRIORIDADE 3: Buscar elementos da tabela canvas_elements
     console.log(`Store - Buscando elementos do canvas para step ${stepId} da tabela canvas_elements`);
     
     const { data: elementsFromTable, error } = await supabase
@@ -275,12 +281,17 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
         return element;
       });
       
+      // Guardar no step para referência futura e evitar busca repetida
+      if (step && processedElements.length > 0) {
+        step.canvasElements = processedElements;
+      }
+      
       return JSON.parse(JSON.stringify(processedElements)); // Return deep copy
     } else {
       console.log(`Store - Nenhum elemento encontrado na tabela canvas_elements, verificando métodos alternativos`);
     }
     
-    // Verificar se temos o adaptador e usar se disponível
+    // PRIORIDADE 4: Verificar se temos o adaptador e usar se disponível
     // @ts-ignore - Propriedade dinâmica
     if (window.stepsDatabaseAdapter) {
       console.log(`Store - Using adapter to get canvas elements for step ${stepId}`);
@@ -288,21 +299,19 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
       const elements = await window.stepsDatabaseAdapter.getCanvasElements(step);
       if (elements && Array.isArray(elements)) {
         console.log(`Store - Adapter returned ${elements.length} elements`);
+        
+        // Guardar no step para referência futura e evitar busca repetida
+        if (step && elements.length > 0) {
+          step.canvasElements = elements;
+        }
+        
         return JSON.parse(JSON.stringify(elements)); // Return deep copy
       }
     }
     
-    // Fallback para o método original
-    if (!step.canvasElements) {
-      console.log(`Store - No canvas elements found for step ${stepId}, returning empty array`);
-      return [];
-    }
-    
-    const elements = step.canvasElements;
-    console.log(`Store - Retrieved ${elements.length} canvas elements from step.canvasElements field`);
-    
-    // Return a deep copy to avoid mutation issues
-    return JSON.parse(JSON.stringify(elements));
+    // Fallback: Se não encontrou elementos em nenhum lugar, retornar array vazio
+    console.log(`Store - No canvas elements found for step ${stepId} in any source, returning empty array`);
+    return [];
   } catch (err) {
     console.error(`Store - Erro ao buscar elementos do canvas:`, err);
     

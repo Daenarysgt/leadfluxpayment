@@ -227,10 +227,47 @@ export const useCanvasSynchronization = (
     }
   }, [localCanvasElements, currentFunnel, currentStep, storeSetCanvasElements]);
 
-  const preventNextReload = useCallback(() => {
+  // Função para impedir o recarregamento após operações como duplicação
+  const preventNextReload = useCallback((stepId?: string) => {
     preventReloadRef.current = true;
-    console.log(`Builder - Marcando para previnir próximo recarregamento`);
-  }, []);
+    
+    // Se foi fornecido um stepId específico, verificar se já temos os elementos no cache
+    if (stepId) {
+      // @ts-ignore - Propriedade dinâmica
+      const hasPreloadedElements = window.preloadedCanvasElements && 
+                                 // @ts-ignore - Propriedade dinâmica
+                                 window.preloadedCanvasElements[stepId] && 
+                                 // @ts-ignore - Propriedade dinâmica
+                                 window.preloadedCanvasElements[stepId].length > 0;
+      
+      // Se temos elementos pré-carregados para este step, usá-los imediatamente
+      if (hasPreloadedElements) {
+        const currentStepObj = currentFunnel?.steps.find(s => s.id === stepId);
+        if (currentStepObj) {
+          // Verificar se o step atual já tem elementos em seu estado interno
+          const hasElementsInState = currentStepObj.canvasElements && 
+                                   Array.isArray(currentStepObj.canvasElements) &&
+                                   currentStepObj.canvasElements.length > 0;
+          
+          // Se o step não tem elementos no state mas existe no cache, usar o cache
+          if (!hasElementsInState) {
+            // @ts-ignore - Propriedade dinâmica
+            console.log(`Builder - Carregando ${window.preloadedCanvasElements[stepId].length} elementos do cache para step ${stepId}`);
+            
+            // @ts-ignore - Propriedade dinâmica
+            const cachedElements = [...window.preloadedCanvasElements[stepId]];
+            
+            // Se o elemento pertence ao step atual, atualizar o estado local também
+            if (stepId === currentStepIdRef.current) {
+              setLocalCanvasElements(cachedElements);
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`Builder - Marcando para prevenir próximo recarregamento${stepId ? ` para step ${stepId}` : ''}`);
+  }, [currentFunnel]);
 
   return {
     localCanvasElements,
