@@ -19,17 +19,6 @@ const StepsSidebar = () => {
     e.stopPropagation(); // Prevent clicking on the step
   }, []);
   
-  // Função wrapper para evitar problemas de binding
-  const handleDuplicate = useCallback((index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log(`StepsSidebar - Chamando duplicação para o índice: ${index}`);
-    if (typeof handleDuplicateStep === 'function') {
-      handleDuplicateStep(index, e);
-    } else {
-      console.error('handleDuplicateStep não é uma função', handleDuplicateStep);
-    }
-  }, [handleDuplicateStep]);
-  
   // Encontrar o índice do step atual na lista ordenada
   const activeStepIndex = useMemo(() => {
     if (!currentFunnel?.steps || currentStep === undefined) return -1;
@@ -57,7 +46,7 @@ const StepsSidebar = () => {
             isActive={activeStepIndex === index}
             onSelect={handleSelectStep}
             onDelete={handleDeleteStep}
-            onDuplicate={handleDuplicate}
+            onDuplicate={handleDuplicateStep}
             onEdit={handleEditStart}
           />
         ))}

@@ -139,76 +139,38 @@ export const useStepManager = () => {
     });
   }, [currentFunnel, sortedSteps, deleteStep, toast]);
   
-  // Função para duplicar steps
   const handleDuplicateStep = useCallback((index: number, e: React.MouseEvent) => {
     // Garantir que o evento não se propague
-    if (e) e.stopPropagation();
+    e.stopPropagation();
     
-    if (!currentFunnel) {
-      console.error("useStepManager - Nenhum funil atual disponível");
-      return;
-    }
-    
-    console.log(`useStepManager - Tentando duplicar etapa no índice: ${index}`);
-    console.log(`useStepManager - Verificando se duplicateStep existe:`, duplicateStep !== undefined);
-    console.log(`useStepManager - Tipo da função duplicateStep:`, typeof duplicateStep);
+    if (!currentFunnel) return;
     
     // Obter o id do step a partir do índice na lista ordenada
     const stepId = sortedSteps[index]?.id;
-    if (!stepId) {
-      console.error(`useStepManager - Step não encontrado no índice: ${index}`);
-      return;
-    }
+    if (!stepId) return;
     
     // Encontrar o índice correspondente ao step na lista original
     let stepIndex = currentFunnel.steps.findIndex(s => s.id === stepId);
-    if (stepIndex === -1) {
-      console.error(`useStepManager - Step com ID ${stepId} não encontrado no funil atual`);
-      return;
-    }
+    if (stepIndex === -1) return;
     
-    console.log(`useStepManager - Duplicando etapa no índice: ${stepIndex}, ID: ${stepId}`);
+    console.log(`useStepManager - Duplicando step no índice: ${stepIndex}`);
     
-    // Verificar se duplicateStep é uma função antes de chamá-la
-    if (typeof duplicateStep !== 'function') {
-      console.error("duplicateStep não é uma função", duplicateStep);
-      
-      toast({
-        title: "Erro ao duplicar etapa",
-        description: "Função duplicateStep indisponível. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Chamar a função de duplicação com try/catch para capturar erros assíncronos
-    try {
-      // Criar uma Promise que envolve a chamada potencialmente problemática
-      Promise.resolve()
-        .then(() => duplicateStep(stepIndex))
-        .then((newStepId) => {
-          toast({
-            title: "Etapa duplicada",
-            description: "Uma cópia da etapa foi criada com sucesso.",
-          });
-          console.log(`Nova etapa criada com ID: ${newStepId}`);
-        })
-        .catch((error) => {
-          console.error("Erro ao duplicar etapa:", error);
-          toast({
-            title: "Erro ao duplicar etapa",
-            description: "Não foi possível duplicar a etapa. Tente novamente.",
-            variant: "destructive"
-          });
+    // Chamar a função de duplicação
+    duplicateStep(stepIndex)
+      .then(() => {
+        toast({
+          title: "Etapa duplicada",
+          description: "A etapa foi duplicada com sucesso.",
         });
-    } catch (error) {
-      console.error("Erro ao iniciar duplicação:", error);
-      toast({
-        title: "Erro ao duplicar etapa",
-        description: "Não foi possível iniciar o processo de duplicação. Tente novamente.",
-        variant: "destructive"
+      })
+      .catch((error) => {
+        console.error("Erro ao duplicar etapa:", error);
+        toast({
+          title: "Erro ao duplicar",
+          description: "Não foi possível duplicar a etapa. Tente novamente.",
+          variant: "destructive"
+        });
       });
-    }
   }, [currentFunnel, sortedSteps, duplicateStep, toast]);
   
   return {

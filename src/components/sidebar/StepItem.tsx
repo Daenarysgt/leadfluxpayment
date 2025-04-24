@@ -13,7 +13,7 @@ interface StepItemProps {
   onSelect: (index: number) => void;
   onDelete: (index: number, e: React.MouseEvent) => void;
   onEdit: (step: { id: string; title: string }, e: React.MouseEvent) => void;
-  onDuplicate: (index: number, e: React.MouseEvent) => void;
+  onDuplicate?: (index: number, e: React.MouseEvent) => void;
 }
 
 const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplicate }: StepItemProps) => {
@@ -23,20 +23,6 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
-  };
-
-  const handleDuplicateClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log("StepItem - Botão de duplicação clicado");
-    try {
-      if (typeof onDuplicate === 'function') {
-        onDuplicate(index, e);
-      } else {
-        console.error("onDuplicate não é uma função", onDuplicate);
-      }
-    } catch (error) {
-      console.error("Erro ao chamar onDuplicate:", error);
-    }
   };
 
   if (isEditing) {
@@ -104,9 +90,11 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 text-gray-500 hover:text-violet-600"
-          onClick={handleDuplicateClick}
-          title="Duplicar etapa"
+          className="h-7 w-7 text-gray-500 hover:text-blue-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDuplicate?.(index, e);
+          }}
         >
           <Copy className="h-3.5 w-3.5" />
         </Button>

@@ -15,12 +15,12 @@ export interface FunnelStore {
   addStep: () => void;
   updateStep: (stepId: string, step: Partial<Step>) => void;
   deleteStep: (stepIndex: number) => void;
+  duplicateStep: (stepIndex: number) => Promise<any>;
   addQuestion: (stepId: string, type: QuestionType) => void;
   updateQuestion: (stepId: string, questionId: string, question: Partial<Question>) => void;
   deleteQuestion: (stepId: string, questionId: string) => void;
   reorderQuestions: (stepId: string, questionIds: string[]) => void;
   setCurrentStep: (stepIndex: number) => void;
-  duplicateStep: (stepIndex: number) => Promise<string>;
   
   setCanvasElements: (stepId: string, elements: any[]) => void;
   getCanvasElements: (stepId: string) => any[];
