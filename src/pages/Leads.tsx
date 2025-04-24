@@ -413,7 +413,12 @@ const Leads = () => {
 
   const loadMetrics = async (updateState = true) => {
     try {
-      if (!currentFunnel?.id) return null;
+      if (!currentFunnel?.id) {
+        if (updateState) {
+          setMetrics(prev => ({...prev, loadingMetrics: false}));
+        }
+        return null;
+      }
       
       // Garantir que o estado de carregamento seja ativado
       if (updateState) {
@@ -479,10 +484,11 @@ const Leads = () => {
     } finally {
       // Garantir que o estado de carregamento seja sempre desativado, mesmo em caso de erro
       if (updateState) {
+        // Reduzir o timeout para melhorar a experiência do usuário
         setTimeout(() => {
           setMetrics(prev => ({...prev, loadingMetrics: false}));
           console.log("📊 Estado de carregamento das métricas desativado por timeout");
-        }, 1500);  // Garantir visualmente que algo aconteceu
+        }, 800);  // Timeout mais curto para melhor experiência
       }
     }
   };
@@ -1801,7 +1807,7 @@ const Leads = () => {
     };
     
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white border-none shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
           <CardHeader className="pb-2 border-b border-gray-50">
             <CardTitle className="text-base font-medium flex items-center gap-2">
