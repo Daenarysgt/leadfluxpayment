@@ -220,9 +220,15 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         borderRadius: `${borderRadiusValue}px`,
       };
       
-      let imageContainerStyle: React.CSSProperties = {
+      // Estilo específico para a imagem (não para o container)
+      let imageStyle: React.CSSProperties = {
         transform: `translateY(${imagePosition}px)`,
+        position: "relative",
+        zIndex: 1
       };
+      
+      // O container da imagem mantém posição normal
+      let imageContainerStyle: React.CSSProperties = {};
       
       let textStyle: React.CSSProperties = {
         backgroundColor,
@@ -251,10 +257,13 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         case "3d":
           cardStyle = {
             ...cardStyle,
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-            transform: "perspective(1000px) rotateX(5deg)",
-            transition: "transform 0.3s ease"
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            border: "1px solid rgba(0, 0, 0, 0.1)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+            position: "relative",
+            overflow: "hidden",
           };
+          // Adicionar classe para efeito 3D no hover via className ao invés de style
           break;
           
         case "neumorphism":
@@ -286,10 +295,15 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           break;
       }
       
+      // Classe CSS para o efeito 3D
+      const card3DClass = elementStyle === "3d" 
+        ? "option-3d" 
+        : "";
+      
       return (
         <div 
           key={option.id} 
-          className="overflow-hidden cursor-pointer transition-all hover:scale-[1.03]"
+          className={`overflow-hidden cursor-pointer transition-all hover:scale-[1.03] ${card3DClass}`}
           style={cardStyle}
           onClick={() => handleOptionClick(option)}
         >
@@ -301,6 +315,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="h-full w-full object-cover" 
+                    style={imageStyle}
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
                       // Substituir por placeholder em caso de erro
@@ -309,7 +324,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gray-200 flex items-center justify-center">
+                  <div className="h-full w-full bg-gray-200 flex items-center justify-center" style={imageStyle}>
                     <span className="text-gray-400">Sem imagem</span>
                   </div>
                 )}
@@ -321,6 +336,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     src={option.image} 
                     alt={option.text} 
                     className="w-full object-contain" 
+                    style={imageStyle}
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
                       // Substituir por placeholder em caso de erro
@@ -329,7 +345,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center">
+                  <div className="h-40 w-full bg-gray-200 flex items-center justify-center" style={imageStyle}>
                     <span className="text-gray-400">Sem imagem</span>
                   </div>
                 )}
@@ -374,6 +390,20 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           {renderedOptions}
         </div>
       </div>
+      
+      {/* Adicionar estilos CSS para o efeito 3D */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .option-3d {
+          transform: perspective(1000px);
+          transition: transform 0.3s;
+        }
+        .option-3d:hover {
+          transform: perspective(1000px) rotateX(5deg) scale(1.03);
+          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+      `}} />
+      
     </BaseElementRenderer>
   );
 };
