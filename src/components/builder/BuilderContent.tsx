@@ -35,7 +35,7 @@ const BuilderContent = ({
   return (
     <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={35} minSize={30} maxSize={45}>
+        <ResizablePanel defaultSize={38} minSize={32} maxSize={45}>
           <div className="flex h-full">
             <StepsSidebar />
             <ElementsSidebar />

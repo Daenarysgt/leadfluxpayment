@@ -118,7 +118,7 @@ const StepsSidebar = () => {
       </div>
       
       <ScrollArea className="h-[calc(100vh-8rem)]">
-        <div className="p-4">
+        <div className="p-3">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -128,7 +128,7 @@ const StepsSidebar = () => {
               items={steps.map(step => step.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {steps.map((step, index) => (
                   <StepItem
                     key={step.id}

@@ -73,22 +73,22 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
           : 'border-transparent bg-transparent hover:border-gray-200 hover:bg-white hover:shadow-sm'
         }
-        cursor-pointer transition-all duration-200
+        cursor-pointer transition-all duration-200 pr-1 overflow-hidden
       `}
       onClick={() => !isDragging && onSelect(index)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex-1 flex items-center p-3">
+      <div className="flex-grow flex items-center p-3 pr-0 min-w-0 overflow-hidden max-w-[calc(100%-70px)]">
         <div 
-          className="drag-handle mr-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500"
+          className="drag-handle mr-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 flex-shrink-0"
           {...attributes}
           {...listeners}
         >
           <GripVertical size={16} />
         </div>
         <div className={`
-          w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
+          w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-2.5 flex-shrink-0
           ${isActive 
             ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
             : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-blue-600/10 group-hover:via-purple-500/10 group-hover:to-purple-600/10 group-hover:text-violet-700'
@@ -98,7 +98,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           {index + 1}
         </div>
         <span className={`
-          font-medium truncate max-w-[120px] 
+          font-medium truncate overflow-hidden flex-1 min-w-0
           ${isActive ? 'text-violet-900' : 'text-gray-700'}
         `} title={step.title}>
           {step.title}
@@ -106,15 +106,16 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       </div>
       
       <div className={`
-        flex items-center gap-1 pr-2 ml-1 min-w-[85px] justify-end
+        flex items-center gap-0.5 flex-shrink-0 ml-0.5 w-[68px]
         ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-200
       `}>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-1 text-gray-500 hover:text-violet-600"
+          className="h-6 w-6 p-0.5 text-gray-500 hover:text-violet-600"
           onClick={handleEditClick}
+          title="Editar"
         >
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
@@ -122,11 +123,12 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-1 text-gray-500 hover:text-blue-600"
+            className="h-6 w-6 p-0.5 text-gray-500 hover:text-blue-600"
             onClick={(e) => {
               e.stopPropagation();
               onDuplicate(index, e);
             }}
+            title="Duplicar"
           >
             <Copy className="h-3.5 w-3.5" />
           </Button>
@@ -134,8 +136,9 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 p-1 text-gray-500 hover:text-red-600"
+          className="h-6 w-6 p-0.5 text-gray-500 hover:text-red-600"
           onClick={(e) => onDelete(index, e)}
+          title="Excluir"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
