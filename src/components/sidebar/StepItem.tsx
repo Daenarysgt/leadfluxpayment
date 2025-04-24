@@ -67,7 +67,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       ref={setNodeRef}
       style={style}
       className={`
-        group flex items-center rounded-lg border 
+        group flex items-center justify-between rounded-lg border 
         ${isDragging ? 'border-violet-300 bg-violet-50 shadow-md' : ''}
         ${isActive 
           ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
@@ -79,16 +79,18 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center p-2 w-full">
+      {/* Primeira seção: drag handle e número */}
+      <div className="flex items-center p-2 pl-3 space-x-2 flex-shrink-0">
         <div 
-          className="drag-handle mr-1.5 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 flex-shrink-0"
+          className="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500 flex-shrink-0"
           {...attributes}
           {...listeners}
         >
           <GripVertical size={16} />
         </div>
+        
         <div className={`
-          w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-2 flex-shrink-0
+          w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium flex-shrink-0
           ${isActive 
             ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
             : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-blue-600/10 group-hover:via-purple-500/10 group-hover:to-purple-600/10 group-hover:text-violet-700'
@@ -97,50 +99,56 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         `}>
           {index + 1}
         </div>
-        <div className={`
-          flex items-center gap-0.5 flex-shrink-0 mr-2
-          ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
-          transition-opacity duration-200
-        `}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0.5 text-gray-500 hover:text-violet-600"
-            onClick={handleEditClick}
-            title="Editar"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-          </Button>
-          {onDuplicate && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0.5 text-gray-500 hover:text-blue-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDuplicate(index, e);
-              }}
-              title="Duplicar"
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0.5 text-gray-500 hover:text-red-600"
-            onClick={(e) => onDelete(index, e)}
-            title="Excluir"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+      </div>
+      
+      {/* Segunda seção: título, ocupando o espaço disponível */}
+      <div className="flex-1 px-1 min-w-0 py-2">
         <span className={`
-          font-medium truncate overflow-hidden flex-1 min-w-0
+          font-medium truncate block overflow-hidden
           ${isActive ? 'text-violet-900' : 'text-gray-700'}
         `} title={step.title}>
           {step.title}
         </span>
+      </div>
+      
+      {/* Terceira seção: botões de ação */}
+      <div className={`
+        flex items-center gap-0.5 py-2 pr-2 flex-shrink-0
+        ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
+        transition-opacity duration-200
+      `}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0.5 text-gray-500 hover:text-violet-600"
+          onClick={handleEditClick}
+          title="Editar"
+        >
+          <Edit2 className="h-3.5 w-3.5" />
+        </Button>
+        {onDuplicate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0.5 text-gray-500 hover:text-blue-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate(index, e);
+            }}
+            title="Duplicar"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0.5 text-gray-500 hover:text-red-600"
+          onClick={(e) => onDelete(index, e)}
+          title="Excluir"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );
