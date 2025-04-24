@@ -217,7 +217,7 @@ export const setCanvasElementsAction = (set: any, get: any) => async (stepId: st
   }
 };
 
-export const getCanvasElementsAction = (get: any) => (stepId: string) => {
+export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
   const { currentFunnel } = get();
   if (!currentFunnel) return [];
   
@@ -229,25 +229,70 @@ export const getCanvasElementsAction = (get: any) => (stepId: string) => {
     return [];
   }
   
-  // Verificar se temos o adaptador e usar se disponível
-  if (window.stepsDatabaseAdapter) {
-    console.log(`Store - Using adapter to get canvas elements for step ${stepId}`);
-    const elements = window.stepsDatabaseAdapter.getCanvasElements(step);
-    if (elements && Array.isArray(elements)) {
-      console.log(`Store - Adapter returned ${elements.length} elements`);
-      return JSON.parse(JSON.stringify(elements)); // Return deep copy
+  try {
+    // Primeiro, tentar buscar elementos da tabela canvas_elements
+    console.log(`Store - Buscando elementos do canvas para step ${stepId} da tabela canvas_elements`);
+    
+    const { data: elementsFromTable, error } = await supabase
+      .from('canvas_elements')
+      .select('*')
+      .eq('step_id', stepId)
+      .order('position', { ascending: true });
+    
+    if (error) {
+      console.error(`Store - Erro ao buscar da tabela canvas_elements:`, error);
+      // Continuar para usar os métodos alternativos abaixo
+    } else if (elementsFromTable && elementsFromTable.length > 0) {
+      console.log(`Store - Encontrados ${elementsFromTable.length} elementos na tabela canvas_elements`);
+      
+      // Extrair os dados de configuração de cada elemento
+      const processedElements = elementsFromTable.map(element => {
+        // Se o elemento tiver config como um objeto JSON, usar seus valores
+        if (element.config && typeof element.config === 'object') {
+          return {
+            ...element.config,
+            id: element.id // Garantir que estamos usando o ID correto
+          };
+        }
+        
+        // Caso contrário, apenas retornar o elemento diretamente
+        return element;
+      });
+      
+      return JSON.parse(JSON.stringify(processedElements)); // Return deep copy
+    } else {
+      console.log(`Store - Nenhum elemento encontrado na tabela canvas_elements, verificando métodos alternativos`);
     }
-  }
-  
-  // Fallback para o método original
-  if (!step.canvasElements) {
-    console.log(`Store - No canvas elements found for step ${stepId}, returning empty array`);
+    
+    // Verificar se temos o adaptador e usar se disponível
+    if (window.stepsDatabaseAdapter) {
+      console.log(`Store - Using adapter to get canvas elements for step ${stepId}`);
+      const elements = await window.stepsDatabaseAdapter.getCanvasElements(step);
+      if (elements && Array.isArray(elements)) {
+        console.log(`Store - Adapter returned ${elements.length} elements`);
+        return JSON.parse(JSON.stringify(elements)); // Return deep copy
+      }
+    }
+    
+    // Fallback para o método original
+    if (!step.canvasElements) {
+      console.log(`Store - No canvas elements found for step ${stepId}, returning empty array`);
+      return [];
+    }
+    
+    const elements = step.canvasElements;
+    console.log(`Store - Retrieved ${elements.length} canvas elements from step.canvasElements field`);
+    
+    // Return a deep copy to avoid mutation issues
+    return JSON.parse(JSON.stringify(elements));
+  } catch (err) {
+    console.error(`Store - Erro ao buscar elementos do canvas:`, err);
+    
+    // Fallback para o método original mesmo com erro
+    if (step.canvasElements && Array.isArray(step.canvasElements)) {
+      return JSON.parse(JSON.stringify(step.canvasElements));
+    }
+    
     return [];
   }
-  
-  const elements = step.canvasElements;
-  console.log(`Store - Retrieved ${elements.length} canvas elements for step ${stepId}`);
-  
-  // Return a deep copy to avoid mutation issues
-  return JSON.parse(JSON.stringify(elements));
 };

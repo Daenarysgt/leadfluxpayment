@@ -1,4 +1,3 @@
-
 import { useStore } from "@/utils/store";
 import { CanvasElement } from "@/types/canvasTypes";
 import { useCanvasElementSelection } from "./canvas/useCanvasElementSelection";
@@ -9,7 +8,7 @@ export const useBuilderCanvas = () => {
     currentFunnel,
     currentStep,
     setCanvasElements: storeSetCanvasElements,
-    getCanvasElements
+    getCanvasElements: storeGetCanvasElements
   } = useStore();
   
   // Use the selection hook
@@ -28,10 +27,11 @@ export const useBuilderCanvas = () => {
     currentStepIdRef,
     handleCanvasElementsChange,
     handleSave,
-    saveCurrentStepElements
+    saveCurrentStepElements,
+    isLoading
   } = useCanvasSynchronization(
     storeSetCanvasElements,
-    getCanvasElements,
+    storeGetCanvasElements,
     currentFunnel,
     currentStep
   );
@@ -68,6 +68,7 @@ export const useBuilderCanvas = () => {
     handleCanvasElementsChange,
     handleSave,
     saveCurrentStepElements,
-    setSelectedElement
+    setSelectedElement,
+    isLoading
   };
 };

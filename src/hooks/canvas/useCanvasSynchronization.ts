@@ -1,17 +1,17 @@
-
 import { useCallback, useRef, useState, useEffect } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { useToast } from "@/hooks/use-toast";
 
 export const useCanvasSynchronization = (
   storeSetCanvasElements: (stepId: string, elements: CanvasElement[]) => void,
-  getCanvasElements: (stepId: string) => CanvasElement[],
+  storeGetCanvasElements: (stepId: string) => Promise<CanvasElement[]>,
   currentFunnel: any,
   currentStep: number
 ) => {
   const { toast } = useToast();
   const [localCanvasElements, setLocalCanvasElements] = useState<CanvasElement[]>([]);
   const [canvasKey, setCanvasKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   
   const syncingRef = useRef(false);
   const currentStepIdRef = useRef<string | null>(null);
@@ -101,31 +101,41 @@ export const useCanvasSynchronization = (
       console.log(`Builder - Loading canvas elements for step ${currentStep} (${stepId})`);
       
       isUpdatingCanvasRef.current = true;
+      setIsLoading(true);
       
-      try {
-        const elements = getCanvasElements(stepId);
-        const elementsCopy = elements && elements.length > 0 
-          ? JSON.parse(JSON.stringify(elements))
-          : [];
-        
-        setLocalCanvasElements(elementsCopy);
-        currentStepIdRef.current = stepId;
-        
-        setCanvasKey(prev => prev + 1);
-        
-        elementsSyncedRef.current = true;
-        
-        lastSavedElementsRef.current = {
-          stepId: stepId,
-          elements: elementsCopy
-        };
-      } finally {
-        setTimeout(() => {
-          isUpdatingCanvasRef.current = false;
-        }, 200);
-      }
+      // Função assíncrona para carregar os elementos
+      (async () => {
+        try {
+          const elements = await storeGetCanvasElements(stepId);
+          console.log(`Builder - Retrieved ${elements ? elements.length : 0} canvas elements for step ${stepId}`);
+          
+          const elementsCopy = elements && elements.length > 0 
+            ? JSON.parse(JSON.stringify(elements))
+            : [];
+          
+          setLocalCanvasElements(elementsCopy);
+          currentStepIdRef.current = stepId;
+          
+          setCanvasKey(prev => prev + 1);
+          
+          elementsSyncedRef.current = true;
+          
+          lastSavedElementsRef.current = {
+            stepId: stepId,
+            elements: elementsCopy
+          };
+        } catch (error) {
+          console.error('Erro ao carregar elementos do canvas:', error);
+          setLocalCanvasElements([]);
+        } finally {
+          setTimeout(() => {
+            isUpdatingCanvasRef.current = false;
+            setIsLoading(false);
+          }, 200);
+        }
+      })();
     }
-  }, [currentFunnel, currentStep, getCanvasElements, saveCurrentStepElements]);
+  }, [currentFunnel, currentStep, storeGetCanvasElements, saveCurrentStepElements]);
   
   // Effect to auto-save changes
   useEffect(() => {
@@ -191,6 +201,7 @@ export const useCanvasSynchronization = (
     handleCanvasElementsChange,
     handleSave,
     saveCurrentStepElements,
-    isUpdatingCanvasRef
+    isUpdatingCanvasRef,
+    isLoading
   };
 };

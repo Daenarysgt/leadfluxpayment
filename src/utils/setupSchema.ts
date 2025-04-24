@@ -177,51 +177,164 @@ async function createFallbackSchema() {
   // Monkey patch para compatibilidade
   window.stepsDatabaseAdapter = {
     // Função para obter elementos do canvas, tentando diferentes convenções
-    getCanvasElements: (step: any) => {
-      if (!step) return [];
+    getCanvasElements: async (step: any) => {
+      if (!step || !step.id) {
+        console.log(`DatabaseAdapter - Step inválido, não é possível buscar elementos`);
+        return [];
+      }
       
-      // Tentar diferentes nomes para o campo canvasElements
-      if (Array.isArray(step.canvasElements)) return step.canvasElements;
-      if (Array.isArray(step.canvas_elements)) return step.canvas_elements;
-      
-      // Inicializar se não existir
-      return [];
+      try {
+        console.log(`DatabaseAdapter - Buscando elementos do canvas para step ${step.id}`);
+        
+        // Primeiro, tentar buscar da tabela canvas_elements
+        const { data: elementsFromTable, error } = await supabase
+          .from('canvas_elements')
+          .select('*')
+          .eq('step_id', step.id)
+          .order('position', { ascending: true });
+        
+        if (error) {
+          // Se a tabela não existir, cair no fallback
+          if (error.message && error.message.includes('does not exist')) {
+            console.log(`DatabaseAdapter - Tabela canvas_elements não existe, usando campo canvasElements`);
+          } else {
+            console.error(`DatabaseAdapter - Erro ao buscar da tabela canvas_elements:`, error);
+          }
+        } else if (elementsFromTable && elementsFromTable.length > 0) {
+          console.log(`DatabaseAdapter - Encontrados ${elementsFromTable.length} elementos na tabela canvas_elements`);
+          
+          // Processar elementos da tabela para o formato esperado
+          const processedElements = elementsFromTable.map(element => {
+            // Se o elemento tiver config como um objeto JSON, extrair seus valores
+            if (element.config && typeof element.config === 'object') {
+              return {
+                ...element.config,
+                id: element.id // Garantir que estamos usando o ID correto
+              };
+            }
+            
+            // Caso contrário, retornar o elemento como está
+            return element;
+          });
+          
+          return processedElements;
+        } else {
+          console.log(`DatabaseAdapter - Nenhum elemento encontrado na tabela canvas_elements`);
+        }
+        
+        // Fallback: usar campo canvasElements do próprio step
+        if (step.canvasElements && Array.isArray(step.canvasElements)) {
+          console.log(`DatabaseAdapter - Usando ${step.canvasElements.length} elementos do campo canvasElements`);
+          return step.canvasElements;
+        }
+        
+        console.log(`DatabaseAdapter - Nenhum elemento encontrado para o step ${step.id}`);
+        return [];
+      } catch (error) {
+        console.error(`DatabaseAdapter - Erro ao buscar elementos do canvas:`, error);
+        
+        // Em caso de erro, tentar retornar do campo canvasElements
+        if (step.canvasElements && Array.isArray(step.canvasElements)) {
+          return step.canvasElements;
+        }
+        
+        return [];
+      }
     },
     
     // Salvar no campo correto baseado no que existe
     saveCanvasElements: async (stepId: string, elements: any[]) => {
+      console.log(`DatabaseAdapter - Salvando ${elements.length} elementos para o step ${stepId}`);
+      
       try {
-        // Tentar determinar o nome correto do campo no schema atual
-        const { data: sampleStep } = await supabase
-          .from('steps')
-          .select('*')
-          .limit(1)
-          .single();
-          
-        // Verificar qual campo existe
-        let fieldName = 'canvas_elements';
-        if (sampleStep) {
-          if ('canvasElements' in sampleStep) fieldName = 'canvasElements';
-          else if ('canvas_elements' in sampleStep) fieldName = 'canvas_elements';
+        // Verificar se a tabela canvas_elements existe
+        let useNewTable = true;
+        try {
+          // Testar a existência da tabela com uma consulta
+          const { count, error } = await supabase
+            .from('canvas_elements')
+            .select('*', { count: 'exact', head: true })
+            .limit(1);
+            
+          if (error && error.message && error.message.includes('does not exist')) {
+            console.log(`DatabaseAdapter - Tabela canvas_elements não encontrada, usando método legado`);
+            useNewTable = false;
+          }
+        } catch (tableCheckError) {
+          console.error(`DatabaseAdapter - Erro ao verificar tabela canvas_elements:`, tableCheckError);
+          useNewTable = false;
         }
         
-        // Dados para update
-        const updateData: Record<string, any> = {
-          updated_at: new Date().toISOString()
-        };
-        
-        // Definir o campo correto
-        updateData[fieldName] = elements;
-        
-        // Executar o update
-        const { error } = await supabase
-          .from('steps')
-          .update(updateData)
-          .eq('id', stepId);
+        if (useNewTable) {
+          console.log(`DatabaseAdapter - Usando tabela canvas_elements para salvar elementos`);
           
-        return !error;
+          // 1. Primeiro, remover todos os elementos existentes deste step
+          const { error: deleteError } = await supabase
+            .from('canvas_elements')
+            .delete()
+            .eq('step_id', stepId);
+            
+          if (deleteError) {
+            console.error(`DatabaseAdapter - Erro ao limpar elementos existentes:`, deleteError);
+            throw deleteError;
+          }
+          
+          // 2. Se houver elementos para inserir, preparar dados
+          if (elements && elements.length > 0) {
+            const now = new Date().toISOString();
+            const elementsToInsert = elements.map(element => {
+              // Garantir que cada elemento tenha um ID
+              const id = element.id || crypto.randomUUID();
+              
+              return {
+                id,
+                step_id: stepId,
+                type: element.type || 'unknown',
+                config: element, // Armazenar o elemento inteiro como config
+                position: element.position || 0,
+                created_at: now,
+                updated_at: now
+              };
+            });
+            
+            // 3. Inserir os novos elementos
+            const { error: insertError } = await supabase
+              .from('canvas_elements')
+              .insert(elementsToInsert);
+              
+            if (insertError) {
+              console.error(`DatabaseAdapter - Erro ao inserir novos elementos:`, insertError);
+              throw insertError;
+            }
+            
+            console.log(`DatabaseAdapter - ${elementsToInsert.length} elementos salvos com sucesso na tabela canvas_elements`);
+          } else {
+            console.log(`DatabaseAdapter - Nenhum elemento para salvar, step ${stepId} está vazio`);
+          }
+          
+          return true;
+        } else {
+          // MÉTODO LEGADO: Salvar na coluna canvasElements como antes
+          console.log(`DatabaseAdapter - Usando método legado para salvar elementos`);
+          
+          const { error } = await supabase
+            .from('steps')
+            .update({
+              canvasElements: elements,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', stepId);
+            
+          if (error) {
+            console.error(`DatabaseAdapter - Erro ao salvar elementos pelo método legado:`, error);
+            throw error;
+          }
+          
+          console.log(`DatabaseAdapter - Elementos salvos com sucesso pelo método legado`);
+          return true;
+        }
       } catch (error) {
-        console.error('Erro ao salvar elementos do canvas (adaptador):', error);
+        console.error(`DatabaseAdapter - Erro ao salvar elementos do canvas:`, error);
         return false;
       }
     }

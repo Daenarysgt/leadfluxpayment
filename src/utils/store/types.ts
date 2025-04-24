@@ -24,5 +24,5 @@ export interface FunnelStore {
   setCurrentStep: (stepIndex: number) => void;
   
   setCanvasElements: (stepId: string, elements: any[]) => void;
-  getCanvasElements: (stepId: string) => any[];
+  getCanvasElements: (stepId: string) => Promise<any[]>;
 }

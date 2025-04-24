@@ -5,7 +5,7 @@
 
 // Interface para o adaptador de banco de dados para steps
 interface StepsDatabaseAdapter {
-  getCanvasElements: (step: any) => any[];
+  getCanvasElements: (step: any) => Promise<any[]>;
   saveCanvasElements: (stepId: string, elements: any[]) => Promise<boolean>;
 }
 
