@@ -27,7 +27,16 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
 
   const handleDuplicateClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDuplicate(index, e);
+    console.log("StepItem - Botão de duplicação clicado");
+    try {
+      if (typeof onDuplicate === 'function') {
+        onDuplicate(index, e);
+      } else {
+        console.error("onDuplicate não é uma função", onDuplicate);
+      }
+    } catch (error) {
+      console.error("Erro ao chamar onDuplicate:", error);
+    }
   };
 
   if (isEditing) {

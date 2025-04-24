@@ -142,23 +142,50 @@ export const useStepManager = () => {
   // Função para duplicar steps
   const handleDuplicateStep = useCallback((index: number, e: React.MouseEvent) => {
     // Garantir que o evento não se propague
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     
-    if (!currentFunnel) return;
+    if (!currentFunnel) {
+      console.error("useStepManager - Nenhum funil atual disponível");
+      return;
+    }
+    
+    console.log(`useStepManager - Tentando duplicar etapa no índice: ${index}`);
+    console.log(`useStepManager - Verificando se duplicateStep existe:`, duplicateStep !== undefined);
+    console.log(`useStepManager - Tipo da função duplicateStep:`, typeof duplicateStep);
     
     // Obter o id do step a partir do índice na lista ordenada
     const stepId = sortedSteps[index]?.id;
-    if (!stepId) return;
+    if (!stepId) {
+      console.error(`useStepManager - Step não encontrado no índice: ${index}`);
+      return;
+    }
     
     // Encontrar o índice correspondente ao step na lista original
     let stepIndex = currentFunnel.steps.findIndex(s => s.id === stepId);
-    if (stepIndex === -1) return;
+    if (stepIndex === -1) {
+      console.error(`useStepManager - Step com ID ${stepId} não encontrado no funil atual`);
+      return;
+    }
     
     console.log(`useStepManager - Duplicando etapa no índice: ${stepIndex}, ID: ${stepId}`);
     
+    // Verificar se duplicateStep é uma função antes de chamá-la
+    if (typeof duplicateStep !== 'function') {
+      console.error("duplicateStep não é uma função", duplicateStep);
+      
+      toast({
+        title: "Erro ao duplicar etapa",
+        description: "Função duplicateStep indisponível. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Chamar a função de duplicação com try/catch para capturar erros assíncronos
     try {
-      // Chamar a função de duplicação
-      duplicateStep(stepIndex)
+      // Criar uma Promise que envolve a chamada potencialmente problemática
+      Promise.resolve()
+        .then(() => duplicateStep(stepIndex))
         .then((newStepId) => {
           toast({
             title: "Etapa duplicada",
