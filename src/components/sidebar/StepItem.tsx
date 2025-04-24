@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, Copy } from "lucide-react";
+import { Edit2, Trash2, Copy, GripVertical } from "lucide-react";
 import { useState } from "react";
 import StepEditor from "./StepEditor";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface StepItemProps {
   step: {
@@ -20,6 +22,23 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  // Configuração do sortable
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: step.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1
+  };
+
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -32,6 +51,8 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           rounded-lg border ${isActive ? 'border-violet-200 bg-violet-50/50' : 'border-gray-200 bg-white'} 
           shadow-sm transition-all duration-200
         `}
+        ref={setNodeRef}
+        style={style}
       >
         <StepEditor 
           step={step} 
@@ -43,19 +64,29 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={`
         group flex items-center justify-between rounded-lg border 
+        ${isDragging ? 'border-violet-300 bg-violet-50 shadow-md' : ''}
         ${isActive 
           ? 'border-violet-200 bg-violet-50/50 shadow-sm' 
           : 'border-transparent bg-transparent hover:border-gray-200 hover:bg-white hover:shadow-sm'
         }
         cursor-pointer transition-all duration-200
       `}
-      onClick={() => onSelect(index)}
+      onClick={() => !isDragging && onSelect(index)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex-1 flex items-center p-3">
+        <div 
+          className="drag-handle mr-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-violet-500"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={16} />
+        </div>
         <div className={`
           w-6 h-6 flex items-center justify-center rounded-md text-sm font-medium mr-3
           ${isActive 
@@ -87,17 +118,19 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         >
           <Edit2 className="h-3.5 w-3.5" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 text-gray-500 hover:text-blue-600"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDuplicate?.(index, e);
-          }}
-        >
-          <Copy className="h-3.5 w-3.5" />
-        </Button>
+        {onDuplicate && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 text-gray-500 hover:text-blue-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate(index, e);
+            }}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

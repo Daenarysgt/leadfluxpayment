@@ -606,3 +606,82 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
     throw error;
   }
 };
+
+/**
+ * Reordena os steps de um funil e persiste a nova ordem no Supabase
+ */
+export const reorderStepsAction = (set: any, get: any) => async (newStepsOrder: { id: string, order_index: number }[]) => {
+  const { currentFunnel } = get();
+  if (!currentFunnel) {
+    console.error("Não foi possível reordenar: nenhum funil está selecionado");
+    return;
+  }
+
+  try {
+    console.log("StepActions - Reordenando etapas do funil", currentFunnel.id);
+    
+    // Criar uma cópia profunda do funil atual
+    const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
+    
+    // Criar um mapa com os novos order_index para cada step
+    const orderMap = newStepsOrder.reduce((map, item) => {
+      map[item.id] = item.order_index;
+      return map;
+    }, {} as Record<string, number>);
+    
+    // Atualizar o order_index de cada step
+    const updatedSteps = funnelCopy.steps.map((step: any) => {
+      if (orderMap[step.id] !== undefined) {
+        return {
+          ...step,
+          order_index: orderMap[step.id],
+          updated_at: formatDateForSupabase()
+        };
+      }
+      return step;
+    });
+    
+    // Ordenar os steps pelo order_index
+    updatedSteps.sort((a: any, b: any) => {
+      const aIndex = a.order_index ?? 0;
+      const bIndex = b.order_index ?? 0;
+      return aIndex - bIndex;
+    });
+    
+    // Atualizar o funil com os steps reordenados
+    const updatedFunnel = {
+      ...funnelCopy,
+      steps: updatedSteps,
+      updated_at: formatDateForSupabase()
+    };
+    
+    // Atualizar o estado local imediatamente para UI responsiva
+    set((state: any) => ({
+      currentFunnel: updatedFunnel,
+      funnels: state.funnels.map((funnel: any) => 
+        funnel.id === currentFunnel.id ? updatedFunnel : funnel
+      ),
+    }));
+    
+    // Atualizar cada step no Supabase com seu novo order_index
+    for (const { id, order_index } of newStepsOrder) {
+      try {
+        const { error } = await supabase
+          .from('steps')
+          .update({ order_index, updated_at: formatDateForSupabase() })
+          .eq('id', id);
+        
+        if (error) {
+          console.error(`StepActions - Erro ao atualizar order_index do step ${id}:`, error);
+        }
+      } catch (error) {
+        console.error(`StepActions - Erro ao atualizar order_index do step ${id}:`, error);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("StepActions - Erro ao reordenar etapas:", error);
+    return false;
+  }
+};

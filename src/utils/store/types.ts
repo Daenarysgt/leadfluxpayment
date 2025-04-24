@@ -16,6 +16,7 @@ export interface FunnelStore {
   updateStep: (stepId: string, step: Partial<Step>) => void;
   deleteStep: (stepIndex: number) => void;
   duplicateStep: (stepIndex: number) => Promise<any>;
+  reorderSteps: (newStepsOrder: { id: string, order_index: number }[]) => Promise<boolean>;
   addQuestion: (stepId: string, type: QuestionType) => void;
   updateQuestion: (stepId: string, questionId: string, question: Partial<Question>) => void;
   deleteQuestion: (stepId: string, questionId: string) => void;
