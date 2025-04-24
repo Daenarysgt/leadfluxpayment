@@ -20,6 +20,7 @@ export interface FunnelStore {
   deleteQuestion: (stepId: string, questionId: string) => void;
   reorderQuestions: (stepId: string, questionIds: string[]) => void;
   setCurrentStep: (stepIndex: number) => void;
+  duplicateStep: (stepIndex: number) => Promise<string>;
   
   setCanvasElements: (stepId: string, elements: any[]) => void;
   getCanvasElements: (stepId: string) => any[];

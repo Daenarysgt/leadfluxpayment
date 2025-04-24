@@ -451,3 +451,178 @@ export const setCurrentStepAction = (set: any, get: any) => (stepIndex: number) 
   set({ currentStep: stepIndex });
   console.log(`Store - Current step set to: ${stepIndex}`);
 };
+
+export const duplicateStepAction = (set: any, get: any) => async (stepIndex: number) => {
+  const { currentFunnel } = get();
+  if (!currentFunnel) return;
+  
+  console.log(`StepActions - Duplicando etapa no índice: ${stepIndex}`);
+  
+  // Validar se o índice está dentro dos limites válidos
+  if (stepIndex < 0 || stepIndex >= currentFunnel.steps.length) {
+    console.error(`Invalid step index: ${stepIndex}, steps length: ${currentFunnel.steps.length}`);
+    return;
+  }
+  
+  // Obter a etapa a ser duplicada
+  const stepToDuplicate = currentFunnel.steps[stepIndex];
+  console.log(`StepActions - Duplicando etapa: ${stepToDuplicate.title}, ID: ${stepToDuplicate.id}`);
+  
+  // Calcular o order_index para a nova etapa
+  // A etapa duplicada deve ficar logo abaixo da original, então precisamos reorganizar os índices
+  const stepsOrderedByIndex = [...currentFunnel.steps].sort((a, b) => {
+    const orderA = a.order_index ?? 0;
+    const orderB = b.order_index ?? 0;
+    return orderA - orderB;
+  });
+  
+  const originalStepOrderIndex = stepsOrderedByIndex.findIndex(s => s.id === stepToDuplicate.id);
+  const insertionIndex = originalStepOrderIndex + 1;
+  
+  // Gerar novo ID para a etapa duplicada
+  const newStepId = generateValidUUID();
+  
+  // Criar cópia da etapa
+  const duplicatedStep = {
+    ...JSON.parse(JSON.stringify(stepToDuplicate)), // Deep copy
+    id: newStepId,
+    title: `${stepToDuplicate.title} (Cópia)`,
+    created_at: formatDateForSupabase(),
+    updated_at: formatDateForSupabase(),
+  };
+  
+  // Criar uma cópia profunda do funil atual
+  const funnelCopy = JSON.parse(JSON.stringify(currentFunnel));
+  
+  // Atualizar order_index das etapas seguintes para abrir espaço para a nova etapa
+  for (const step of funnelCopy.steps) {
+    const stepOrderIndex = stepsOrderedByIndex.findIndex(s => s.id === step.id);
+    if (stepOrderIndex >= insertionIndex) {
+      step.order_index = (step.order_index ?? 0) + 1;
+      step.updated_at = formatDateForSupabase();
+    }
+  }
+  
+  // Definir o order_index para a nova etapa
+  duplicatedStep.order_index = (stepToDuplicate.order_index ?? 0) + 0.5; // Temp value
+  
+  // Adicionar a etapa duplicada ao funil
+  const updatedSteps = [...funnelCopy.steps, duplicatedStep];
+  
+  // Criar o funil atualizado
+  const updatedFunnel = {
+    ...funnelCopy,
+    steps: updatedSteps,
+    updated_at: formatDateForSupabase(),
+  };
+  
+  // Atualizar o estado local imediatamente para UI responsiva
+  set((state) => ({
+    currentFunnel: updatedFunnel,
+    funnels: state.funnels.map((funnel) => 
+      funnel.id === currentFunnel.id ? updatedFunnel : funnel
+    ),
+  }));
+  
+  try {
+    // Inserir a etapa duplicada no banco de dados
+    console.log(`StepActions - Salvando etapa duplicada ${duplicatedStep.id} no Supabase`);
+    
+    const { data: newStep, error: stepError } = await supabase
+      .from('steps')
+      .insert([{
+        id: duplicatedStep.id,
+        funnel_id: currentFunnel.id,
+        title: duplicatedStep.title,
+        buttonText: duplicatedStep.buttonText,
+        backButtonText: duplicatedStep.backButtonText,
+        showProgressBar: duplicatedStep.showProgressBar,
+        canvasElements: duplicatedStep.canvasElements,
+        order_index: duplicatedStep.order_index,
+        created_at: duplicatedStep.created_at,
+        updated_at: duplicatedStep.updated_at
+      }])
+      .select()
+      .single();
+      
+    if (stepError) {
+      console.error(`StepActions - Erro ao salvar etapa duplicada:`, stepError);
+      throw stepError;
+    }
+    
+    console.log(`StepActions - Etapa duplicada salva com sucesso, ID: ${newStep.id}`);
+    
+    // Atualizar order_index das etapas para garantir ordem correta
+    for (const step of funnelCopy.steps) {
+      const stepOrderIndex = stepsOrderedByIndex.findIndex(s => s.id === step.id);
+      if (stepOrderIndex >= insertionIndex) {
+        const { error: updateError } = await supabase
+          .from('steps')
+          .update({
+            order_index: step.order_index,
+            updated_at: step.updated_at
+          })
+          .eq('id', step.id);
+          
+        if (updateError) {
+          console.error(`StepActions - Erro ao atualizar order_index da etapa ${step.id}:`, updateError);
+        }
+      }
+    }
+    
+    // Recuperar o funil atualizado para garantir sincronização completa
+    const { data: refreshedFunnel, error: refreshError } = await supabase
+      .from('funnels')
+      .select(`
+        *,
+        steps (
+          *,
+          questions (*)
+        )
+      `)
+      .eq('id', currentFunnel.id)
+      .single();
+      
+    if (refreshError) {
+      console.error(`StepActions - Erro ao atualizar funil após duplicação:`, refreshError);
+    } else if (refreshedFunnel) {
+      set((state) => ({
+        currentFunnel: refreshedFunnel,
+        funnels: state.funnels.map((funnel) => 
+          funnel.id === currentFunnel.id ? refreshedFunnel : funnel
+        ),
+      }));
+      console.log(`StepActions - Funil atualizado com sucesso após duplicação`);
+    }
+    
+    return duplicatedStep.id;
+  } catch (error) {
+    console.error('StepActions - Erro ao duplicar etapa:', error);
+    
+    // Fallback para persistenceService em caso de erro
+    operationQueueService.enqueue(
+      async (funnelData) => {
+        const result = await persistenceService.saveFunnel(funnelData);
+        
+        if (!result.success) {
+          throw new Error(`Falha ao duplicar etapa: ${result.error}`);
+        }
+        
+        return result.data;
+      },
+      updatedFunnel,
+      {
+        maxAttempts: 3,
+        description: `Duplicar etapa ${stepToDuplicate.id} no funil ${currentFunnel.id}`,
+        onSuccess: (savedFunnel) => {
+          console.log("StepActions - Duplicação de etapa persistida com sucesso");
+        },
+        onError: (error) => {
+          console.error(`StepActions - Erro ao persistir duplicação da etapa:`, error);
+        }
+      }
+    );
+    
+    throw error;
+  }
+};
