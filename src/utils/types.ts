@@ -185,8 +185,9 @@ export interface Navigation {
 export interface MultipleChoiceOption {
   id: string;
   text: string;
-  image?: string;
+  value?: string;
   emoji?: string;
+  image?: string;
   description?: string;
   style?: {
     backgroundColor?: string;
@@ -195,6 +196,9 @@ export interface MultipleChoiceOption {
     selectedBorderColor?: string;
     textColor?: string;
     selectedTextColor?: string;
+    aspectRatio?: "1:1" | "16:9" | "9:16" | "4:3" | "original";
+    imagePosition?: number;
+    textAlign?: 'left' | 'center' | 'right';
   };
   navigation?: Navigation;
 }
@@ -217,4 +221,7 @@ export interface MultipleChoiceContent {
   continueButtonText?: string;
   helperText?: string;
   showHelperText?: boolean;
+  showArrows?: boolean;
+  optionStyle?: 'default' | 'flat' | '3d' | 'neumorphism' | 'glass';
+  marginTop?: number;
 }

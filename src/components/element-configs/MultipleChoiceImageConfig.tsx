@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/utils/store";
 import TitleInput from "./multiple-choice/TitleInput";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Upload, Link, X, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Plus, Trash2, Upload, Link, X, ArrowUp, ArrowDown, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,10 +27,35 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
   // Estado para controlar o carregamento de imagens
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   
+  // Novo estado para posição vertical da imagem
+  const [imagePositions, setImagePositions] = useState<Record<string, number>>({});
+  // Novo estado para alinhamento de texto
+  const [textAlignments, setTextAlignments] = useState<Record<string, string>>({});
+  // Novo estado para controle de setas
+  const [showArrows, setShowArrows] = useState(element.content?.showArrows !== false);
+  // Novo estado para estilo de opções
+  const [optionStyle, setOptionStyle] = useState(element.content?.optionStyle || "default");
+  
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
     title: step.title
   })) || [];
+
+  // Inicializar estados com base nas opções existentes
+  useEffect(() => {
+    const initialImagePositions: Record<string, number> = {};
+    const initialTextAlignments: Record<string, string> = {};
+    
+    if (element.content?.options) {
+      element.content.options.forEach((option: any) => {
+        initialImagePositions[option.id] = option.style?.imagePosition || 0;
+        initialTextAlignments[option.id] = option.style?.textAlign || "left";
+      });
+    }
+    
+    setImagePositions(initialImagePositions);
+    setTextAlignments(initialTextAlignments);
+  }, [element.content?.options]);
 
   const handleTitleChange = (title: string) => {
     onUpdate({
@@ -465,15 +490,26 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     }, 500); // Pequeno atraso para garantir que todas as atualizações foram processadas
   };
 
-  const handleOptionImagePositionChange = (optionId: string, position: number) => {
+  // Novo manipulador para posicionamento de imagem
+  const handleImagePositionChange = (optionId: string, direction: 'up' | 'down') => {
+    const currentPosition = imagePositions[optionId] || 0;
+    const newPosition = direction === 'up' ? currentPosition - 10 : currentPosition + 10;
+    
+    // Atualizar o estado local
+    setImagePositions({
+      ...imagePositions,
+      [optionId]: newPosition
+    });
+    
+    // Atualizar a opção no elemento
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
-        return { 
-          ...option, 
-          style: { 
-            ...(option.style || {}), 
-            imagePosition: position 
-          } 
+        return {
+          ...option,
+          style: {
+            ...(option.style || {}),
+            imagePosition: newPosition
+          }
         };
       }
       return option;
@@ -486,16 +522,24 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
       }
     });
   };
-
-  const handleOptionTextAlignChange = (optionId: string, align: string) => {
+  
+  // Novo manipulador para alinhamento de texto
+  const handleTextAlignChange = (optionId: string, align: 'left' | 'center' | 'right') => {
+    // Atualizar o estado local
+    setTextAlignments({
+      ...textAlignments,
+      [optionId]: align
+    });
+    
+    // Atualizar a opção no elemento
     const updatedOptions = element.content.options.map((option: any) => {
       if (option.id === optionId) {
-        return { 
-          ...option, 
-          style: { 
-            ...(option.style || {}), 
-            textAlign: align 
-          } 
+        return {
+          ...option,
+          style: {
+            ...(option.style || {}),
+            textAlign: align
+          }
         };
       }
       return option;
@@ -508,305 +552,259 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
       }
     });
   };
-
-  const handleOptionShowArrowChange = (optionId: string, showArrow: boolean) => {
-    const updatedOptions = element.content.options.map((option: any) => {
-      if (option.id === optionId) {
-        return { 
-          ...option, 
-          style: { 
-            ...(option.style || {}), 
-            showArrow 
-          } 
-        };
-      }
-      return option;
-    });
+  
+  // Manipulador para mostrar/esconder setas
+  const handleShowArrowsToggle = () => {
+    const newShowArrows = !showArrows;
+    setShowArrows(newShowArrows);
     
     onUpdate({
       content: {
         ...element.content,
-        options: updatedOptions
+        showArrows: newShowArrows
+      }
+    });
+  };
+  
+  // Manipulador para alterar estilo global das opções
+  const handleOptionStyleChange = (style: string) => {
+    setOptionStyle(style);
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        optionStyle: style
       }
     });
   };
 
-  const handleOptionCardStyleChange = (optionId: string, style: string) => {
-    const updatedOptions = element.content.options.map((option: any) => {
-      if (option.id === optionId) {
-        return { 
-          ...option, 
-          style: { 
-            ...(option.style || {}), 
-            cardStyle: style 
-          } 
-        };
-      }
-      return option;
-    });
-    
-    onUpdate({
-      content: {
-        ...element.content,
-        options: updatedOptions
-      }
-    });
+  // Renderizar configurações de opção
+  const renderOptionConfig = (option: any, index: number) => {
+    return (
+      <div key={option.id} className="space-y-2 border p-2 rounded-md">
+        <div className="flex items-center justify-between">
+          <Label htmlFor={`option-${option.id}`}>Texto da opção</Label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteOption(option.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <Input
+          id={`option-${option.id}`}
+          value={option.text || ""}
+          onChange={(e) => handleOptionTextChange(option.id, e.target.value)}
+          placeholder="Texto da opção"
+        />
+
+        <div className="space-y-2">
+          <Label>URL da imagem</Label>
+          <div className="flex gap-2 relative">
+            <Input
+              value={option.image || ""}
+              onChange={(e) => handleOptionImageChange(option.id, e.target.value)}
+              placeholder="/placeholder.svg"
+              className="flex-1"
+            />
+            <label 
+              htmlFor={`file-upload-${option.id}`}
+              className={`cursor-pointer flex items-center justify-center px-3 py-2 bg-primary text-primary-foreground rounded-md ${uploadingImage === option.id ? 'opacity-50' : ''}`}
+            >
+              {uploadingImage === option.id ? (
+                <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+            </label>
+            <input
+              id={`file-upload-${option.id}`}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingImage !== null}
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  handleFileUpload(option.id, e.target.files[0]);
+                }
+              }}
+            />
+          </div>
+          {option.image && option.image.includes('supabase.co') && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Imagem armazenada no Supabase Storage ✓
+            </div>
+          )}
+        </div>
+
+        {/* Controles para posicionamento da imagem */}
+        <div className="space-y-2">
+          <Label>Posição da imagem (vertical)</Label>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleImagePositionChange(option.id, 'up')}
+              title="Mover imagem para cima"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 text-xs text-center">
+              {imagePositions[option.id] || 0}px
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleImagePositionChange(option.id, 'down')}
+              title="Mover imagem para baixo"
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Controles para alinhamento de texto */}
+        <div className="space-y-2">
+          <Label>Alinhamento do texto</Label>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={textAlignments[option.id] === 'left' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleTextAlignChange(option.id, 'left')}
+              title="Alinhar à esquerda"
+            >
+              <AlignLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={textAlignments[option.id] === 'center' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleTextAlignChange(option.id, 'center')}
+              title="Centralizar"
+            >
+              <AlignCenter className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={textAlignments[option.id] === 'right' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleTextAlignChange(option.id, 'right')}
+              title="Alinhar à direita"
+            >
+              <AlignRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Cor de fundo</Label>
+          <Input
+            type="color"
+            value={option.style?.backgroundColor || "#0F172A"}
+            onChange={(e) => handleOptionBackgroundColorChange(option.id, e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Proporção da imagem</Label>
+          <RadioGroup
+            value={option.style?.aspectRatio || "1:1"}
+            onValueChange={(value) => handleOptionAspectRatioChange(option.id, value as any)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="1:1" id={`aspect-1-1-${option.id}`} />
+              <Label htmlFor={`aspect-1-1-${option.id}`}>1:1</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="16:9" id={`aspect-16-9-${option.id}`} />
+              <Label htmlFor={`aspect-16-9-${option.id}`}>16:9</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="9:16" id={`aspect-9-16-${option.id}`} />
+              <Label htmlFor={`aspect-9-16-${option.id}`}>9:16</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="4:3" id={`aspect-4-3-${option.id}`} />
+              <Label htmlFor={`aspect-4-3-${option.id}`}>4:3</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Navegação ao clicar</Label>
+          <Select
+            value={option.navigation?.type || "next"}
+            onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a navegação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="next">Próximo passo</SelectItem>
+              <SelectItem value="step">Passo específico</SelectItem>
+              <SelectItem value="url">URL externa</SelectItem>
+              <SelectItem value="none">Nenhuma ação</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {option.navigation?.type === "step" && (
+            <div className="space-y-2">
+              <Label>Selecione o passo</Label>
+              <Select
+                value={option.navigation?.stepId || ""}
+                onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o passo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {steps.map((step) => (
+                    <SelectItem key={step.id} value={step.id}>
+                      {step.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {option.navigation?.type === "url" && (
+            <div className="space-y-2">
+              <Label>URL externa</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={option.navigation?.url || ""}
+                  onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
+                  placeholder="https://exemplo.com"
+                  className="flex-1"
+                />
+                <Link className="h-4 w-4" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="space-y-4">
+      <TitleInput 
+        title={element.content?.title || ""} 
+        onChange={handleTitleChange} 
+      />
       <Tabs defaultValue="content">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid grid-cols-2">
           <TabsTrigger value="content">Conteúdo</TabsTrigger>
           <TabsTrigger value="style">Estilo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="content">
           <div className="space-y-4">
-            <TitleInput
-              title={element.content?.title || ""}
-              onChange={handleTitleChange}
-            />
-
-            <Separator />
-
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Opções</h3>
-              
-              {element.content?.options.map((option: any) => (
-                <div key={option.id} className="space-y-2 border p-2 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor={`option-${option.id}`}>Texto da opção</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteOption(option.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <Input
-                    id={`option-${option.id}`}
-                    value={option.text || ""}
-                    onChange={(e) => handleOptionTextChange(option.id, e.target.value)}
-                    placeholder="Texto da opção"
-                  />
-
-                  <div className="space-y-2">
-                    <Label>URL da imagem</Label>
-                    <div className="flex gap-2 relative">
-                      <Input
-                        value={option.image || ""}
-                        onChange={(e) => handleOptionImageChange(option.id, e.target.value)}
-                        placeholder="/placeholder.svg"
-                        className="flex-1"
-                      />
-                      <label 
-                        htmlFor={`file-upload-${option.id}`}
-                        className={`cursor-pointer flex items-center justify-center px-3 py-2 bg-primary text-primary-foreground rounded-md ${uploadingImage === option.id ? 'opacity-50' : ''}`}
-                      >
-                        {uploadingImage === option.id ? (
-                          <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                        ) : (
-                          <Upload className="h-4 w-4" />
-                        )}
-                      </label>
-                      <input
-                        id={`file-upload-${option.id}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        disabled={uploadingImage !== null}
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            handleFileUpload(option.id, e.target.files[0]);
-                          }
-                        }}
-                      />
-                    </div>
-                    {option.image && option.image.includes('supabase.co') && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Imagem armazenada no Supabase Storage ✓
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Cor de fundo</Label>
-                    <Input
-                      type="color"
-                      value={option.style?.backgroundColor || "#0F172A"}
-                      onChange={(e) => handleOptionBackgroundColorChange(option.id, e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Proporção da imagem</Label>
-                    <RadioGroup
-                      value={option.style?.aspectRatio || "1:1"}
-                      onValueChange={(value) => handleOptionAspectRatioChange(option.id, value as any)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="1:1" id={`aspect-1-1-${option.id}`} />
-                        <Label htmlFor={`aspect-1-1-${option.id}`}>1:1</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="16:9" id={`aspect-16-9-${option.id}`} />
-                        <Label htmlFor={`aspect-16-9-${option.id}`}>16:9</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="9:16" id={`aspect-9-16-${option.id}`} />
-                        <Label htmlFor={`aspect-9-16-${option.id}`}>9:16</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="4:3" id={`aspect-4-3-${option.id}`} />
-                        <Label htmlFor={`aspect-4-3-${option.id}`}>4:3</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Posição Vertical da Imagem</Label>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOptionImagePositionChange(option.id, (option.style?.imagePosition || 0) - 5)}
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOptionImagePositionChange(option.id, (option.style?.imagePosition || 0) + 5)}
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                      <div className="flex-1">
-                        <Slider
-                          min={-100}
-                          max={100}
-                          step={1}
-                          value={[option.style?.imagePosition || 0]}
-                          onValueChange={(value) => handleOptionImagePositionChange(option.id, value[0])}
-                        />
-                      </div>
-                      <span className="text-sm text-gray-500 w-10 text-right">{option.style?.imagePosition || 0}px</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Alinhamento do Texto</Label>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant={option.style?.textAlign === "left" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleOptionTextAlignChange(option.id, "left")}
-                      >
-                        <AlignLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={option.style?.textAlign === "center" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleOptionTextAlignChange(option.id, "center")}
-                      >
-                        <AlignCenter className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={option.style?.textAlign === "right" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleOptionTextAlignChange(option.id, "right")}
-                      >
-                        <AlignRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Exibir Seta de Navegação</Label>
-                      <Switch
-                        checked={option.style?.showArrow !== false}
-                        onCheckedChange={(checked) => handleOptionShowArrowChange(option.id, checked)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Estilo da Opção</Label>
-                    <Select
-                      value={option.style?.cardStyle || "default"}
-                      onValueChange={(value) => handleOptionCardStyleChange(option.id, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estilo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">Padrão</SelectItem>
-                        <SelectItem value="flat">Plano</SelectItem>
-                        <SelectItem value="3d">3D</SelectItem>
-                        <SelectItem value="neumorphism">Neumorfismo</SelectItem>
-                        <SelectItem value="glass">Vidro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Navegação ao clicar</Label>
-                    <Select
-                      value={option.navigation?.type || "next"}
-                      onValueChange={(value) => handleOptionNavigationTypeChange(option.id, value as any)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a navegação" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="next">Próximo passo</SelectItem>
-                        <SelectItem value="step">Passo específico</SelectItem>
-                        <SelectItem value="url">URL externa</SelectItem>
-                        <SelectItem value="none">Nenhuma ação</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {option.navigation?.type === "step" && (
-                      <div className="space-y-2">
-                        <Label>Selecione o passo</Label>
-                        <Select
-                          value={option.navigation?.stepId || ""}
-                          onValueChange={(value) => handleOptionStepIdChange(option.id, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o passo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {steps.map((step) => (
-                              <SelectItem key={step.id} value={step.id}>
-                                {step.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {option.navigation?.type === "url" && (
-                      <div className="space-y-2">
-                        <Label>URL externa</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            value={option.navigation?.url || ""}
-                            onChange={(e) => handleOptionUrlChange(option.id, e.target.value)}
-                            placeholder="https://exemplo.com"
-                            className="flex-1"
-                          />
-                          <Link className="h-4 w-4" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {(element.content?.options || []).map((option: any, index: number) => 
+                renderOptionConfig(option, index)
+              )}
 
               <Button
                 variant="outline"
@@ -840,18 +838,54 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                 >
                   <ArrowUp className="h-4 w-4" />
                 </Button>
-                <div className="flex-1">
-                  <Slider
-                    id="margin-top"
-                    min={-100}
-                    max={100}
-                    step={1}
-                    value={[marginTop]}
-                    onValueChange={handleMarginTopChange}
-                  />
+                <Slider
+                  id="margin-top"
+                  value={[marginTop]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={handleMarginTopChange}
+                  className="flex-1"
+                />
+                <div className="w-10 text-center text-xs">
+                  {marginTop}px
                 </div>
-                <span className="text-sm text-gray-500 w-10 text-right">{marginTop}px</span>
               </div>
+            </div>
+
+            {/* Controle de visualização de setas */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-arrows">Mostrar setas</Label>
+                <Switch
+                  id="show-arrows"
+                  checked={showArrows}
+                  onCheckedChange={handleShowArrowsToggle}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Controle a visibilidade das setas de navegação em cada opção
+              </div>
+            </div>
+
+            {/* Estilos de opções */}
+            <div className="space-y-2">
+              <Label>Estilo das opções</Label>
+              <Select
+                value={optionStyle}
+                onValueChange={handleOptionStyleChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um estilo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Padrão</SelectItem>
+                  <SelectItem value="flat">Plano</SelectItem>
+                  <SelectItem value="3d">3D</SelectItem>
+                  <SelectItem value="neumorphism">Neumorfismo</SelectItem>
+                  <SelectItem value="glass">Vidro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </TabsContent>
