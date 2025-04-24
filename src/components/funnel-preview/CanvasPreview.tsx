@@ -95,12 +95,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: '0', // Remover padding para consistência com o editor
-    margin: '0 auto',
+    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
+    margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
+    left: isMobile ? '0' : 'auto',
+    right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
-    maxWidth: isMobile ? '360px' : '600px', // Mesma largura usada no builder
-    overflow: 'hidden',
   };
 
   // Classes condicionais para desktop e mobile
@@ -134,11 +134,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '2rem',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
+        paddingBottom: '2rem'
       }}
     >
       {canvasElements.map((element, index) => {
@@ -148,7 +144,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         const adjustedElement = { ...element };
         
         // Para dispositivos móveis, modificar as posições e dimensões
-        // usando exatamente a mesma lógica do BuilderCanvas
         if (isMobile) {
           // Assegurar que elementos com position tenham left=0 para evitar deslocamento
           if (adjustedElement.position) {
@@ -158,32 +153,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
             };
           }
           
-          // Assegurar largura máxima para caber na tela usando o mesmo valor fixo do builder
+          // Assegurar largura máxima para caber na tela
           if (adjustedElement.dimensions) {
             adjustedElement.dimensions = {
               ...adjustedElement.dimensions,
-              width: 360 - 16 // Usar a mesma largura fixa de 360px menos um pequeno espaçamento
+              width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
             };
-          }
-          
-          // Ajustes adicionais para garantir consistência total com o BuilderCanvas
-          if (!adjustedElement.content) {
-            adjustedElement.content = {};
-          }
-          
-          // Remover qualquer padding adicional
-          if (adjustedElement.style?.padding) {
-            adjustedElement.style.padding = '0px';
-          }
-          
-          // Garantir que elementos com margens negativas sejam tratados corretamente
-          if (adjustedElement.content.marginTop && adjustedElement.content.marginTop < 0) {
-            adjustedElement.content.marginTop = 0;
-          }
-          
-          // Assegurar que o alinhamento de texto é consistente
-          if (adjustedElement.style?.textAlign && !adjustedElement.content.textAlign) {
-            adjustedElement.content.textAlign = adjustedElement.style.textAlign;
           }
         }
         
@@ -206,18 +181,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         const elementWrapperStyle: React.CSSProperties = isMobile ? {
           position: 'relative',
           left: '0',
+          right: '0',
           margin: '0 auto',
           width: '100%',
           padding: '0',
-          transform: 'none',
-          marginBottom: '1rem', // Mesmo valor usado no BaseElementRenderer
-        } : {
-          position: 'relative',
-          margin: '0 auto',
-          width: '100%',
-          padding: '0',
-          marginBottom: '1rem', // Mesmo valor usado no BaseElementRenderer
-        };
+          transform: 'none'
+        } : {};
         
         return (
           <div 
