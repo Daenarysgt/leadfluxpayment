@@ -22,7 +22,7 @@ import { useState, useEffect } from "react";
 import { Step } from "@/utils/types";
 
 const StepsSidebar = () => {
-  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, reorderSteps } = useStore();
+  const { currentFunnel, currentStep, setCurrentStep, addStep, deleteStep, reorderSteps, duplicateStep } = useStore();
   const [steps, setSteps] = useState<Step[]>([]);
 
   // Sincronizar os steps do currentFunnel para o estado local
@@ -53,6 +53,18 @@ const StepsSidebar = () => {
     e.stopPropagation();
     // Implementar edição do título do step
     console.log('Editar step:', step);
+  };
+
+  const handleStepDuplicate = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Duplicando etapa:', index);
+    duplicateStep(index)
+      .then(() => {
+        console.log('Etapa duplicada com sucesso');
+      })
+      .catch(error => {
+        console.error('Erro ao duplicar etapa:', error);
+      });
   };
 
   const handleAddStep = () => {
@@ -126,6 +138,7 @@ const StepsSidebar = () => {
                     onSelect={handleStepClick}
                     onDelete={handleStepDelete}
                     onEdit={handleStepEdit}
+                    onDuplicate={handleStepDuplicate}
                   />
                 ))}
               </div>
