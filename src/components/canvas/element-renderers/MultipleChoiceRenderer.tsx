@@ -29,7 +29,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     continueButtonText = "Continuar",
     helperText = "Selecione uma ou mais opções para avançar",
     showHelperText = true,
-    showIndicators = true // Nova opção para controlar visibilidade dos indicadores
+    showIndicators = true, // Nova opção para controlar visibilidade dos indicadores
+    showEmojis = true // Garantir que showEmojis seja considerado (adicionado explicitamente)
   } = content || {};
   
   // Get style settings
@@ -190,7 +191,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             switch (navigationType) {
               case "next":
                 // Navegar para a próxima etapa
-                if (activeStep < funnel.steps.length - 1) {
+              if (activeStep < funnel.steps.length - 1) {
                   console.log("Navegando para próxima etapa:", activeStep + 1);
                   onStepChange(activeStep + 1);
                 } else {
@@ -205,7 +206,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   if (targetIndex !== -1) {
                     console.log("Navegando para etapa específica:", targetIndex);
                     onStepChange(targetIndex);
-                  } else {
+              } else {
                     console.error("Etapa de destino não encontrada:", option.navigation.stepId);
                   }
                 }
@@ -215,7 +216,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 // Navegar para uma URL externa
                 if (option.navigation.url) {
                   console.log("Navegando para URL externa:", option.navigation.url);
-                  window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
+                window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
                 }
                 break;
                 
@@ -392,7 +393,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
         optionStyle = {
           ...optionStyle,
           backgroundColor: '#f0f0f0',
-          boxShadow: isSelected 
+          boxShadow: isSelected
             ? `inset 3px 3px 6px rgba(0,0,0,0.2), inset -3px -3px 6px rgba(255,255,255,0.7), 0 0 0 2px ${indicatorColor}`
             : '3px 3px 6px rgba(0,0,0,0.2), -3px -3px 6px rgba(255,255,255,0.7)',
           border: 'none'
@@ -422,7 +423,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     marginTop: marginTop !== undefined ? `${marginTop}px` : undefined,
     fontFamily: formatFontFamily(fontFamily)
   };
-  
+
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4" style={containerStyle}>
@@ -464,7 +465,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const shouldShowIndicator = showIndicators;
             
             return (
-              <div 
+              <div
                 key={option.id}
                 style={getOptionStyle(isSelected)}
                 className="group"
@@ -479,7 +480,12 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                   </div>
                 )}
                 
-                <span className="flex-1">{option.text}</span>
+                <span className="flex-1 flex items-center">
+                  {showEmojis && option.emoji && (
+                    <span className="mr-2 text-xl font-apple-emoji">{option.emoji}</span>
+                  )}
+                  {option.text}
+                </span>
                 
                 {/* Indicador à direita */}
                 {shouldShowIndicator && indicatorAlign === 'right' && (
@@ -491,6 +497,13 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             );
           })}
         </div>
+        
+        {/* Estilo para garantir que os emojis sejam exibidos corretamente */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .font-apple-emoji {
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+          }
+        `}} />
         
         {showHelperText && allowMultipleSelection && (
           <p 

@@ -96,7 +96,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     
     try {
       // Se estamos no modo de preview, tentamos lidar com a navegação
-      if (previewMode && previewProps) {
+    if (previewMode && previewProps) {
         const { activeStep, onStepChange, funnel } = previewProps;
         
         // Registrar a interação com o valor selecionado
