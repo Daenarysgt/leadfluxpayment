@@ -8,6 +8,9 @@ const TextRenderer = (props: ElementRendererProps) => {
   // Obter as configurações globais do funil, se disponíveis
   const funnelSettings = element.previewProps?.funnel?.settings || {};
   
+  // Verificar se estamos em modo de preview
+  const isPreviewMode = element.previewMode;
+  
   const renderFormattedText = () => {
     // Se existir texto formatado em HTML, renderizamos ele diretamente
     if (element.content?.formattedText) {

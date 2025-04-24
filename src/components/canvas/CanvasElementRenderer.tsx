@@ -91,10 +91,18 @@ const CanvasElementRenderer = (props: ElementRendererProps) => {
   
   console.log(`CanvasElementRenderer - Rendering element: ${element.id}, type: ${element.type}`);
   
+  // Verificar se estamos em modo de preview
+  const isPreviewMode = element.previewMode;
+  
   return (
     <div 
       className="w-full"
       onDragOver={handleDragOver}
+      style={{
+        // Remover qualquer espaçamento que prejudique a consistência com o preview
+        margin: 0,
+        padding: 0
+      }}
     >
       <ElementFactory 
         key={stableKey} 

@@ -359,13 +359,17 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto pb-20 rounded-lg relative", 
+          "w-full mx-auto pb-10 rounded-lg relative", 
           isMobile ? "max-w-[375px]" : "max-w-[600px]",
           isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}
         style={{
           backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.3s ease',
+          // Adicionar padding extra lateral apenas para o canvas (não para os elementos)
+          // para permitir espaço para os controles flutuantes externos
+          paddingLeft: '16px',
+          paddingRight: '16px'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}
@@ -409,41 +413,49 @@ const BuilderCanvas = ({
             />
           </div>
         )}
-        {displayElements.map((element, index) => {
-          // Create a unique key that forces re-render when elements or selections change
-          const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
-          
-          return (
-            <div 
-              key={key} 
-              className={cn(
-                "relative transition-all",
-                dropTargetId === element.id && "border-2 border-violet-500 rounded-md shadow-lg"
-              )}
-              onDragEnter={(e) => handleDragEnter(e, element.id)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onDrop={handleElementDrop}
-            >
-              <CanvasElementRenderer
-                element={element}
-                isSelected={element.id === selectedElementId}
-                onSelect={handleElementSelect}
-                onRemove={handleElementRemove}
-                onDuplicate={handleElementDuplicate}
-                onMoveUp={handleElementMoveUp}
-                onMoveDown={handleElementMoveDown}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                isDragging={element.id === draggedElementId}
-                index={index}
-                totalElements={elements.length}
-              />
-            </div>
-          );
-        })}
+        <div className="relative" style={{ marginLeft: '-16px', marginRight: '-16px' }}>
+          {displayElements.map((element, index) => {
+            // Create a unique key that forces re-render when elements or selections change
+            const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
+            
+            return (
+              <div 
+                key={key} 
+                className={cn(
+                  "relative transition-all",
+                  dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+                )}
+                onDragEnter={(e) => handleDragEnter(e, element.id)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={handleElementDrop}
+                // Remover espaçamentos entre elementos para igualar ao preview
+                style={{ 
+                  marginBottom: '0px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px'
+                }}
+              >
+                <CanvasElementRenderer
+                  element={element}
+                  isSelected={element.id === selectedElementId}
+                  onSelect={handleElementSelect}
+                  onRemove={handleElementRemove}
+                  onDuplicate={handleElementDuplicate}
+                  onMoveUp={handleElementMoveUp}
+                  onMoveDown={handleElementMoveDown}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  isDragging={element.id === draggedElementId}
+                  index={index}
+                  totalElements={elements.length}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </CanvasDropZone>
   );

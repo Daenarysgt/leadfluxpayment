@@ -82,10 +82,10 @@ const BaseElementRenderer = ({
   }, []);
 
   const baseElementClasses = cn(
-    "w-full rounded-md mb-2 border-2 relative group",
-    isSelected ? "border-violet-500" : "border-transparent",
-    isDragging && "opacity-50 border-dashed border-violet-400",
-    dropTarget && !isDragging && "border-violet-500 bg-violet-50/30 shadow-sm",
+    "w-full rounded-md relative group",
+    isSelected ? "outline outline-2 outline-violet-500" : "outline-none",
+    isDragging && "opacity-50 outline-dashed outline-2 outline-violet-400",
+    dropTarget && !isDragging && "outline outline-2 outline-violet-500 bg-violet-50/30 shadow-sm",
     !isPreviewMode && "transition-all duration-200" // Apenas aplicar transição no modo construtor
   );
 
@@ -302,18 +302,14 @@ const BaseElementRenderer = ({
           data-element-type={element.type}
           style={{
             // Aplicar estilos consistentes com CanvasPreview
-            marginBottom: isPreviewMode ? '0px' : '0.5rem',
+            marginBottom: '0px', // Remover margem para igualar ao preview
             transition: 'all 0.2s ease',
             // Converter para um estilo mais próximo da pré-visualização quando editando
             ...(element.content?.marginTop && { marginTop: `${element.content.marginTop}px` })
           }}
         >
           {/* Conteúdo real do elemento */}
-          <div className={cn(
-            "relative",
-            // Padding reduzido para se aproximar da visualização final
-            !isPreviewMode && "py-1 px-2 min-h-[40px]"
-          )}>
+          <div className="relative">
             {children}
           </div>
 
@@ -321,43 +317,16 @@ const BaseElementRenderer = ({
           {!isPreviewMode && (
             <div 
               className={cn(
-                "absolute inset-0 cursor-pointer transition-all duration-150",
+                "absolute inset-0 cursor-pointer transition-all duration-150 pointer-events-none",
                 // Para accordion, ajustar o z-index para permitir cliques no ícone dropdown
                 element.type === "accordion" ? "z-0" : "z-10",
                 isSelected 
-                  ? "bg-violet-500/10 border-2 border-violet-500" 
+                  ? "bg-violet-500/5" 
                   : isHovering 
-                    ? "bg-violet-500/5 border-2 border-dashed border-violet-400/60" 
-                    : dropTarget ? "bg-violet-100/40 border-2 border-violet-500" : "bg-transparent border-2 border-transparent"
+                    ? "bg-violet-500/5" 
+                    : dropTarget ? "bg-violet-100/40" : "bg-transparent"
               )}
-              onClick={(e) => {
-                e.stopPropagation();
-                // Se for accordion, verificar se o clique foi na área do ícone dropdown (direita)
-                if (element.type === "accordion") {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  // Aumentar a área de clique ignorada no lado direito para permitir interação com ícone
-                  if (clickX > rect.width - 100) {
-                    return; // Não selecionar, permitir que o clique passe para o ícone
-                  }
-                  
-                  // Também não ativar o clique em elementos internos que têm interação própria
-                  const target = e.target as HTMLElement;
-                  if (target.closest('.cursor-pointer') && target !== e.currentTarget) {
-                    return;
-                  }
-                }
-                onSelect(element.id);
-              }}
             >
-              {/* Indicador de elemento editável */}
-              {!isSelected && isHovering && !dropTarget && (
-                <div className="absolute top-2 right-2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
-                  <Edit className="h-3 w-3" />
-                  <span>Editar</span>
-                </div>
-              )}
-
               {/* Indicador de drop */}
               {dropTarget && !isDragging && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -370,9 +339,9 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Handle de arrastar - agora como área flotante discreta */}
+          {/* Handle de arrastar - agora posicionado fora do espaço de conteúdo */}
           {isSelected && onDragStart && !isPreviewMode && (
-            <div className="absolute left-0 top-0 bottom-0 flex items-center z-20">
+            <div className="absolute -left-8 top-0 bottom-0 flex items-center z-20">
               <div 
                 className={cn(
                   "w-8 h-8 bg-violet-100 flex items-center justify-center rounded-br transition-all shadow-sm",
@@ -388,9 +357,9 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Adicionar botão de arrasto centralizado para maior facilidade */}
+          {/* Botão de arrasto centralizado posicionado fora do espaço de conteúdo */}
           {isSelected && onDragStart && !isPreviewMode && (
-            <div className="absolute right-1/2 translate-x-1/2 -bottom-2 z-30">
+            <div className="absolute right-1/2 translate-x-1/2 -bottom-5 z-30">
               <div 
                 className={cn(
                   "w-10 h-5 bg-violet-100 rounded-b-md flex items-center justify-center shadow-sm hover:bg-violet-200",
@@ -406,9 +375,9 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Botões de navegação fixados no lado */}
+          {/* Botões de navegação fixados no lado (fora do espaço de conteúdo) */}
           {!isPreviewMode && (isSelected || isHovering) && (
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-lg p-1 shadow-lg z-[999] border border-violet-200">
+            <div className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white rounded-lg p-1 shadow-lg z-[999] border border-violet-200">
               {showMoveUp && (
                 <button 
                   className="w-6 h-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full flex items-center justify-center text-white"
@@ -436,9 +405,9 @@ const BaseElementRenderer = ({
             </div>
           )}
           
-          {/* Right-side element actions */}
+          {/* Botões de ações no lado direito (fora do espaço de conteúdo) */}
           {isSelected && !isPreviewMode && (
-            <div className="absolute right-2 top-2 flex items-center gap-1 bg-white/80 rounded-md p-1 shadow-sm z-20">
+            <div className="absolute -right-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 bg-white/80 rounded-md p-1 shadow-sm z-20">
               {onDuplicate && (
                 <button
                   className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100"
@@ -455,6 +424,14 @@ const BaseElementRenderer = ({
               >
                 <Trash className="h-3.5 w-3.5 text-red-500" />
               </button>
+            </div>
+          )}
+          
+          {/* Indicador de elemento editável (fora do espaço de conteúdo) */}
+          {!isSelected && isHovering && !dropTarget && !isPreviewMode && (
+            <div className="absolute -right-16 top-1/2 -translate-y-1/2 bg-violet-100 text-violet-600 text-xs px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+              <Edit className="h-3 w-3" />
+              <span>Editar</span>
             </div>
           )}
         </div>
