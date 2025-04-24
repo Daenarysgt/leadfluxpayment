@@ -9,7 +9,13 @@ interface StepsDatabaseAdapter {
   saveCanvasElements: (stepId: string, elements: any[]) => Promise<boolean>;
 }
 
-// Estender a interface Window global
-interface Window {
-  stepsDatabaseAdapter?: StepsDatabaseAdapter;
-} 
+declare global {
+  interface Window {
+    stepsDatabaseAdapter?: StepsDatabaseAdapter;
+    preloadedCanvasElements?: {
+      [stepId: string]: any[];
+    };
+  }
+}
+
+export {}; 

@@ -230,6 +230,22 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
   }
   
   try {
+    // Verificar se há elementos pré-carregados no cache temporário
+    // @ts-ignore - Propriedade dinâmica
+    if (window.preloadedCanvasElements && window.preloadedCanvasElements[stepId]) {
+      // @ts-ignore - Propriedade dinâmica
+      const cachedElements = window.preloadedCanvasElements[stepId];
+      console.log(`Store - Usando ${cachedElements.length} elementos pré-carregados do cache para step ${stepId}`);
+      
+      // Limpar o cache após o uso para não interferir em buscas futuras
+      // @ts-ignore - Propriedade dinâmica
+      delete window.preloadedCanvasElements[stepId];
+      
+      return JSON.parse(JSON.stringify(cachedElements)); // Return deep copy
+    }
+    
+    // Se não há elementos no cache, continuar com o fluxo normal
+    
     // Primeiro, tentar buscar elementos da tabela canvas_elements
     console.log(`Store - Buscando elementos do canvas para step ${stepId} da tabela canvas_elements`);
     
@@ -265,8 +281,10 @@ export const getCanvasElementsAction = (get: any) => async (stepId: string) => {
     }
     
     // Verificar se temos o adaptador e usar se disponível
+    // @ts-ignore - Propriedade dinâmica
     if (window.stepsDatabaseAdapter) {
       console.log(`Store - Using adapter to get canvas elements for step ${stepId}`);
+      // @ts-ignore - Propriedade dinâmica
       const elements = await window.stepsDatabaseAdapter.getCanvasElements(step);
       if (elements && Array.isArray(elements)) {
         console.log(`Store - Adapter returned ${elements.length} elements`);

@@ -744,11 +744,11 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
       console.log(`StepActions - Atualizando estado com ${processedCanvasElements.length} elementos do canvas`);
       
       // Encontrar o índice do step no array atual de steps
-      const stepIndex = updatedFunnel.steps.findIndex(s => s.id === newStepId);
-      if (stepIndex !== -1) {
+      const newStepIndex = updatedFunnel.steps.findIndex(s => s.id === newStepId);
+      if (newStepIndex !== -1) {
         // Criar uma cópia do array de steps e atualizar o step específico
         const updatedStepsWithElements = [...updatedFunnel.steps];
-        updatedStepsWithElements[stepIndex] = finalStep;
+        updatedStepsWithElements[newStepIndex] = finalStep;
         
         // Atualizar o estado com o array de steps atualizado
         const finalFunnel = {
@@ -756,15 +756,30 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           steps: updatedStepsWithElements
         };
         
+        // IMPORTANTE: Pré-carregar os dados do canvas no cache local do getCanvasElements
+        // Isso evita uma nova busca ao banco quando setCurrentStep for chamado
+        if (window.preloadedCanvasElements === undefined) {
+          window.preloadedCanvasElements = {};
+        }
+        
+        // Armazenar os elementos processados no cache temporário usando o step_id como chave
+        window.preloadedCanvasElements[newStepId] = [...processedCanvasElements];
+        console.log(`StepActions - Pré-carregados ${processedCanvasElements.length} elementos no cache temporário para step ${newStepId}`);
+        
+        // Importante: primeiro atualize o funnel e DEPOIS mude o step atual
         set((state) => ({
           currentFunnel: finalFunnel,
           funnels: state.funnels.map((funnel) => 
             funnel.id === currentFunnel.id ? finalFunnel : funnel
-          ),
-          currentStep: stepIndex
+          )
         }));
         
-        console.log(`StepActions - Estado atualizado com elementos do canvas para o step ${newStepId}`);
+        // Aguardar o próximo ciclo de renderização antes de mudar o step atual
+        // Isso dá tempo para o estado do funnel ser atualizado completamente
+        setTimeout(() => {
+          set({ currentStep: newStepIndex });
+          console.log(`StepActions - Estado atualizado com elementos do canvas para o step ${newStepId} e currentStep definido para ${newStepIndex}`);
+        }, 50);
       } else {
         console.error(`StepActions - Não foi possível encontrar o step ${newStepId} no estado atual`);
       }
