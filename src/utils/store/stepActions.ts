@@ -529,62 +529,22 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
     
     console.log(`StepActions - Criado novo step com ID ${newStepId}`);
     
-    // Preparar elementos do canvas para clonagem
-    const clonedCanvasElements = stepToClone.canvasElements?.map(element => {
-      // Gerar um novo ID para o elemento do canvas
-      const newElementId = generateValidUUID();
-      
-      // Retornar o elemento clonado com um novo ID e referência ao novo step
-      return {
-        ...element,
-        id: newElementId,
-        step_id: newStepId,
-        // Atualizar quaisquer outras propriedades que possam referenciar outros elementos
-        // como relações parent-child, se aplicável
-      };
-    }) || [];
-    
-    // Inserir o novo step na colecão
-    const updatedFunnel = {
-      ...currentFunnel,
-      steps: [...updatedSteps, { ...newStep, canvasElements: clonedCanvasElements }],
-      updated_at: now
-    };
-    
-    // Ordenar os steps pelo order_index
-    updatedFunnel.steps.sort((a, b) => {
-      const aIndex = a.order_index ?? 0;
-      const bIndex = b.order_index ?? 0;
-      return aIndex - bIndex;
-    });
-    
-    // Atualizar o estado local primeiro para interface responsiva
-    set((state) => ({
-      currentFunnel: updatedFunnel,
-      funnels: state.funnels.map((funnel) => 
-        funnel.id === currentFunnel.id ? updatedFunnel : funnel
-      )
-    }));
-    
-    console.log(`StepActions - Estado local atualizado com o novo step`);
-    
-    // Preparar dados para persistência no Supabase
+    // Preparar dados para persistência no Supabase (sem os canvas_elements)
     const stepToCreate = {
       id: newStepId,
       title: newStep.title,
       button_text: stepToClone.buttonText || 'Continuar',
       back_button_text: stepToClone.backButtonText || 'Voltar',
       show_progress_bar: stepToClone.showProgressBar !== undefined ? stepToClone.showProgressBar : true,
-      canvas_elements: clonedCanvasElements,
       order_index: nextOrderIndex,
       funnel_id: currentFunnel.id,
       created_at: now,
       updated_at: now
     };
     
-    console.log(`StepActions - Persistindo novo step no Supabase`);
+    console.log(`StepActions - Persistindo novo step no Supabase (sem elementos do canvas)`);
     
-    // Persistir no banco de dados
+    // 1. Primeiro, inserir apenas o step na tabela steps
     const { data: newStepData, error } = await supabase
       .from('steps')
       .insert([stepToCreate])
@@ -597,6 +557,48 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
     }
     
     console.log(`StepActions - Step duplicado com sucesso no Supabase:`, newStepData);
+    
+    // 2. Depois, buscar os elementos do canvas da etapa original
+    console.log(`StepActions - Buscando elementos do canvas da etapa original (ID: ${stepToClone.id})`);
+    const { data: originalCanvasElements, error: fetchError } = await supabase
+      .from('canvas_elements')
+      .select('*')
+      .eq('step_id', stepToClone.id);
+    
+    if (fetchError) {
+      console.error(`StepActions - Erro ao buscar elementos do canvas da etapa original:`, fetchError);
+    } else {
+      console.log(`StepActions - Encontrados ${originalCanvasElements?.length || 0} elementos do canvas para duplicar`);
+      
+      // 3. Se encontrou elementos, duplicá-los para a nova etapa
+      if (originalCanvasElements && originalCanvasElements.length > 0) {
+        // Mapear os elementos originais para novos elementos com IDs únicos
+        const newCanvasElements = originalCanvasElements.map(element => ({
+          ...element,
+          id: generateValidUUID(),
+          step_id: newStepId, // Associar ao novo step
+          created_at: now,
+          updated_at: now
+        }));
+        
+        console.log(`StepActions - Inserindo ${newCanvasElements.length} novos elementos do canvas`);
+        
+        // Inserir os novos elementos do canvas
+        const { data: insertedElements, error: insertError } = await supabase
+          .from('canvas_elements')
+          .insert(newCanvasElements)
+          .select();
+        
+        if (insertError) {
+          console.error(`StepActions - Erro ao inserir novos elementos do canvas:`, insertError);
+        } else {
+          console.log(`StepActions - Elementos do canvas duplicados com sucesso: ${insertedElements?.length || 0} elementos`);
+          
+          // Atualizar o objeto do step com referência aos novos elementos (apenas em memória)
+          newStep.canvasElements = insertedElements || [];
+        }
+      }
+    }
     
     // Atualizar os order_index dos outros steps no banco
     for (const step of updatedSteps) {
@@ -619,25 +621,25 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
       }
     }
     
-    // Atualizar o estado final após persistência no banco
-    const finalFunnel = {
-      ...updatedFunnel,
-      steps: updatedFunnel.steps.map(step => {
-        if (step.id === newStepId) {
-          return {
-            ...step,
-            ...newStepData, // Usar dados retornados do banco
-          };
-        }
-        return step;
-      })
+    // Construir o funnel atualizado
+    const updatedFunnel = {
+      ...currentFunnel,
+      steps: [...updatedSteps, newStep],
+      updated_at: now
     };
+    
+    // Ordenar os steps pelo order_index
+    updatedFunnel.steps.sort((a, b) => {
+      const aIndex = a.order_index ?? 0;
+      const bIndex = b.order_index ?? 0;
+      return aIndex - bIndex;
+    });
     
     // Atualizar o estado com os dados mais recentes
     set((state) => ({
-      currentFunnel: finalFunnel,
+      currentFunnel: updatedFunnel,
       funnels: state.funnels.map((funnel) => 
-        funnel.id === currentFunnel.id ? finalFunnel : funnel
+        funnel.id === currentFunnel.id ? updatedFunnel : funnel
       )
     }));
     
