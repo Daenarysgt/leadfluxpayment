@@ -8,10 +8,11 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageIcon, Upload, Plus, Trash2, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { nanoid } from "nanoid";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { supabase } from "@/lib/supabase";
 
 interface CarouselConfigProps {
   element: any;
@@ -21,6 +22,7 @@ interface CarouselConfigProps {
 const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [uploadingSlideId, setUploadingSlideId] = useState<string | null>(null);
   
   // Get or initialize options array
   const options = element.content?.options || [];
@@ -36,7 +38,7 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
   const captionBgColor = element.content?.captionBgColor || "rgba(0, 0, 0, 0.5)";
   const captionTextColor = element.content?.captionTextColor || "#ffffff";
   
-  // Função para converter arquivo em base64
+  // Função para converter arquivo em base64 (mantida para compatibilidade)
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -46,8 +48,8 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
     });
   };
 
-  // Função para redimensionar imagem antes de converter para base64
-  const resizeImage = (file: File, maxWidth = 1200, maxHeight = 1200): Promise<File> => {
+  // Função para redimensionar imagem antes de fazer upload
+  const resizeImage = (file: File, maxWidth = 1200, maxHeight = 900): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -99,6 +101,67 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
       reader.onerror = (error) => reject(error);
     });
   };
+
+  // Função para fazer upload para o Supabase Storage
+  const uploadImageToStorage = async (file: File, optionId: string): Promise<string> => {
+    try {
+      // Criar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${optionId}.${fileExt}`;
+      const filePath = `carousel/${fileName}`;
+      
+      console.log(`CarouselConfig - Fazendo upload para ${filePath}`);
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      // Obter a URL pública da imagem
+      const { data: urlData } = supabase
+        .storage
+        .from('images')
+        .getPublicUrl(filePath);
+      
+      console.log(`CarouselConfig - Upload bem-sucedido, URL: ${urlData.publicUrl}`);
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("CarouselConfig - Erro ao fazer upload da imagem:", error);
+      throw error;
+    }
+  };
+
+  // Remover imagem antiga do Storage
+  const deleteOldImage = async (imageUrl: string) => {
+    if (!imageUrl || !imageUrl.includes('supabase.co/storage/v1/object/public/images/')) return;
+    
+    try {
+      // Extrair o caminho da imagem da URL
+      const urlParts = imageUrl.split('/public/images/');
+      if (urlParts.length < 2) return;
+      
+      const filePath = urlParts[1];
+      
+      console.log(`CarouselConfig - Removendo imagem antiga: ${filePath}`);
+      
+      // Excluir do Storage
+      const { error } = await supabase
+        .storage
+        .from('images')
+        .remove([filePath]);
+        
+      if (error) console.error("CarouselConfig - Erro ao excluir imagem antiga:", error);
+    } catch (error) {
+      console.error("CarouselConfig - Erro ao tentar excluir imagem antiga:", error);
+    }
+  };
   
   const handleAddImage = () => {
     if (options.length >= 10) {
@@ -127,6 +190,12 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
   };
   
   const handleRemoveImage = (id: string) => {
+    // Buscar a opção para verificar se tem imagem no Storage
+    const option = options.find((opt: any) => opt.id === id);
+    if (option?.image && option.image.includes('supabase.co/storage')) {
+      deleteOldImage(option.image).catch(console.error);
+    }
+    
     const newOptions = options.filter((opt: any) => opt.id !== id);
     
     onUpdate({
@@ -139,19 +208,29 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
   
   const handleImageUpload = async (file: File, optionId: string) => {
     setUploading(true);
+    setUploadingSlideId(optionId);
     
     try {
-      // Redimensionar a imagem antes de converter para base64
+      // Buscar a opção para verificar se tem imagem no Storage
+      const option = options.find((opt: any) => opt.id === optionId);
+      if (option?.image && option.image.includes('supabase.co/storage')) {
+        await deleteOldImage(option.image);
+      }
+      
+      // Redimensionar a imagem
       const resizedFile = await resizeImage(file);
-      const base64Image = await convertToBase64(resizedFile);
+      
+      // Fazer upload para o Storage
+      const imageUrl = await uploadImageToStorage(resizedFile, optionId);
       
       // Find the option to update
       const newOptions = options.map((opt: any) => {
         if (opt.id === optionId) {
           return { 
             ...opt, 
-            image: base64Image,
-            fileName: file.name 
+            image: imageUrl,
+            fileName: file.name,
+            isStorageImage: true // Indicar que esta imagem está no Storage
           };
         }
         return opt;
@@ -165,20 +244,20 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
         }
       });
       
-      setUploading(false);
-      
       toast({
         title: "Imagem carregada",
         description: `${file.name} foi adicionada ao carrossel`,
       });
     } catch (error) {
-      setUploading(false);
       toast({
         title: "Erro ao processar imagem",
         description: "Não foi possível processar a imagem. Tente novamente.",
         variant: "destructive",
       });
       console.error("Erro ao processar imagem:", error);
+    } finally {
+      setUploading(false);
+      setUploadingSlideId(null);
     }
   };
   
@@ -383,6 +462,7 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) => handleFileInputChange(e, option.id)}
+                      disabled={uploading}
                     />
                     
                     {option.image ? (
@@ -394,9 +474,23 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
                             className="max-h-[120px] mx-auto object-contain"
                           />
                         </div>
-                        <Button variant="outline" size="sm">
-                          Trocar imagem
-                        </Button>
+                        {uploadingSlideId === option.id ? (
+                          <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-2 border-t-transparent border-primary rounded-full animate-spin mr-2"></div>
+                            <span className="text-sm">Carregando...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Button variant="outline" size="sm">
+                              Trocar imagem
+                            </Button>
+                            {option.isStorageImage && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Imagem armazenada no Storage ✓
+                              </div>
+                            )}
+                          </>
+                        )}
                       </>
                     ) : (
                       <>
@@ -404,9 +498,16 @@ const CarouselConfig = ({ element, onUpdate }: CarouselConfigProps) => {
                         <p className="text-sm text-muted-foreground mb-2">
                           Clique para enviar uma imagem
                         </p>
-                        <Button variant="outline" size="sm">
-                          Selecionar arquivo
-                        </Button>
+                        {uploadingSlideId === option.id ? (
+                          <div className="flex items-center justify-center">
+                            <div className="h-5 w-5 border-2 border-t-transparent border-primary rounded-full animate-spin mr-2"></div>
+                            <span className="text-sm">Carregando...</span>
+                          </div>
+                        ) : (
+                          <Button variant="outline" size="sm">
+                            Selecionar arquivo
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>

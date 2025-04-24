@@ -8,6 +8,7 @@ import { Upload, Link as LinkIcon, ImageIcon, ZoomIn, ZoomOut, Maximize, AlignLe
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { supabase } from "@/lib/supabase";
 
 interface ImageConfigProps {
   element: any;
@@ -40,7 +41,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     });
   };
 
-  // Função para redimensionar imagem antes de converter para base64
+  // Função para redimensionar imagem antes de fazer upload
   const resizeImage = (file: File, maxWidth = 1200, maxHeight = 1200): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -92,6 +93,67 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
       };
       reader.onerror = (error) => reject(error);
     });
+  };
+
+  // Função para fazer upload para o Supabase Storage
+  const uploadImageToStorage = async (file: File): Promise<string> => {
+    try {
+      // Criar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `images/${fileName}`;
+      
+      console.log(`ImageConfig - Fazendo upload para ${filePath}`);
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      // Obter a URL pública da imagem
+      const { data: urlData } = supabase
+        .storage
+        .from('images')
+        .getPublicUrl(filePath);
+      
+      console.log(`ImageConfig - Upload bem-sucedido, URL: ${urlData.publicUrl}`);
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("ImageConfig - Erro ao fazer upload da imagem:", error);
+      throw error;
+    }
+  };
+
+  // Remover imagem antiga do Storage
+  const deleteOldImage = async (imageUrl: string) => {
+    if (!imageUrl || !imageUrl.includes('supabase.co/storage/v1/object/public/images/')) return;
+    
+    try {
+      // Extrair o caminho da imagem da URL
+      const urlParts = imageUrl.split('/public/images/');
+      if (urlParts.length < 2) return;
+      
+      const filePath = urlParts[1];
+      
+      console.log(`ImageConfig - Removendo imagem antiga: ${filePath}`);
+      
+      // Excluir do Storage
+      const { error } = await supabase
+        .storage
+        .from('images')
+        .remove([filePath]);
+        
+      if (error) console.error("ImageConfig - Erro ao excluir imagem antiga:", error);
+    } catch (error) {
+      console.error("ImageConfig - Erro ao tentar excluir imagem antiga:", error);
+    }
   };
   
   const handleUrlChange = (url: string) => {
@@ -149,14 +211,19 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
     setImageFile(file);
     
     try {
+      // Verificar se há uma imagem antiga para excluir
+      if (element.content?.imageUrl && element.content.imageUrl.includes('supabase.co/storage')) {
+        await deleteOldImage(element.content.imageUrl);
+      }
+      
       // Verificar se é um GIF
       const isGif = file.type === 'image/gif';
       
-      // Se for GIF, convertemos diretamente para base64 sem redimensionar
-      // Se não for GIF, procedemos com o redimensionamento normal
-      const base64Image = isGif 
-        ? await convertToBase64(file)
-        : await convertToBase64(await resizeImage(file));
+      // Redimensionar a imagem (exceto GIFs animados para preservar a animação)
+      const processedFile = isGif ? file : await resizeImage(file);
+      
+      // Fazer upload para o Storage
+      const imageUrl = await uploadImageToStorage(processedFile);
       
       // Get image dimensions
       const img = new Image();
@@ -171,15 +238,16 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
         setImgDimensions(newDimensions);
         setSizePercentage(100);
         
-        // Update element with base64 image and dimensions
+        // Update element with image URL and dimensions
         onUpdate({
           content: {
             ...element.content,
-            imageUrl: base64Image,
+            imageUrl: imageUrl,
             width: img.width,
             height: img.height,
             fileName: file.name,
-            isAnimatedGif: isGif // Adicionar flag para identificar GIFs animados
+            isAnimatedGif: isGif,
+            isStorageImage: true // Indicar que esta imagem está no Storage
           }
         });
         
@@ -200,7 +268,7 @@ const ImageConfig = ({ element, onUpdate }: ImageConfigProps) => {
         });
       };
       
-      img.src = base64Image;
+      img.src = imageUrl;
     } catch (error) {
       setUploading(false);
       toast({
