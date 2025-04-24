@@ -453,7 +453,7 @@ export const setCurrentStepAction = (set: any, get: any) => (stepIndex: number) 
 };
 
 export const duplicateStepAction = (set: any, get: any) => async (stepIndex: number) => {
-  const { currentFunnel } = get();
+  const { currentFunnel, setCanvasElements, getCanvasElements } = get();
   
   if (!currentFunnel || !currentFunnel.steps || currentFunnel.steps.length === 0) {
     console.error('Não é possível duplicar: funil não encontrado ou sem etapas');
@@ -471,6 +471,28 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
     // Obter o step a ser duplicado
     const stepToClone = currentFunnel.steps[stepIndex];
     console.log(`StepActions - Duplicando etapa "${stepToClone.title}" (ID: ${stepToClone.id})`);
+    
+    // MODIFICAÇÃO 1: Garantir que os elementos do canvas do step original estejam persistidos antes de duplicar
+    console.log(`StepActions - Garantindo persistência dos elementos do step original antes da duplicação`);
+    
+    // 1. Verificar se o step original tem elementos no state
+    const hasElementsInState = stepToClone.canvasElements && 
+                              Array.isArray(stepToClone.canvasElements) && 
+                              stepToClone.canvasElements.length > 0;
+    
+    if (hasElementsInState) {
+      console.log(`StepActions - Step original tem ${stepToClone.canvasElements.length} elementos no state, persistindo...`);
+      // Forçar persistência dos elementos do step original no banco
+      try {
+        await setCanvasElements(stepToClone.id, stepToClone.canvasElements);
+        console.log(`StepActions - Elementos do step original persistidos com sucesso`);
+        // Aguardar um momento para garantir consistência no banco
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (persistError) {
+        console.error(`StepActions - Erro ao persistir elementos do step original:`, persistError);
+        // Continuar com os elementos do state como fallback
+      }
+    }
     
     // Encontrar o order_index dos steps existentes
     const orderIndices = currentFunnel.steps
@@ -576,13 +598,13 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         const { data: newStepData, error } = await supabase
           .from('steps')
           .insert([stepToCreate])
-      .select()
-      .single();
+          .select()
+          .single();
     
-    if (error) {
+        if (error) {
           console.error(`StepActions - Erro ao criar step duplicado no banco:`, error);
-      throw error;
-    }
+          throw error;
+        }
     
         // Garantir que newStepData é um objeto com id
         const stepData = newStepData as { id: string };
@@ -593,84 +615,106 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         
         let canvasElementsArray = [];
         try {
-          // Buscar elementos do canvas na tabela canvas_elements usando step_id como referência
-          const { data: originalElements, error: fetchError } = await supabase
+          // MODIFICAÇÃO 2: Estratégia dupla - primeiro tentar buscar do banco, depois usar state como fallback
+          
+          // 2.1 Tentar buscar elementos do canvas na tabela canvas_elements
+          const { data: elementsFromDB, error: fetchError } = await supabase
             .from('canvas_elements')
             .select('*')
             .eq('step_id', stepToClone.id);
           
           if (fetchError) {
             console.error(`StepActions - Erro ao buscar elementos do canvas da etapa original:`, fetchError);
-          } else {
-            const elementsCount = originalElements?.length || 0;
-            console.log(`StepActions - Retrieved ${elementsCount} canvas elements for step ${stepToClone.id}`);
+            throw fetchError;
+          }
+          
+          let elementsCount = elementsFromDB?.length || 0;
+          console.log(`StepActions - Retrieved ${elementsCount} canvas elements for step ${stepToClone.id} from database`);
+          
+          // Preparar array de elementos para clonagem (do banco ou do state)
+          let elementsToClone = elementsFromDB || [];
+          
+          // 2.2 Se não encontrou elementos no banco, mas existem no state, usar o state como fallback
+          if ((elementsToClone.length === 0) && hasElementsInState) {
+            console.log(`StepActions - Usando elementos do state como fallback (${stepToClone.canvasElements.length} elementos)`);
             
-            // Se encontrou elementos, duplicá-los para a nova etapa
-            if (originalElements && originalElements.length > 0) {
-              // Deep clone de cada elemento com novo id e step_id
-              const newElements = originalElements.map(el => {
-                // Extrair uma cópia limpa sem o id original
-                const { id: originalId, ...elWithoutId } = el;
-                
-                return {
-                  ...elWithoutId,
-                  id: generateValidUUID(),
-                  step_id: newStepId,
-                  created_at: now,
-                  updated_at: now
-                };
-              });
+            // Usar elementos do state para clonagem
+            elementsToClone = stepToClone.canvasElements.map(el => {
+              // Transformar elementos do state para formato da tabela canvas_elements
+              return {
+                id: generateValidUUID(),
+                step_id: stepToClone.id,
+                type: el.type || 'unknown',
+                position: el.position || 0,
+                config: el,
+                created_at: now,
+                updated_at: now
+              };
+            });
+            
+            elementsCount = elementsToClone.length;
+            console.log(`StepActions - Transformados ${elementsCount} elementos do state para formato do banco`);
+          }
+          
+          // Se encontrou elementos (no banco ou no state), duplicá-los para a nova etapa
+          if (elementsToClone.length > 0) {
+            // Deep clone de cada elemento com novo id e step_id
+            const newElements = elementsToClone.map(el => {
+              // Extrair uma cópia limpa sem o id original
+              const { id: originalId, ...elWithoutId } = el;
               
-              console.log(`StepActions - Inserindo ${newElements.length} novos elementos do canvas para o step ${newStepId}`);
+              return {
+                ...elWithoutId,
+                id: generateValidUUID(),
+                step_id: newStepId,
+                created_at: now,
+                updated_at: now
+              };
+            });
+            
+            console.log(`StepActions - Inserindo ${newElements.length} novos elementos do canvas para o step ${newStepId}`);
     
-              // Inserir os novos elementos na tabela canvas_elements
-              const { data: insertedElements, error: insertError } = await supabase
-                .from('canvas_elements')
-                .insert(newElements)
-                .select();
+            // Inserir os novos elementos na tabela canvas_elements
+            const { data: insertedElements, error: insertError } = await supabase
+              .from('canvas_elements')
+              .insert(newElements)
+              .select();
+            
+            if (insertError) {
+              console.error(`StepActions - Erro ao inserir novos elementos do canvas:`, insertError);
               
-              if (insertError) {
-                console.error(`StepActions - Erro ao inserir novos elementos do canvas:`, insertError);
-                
-                // Tentar inserir um por um para identificar o problema específico
-                for (let i = 0; i < newElements.length; i++) {
-                  try {
-                    const { error: singleInsertError } = await supabase
-                      .from('canvas_elements')
-                      .insert([newElements[i]]);
-                    
-                    if (singleInsertError) {
-                      console.error(`StepActions - Erro ao inserir elemento #${i}:`, singleInsertError);
-                    } else {
-                      console.log(`StepActions - Elemento #${i} inserido com sucesso`);
-                    }
-                  } catch (singleError) {
-                    console.error(`StepActions - Exceção ao inserir elemento #${i}:`, singleError);
+              // Tentar inserir um por um para identificar o problema específico
+              for (let i = 0; i < newElements.length; i++) {
+                try {
+                  const { error: singleInsertError } = await supabase
+                    .from('canvas_elements')
+                    .insert([newElements[i]]);
+                  
+                  if (singleInsertError) {
+                    console.error(`StepActions - Erro ao inserir elemento #${i}:`, singleInsertError);
+                  } else {
+                    console.log(`StepActions - Elemento #${i} inserido com sucesso`);
                   }
+                } catch (singleError) {
+                  console.error(`StepActions - Exceção ao inserir elemento #${i}:`, singleError);
                 }
-              } else {
-                console.log(`StepActions - Elementos do canvas duplicados com sucesso: ${insertedElements?.length || 0} elementos`);
-                canvasElementsArray = insertedElements || [];
               }
             } else {
-              console.log(`StepActions - Nenhum elemento do canvas encontrado para a etapa original`);
-              
-              // Verificar se existe algum elemento na tabela canvas_elements
-              const { count, error: countError } = await supabase
-                .from('canvas_elements')
-                .select('*', { count: 'exact', head: true });
-              
-              if (countError) {
-                console.error(`StepActions - Erro ao verificar contagem de elementos:`, countError);
-              } else {
-                console.log(`StepActions - Total de elementos na tabela canvas_elements: ${count || 0}`);
-              }
-              
-              // Verificar se o step original tem elementos no campo canvasElements (formato antigo)
-              if (stepToClone.canvasElements && Array.isArray(stepToClone.canvasElements) && stepToClone.canvasElements.length > 0) {
-                console.log(`StepActions - Step original tem ${stepToClone.canvasElements.length} elementos no campo canvasElements`);
-                console.log(`StepActions - Esses elementos não foram migrados para a tabela canvas_elements ainda`);
-              }
+              console.log(`StepActions - Elementos do canvas duplicados com sucesso: ${insertedElements?.length || 0} elementos`);
+              canvasElementsArray = insertedElements || [];
+            }
+          } else {
+            console.log(`StepActions - Nenhum elemento do canvas encontrado para a etapa original (nem no banco nem no state)`);
+            
+            // Verificar se existe algum elemento na tabela canvas_elements (diagnóstico)
+            const { count, error: countError } = await supabase
+              .from('canvas_elements')
+              .select('*', { count: 'exact', head: true });
+            
+            if (countError) {
+              console.error(`StepActions - Erro ao verificar contagem de elementos:`, countError);
+            } else {
+              console.log(`StepActions - Total de elementos na tabela canvas_elements: ${count || 0}`);
             }
           }
         } catch (canvasError) {
@@ -680,19 +724,19 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         
         // 4. Atualizar os order_index dos outros steps no banco
         const orderUpdatePromises = [];
-    for (const step of updatedSteps) {
-      if (step.order_index !== (step.order_index ?? 0)) {
+        for (const step of updatedSteps) {
+          if (step.order_index !== (step.order_index ?? 0)) {
             const updatePromise = supabase
-          .from('steps')
+              .from('steps')
               .update({ 
                 order_index: step.order_index,
                 updated_at: formatDateForSupabase()
               })
-          .eq('id', step.id);
+              .eq('id', step.id);
             
             orderUpdatePromises.push(updatePromise);
-      }
-    }
+          }
+        }
     
         if (orderUpdatePromises.length > 0) {
           console.log(`StepActions - Atualizando order_index de ${orderUpdatePromises.length} steps existentes`);
@@ -713,6 +757,14 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
       }
     };
     
+    // IMPORTANTE: Pré-carregar os dados do canvas no cache local do getCanvasElements
+    // Isso evita uma nova busca ao banco quando setCurrentStep for chamado
+    // @ts-ignore - Propriedade dinâmica
+    if (window.preloadedCanvasElements === undefined) {
+      // @ts-ignore - Propriedade dinâmica
+      window.preloadedCanvasElements = {};
+    }
+    
     // Executar a persistência e tratar resultados/erros
     try {
       const persistResult = await persistAll();
@@ -732,14 +784,6 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           return element;
         });
         console.log(`StepActions - Processados ${processedCanvasElements.length} elementos para o novo step`);
-      }
-      
-      // IMPORTANTE: Pré-carregar os dados do canvas no cache local do getCanvasElements
-      // Isso evita uma nova busca ao banco quando setCurrentStep for chamado
-      // @ts-ignore - Propriedade dinâmica
-      if (window.preloadedCanvasElements === undefined) {
-        // @ts-ignore - Propriedade dinâmica
-        window.preloadedCanvasElements = {};
       }
       
       // Armazenar os elementos processados no cache temporário usando o step_id como chave
