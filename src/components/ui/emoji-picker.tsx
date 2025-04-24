@@ -59,7 +59,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, selectedEmoji 
             }
             
             .emoji-item {
-              font-size: 1.5rem;
+              font-size: 2rem;
               cursor: pointer;
               text-align: center;
               transition: transform 0.1s ease;

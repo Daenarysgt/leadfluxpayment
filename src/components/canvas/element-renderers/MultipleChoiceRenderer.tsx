@@ -482,7 +482,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
                 
                 <span className="flex-1 flex items-center">
                   {showEmojis && option.emoji && (
-                    <span className="mr-2 text-xl font-apple-emoji">{option.emoji}</span>
+                    <span className="mr-2 text-3xl font-apple-emoji">{option.emoji}</span>
                   )}
                   {option.text}
                 </span>
