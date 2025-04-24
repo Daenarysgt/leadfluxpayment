@@ -238,7 +238,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       let textStyle: React.CSSProperties = {
         backgroundColor,
         fontFamily,
-        fontSize: `${bodySize}px`,
+        fontSize: isMobile ? `${Math.max(bodySize - 2, 12)}px` : `${bodySize}px`,
         fontStyle,
         fontWeight,
         textDecoration,
@@ -251,7 +251,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         position: "relative",
         width: "100%",
         color: "white", // Garantir que o texto seja visível
-        padding: "8px",
+        padding: isMobile ? "6px" : "8px",
         zIndex: 5
       };
       
@@ -366,8 +366,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             
             {/* Barra de texto com opção - Ajuste para garantir visibilidade em mobile */}
             <div className="absolute bottom-0 left-0 right-0 p-3" style={textStyle}>
-              <span className="text-inherit font-medium flex-grow">{option.text}</span>
-              {showArrows && <ChevronRight className="h-5 w-5 text-inherit ml-2" />}
+              <span className="text-inherit font-medium flex-grow truncate">{option.text}</span>
+              {showArrows && <ChevronRight className={`text-inherit ml-1 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />}
             </div>
           </div>
         </div>
@@ -400,7 +400,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+        <div className={`grid grid-cols-2 gap-4`}>
           {renderedOptions}
         </div>
       </div>
@@ -419,8 +419,14 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         
         /* Estilos adicionais para garantir a visibilidade em dispositivos móveis */
         @media (max-width: 768px) {
-          .grid-cols-1 > div {
-            margin-bottom: 16px;
+          .grid-cols-2 > div {
+            min-height: 120px;
+            min-width: 0;
+            font-size: 0.9em;
+          }
+          
+          .grid-cols-2 > div .p-3 {
+            padding: 6px 8px;
           }
         }
       `}} />
