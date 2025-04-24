@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
+import { supabase } from "@/lib/supabase";
 
 interface MultipleChoiceImageConfigProps {
   element: any;
@@ -22,6 +23,8 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
   
   // Estado para armazenar a margem superior
   const [marginTop, setMarginTop] = useState(element.content?.marginTop || 0);
+  // Estado para controlar o carregamento de imagens
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   
   const steps = currentFunnel?.steps.map(step => ({
     id: step.id,
@@ -63,7 +66,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
-  // Função para converter arquivo em base64
+  // Função para converter arquivo em base64 (mantida para compatibilidade)
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -73,8 +76,8 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
-  // Função para redimensionar imagem antes de converter para base64
-  const resizeImage = (file: File, maxWidth = 800, maxHeight = 600): Promise<File> => {
+  // Função para redimensionar imagem antes do upload
+  const resizeImage = (file: File, maxWidth = 1200, maxHeight = 900): Promise<File> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -135,7 +138,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
             
             console.log(`MultipleChoiceImageConfig - Imagem redimensionada: ${resizedFile.size} bytes`);
             resolve(resizedFile);
-          }, outputType, outputType === 'image/jpeg' ? 0.92 : undefined);
+          }, outputType, outputType === 'image/jpeg' ? 0.9 : undefined);
         };
         img.onerror = () => {
           reject(new Error('Erro ao carregar imagem para redimensionamento'));
@@ -145,95 +148,106 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
     });
   };
 
+  // Função para fazer upload para o Supabase Storage
+  const uploadImageToStorage = async (file: File, optionId: string): Promise<string> => {
+    try {
+      // Criar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${optionId}.${fileExt}`;
+      const filePath = `options/${currentFunnel?.id || 'default'}/${fileName}`;
+      
+      console.log(`MultipleChoiceImageConfig - Fazendo upload para ${filePath}`);
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      // Obter a URL pública da imagem
+      const { data: urlData } = supabase
+        .storage
+        .from('images')
+        .getPublicUrl(filePath);
+      
+      console.log(`MultipleChoiceImageConfig - Upload bem-sucedido, URL: ${urlData.publicUrl}`);
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("MultipleChoiceImageConfig - Erro ao fazer upload da imagem:", error);
+      throw error;
+    }
+  };
+
+  // Remover imagem antiga do Storage
+  const deleteOldImage = async (imageUrl: string) => {
+    if (!imageUrl || !imageUrl.includes('supabase.co/storage/v1/object/public/images/')) return;
+    
+    try {
+      // Extrair o caminho da imagem da URL
+      const urlParts = imageUrl.split('/public/images/');
+      if (urlParts.length < 2) return;
+      
+      const filePath = urlParts[1];
+      
+      console.log(`MultipleChoiceImageConfig - Removendo imagem antiga: ${filePath}`);
+      
+      // Excluir do Storage
+      const { error } = await supabase
+        .storage
+        .from('images')
+        .remove([filePath]);
+        
+      if (error) console.error("MultipleChoiceImageConfig - Erro ao excluir imagem antiga:", error);
+    } catch (error) {
+      console.error("MultipleChoiceImageConfig - Erro ao tentar excluir imagem antiga:", error);
+    }
+  };
+
   // Função para processar o upload de arquivo
   const handleFileUpload = async (optionId: string, file: File) => {
     try {
+      // Marcar essa opção como em carregamento
+      setUploadingImage(optionId);
       console.log(`MultipleChoiceImageConfig - Processando upload de imagem para opção ${optionId}`);
+      
+      // Buscar imagem antiga para remover após o upload ter sucesso
+      const oldImage = element.content.options.find((option: any) => option.id === optionId)?.image;
       
       // Determinando o tipo de arquivo
       const isJpeg = file.type === 'image/jpeg' || file.type === 'image/jpg';
       const isPng = file.type === 'image/png';
       const isGif = file.type === 'image/gif';
       
-      let base64Image;
-      
+      // Redimensionar para tamanho adequado (mas manter qualidade alta)
+      let resizedFile;
       if (isGif) {
-        // Para GIFs, não redimensionamos para preservar a animação, mas comprimimos
-        console.log("MultipleChoiceImageConfig - Convertendo GIF para base64, reduzindo tamanho");
-        // Redimensionar para reduzir tamanho mesmo sendo GIF
-        const resizedFile = await resizeImage(file, 400, 300);
-        base64Image = await convertToBase64(resizedFile);
+        // Para GIFs, usar arquivo original para preservar animação
+        resizedFile = file;
       } else {
-        // Para outros tipos de imagem, redimensionamos para otimizar
-        console.log(`MultipleChoiceImageConfig - Redimensionando imagem: ${file.type}, tamanho: ${file.size} bytes`);
-        
-        // Reduzir tamanho máximo para reduzir peso total
-        const resizedFile = await resizeImage(file, 800, 600);
-        
-        // Converter com qualidade reduzida
-        const canvas = document.createElement('canvas');
-        const img = new Image();
-        
-        // Criamos uma Promise manualmente para aguardar o carregamento da imagem
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = URL.createObjectURL(resizedFile);
-        });
-        
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, img.width, img.height);
-        
-        // Use melhor qualidade para JPEG, ou PNG para transparência
-        if (isPng) {
-          base64Image = canvas.toDataURL('image/png');
-        } else {
-          // Reduzir qualidade para JPEG para diminuir tamanho
-          base64Image = canvas.toDataURL('image/jpeg', 0.7); // Reduzir qualidade de 0.92 para 0.7
-        }
-        
-        // Liberar o URL objeto
-        URL.revokeObjectURL(img.src);
+        // Para outros tipos, redimensionar
+        resizedFile = await resizeImage(file, 1200, 900);
       }
       
-      const maxBase64Length = 50000; // Aproximadamente 37KB
-      if (base64Image && base64Image.length > maxBase64Length) {
-        console.log(`MultipleChoiceImageConfig - Imagem muito grande (${base64Image.length} caracteres), comprimindo mais`);
-        
-        // Comprimir mais se a imagem ainda for muito grande
-        const tempImg = new Image();
-        tempImg.src = base64Image;
-        
-        await new Promise((resolve) => {
-          tempImg.onload = resolve;
-        });
-        
-        const tempCanvas = document.createElement('canvas');
-        // Reduzir ainda mais as dimensões para grandes imagens
-        const scaleFactor = Math.sqrt(maxBase64Length / base64Image.length) * 0.9;
-        tempCanvas.width = tempImg.width * scaleFactor;
-        tempCanvas.height = tempImg.height * scaleFactor;
-        
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx?.drawImage(tempImg, 0, 0, tempCanvas.width, tempCanvas.height);
-        
-        if (isPng) {
-          base64Image = tempCanvas.toDataURL('image/png');
-        } else {
-          base64Image = tempCanvas.toDataURL('image/jpeg', 0.6);
-        }
+      // Fazer upload para o Storage e obter URL
+      const imageUrl = await uploadImageToStorage(resizedFile, optionId);
+      
+      // Se havia uma imagem antiga do Supabase Storage, tente removê-la
+      if (oldImage && oldImage.includes('supabase.co/storage')) {
+        deleteOldImage(oldImage).catch(console.error);
       }
       
-      console.log(`MultipleChoiceImageConfig - Imagem processada: tamanho final ${base64Image.length} caracteres`);
-      
-      // Atualizar option com a imagem processada
-      handleOptionImageChange(optionId, base64Image);
+      // Atualizar option com a URL da imagem
+      handleOptionImageChange(optionId, imageUrl);
       
       // Garantir a persistência imediatamente
       const updatedOptions = element.content.options.map((option: any) => 
-        option.id === optionId ? { ...option, image: base64Image } : option
+        option.id === optionId ? { ...option, image: imageUrl } : option
       );
       
       // Atualizar todo o elemento com as opções atualizadas
@@ -250,6 +264,8 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
       console.log(`MultipleChoiceImageConfig - Imagem salva com sucesso para opção ${optionId}`);
     } catch (error) {
       console.error("MultipleChoiceImageConfig - Erro ao processar imagem:", error);
+    } finally {
+      setUploadingImage(null);
     }
   };
 
@@ -391,6 +407,12 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
   };
 
   const handleDeleteOption = (optionId: string) => {
+    // Buscar imagem antiga para remover
+    const option = element.content.options.find((option: any) => option.id === optionId);
+    if (option?.image && option.image.includes('supabase.co/storage')) {
+      deleteOldImage(option.image).catch(console.error);
+    }
+    
     const updatedOptions = element.content.options.filter((option: any) => option.id !== optionId);
     onUpdate({
       content: {
@@ -484,7 +506,7 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
 
                   <div className="space-y-2">
                     <Label>URL da imagem</Label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 relative">
                       <Input
                         value={option.image || ""}
                         onChange={(e) => handleOptionImageChange(option.id, e.target.value)}
@@ -493,15 +515,20 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                       />
                       <label 
                         htmlFor={`file-upload-${option.id}`}
-                        className="cursor-pointer flex items-center justify-center px-3 py-2 bg-primary text-primary-foreground rounded-md"
+                        className={`cursor-pointer flex items-center justify-center px-3 py-2 bg-primary text-primary-foreground rounded-md ${uploadingImage === option.id ? 'opacity-50' : ''}`}
                       >
-                        <Upload className="h-4 w-4" />
+                        {uploadingImage === option.id ? (
+                          <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
                       </label>
                       <input
                         id={`file-upload-${option.id}`}
                         type="file"
                         accept="image/*"
                         className="hidden"
+                        disabled={uploadingImage !== null}
                         onChange={(e) => {
                           if (e.target.files?.[0]) {
                             handleFileUpload(option.id, e.target.files[0]);
@@ -509,6 +536,11 @@ const MultipleChoiceImageConfig = ({ element, onUpdate }: MultipleChoiceImageCon
                         }}
                       />
                     </div>
+                    {option.image && option.image.includes('supabase.co') && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Imagem armazenada no Supabase Storage ✓
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
