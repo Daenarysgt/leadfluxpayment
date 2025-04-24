@@ -111,7 +111,7 @@ const StepsSidebar = () => {
   };
 
   return (
-    <div className="w-[280px] border-r bg-gradient-to-b from-gray-50 to-white">
+    <div className="w-[300px] border-r bg-gradient-to-b from-gray-50 to-white">
       <div className="p-4 border-b bg-white/50 backdrop-blur-sm">
         <h2 className="font-semibold text-lg text-gray-800">Etapas do Funil</h2>
         <p className="text-sm text-gray-500 mt-1">Configure cada etapa do seu funil</p>

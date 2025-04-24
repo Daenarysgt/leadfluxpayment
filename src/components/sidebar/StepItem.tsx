@@ -98,22 +98,22 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           {index + 1}
         </div>
         <span className={`
-          font-medium truncate
+          font-medium truncate max-w-[120px] 
           ${isActive ? 'text-violet-900' : 'text-gray-700'}
-        `}>
+        `} title={step.title}>
           {step.title}
         </span>
       </div>
       
       <div className={`
-        flex items-center gap-1 pr-2
+        flex items-center gap-1 pr-2 ml-1 min-w-[85px] justify-end
         ${isHovered || isActive ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-200
       `}>
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 text-gray-500 hover:text-violet-600"
+          className="h-7 w-7 p-1 text-gray-500 hover:text-violet-600"
           onClick={handleEditClick}
         >
           <Edit2 className="h-3.5 w-3.5" />
@@ -122,7 +122,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 text-gray-500 hover:text-blue-600"
+            className="h-7 w-7 p-1 text-gray-500 hover:text-blue-600"
             onClick={(e) => {
               e.stopPropagation();
               onDuplicate(index, e);
@@ -134,7 +134,7 @@ const StepItem = ({ step, index, isActive, onSelect, onDelete, onEdit, onDuplica
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 w-7 text-gray-500 hover:text-red-600"
+          className="h-7 w-7 p-1 text-gray-500 hover:text-red-600"
           onClick={(e) => onDelete(index, e)}
         >
           <Trash2 className="h-3.5 w-3.5" />
