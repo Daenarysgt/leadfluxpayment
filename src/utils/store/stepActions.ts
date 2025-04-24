@@ -592,60 +592,56 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
         
         let canvasElementsArray = [];
         try {
-          // Verificar se os elementos do canvas estão armazenados na própria tabela steps
-          // como um campo JSON (canvas_elements) em vez de uma tabela separada
-          const { data: stepWithElements, error: fetchStepError } = await supabase
-            .from('steps')
-            .select('canvas_elements')
-            .eq('id', stepToClone.id)
-            .single();
+          // Buscar elementos do canvas na tabela canvas_elements usando step_id como referência
+          const { data: canvasElements, error: fetchError } = await supabase
+            .from('canvas_elements') // Tabela separada para elementos do canvas
+            .select('*')
+            .eq('step_id', stepToClone.id);
           
-          if (fetchStepError) {
-            console.error(`StepActions - Erro ao buscar elementos do canvas do step:`, fetchStepError);
-          } else if (stepWithElements && stepWithElements.canvas_elements) {
-            console.log(`StepActions - Encontrados elementos do canvas armazenados no campo JSON do step`);
-            
-            // Se os elementos existem como um campo JSON na tabela steps
-            const originalElements = Array.isArray(stepWithElements.canvas_elements) 
-              ? stepWithElements.canvas_elements 
-              : [];
-            
-            const elementsCount = originalElements.length;
+          if (fetchError) {
+            console.error(`StepActions - Erro ao buscar elementos do canvas da etapa original:`, fetchError);
+          } else {
+            const elementsCount = canvasElements?.length || 0;
             console.log(`StepActions - Encontrados ${elementsCount} elementos do canvas para duplicar`);
             
-            if (elementsCount > 0) {
-              // Clonar elementos com novos IDs
-              const newCanvasElements = originalElements.map(element => {
+            // Se encontrou elementos, duplicá-los para a nova etapa
+            if (canvasElements && canvasElements.length > 0) {
+              // Mapear os elementos originais para novos elementos com IDs únicos
+              const newCanvasElements = canvasElements.map(element => {
+                // Criar uma cópia segura do elemento
                 const safeElement = { ...element };
+                delete safeElement.id; // Remover o ID original para evitar conflitos
+                
                 return {
                   ...safeElement,
                   id: generateValidUUID(),
-                  step_id: newStepId,
+                  step_id: newStepId, // Associar ao novo step
                   created_at: now,
                   updated_at: now
                 };
               });
               
-              console.log(`StepActions - Atualizando ${newCanvasElements.length} elementos do canvas no novo step`);
+              console.log(`StepActions - Inserindo ${newCanvasElements.length} novos elementos do canvas`);
               
-              // Atualizar o step recém-criado com os novos elementos clonados
-              const { error: updateError } = await supabase
-                .from('steps')
-                .update({ 
-                  canvas_elements: newCanvasElements,
-                  updated_at: now
-                })
-                .eq('id', newStepId);
+              // Inserir os novos elementos na tabela canvas_elements
+              const { data: insertedElements, error: insertError } = await supabase
+                .from('canvas_elements')
+                .insert(newCanvasElements)
+                .select();
               
-              if (updateError) {
-                console.error(`StepActions - Erro ao atualizar elementos do canvas no novo step:`, updateError);
+              if (insertError) {
+                console.error(`StepActions - Erro ao inserir novos elementos do canvas:`, insertError);
+                
+                // Se o erro for relacionado à tabela não existente, logar isso especificamente
+                if (insertError.message && insertError.message.includes("does not exist")) {
+                  console.error(`StepActions - A tabela 'canvas_elements' parece não existir. Pode ser necessário criá-la no Supabase.`);
+                  console.error(`StepActions - Schema sugerido: id (UUID), step_id (FK), type, config, position, etc.`);
+                }
               } else {
-                console.log(`StepActions - Elementos do canvas duplicados com sucesso no campo JSON`);
-                canvasElementsArray = newCanvasElements;
+                console.log(`StepActions - Elementos do canvas duplicados com sucesso: ${insertedElements?.length || 0} elementos`);
+                canvasElementsArray = insertedElements || [];
               }
             }
-          } else {
-            console.log(`StepActions - Step não possui elementos do canvas ou está em formato não reconhecido`);
           }
         } catch (canvasError) {
           console.error(`StepActions - Exceção ao processar elementos do canvas:`, canvasError);
