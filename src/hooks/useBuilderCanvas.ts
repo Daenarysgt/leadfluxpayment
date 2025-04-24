@@ -28,7 +28,8 @@ export const useBuilderCanvas = () => {
     handleCanvasElementsChange,
     handleSave,
     saveCurrentStepElements,
-    isLoading
+    isLoading,
+    preventNextReload
   } = useCanvasSynchronization(
     storeSetCanvasElements,
     storeGetCanvasElements,
@@ -69,6 +70,7 @@ export const useBuilderCanvas = () => {
     handleSave,
     saveCurrentStepElements,
     setSelectedElement,
-    isLoading
+    isLoading,
+    preventNextReload
   };
 };

@@ -774,6 +774,19 @@ export const duplicateStepAction = (set: any, get: any) => async (stepIndex: num
           )
         }));
         
+        // Notificar o Builder para prevenir recarregamento de elementos
+        // Importante: Isso só funcionará se o Builder já estiver montado
+        try {
+          // @ts-ignore - Propriedade dinâmica
+          if (window.LEADFLUX_APP_HOOKS && window.LEADFLUX_APP_HOOKS.preventCanvasReload) {
+            // @ts-ignore - Propriedade dinâmica
+            window.LEADFLUX_APP_HOOKS.preventCanvasReload();
+            console.log(`StepActions - Notificado Builder para prevenir recarregamento`);
+          }
+        } catch (hookError) {
+          console.error(`StepActions - Erro ao acessar hooks da aplicação:`, hookError);
+        }
+        
         // Aguardar o próximo ciclo de renderização antes de mudar o step atual
         // Isso dá tempo para o estado do funnel ser atualizado completamente
         setTimeout(() => {

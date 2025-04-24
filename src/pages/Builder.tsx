@@ -37,7 +37,8 @@ const Builder = () => {
     handleCanvasElementsChange,
     handleSave,
     saveCurrentStepElements,
-    setSelectedElement
+    setSelectedElement,
+    preventNextReload
   } = useBuilderCanvas();
 
   // Referência ao container principal do Builder
@@ -45,6 +46,26 @@ const Builder = () => {
   
   // Estado para armazenar a escala atual
   const [zoomScale] = useState(0.9); // 90% de zoom
+
+  // Registrar hooks globais para permitir comunicação com outras partes da aplicação
+  useEffect(() => {
+    // @ts-ignore - Definido dinamicamente
+    window.LEADFLUX_APP_HOOKS = {
+      ...window.LEADFLUX_APP_HOOKS,
+      preventCanvasReload: preventNextReload
+    };
+    
+    console.log("Builder - Hooks registrados no objeto window");
+    
+    return () => {
+      // Limpar quando o componente for desmontado
+      // @ts-ignore - Definido dinamicamente
+      if (window.LEADFLUX_APP_HOOKS) {
+        // @ts-ignore - Definido dinamicamente
+        delete window.LEADFLUX_APP_HOOKS.preventCanvasReload;
+      }
+    };
+  }, [preventNextReload]);
 
   // Initialize funnel if none is selected
   useEffect(() => {

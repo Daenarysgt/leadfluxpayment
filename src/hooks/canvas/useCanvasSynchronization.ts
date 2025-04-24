@@ -19,6 +19,7 @@ export const useCanvasSynchronization = (
   const lastSavedElementsRef = useRef<{stepId: string, elements: CanvasElement[]}>({stepId: '', elements: []});
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUpdatingCanvasRef = useRef(false);
+  const preventReloadRef = useRef(false);
 
   const handleCanvasElementsChange = useCallback((elements: CanvasElement[]) => {
     console.log(`Builder - Canvas elements updated: ${elements.length} elements`);
@@ -97,15 +98,48 @@ export const useCanvasSynchronization = (
     const stepId = currentFunnel.steps[currentStep]?.id;
     if (!stepId) return;
     
-    if (stepId !== currentStepIdRef.current) {
+    if (stepId === currentStepIdRef.current && localCanvasElements.length > 0) {
+      console.log(`Builder - Já estamos visualizando o step ${stepId} com ${localCanvasElements.length} elementos`);
+      return;
+    }
+    
+    const currentStepObj = currentFunnel.steps[currentStep];
+    const hasElementsInState = currentStepObj && 
+                              currentStepObj.canvasElements && 
+                              Array.isArray(currentStepObj.canvasElements) && 
+                              currentStepObj.canvasElements.length > 0;
+    
+    const hasPreloadedElements = window.preloadedCanvasElements && window.preloadedCanvasElements[stepId];
+    
+    if (stepId !== currentStepIdRef.current || preventReloadRef.current) {
       console.log(`Builder - Loading canvas elements for step ${currentStep} (${stepId})`);
       
       isUpdatingCanvasRef.current = true;
       setIsLoading(true);
       
-      // Função assíncrona para carregar os elementos
+      if (preventReloadRef.current) {
+        console.log(`Builder - Prevenindo recarregamento, usando elementos existentes`);
+        preventReloadRef.current = false;
+      }
+      
       (async () => {
         try {
+          if (hasElementsInState) {
+            console.log(`Builder - Usando ${currentStepObj.canvasElements.length} elementos existentes no state do step ${stepId}`);
+            
+            const elementsCopy = JSON.parse(JSON.stringify(currentStepObj.canvasElements));
+            setLocalCanvasElements(elementsCopy);
+            currentStepIdRef.current = stepId;
+            setCanvasKey(prev => prev + 1);
+            elementsSyncedRef.current = true;
+            
+            lastSavedElementsRef.current = {
+              stepId: stepId,
+              elements: elementsCopy
+            };
+            return;
+          }
+          
           const elements = await storeGetCanvasElements(stepId);
           console.log(`Builder - Retrieved ${elements ? elements.length : 0} canvas elements for step ${stepId}`);
           
@@ -193,6 +227,11 @@ export const useCanvasSynchronization = (
     }
   }, [localCanvasElements, currentFunnel, currentStep, storeSetCanvasElements]);
 
+  const preventNextReload = useCallback(() => {
+    preventReloadRef.current = true;
+    console.log(`Builder - Marcando para previnir próximo recarregamento`);
+  }, []);
+
   return {
     localCanvasElements,
     setLocalCanvasElements,
@@ -202,6 +241,7 @@ export const useCanvasSynchronization = (
     handleSave,
     saveCurrentStepElements,
     isUpdatingCanvasRef,
-    isLoading
+    isLoading,
+    preventNextReload
   };
 };
