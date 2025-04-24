@@ -413,12 +413,7 @@ const Leads = () => {
 
   const loadMetrics = async (updateState = true) => {
     try {
-      if (!currentFunnel?.id) {
-        if (updateState) {
-          setMetrics(prev => ({...prev, loadingMetrics: false}));
-        }
-        return null;
-      }
+      if (!currentFunnel?.id) return null;
       
       // Garantir que o estado de carregamento seja ativado
       if (updateState) {
@@ -430,9 +425,9 @@ const Leads = () => {
       console.log("📊 Métricas retornadas:", funnelMetrics);
       
       // Adicionar verificação para valores nulos ou indefinidos para evitar erros
-      const total = funnelMetrics?.total_sessions || 0;
-      const completion = funnelMetrics?.completion_rate || 0;
-      const interaction = funnelMetrics?.interaction_rate || 0;
+      const total = funnelMetrics?.total_sessions !== undefined ? funnelMetrics.total_sessions : 0;
+      const completion = funnelMetrics?.completion_rate !== undefined ? funnelMetrics.completion_rate : 0;
+      const interaction = funnelMetrics?.interaction_rate !== undefined ? funnelMetrics.interaction_rate : 0;
       
       // Carregar contagem de fluxos completos diretamente da API
       const { conversions } = await accessService.getFunnelStats(currentFunnel.id);
@@ -460,36 +455,11 @@ const Leads = () => {
     } catch (error) {
       console.error('❌ Erro ao carregar métricas:', error);
       
-      // Usar valores anteriores ou fallbacks
-      const fallbackMetrics = {
-        totalSessions: Math.max(10, metrics.totalSessions || 0),  // Usar valor anterior se disponível
-        completionRate: Math.max(5.5, metrics.completionRate || 0),
-        interactionRate: Math.max(8.2, metrics.interactionRate || 0),
-        todayLeads: Math.max(3, metrics.todayLeads || 0),
-        loadingMetrics: false,
-        mainSource: {
-          name: selectedSource.name,
-          percentage: Math.max(8.2, metrics.mainSource.percentage || 0)
-        },
-        completedFlows: metrics.completedFlows || 0 // Manter o valor anterior ou usar 0
-      };
-      
-      console.log("📊 Usando métricas de fallback:", fallbackMetrics);
-      
       if (updateState) {
-        setMetrics(fallbackMetrics);
+        setMetrics(prev => ({...prev, loadingMetrics: false}));
       }
       
-      return fallbackMetrics;
-    } finally {
-      // Garantir que o estado de carregamento seja sempre desativado, mesmo em caso de erro
-      if (updateState) {
-        // Reduzir o timeout para melhorar a experiência do usuário
-        setTimeout(() => {
-          setMetrics(prev => ({...prev, loadingMetrics: false}));
-          console.log("📊 Estado de carregamento das métricas desativado por timeout");
-        }, 800);  // Timeout mais curto para melhor experiência
-      }
+      return null;
     }
   };
 
@@ -1234,7 +1204,14 @@ const Leads = () => {
     // Usar useCallback para evitar recriações desnecessárias da função
     const calculateInteractionRate = useCallback(async () => {
       try {
-        if (!currentFunnel?.id) return;
+        if (!currentFunnel?.id) {
+          setInteractionRate(prev => ({ 
+            ...prev, 
+            isLoading: false,
+            hasData: true
+          }));
+          return;
+        }
         
         // Não mudar para loading se já temos dados, evita piscar durante atualizações
         if (!interactionRate.hasData) {
@@ -1285,6 +1262,7 @@ const Leads = () => {
         console.error('Erro ao calcular taxa de interação:', error);
         setInteractionRate(prev => ({ 
           ...prev, 
+          value: 0,  // Garantir que exibimos 0% em vez de estado de carregamento
           isLoading: false,
           hasData: true
         }));
@@ -1337,7 +1315,17 @@ const Leads = () => {
     // Usar useCallback para evitar recriações desnecessárias da função
     const calculateDropoffRates = useCallback(async () => {
       try {
-        if (!currentFunnel?.id) return;
+        if (!currentFunnel?.id) {
+          setDropoffData(prev => ({ 
+            ...prev,
+            highestDropoffStep: 0,
+            highestDropoffRate: 0,
+            stepName: 'Sem dados',
+            isLoading: false,
+            hasData: true
+          }));
+          return;
+        }
         
         console.log('****** INÍCIO DO CÁLCULO DE TAXAS DE ABANDONO ******');
         
@@ -1726,8 +1714,14 @@ const Leads = () => {
               {metrics.completedFlows}
             </p>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-              <ArrowUpRight className="h-3 w-3 text-green-500" />
-              <span className="text-green-500">Atualizado</span>
+              {metrics.completedFlows > 0 ? (
+                <>
+                  <ArrowUpRight className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Atualizado</span>
+                </>
+              ) : (
+                <span>Aguardando conversões</span>
+              )}
             </p>
           </>
         )}
@@ -1767,6 +1761,20 @@ const Leads = () => {
             description: "Taxa de conversão mediana"
           };
         } else {
+          // Caso especial para quando não há dados (taxa = 0)
+          if (currentConversionRate === 0 && metrics.totalSessions === 0) {
+            return {
+              color: "text-gray-600",
+              textGradient: "from-gray-600 to-gray-700",
+              bgColor: "bg-gray-300",
+              bgLight: "bg-gray-100",
+              borderColor: "border-gray-300",
+              icon: "⚪",
+              text: "Sem dados",
+              description: "Aguardando interações"
+            };
+          }
+          
           return {
             color: "text-red-600",
             textGradient: "from-red-600 to-rose-600",
@@ -1798,7 +1806,7 @@ const Leads = () => {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mt-1 ml-5">
-                Baseado na taxa de conversão atual
+                {status.description}
               </p>
             </>
           )}
