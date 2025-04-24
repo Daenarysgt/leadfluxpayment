@@ -371,58 +371,39 @@ const Leads = () => {
     }
   }, [currentFunnel?.id]);
 
-  // Nova função unificada para carregar todos os dados de forma consistente
+  // Função principal para carregar todos os dados
   const loadAllData = async (showLoading = true) => {
-      if (!currentFunnel?.id) return;
-      
     try {
       if (showLoading) {
         setIsLoading(true);
       }
       
-      console.log("🔍 Iniciando carregamento dos dados");
+      console.log('Carregando todos os dados para o funil:', currentFunnel?.id);
       
-      // Primeiro carregar os nomes das etapas, pois outros dados dependem disso
-      await loadStepNames();
-      
-      // Carregar métricas primeiro para garantir que os cards apareçam
-      await loadMetrics(true);
-      
-      // Forçar saída do estado de carregamento após um tempo máximo
-      setTimeout(() => {
-        setMetrics(prev => ({
-          ...prev, 
-          loadingMetrics: false
-        }));
-        metricsForceLoaded.current = true;
-        console.log("⏱️ Timeout de segurança para evitar carregamento infinito das métricas");
-      }, 3000);
-      
-      // Depois carregar os leads com interações em sequência para garantir consistência
-      await loadLeads();
-      
-      // Em seguida carregar os dados complementares
-      await Promise.all([
+      // Fazer todas as chamadas em paralelo
+      const [metricsPromise, leadsPromise, stepMetricsPromise, formDataPromise, stepNamesPromise] = await Promise.allSettled([
+        loadMetrics(false),
+        loadLeads(),
         loadStepMetrics(),
-        loadFormData()
+        loadFormData(), // Garantir que é carregado junto com os outros dados
+        loadStepNames()
       ]);
       
-      // Atualizar timestamp da última atualização
-      setLastUpdated(new Date());
-      console.log('✅ Todos os dados recarregados com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao carregar dados:', error);
+      console.log('Resultado das cargas de dados:', {
+        metrics: metricsPromise.status,
+        leads: leadsPromise.status,
+        stepMetrics: stepMetricsPromise.status,
+        formData: formDataPromise.status,
+        stepNames: stepNamesPromise.status
+      });
       
-      // Garantir que métricas não fiquem em estado de carregamento
-      setMetrics(prev => ({
-        ...prev,
-        loadingMetrics: false,
-        // Manter valores existentes ou usar fallbacks
-        totalSessions: prev.totalSessions || 10,
-        completionRate: prev.completionRate || 5.5,
-        interactionRate: prev.interactionRate || 8.2,
-        todayLeads: prev.todayLeads || 3
-      }));
+      // Atualizar a hora da última atualização
+      setLastUpdated(new Date());
+      
+      // Iniciar a verificação de visitantes ativos
+      loadActiveVisitors();
+    } catch (error) {
+      console.error('Erro ao carregar todos os dados:', error);
     } finally {
       if (showLoading) {
         setIsLoading(false);
@@ -786,13 +767,28 @@ const Leads = () => {
     try {
       if (!currentFunnel?.id) return;
       
-      console.log('Getting form data for funnel:', currentFunnel.id);
+      console.log('Buscando dados de formulário para o funil:', currentFunnel.id, 'período:', selectedPeriod);
       const formData = await accessService.getFunnelFormData(currentFunnel.id, selectedPeriod);
       
-      console.log('Form data found:', formData);
+      console.log('Dados de formulário encontrados:', formData.length, 'registros');
+      
+      // Adicionar logs detalhados para cada registro de formulário encontrado
+      formData.forEach((form, index) => {
+        console.log(`Formulário #${index + 1}:`, {
+          sessionId: form.sessionId,
+          data: form.submissionTime,
+          campos: {
+            nome: form.leadInfo?.name,
+            email: form.leadInfo?.email, 
+            telefone: form.leadInfo?.phone,
+            outros: Object.keys(form.leadInfo || {}).filter(key => !['name', 'email', 'phone'].includes(key))
+          }
+        });
+      });
+      
       setFormDataLeads(formData);
     } catch (error) {
-      console.error('Error loading form data:', error);
+      console.error('Erro ao carregar dados de formulário:', error);
       setFormDataLeads([]);
     }
   };
@@ -1601,6 +1597,14 @@ const Leads = () => {
 
   // Função simplificada para renderizar interações com base no tipo
   const renderInteractionCell = (interaction, stepMetric, isFirstInteractionStep, formDataForLead) => {
+    // Verificar se temos dados do formulário para mostrar
+    const hasFormData = formDataForLead && formDataForLead.leadInfo && Object.keys(formDataForLead.leadInfo).length > 0;
+    
+    // Log para depuração
+    if (hasFormData) {
+      console.log('Renderizando célula com dados do formulário:', formDataForLead.leadInfo);
+    }
+    
     // Mapear tipos de interação para renderização apropriada
     switch (interaction.type) {
       case 'choice':
@@ -1613,44 +1617,16 @@ const Leads = () => {
                 <span className="font-medium">{interaction.value}</span>
               </div>
             </div>
-          </div>
-        );
-        
-      case 'form':
-        return (
-          <div className="text-sm">
-            <div className="font-medium">Preencheu</div>
-            <div className="mt-2 text-xs text-gray-500 space-y-1">
-              {interaction.fields?.email && (
-                <div className="flex items-center gap-1">
-                  <Mail className="h-3 w-3" />
-                  <span>{interaction.fields.email}</span>
-                </div>
-              )}
-              {interaction.fields?.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-3 w-3" />
-                  <span>{interaction.fields.phone}</span>
-                </div>
-              )}
-              {interaction.fields?.text && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs">{interaction.fields.text}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      
-      case 'click':
-      default:
-        return (
-          <div className="text-sm">
-            <div className="font-medium">Clicou</div>
             
-            {/* Exibir dados do formulário na primeira etapa */}
-            {isFirstInteractionStep && formDataForLead && (
+            {/* Mostrar os dados do formulário em qualquer etapa onde houver uma escolha */}
+            {hasFormData && (
               <div className="mt-2 text-xs text-gray-500 space-y-1">
+                {(formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text) && (
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text}</span>
+                  </div>
+                )}
                 {formDataForLead.leadInfo?.email && (
                   <div className="flex items-center gap-1">
                     <Mail className="h-3 w-3" />
@@ -1663,9 +1639,63 @@ const Leads = () => {
                     <span>{formDataForLead.leadInfo.phone}</span>
                   </div>
                 )}
-                {formDataForLead.leadInfo?.text && (
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'form':
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Preencheu</div>
+            <div className="mt-2 text-xs text-gray-500 space-y-1">
+              {(interaction.fields?.name || interaction.fields?.text) && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  <span>{interaction.fields?.name || interaction.fields?.text}</span>
+                </div>
+              )}
+              {interaction.fields?.email && (
+                <div className="flex items-center gap-1">
+                  <Mail className="h-3 w-3" />
+                  <span>{interaction.fields.email}</span>
+                </div>
+              )}
+              {interaction.fields?.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span>{interaction.fields.phone}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'click':
+      default:
+        return (
+          <div className="text-sm">
+            <div className="font-medium">Clicou</div>
+            
+            {/* Mostrar dados do formulário em qualquer etapa, não apenas na primeira */}
+            {hasFormData && (
+              <div className="mt-2 text-xs text-gray-500 space-y-1">
+                {(formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text) && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs">{formDataForLead.leadInfo.text}</span>
+                    <Users className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.email}</span>
+                  </div>
+                )}
+                {formDataForLead.leadInfo?.phone && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    <span>{formDataForLead.leadInfo.phone}</span>
                   </div>
                 )}
               </div>
@@ -2259,15 +2289,43 @@ const Leads = () => {
                             {new Date(lead.firstInteraction).toLocaleDateString('pt-BR')}
                           </TableCell>
                           {stepMetrics.map((step, stepIndex) => {
-                            // Exibir informações do formulário na primeira etapa com interação
-                            const isFirstInteractionStep = stepIndex === 0;
+                            // Determinar se esta etapa tem uma interação
                             const hasInteraction = !!lead.interactions[step.step_number];
                             const interaction = lead.interactions[step.step_number];
+                            
+                            // Buscar os dados de formulário para esta sessão
+                            const formDataForLead = formDataLeads.find(form => form.sessionId === lead.sessionId);
+                            const hasFormData = formDataForLead && formDataForLead.leadInfo && Object.keys(formDataForLead.leadInfo).length > 0;
                             
                             return (
                               <TableCell key={step.step_number} className="border-r">
                                 {hasInteraction ? (
-                                  renderInteractionCell(interaction, step, isFirstInteractionStep, formDataForLead)
+                                  // Se tem interação, renderizar normalmente
+                                  renderInteractionCell(interaction, step, stepIndex === 0, formDataForLead)
+                                ) : hasFormData && stepIndex === 0 ? (
+                                  // Se não tem interação, mas tem dados de formulário, mostrar só os dados na primeira coluna
+                                  <div className="text-sm">
+                                    <div className="text-xs text-gray-500 space-y-1">
+                                      {formDataForLead.leadInfo?.name && (
+                                        <div className="flex items-center gap-1">
+                                          <Users className="h-3 w-3" />
+                                          <span>{formDataForLead.leadInfo.name}</span>
+                                        </div>
+                                      )}
+                                      {formDataForLead.leadInfo?.email && (
+                                        <div className="flex items-center gap-1">
+                                          <Mail className="h-3 w-3" />
+                                          <span>{formDataForLead.leadInfo.email}</span>
+                                        </div>
+                                      )}
+                                      {formDataForLead.leadInfo?.phone && (
+                                        <div className="flex items-center gap-1">
+                                          <Phone className="h-3 w-3" />
+                                          <span>{formDataForLead.leadInfo.phone}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 ) : ''}
                               </TableCell>
                             );
