@@ -140,27 +140,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
       {canvasElements.map((element, index) => {
         console.log("CanvasPreview - Processing element:", element.id, element.type);
         
-        // Ajustar a posição dos elementos em dispositivos móveis
+        // Manter elementos com o mesmo estilo do desktop
         const adjustedElement = { ...element };
-        
-        // Para dispositivos móveis, modificar as posições e dimensões
-        if (isMobile) {
-          // Assegurar que elementos com position tenham left=0 para evitar deslocamento
-          if (adjustedElement.position) {
-            adjustedElement.position = {
-              ...adjustedElement.position,
-              x: 0 // Forçar alinhamento à esquerda
-            };
-          }
-          
-          // Assegurar largura máxima para caber na tela
-          if (adjustedElement.dimensions) {
-            adjustedElement.dimensions = {
-              ...adjustedElement.dimensions,
-              width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
-            };
-          }
-        }
         
         // Add preview properties to the element for navigation
         const elementWithPreviewProps = {
@@ -170,23 +151,15 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
             activeStep,
             onStepChange: handleStepChange,
             funnel,
-            isMobile
+            isMobile: false // Forçar modo desktop sempre
           }
         };
         
-        // Adicionar classes específicas para telas móveis aos elementos
-        const elementWrapperClass = isMobile ? "w-full mobile-element" : "w-full";
+        // Usar a mesma classe para desktop e mobile
+        const elementWrapperClass = "w-full";
         
-        // Estilos específicos para o wrapper do elemento
-        const elementWrapperStyle: React.CSSProperties = isMobile ? {
-          position: 'relative',
-          left: '0',
-          right: '0',
-          margin: '0 auto',
-          width: '100%',
-          padding: '0',
-          transform: 'none'
-        } : {};
+        // Sem estilos específicos para mobile
+        const elementWrapperStyle: React.CSSProperties = {};
         
         return (
           <div 

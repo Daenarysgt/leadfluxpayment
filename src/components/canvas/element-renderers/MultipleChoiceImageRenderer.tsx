@@ -417,16 +417,16 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
         
-        /* Estilos adicionais para garantir a visibilidade em dispositivos móveis */
+        /* Preservar estilos desktop em dispositivos móveis */
         @media (max-width: 768px) {
           .grid-cols-2 > div {
-            min-height: 120px;
-            min-width: 0;
-            font-size: 0.9em;
+            min-height: inherit !important;
+            min-width: inherit !important;
+            font-size: inherit !important;
           }
           
           .grid-cols-2 > div .p-3 {
-            padding: 6px 8px;
+            padding: inherit !important;
           }
         }
       `}} />
