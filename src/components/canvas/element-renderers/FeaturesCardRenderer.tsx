@@ -122,98 +122,112 @@ const FeaturesCardRenderer: React.FC<ElementRendererProps> = (props) => {
           borderColor: mergedContent.borderEnabled ? mergedContent.borderColor : 'transparent',
           borderWidth: mergedContent.borderEnabled ? `${mergedContent.borderWidth}px` : '0',
           textAlign: mergedContent.alignment as any || 'left',
+          maxWidth: '100%',
+          width: '100%',
+          height: 'auto',
+          minHeight: '70px',
+          maxHeight: '100px'
         }}
       >
         {/* Barra de acento lateral */}
         <div 
-          className="absolute top-0 left-0 h-full w-2" 
+          className="absolute top-0 left-0 h-full w-1" 
           style={{ backgroundColor: mergedContent.accentBarColor || '#4ade80' }}
         />
 
         {/* Conteúdo do card com padding para acomodar a barra lateral */}
-        <div className="p-6 pl-8">
-          {/* Título e subtítulo */}
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold">{mergedContent.title}</h3>
-            {mergedContent.subtitle && (
-              <p className="text-gray-500 mt-1">{mergedContent.subtitle}</p>
-            )}
-          </div>
-
-          {/* Preço */}
-          {mergedContent.price && (
-            <div className="mb-6">
-              <span className="text-2xl font-bold">{mergedContent.price}</span>
-              {mergedContent.priceDescription && (
-                <span className="text-gray-500 ml-1">{mergedContent.priceDescription}</span>
-              )}
-            </div>
-          )}
-
-          {/* Lista de recursos */}
-          <div className="space-y-3 mb-6">
-            {mergedContent.items.map((item) => (
-              <div 
-                key={item.id} 
-                className="flex items-start"
-              >
-                {mergedContent.showIcon && (
-                  <div className="mr-3 flex-shrink-0 mt-1">
-                    <Check 
-                      size={16} 
-                      style={{ color: mergedContent.iconColor || '#22c55e' }} 
-                    />
-                  </div>
-                )}
-                
-                <div className="flex-grow">
-                  {previewMode ? (
-                    <span>{item.text}</span>
-                  ) : (
-                    <input
-                      type="text"
-                      value={item.text}
-                      onChange={(e) => handleItemTextChange(item.id, e.target.value)}
-                      className="w-full bg-transparent border-none p-0 focus:ring-0"
-                    />
-                  )}
-                </div>
-                
-                {!previewMode && (
-                  <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    className="ml-2 text-gray-400 hover:text-red-500"
-                  >
-                    ✕
-                  </button>
+        <div className="p-2 pl-3 flex h-full">
+          <div className="flex flex-col justify-between flex-1">
+            <div className="flex justify-between items-start">
+              {/* Título e subtítulo em um lado */}
+              <div className="max-w-[40%]">
+                <h3 className="text-xs font-semibold truncate">{mergedContent.title}</h3>
+                {mergedContent.subtitle && (
+                  <p className="text-gray-500 text-[10px] truncate">{mergedContent.subtitle}</p>
                 )}
               </div>
-            ))}
-            
-            {!previewMode && (
-              <button
-                onClick={handleAddItem}
-                className="mt-2 text-violet-500 hover:text-violet-700 text-sm flex items-center"
+              
+              {/* Preço no lado direito */}
+              {mergedContent.price && (
+                <div className="text-right">
+                  <span className="text-xs font-bold">{mergedContent.price}</span>
+                  {mergedContent.priceDescription && (
+                    <div className="text-gray-500 text-[9px]">{mergedContent.priceDescription}</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Lista de recursos em linha */}
+            <div className="flex flex-wrap gap-1 mt-1 mb-1">
+              {mergedContent.items.slice(0, 4).map((item) => (
+                <div 
+                  key={item.id} 
+                  className="flex items-center"
+                >
+                  {mergedContent.showIcon && (
+                    <div className="mr-0.5 flex-shrink-0">
+                      <Check 
+                        size={8} 
+                        style={{ color: mergedContent.iconColor || '#22c55e' }} 
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="flex-grow">
+                    {previewMode ? (
+                      <span className="text-[8px]">{item.text}</span>
+                    ) : (
+                      <input
+                        type="text"
+                        value={item.text}
+                        onChange={(e) => handleItemTextChange(item.id, e.target.value)}
+                        className="w-full bg-transparent border-none p-0 text-[8px] focus:ring-0"
+                      />
+                    )}
+                  </div>
+                  
+                  {!previewMode && (
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="ml-0.5 text-gray-400 hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              {/* Se houver mais itens do que os exibidos, mostrar indicador */}
+              {mergedContent.items.length > 4 && (
+                <span className="text-[8px] text-gray-500">+{mergedContent.items.length - 4} mais</span>
+              )}
+              
+              {!previewMode && (
+                <button
+                  onClick={handleAddItem}
+                  className="text-violet-500 hover:text-violet-700 text-[8px] flex items-center"
+                >
+                  +
+                </button>
+              )}
+            </div>
+
+            {/* Botão (se habilitado) */}
+            {mergedContent.button?.enabled && (
+              <Button
+                className="mt-auto transition-all text-[8px] py-0 px-1 h-4"
+                variant={mergedContent.button.variant as any || 'default'}
+                style={{
+                  backgroundColor: mergedContent.button.variant === 'default' ? mergedContent.button.color : 'transparent',
+                  color: mergedContent.button.textColor || '#ffffff',
+                  borderColor: mergedContent.button.variant !== 'default' && mergedContent.button.variant !== 'link' ? mergedContent.button.color : undefined,
+                }}
               >
-                + Adicionar recurso
-              </button>
+                {mergedContent.button.text}
+              </Button>
             )}
           </div>
-
-          {/* Botão (se habilitado) */}
-          {mergedContent.button?.enabled && (
-            <Button
-              className="mt-2 transition-all"
-              variant={mergedContent.button.variant as any || 'default'}
-              style={{
-                backgroundColor: mergedContent.button.variant === 'default' ? mergedContent.button.color : 'transparent',
-                color: mergedContent.button.textColor || '#ffffff',
-                borderColor: mergedContent.button.variant !== 'default' && mergedContent.button.variant !== 'link' ? mergedContent.button.color : undefined,
-              }}
-            >
-              {mergedContent.button.text}
-            </Button>
-          )}
         </div>
       </div>
     );

@@ -23,6 +23,7 @@ import PriceConfig from "./PriceConfig";
 import NotesConfig from "./NotesConfig";
 import TimerConfig from "./TimerConfig";
 import AccordionConfig from "./AccordionConfig";
+import FeaturesCardConfig from "./FeaturesCardConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -241,9 +242,23 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
         />
       );
       
+    case ComponentType.FeaturesCard:
+      return (
+        <FeaturesCardConfig
+          key={stableKey}
+          element={element}
+          onUpdate={onUpdate}
+        />
+      );
+      
     default:
-      console.warn(`No config panel for element type: ${element.type}`);
-      return <div className="p-4">Configuração não disponível para este elemento.</div>;
+      return (
+        <div className="p-4 border rounded-md bg-gray-50">
+          <p className="text-gray-500 text-center">
+            Não há configurações disponíveis para este tipo de elemento.
+          </p>
+        </div>
+      );
   }
 };
 
