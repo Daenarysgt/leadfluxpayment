@@ -91,9 +91,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Calcular a altura do cabeçalho fixo para o ajuste de espaçamento
   const headerHeight = validLogo ? "56px" : "24px";
+  
+  // Detectar se estamos na visualização do builder ou na URL pública
+  const isBuilderPreview = window.location.pathname.includes('/builder/');
+  const containerClass = isBuilderPreview ? "funnel-preview builder-preview" : "funnel-preview public-view";
 
   return (
-    <div className="w-full" style={customStyles}>
+    <div className={`w-full ${containerClass}`} style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -108,12 +112,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         style={{
           position: 'fixed',
           top: 0,
-          left: 0,
-          right: 0,
+          left: isBuilderPreview ? 'auto' : 0,
+          right: isBuilderPreview ? 'auto' : 0,
           zIndex: 50,
           backgroundColor: activeFunnel.settings.backgroundColor || 'white',
           padding: '8px 0 4px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          width: isBuilderPreview ? '100%' : '100vw',
+          maxWidth: isBuilderPreview ? '840px' : '100%',
+          margin: isBuilderPreview ? '0 auto' : 0
         }}
       >
         {/* Logo */}

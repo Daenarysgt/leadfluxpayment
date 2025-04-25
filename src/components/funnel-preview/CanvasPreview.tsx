@@ -89,6 +89,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
+  // Detectar se estamos na visualização do builder ou na URL pública
+  const isBuilderPreview = window.location.pathname.includes('/builder/');
+  
   // Determinar o estilo baseado na configuração e tipo de dispositivo
   let containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
@@ -104,9 +107,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   };
 
   // Classes condicionais para desktop e mobile
-  const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
-    : "w-full mx-auto min-h-[300px] rounded-lg";
+  const containerClass = isBuilderPreview 
+    ? "w-full mx-auto min-h-[300px] rounded-lg builder-canvas" 
+    : "w-full mx-auto min-h-[300px] rounded-lg public-canvas";
   
   // Adicionar logs para monitorar eventos de clique e registros de interação
 
