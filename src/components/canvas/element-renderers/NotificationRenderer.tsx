@@ -29,101 +29,103 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   // Estado para controlar visibilidade da notificação flutuante
   const [isVisible, setIsVisible] = useState(false);
   const [didInitialize, setDidInitialize] = useState(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
 
   // Refs para gerenciar recursos
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Verificação se estamos no funil público (iframe)
   const isIframe = typeof window !== 'undefined' && window.self !== window.top;
   
-  // EFEITO DE INICIALIZAÇÃO ÚNICO
-  // Este efeito roda apenas uma vez na montagem do componente
+  // Função para mostrar a notificação
+  const showNotification = () => {
+    console.log('[Notification] Mostrando notificação');
+    setIsVisible(true);
+    setDidInitialize(true);
+    
+    // Tocar o som se estiver carregado
+    if (soundEnabled && audioRef.current && audioLoaded) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play()
+        .catch(err => console.warn('[Notification] Erro ao tocar som:', err));
+    }
+    
+    // Configurar timer para esconder
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      console.log('[Notification] Escondendo notificação');
+      setIsVisible(false);
+    }, toastDuration * 1000);
+  };
+
+  // Efeito para inicializar o áudio
   useEffect(() => {
-    // Só queremos mostrar a notificação em preview ou no funil público
-    if (isIframe || previewMode) {
-      console.log('[Notification] Inicializando notificação', { isIframe, previewMode });
+    if (soundEnabled && (isIframe || previewMode)) {
+      const soundUrl = `/sounds/${soundType}.mp3`;
+      const audio = new Audio(soundUrl);
       
-      // Forçamos um delay inicial para garantir que tudo carregou
-      const initTimer = setTimeout(() => {
-        console.log('[Notification] Mostrando notificação após delay inicial');
-        setIsVisible(true);
-        setDidInitialize(true);
-        
-        // Carregar e tentar tocar o som
-        if (soundEnabled) {
-          forcePlaySound();
-        }
-        
-        // Configurar o timer para esconder a notificação
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        
-        timeoutRef.current = setTimeout(() => {
-          console.log(`[Notification] Escondendo notificação após ${toastDuration}s`);
-          setIsVisible(false);
-        }, toastDuration * 1000);
-      }, 1000);
+      audio.addEventListener('canplaythrough', () => {
+        console.log('[Notification] Áudio carregado');
+        setAudioLoaded(true);
+      });
       
-      // Limpeza ao desmontar o componente
+      audio.load();
+      audioRef.current = audio;
+      
       return () => {
-        clearTimeout(initTimer);
+        audio.removeEventListener('canplaythrough', () => {});
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+      };
+    }
+  }, [soundEnabled, soundType]);
+
+  // Efeito para inicializar o sistema de repetição
+  useEffect(() => {
+    if (isIframe || previewMode) {
+      // Primeira exibição após 1 segundo
+      const initialTimer = setTimeout(() => {
+        showNotification();
+      }, 1000);
+
+      // Configurar intervalo de repetição (a cada 30 segundos)
+      intervalRef.current = setInterval(() => {
+        showNotification();
+      }, 30000); // 30 segundos
+
+      // Cleanup
+      return () => {
+        clearTimeout(initialTimer);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
     }
-  }, []); // Dependência vazia significa que só executa na montagem
-  
-  // Função para forçar a reprodução do som de todas as formas possíveis
-  const forcePlaySound = () => {
-    try {
-      const soundUrl = `/sounds/${soundType}.mp3`;
-      console.log('[Notification] Tentando reproduzir som:', soundUrl);
-      
-      // Criar elementos de áudio
-      const audio1 = new Audio(soundUrl);
-      const audio2 = new Audio(soundUrl);
-      audioRef.current = audio1;
-      
-      // Configurar volume máximo
-      audio1.volume = 1.0;
-      audio2.volume = 1.0;
-      
-      // MÉTODO 1: Reprodução direta e imediata
-      const playPromise = audio1.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => console.log('[Notification] Som reproduzido com sucesso (método 1)'))
-          .catch(err => {
-            console.warn('[Notification] Método 1 falhou:', err);
-            
-            // MÉTODO 2: Forçar carga e tentar novamente com delay
-            audio1.load();
-            setTimeout(() => {
-              audio1.play()
-                .then(() => console.log('[Notification] Som reproduzido com sucesso (método 2)'))
-                .catch(e => console.warn('[Notification] Método 2 falhou:', e));
-            }, 500);
-          });
-      }
-      
-      // MÉTODO 3: Tentativa após interação do usuário
+  }, [isIframe, previewMode]);
+
+  // Efeito para lidar com interação do usuário (necessário para som em alguns navegadores)
+  useEffect(() => {
+    if (isIframe || previewMode) {
       const handleUserInteraction = () => {
-        audio2.play()
-          .then(() => console.log('[Notification] Som reproduzido após interação (método 3)'))
-          .catch(e => console.warn('[Notification] Método 3 falhou:', e));
-        
-        // Remover listener após tentativa
+        if (audioRef.current) {
+          audioRef.current.play()
+            .then(() => console.log('[Notification] Som ativado após interação'))
+            .catch(err => console.warn('[Notification] Erro ao ativar som:', err));
+        }
+      };
+
+      document.addEventListener('click', handleUserInteraction);
+      document.addEventListener('touchstart', handleUserInteraction);
+
+      return () => {
         document.removeEventListener('click', handleUserInteraction);
         document.removeEventListener('touchstart', handleUserInteraction);
       };
-      
-      // Adicionar listeners para interação
-      document.addEventListener('click', handleUserInteraction, { once: true });
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
-      
-    } catch (error) {
-      console.error('[Notification] Erro ao configurar áudio:', error);
     }
-  };
+  }, [isIframe, previewMode]);
   
   // Renderiza a visualização no builder/editor (estática)
   const renderEditorView = () => {
