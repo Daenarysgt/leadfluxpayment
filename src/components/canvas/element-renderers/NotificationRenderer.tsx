@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { NotificationContent } from "@/types/canvasTypes";
 import ElementWrapper from "../ElementWrapper";
+
+interface NotificationItem {
+  id: number;
+  isVisible: boolean;
+  timeoutId?: NodeJS.Timeout;
+}
 
 const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   const { element, isSelected, onSelect, onRemove, onDuplicate, onMoveUp, onMoveDown, index, totalElements, previewMode } = props;
   const content = element.content as NotificationContent || {};
   
-  // Valores padrão com novo estilo
+  // Valores padrão
   const {
     notificationTitle = "Venda realizada com o Pix",
     notificationText = "Sua comissão: R$34,90",
@@ -26,43 +32,50 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   } = content;
 
   // Estados
-  const [notifications, setNotifications] = useState<Array<{id: number, visible: boolean}>>([]);
-  const [isPublic] = useState(typeof window !== 'undefined' && (window.self !== window.top || previewMode));
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isPublic] = useState(() => typeof window !== 'undefined' && (window.self !== window.top || previewMode));
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Função para criar uma nova notificação
-  const createNotification = () => {
-    const newNotification = { id: Date.now(), visible: true };
-    
+  const createNotification = useCallback(() => {
+    const newNotification: NotificationItem = {
+      id: Date.now(),
+      isVisible: true
+    };
+
     setNotifications(prev => {
-      // Mantém apenas as últimas notificações baseado no stackSize
+      // Remove notificações antigas se exceder o limite
       const updated = [newNotification, ...prev].slice(0, stackSize);
       return updated;
     });
 
-    // Remove a notificação após o tempo definido
-    setTimeout(() => {
-      setNotifications(prev => 
-        prev.filter(n => n.id !== newNotification.id)
-      );
+    // Configura o timeout para remover a notificação
+    const timeoutId = setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
     }, displayDuration * 1000);
 
-    // Toca o som se habilitado
+    // Atualiza a notificação com o ID do timeout
+    setNotifications(prev => 
+      prev.map(n => n.id === newNotification.id ? { ...n, timeoutId } : n)
+    );
+
+    // Toca o som
     if (soundEnabled && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(err => console.warn('Erro ao tocar som:', err));
     }
-  };
+  }, [stackSize, displayDuration, soundEnabled]);
 
   // Efeito para inicializar o áudio
   useEffect(() => {
     if (soundEnabled && isPublic) {
       const audio = new Audio(`/sounds/${soundType}.mp3`);
       audioRef.current = audio;
-      
+
       return () => {
         if (audioRef.current) {
           audioRef.current.pause();
@@ -72,23 +85,40 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
     }
   }, [soundEnabled, soundType, isPublic]);
 
-  // Efeito para iniciar o sistema de notificações
+  // Efeito para inicializar o sistema de notificações
   useEffect(() => {
-    if (isPublic && enabled) {
+    if (!isInitialized && isPublic && enabled) {
+      setIsInitialized(true);
+
       // Primeira notificação após 2 segundos
-      const initialTimer = setTimeout(createNotification, 2000);
-      
-      // Cria novas notificações periodicamente
+      const initialTimer = setTimeout(() => {
+        createNotification();
+      }, 2000);
+
+      // Configura o intervalo para novas notificações
       intervalRef.current = setInterval(createNotification, 15000);
 
       return () => {
         clearTimeout(initialTimer);
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       };
     }
-  }, [isPublic, enabled]);
+  }, [isPublic, enabled, isInitialized, createNotification]);
+
+  // Limpa todas as notificações e timeouts quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      notifications.forEach(notification => {
+        if (notification.timeoutId) {
+          clearTimeout(notification.timeoutId);
+        }
+      });
+      setNotifications([]);
+    };
+  }, []);
 
   // Renderiza a visualização estática para o editor
   const renderEditorView = () => {
@@ -133,14 +163,16 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
         className={`fixed ${positionClasses[position]} z-[9999] flex flex-col gap-2`}
         style={{ pointerEvents: 'none' }}
       >
-        {notifications.map((notification, index) => (
+        {notifications.map((notification) => (
           <div
             key={notification.id}
-            className="flex items-start gap-3 p-4 rounded-lg shadow-lg transition-all duration-500"
+            className={`
+              flex items-start gap-3 p-4 rounded-lg shadow-lg
+              transform transition-all duration-500 ease-in-out
+              ${notification.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+            `}
             style={{
               backgroundColor,
-              opacity: notification.visible ? 1 : 0,
-              transform: `translateY(${notification.visible ? 0 : 20}px)`,
               maxWidth: '380px',
             }}
           >
