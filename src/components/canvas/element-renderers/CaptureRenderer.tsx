@@ -61,6 +61,50 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   const textColor = content?.style?.textColor || "#000000";
   const placeholderColor = content?.style?.placeholderColor || "#71717A";
   
+  // Efeito para salvar dados de campo de texto automaticamente depois de 500ms
+  useEffect(() => {
+    if (!previewMode || !previewProps?.funnel) return;
+    
+    // Verificar se há valores preenchidos
+    const hasValues = captureFields.some(field => formValues[field.id]?.trim());
+    if (!hasValues) return;
+    
+    // Timer para salvar os dados após um período de inatividade
+    const timer = setTimeout(async () => {
+      // Verificar se algum campo de texto está preenchido
+      const textFieldsFilled = captureFields
+        .filter(field => field.type === 'text')
+        .some(field => formValues[field.id]?.trim());
+      
+      if (textFieldsFilled) {
+        // Monta o objeto com os dados dos campos preenchidos
+        const formData: Record<string, string> = {};
+        captureFields.forEach(field => {
+          if (formValues[field.id]?.trim()) {
+            formData[field.type] = formValues[field.id];
+          }
+        });
+        
+        // Só envia se tiver dados
+        if (Object.keys(formData).length > 0) {
+          try {
+            // Enviar dados para o serviço
+            await accessService.saveCaptureFormData(
+              previewProps.funnel.id,
+              null, // sessionId será preenchido pelo serviço
+              formData
+            );
+            console.log('Dados do formulário salvos automaticamente:', formData);
+          } catch (error) {
+            console.error("Erro ao salvar dados do formulário automaticamente:", error);
+          }
+        }
+      }
+    }, 500); // 500ms de delay para evitar muitas requisições
+    
+    return () => clearTimeout(timer);
+  }, [previewMode, previewProps, formValues, captureFields]);
+  
   const handleChange = (fieldId: string, value: string) => {
     setFormValues(prev => ({
       ...prev,
@@ -274,6 +318,38 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     "--placeholder-color": placeholderColor
   } as React.CSSProperties;
 
+  // Função para salvar dados quando o usuário sai do campo
+  const handleBlur = async () => {
+    if (!previewMode || !previewProps?.funnel) return;
+    
+    // Verificar se há valores preenchidos
+    const hasValues = captureFields.some(field => formValues[field.id]?.trim());
+    if (!hasValues) return;
+    
+    // Monta o objeto com os dados dos campos preenchidos
+    const formData: Record<string, string> = {};
+    captureFields.forEach(field => {
+      if (formValues[field.id]?.trim()) {
+        formData[field.type] = formValues[field.id];
+      }
+    });
+    
+    // Só envia se tiver dados
+    if (Object.keys(formData).length > 0) {
+      try {
+        // Enviar dados para o serviço
+        await accessService.saveCaptureFormData(
+          previewProps.funnel.id,
+          null, // sessionId será preenchido pelo serviço
+          formData
+        );
+        console.log('Dados do formulário salvos ao sair do campo:', formData);
+      } catch (error) {
+        console.error("Erro ao salvar dados do formulário ao sair do campo:", error);
+      }
+    }
+  };
+
   return (
     <BaseElementRenderer {...props}>
       <div className="p-4 w-full" style={containerStyle}>
@@ -293,6 +369,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
                 placeholder={field.placeholder}
                 value={formValues[field.id] || ''}
                 onChange={(e) => handleChange(field.id, e.target.value)}
+                onBlur={handleBlur}
                 className="w-full [&::placeholder]:text-[var(--placeholder-color)]"
                 style={inputStyle}
                 required

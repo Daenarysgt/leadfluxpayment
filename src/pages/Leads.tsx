@@ -598,6 +598,9 @@ const Leads = () => {
               // Identificar se este é um multiple choice padrão conhecido
               const isKnownMultipleChoice = multipleChoiceSteps[stepNumber];
               
+              // Verificar se este é um formulário com campo de texto
+              const hasTextField = formData && formData.leadInfo && ('text' in formData.leadInfo);
+              
               // Determinar o tipo de interação
               if (formData && stepNumber === '1') {
                 // Interação de formulário (captura)
@@ -607,6 +610,11 @@ const Leads = () => {
                   fields: formData.leadInfo || {},
                   timestamp: new Date(interaction.timestamp || lead.firstInteraction)
                 };
+                
+                // Se temos um campo de texto, garantir que ele seja exibido
+                if (hasTextField) {
+                  console.log('Formulário com campo de texto encontrado:', formData.leadInfo.text);
+                }
               } else if (choiceValue || isKnownMultipleChoice) {
                 // Interação de múltipla escolha (de qualquer tipo)
                 processedInteractions[stepNumber] = {
@@ -750,15 +758,23 @@ const Leads = () => {
       
       // Adicionar logs detalhados para cada registro de formulário encontrado
       formData.forEach((form, index) => {
+        // Garantir que os dados de leadInfo não sejam nulos
+        form.leadInfo = form.leadInfo || {};
+        
+        // Verificar se existem campos do tipo 'text' nos dados
+        const hasTextField = Object.keys(form.leadInfo).includes('text');
+        
         console.log(`Formulário #${index + 1}:`, {
           sessionId: form.sessionId,
           data: form.submissionTime,
           campos: {
             nome: form.leadInfo?.name,
+            texto: form.leadInfo?.text,
             email: form.leadInfo?.email, 
             telefone: form.leadInfo?.phone,
-            outros: Object.keys(form.leadInfo || {}).filter(key => !['name', 'email', 'phone'].includes(key))
-          }
+            outrosCampos: Object.keys(form.leadInfo).filter(key => !['name', 'text', 'email', 'phone'].includes(key))
+          },
+          possuiCampoTexto: hasTextField
         });
       });
       
@@ -2320,10 +2336,10 @@ const Leads = () => {
                                   // Se não tem interação, mas tem dados de formulário, mostrar só os dados na primeira coluna
                                   <div className="text-sm">
                                     <div className="text-xs text-gray-500 space-y-1">
-                                      {formDataForLead.leadInfo?.name && (
+                                      {(formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text) && (
                                         <div className="flex items-center gap-1">
                                           <Users className="h-3 w-3" />
-                                          <span>{formDataForLead.leadInfo.name}</span>
+                                          <span>{formDataForLead.leadInfo?.name || formDataForLead.leadInfo?.text}</span>
                                         </div>
                                       )}
                                       {formDataForLead.leadInfo?.email && (
