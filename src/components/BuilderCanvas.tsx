@@ -380,6 +380,7 @@ const BuilderCanvas = ({
           transition: 'all 0.3s ease',
           paddingLeft: '16px',
           paddingRight: '16px',
+          paddingBottom: isExternalDragOver ? '50px' : '0px',
           minHeight: isCanvasEmpty ? '200px' : 'auto'
         }}
         onDragOver={handleCanvasDragOver}
@@ -469,6 +470,42 @@ const BuilderCanvas = ({
               </div>
             );
           })}
+        </div>
+        
+        {/* Área visível para arrastar no final do canvas */}
+        <div
+          className={cn(
+            "w-full transition-all py-2",
+            isExternalDragOver ? "h-20 opacity-100" : "h-10 opacity-0"
+          )}
+          style={{
+            marginTop: '10px',
+            border: isExternalDragOver ? '2px dashed #8b5cf6' : 'none',
+            borderRadius: '6px',
+            backgroundColor: isExternalDragOver ? 'rgba(139, 92, 246, 0.05)' : 'transparent',
+            // Propriedades extras para garantir o comportamento correto
+            position: 'relative',
+            cursor: 'pointer'
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!isExternalDragOver && 
+                e.dataTransfer.types.includes("componentType") && 
+                !e.dataTransfer.types.includes("elementId")) {
+              setIsExternalDragOver(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+            setIsExternalDragOver(false);
+          }}
+          onDrop={handleCanvasDrop}
+        >
+          {isExternalDragOver && (
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-violet-500 text-sm">Solte para adicionar no final</p>
+            </div>
+          )}
         </div>
       </div>
     </CanvasDropZone>

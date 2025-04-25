@@ -23,13 +23,29 @@ export const useCanvasResize = () => {
       containerEl.style.display = 'flex';
       containerEl.style.flexDirection = 'column';
       
-      // Ajustar qualquer 'padding-bottom' que possa estar causando o espaço em branco
+      // Ajustar qualquer 'padding-bottom' excessivo que possa estar causando o espaço em branco
+      // Mas preservar um pequeno padding para permitir o drag and drop
       canvasElements.forEach((element) => {
         const el = element as HTMLElement;
-        if (getComputedStyle(el).paddingBottom !== '0px') {
-          el.style.paddingBottom = '0';
+        const paddingBottom = parseInt(getComputedStyle(el).paddingBottom, 10);
+        
+        // Se o padding-bottom for excessivo (mais de 60px), reduzir para um valor razoável
+        if (paddingBottom > 60) {
+          el.style.paddingBottom = '60px'; // Manter espaço suficiente para drag-and-drop
+        } else if (paddingBottom === 0) {
+          // Garantir um espaço mínimo para permitir drag-and-drop
+          el.style.paddingBottom = '20px';
         }
       });
+      
+      // Garantir que a área de arrastar esteja visível
+      const dropArea = document.querySelector('[class*="canvas"] > div:last-child');
+      if (dropArea) {
+        const dropAreaEl = dropArea as HTMLElement;
+        dropAreaEl.style.visibility = 'visible';
+        dropAreaEl.style.opacity = '1';
+        dropAreaEl.style.pointerEvents = 'auto';
+      }
     }
   }, []);
   

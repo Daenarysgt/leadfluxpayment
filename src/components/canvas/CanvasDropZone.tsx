@@ -57,16 +57,21 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
         // Check if the drag is over our drop zone or one of its children
         if (dropZoneRef.current) {
           const rect = dropZoneRef.current.getBoundingClientRect();
+          
+          // Ampliar um pouco a área de detecção na parte inferior
+          // para facilitar o drop em elementos no final do canvas
+          const extendedBottom = rect.bottom + 50;
+          
           if (
             e.clientX >= rect.left &&
             e.clientX <= rect.right &&
             e.clientY >= rect.top &&
-            e.clientY <= rect.bottom
+            e.clientY <= extendedBottom  // Área estendida para baixo
           ) {
-            // If we're over our element, set dragging to true
+            // Se estamos sobre nosso elemento, ativar o modo de arrastar
             setIsDragging(true);
             
-            // Clear any existing timer
+            // Limpar qualquer timer existente
             if (isDraggingTimer.current) {
               clearTimeout(isDraggingTimer.current);
             }
@@ -154,6 +159,12 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      style={{
+        // Garantir que tenha uma área mínima para drop mesmo quando vazio
+        minHeight: isEmpty ? '300px' : 'auto',
+        // Garantir um espaço no final para facilitar o drop de novos elementos
+        paddingBottom: '60px'
+      }}
     >
       {isDragging && (
         <div className="absolute inset-0 bg-violet-100/50 flex items-center justify-center z-40 pointer-events-none border-2 border-dashed border-violet-400">
@@ -169,6 +180,20 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
       )}
       
       {children}
+      
+      {/* Adicionar uma área extra de drop no final do canvas */}
+      {!isEmpty && !isDragging && (
+        <div 
+          className="w-full h-20 mt-4 opacity-0 hover:opacity-30 transition-opacity"
+          style={{
+            border: '2px dashed transparent',
+            borderRadius: '6px',
+            marginBottom: '20px',
+            backgroundColor: 'transparent',
+            pointerEvents: 'none' // Não interfere com outros elementos
+          }}
+        />
+      )}
     </div>
   );
 };
