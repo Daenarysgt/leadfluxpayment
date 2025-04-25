@@ -355,85 +355,70 @@ const BuilderCanvas = ({
     <CanvasDropZone 
       onDrop={handleDrop}
       isEmpty={isCanvasEmpty}
+      onDragOver={handleCanvasDragOver}
+      onDragLeave={handleCanvasDragLeave}
+      onCanvasDrop={handleCanvasDrop}
     >
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto pb-10 rounded-lg relative", 
-          isMobile ? "max-w-[375px]" : "max-w-[600px]",
-          isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
+          "canvas-container w-full rounded-lg border bg-white mx-auto relative",
+          isMobile ? "max-w-[380px]" : "max-w-[800px]",
+          isExternalDragOver && "border-dashed border-primary border-2 bg-accent/10"
         )}
-        style={{
-          backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
-          transition: 'all 0.3s ease',
-          // Adicionar padding extra lateral apenas para o canvas (não para os elementos)
-          // para permitir espaço para os controles flutuantes externos
-          paddingLeft: '16px',
-          paddingRight: '16px'
-        }}
-        onDragOver={handleCanvasDragOver}
-        onDragLeave={handleCanvasDragLeave}
-        onDrop={handleCanvasDrop}
+        style={{ minHeight: '300px', paddingBottom: '100px' }}
       >
-        {isExternalDragOver && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-            <div className="bg-white/80 rounded-lg shadow-sm px-4 py-2 text-center">
-              <p className="text-violet-600 font-medium">Solte para adicionar aqui</p>
+        <div className="p-4 w-full" style={{ paddingBottom: '100px' }}>
+          {currentFunnel?.settings?.logo && (
+            <div className="w-full flex justify-center mb-4">
+              <img 
+                src={validateLogo(currentFunnel.settings.logo) || undefined} 
+                alt="Logo do funil" 
+                className="h-16 object-contain" 
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
             </div>
-          </div>
-        )}
-        
-        {currentFunnel?.settings.showProgressBar && (
-          <div className="mb-6">
-            {currentFunnel.settings.logo && (
-              <>
-                {validateLogo(currentFunnel.settings.logo) && (
-                  <div className="w-full flex justify-center py-4 mb-2">
-                    <img 
-                      src={validateLogo(currentFunnel.settings.logo)} 
-                      alt="Logo" 
-                      className="max-h-14 object-contain"
-                      onError={(e) => {
-                        console.error("BuilderCanvas - Erro ao carregar logo:", e);
-                        // Esconder o elemento em caso de erro
-                        e.currentTarget.style.display = 'none';
-                      }}
-                      onLoad={() => {
-                        console.log("BuilderCanvas - Logo carregado com sucesso");
-                      }}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-            <ProgressBar 
-              currentStep={currentStep}
-              totalSteps={currentFunnel.steps.length}
-              primaryColor={currentFunnel.settings.primaryColor}
-            />
-          </div>
-        )}
-        <div className="relative" style={{ marginLeft: '-16px', marginRight: '-16px' }}>
+          )}
+
+          {displayElements.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-lg text-center">
+              <h3 className="text-xl font-medium mb-2">Esta etapa está vazia</h3>
+              <p className="text-muted-foreground mb-4">Arraste e solte elementos do painel lateral para começar a construir.</p>
+            </div>
+          )}
+
           {displayElements.map((element, index) => {
-            // Create a unique key that forces re-render when elements or selections change
             const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
             
             return (
               <div 
                 key={key} 
                 className={cn(
-                  "relative transition-all",
-                  dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+                  "relative transition-transform duration-100 ease-out mb-4 rounded",
+                  element.id === draggedElementId && "opacity-50 transform translate-y-2",
+                  element.id === dropTargetId && "drop-highlight",
                 )}
+                draggable={true}
+                data-element-id={element.id}
+                onDragStart={(e) => {
+                  console.log("Element - onDragStart", element.id);
+                  e.dataTransfer.setData("elementId", element.id);
+                  handleDragStart(element.id);
+                }}
+                onDragEnd={() => {
+                  console.log("Element - onDragEnd", element.id);
+                  handleDragEnd();
+                }}
                 onDragEnter={(e) => handleDragEnter(e, element.id)}
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                 }}
                 onDrop={handleElementDrop}
-                // Remover espaçamentos entre elementos para igualar ao preview
                 style={{ 
-                  marginBottom: '0px',
+                  marginBottom: '12px',
                   paddingLeft: '16px',
                   paddingRight: '16px'
                 }}

@@ -5,9 +5,19 @@ interface CanvasDropZoneProps {
   onDrop: (componentType: string) => void;
   isEmpty: boolean;
   children: React.ReactNode;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onCanvasDrop?: (e: React.DragEvent) => void;
 }
 
-const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
+const CanvasDropZone = ({ 
+  onDrop, 
+  isEmpty, 
+  children, 
+  onDragOver: externalDragOver, 
+  onDragLeave: externalDragLeave,
+  onCanvasDrop: externalCanvasDrop
+}: CanvasDropZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [showEmptyMessage, setShowEmptyMessage] = useState(false);
   const emptyMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -103,6 +113,11 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
     e.preventDefault();
     e.stopPropagation();
     
+    // Call external handler if provided
+    if (externalDragOver) {
+      externalDragOver(e);
+    }
+    
     // Only show the drop indicator for new components, not for reordering
     if (e.dataTransfer.types.includes("componentType") && 
         !e.dataTransfer.types.includes("elementId") && 
@@ -112,6 +127,11 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
   };
   
   const handleDragLeave = (e: React.DragEvent) => {
+    // Call external handler if provided
+    if (externalDragLeave) {
+      externalDragLeave(e);
+    }
+    
     // Check if the drag has actually left the drop zone (not just entered a child)
     if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
       // Use a small delay to prevent flickering when moving between elements
@@ -129,6 +149,12 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    
+    // Call external handler if provided
+    if (externalCanvasDrop) {
+      externalCanvasDrop(e);
+      return; // Let the external handler handle it completely
+    }
     
     // Get component type from the drop data
     const componentType = e.dataTransfer.getData("componentType");

@@ -1,0 +1,49 @@
+/* Estilos específicos para o builder */
+
+/* Ajustes para o zoom de 90% */
+.builder-container {
+  transform: scale(0.90);
+  transform-origin: 0 0;
+  width: 111.12vw !important; /* 100/0.9 = ~111.11 */
+  height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+  overflow: hidden !important;
+}
+
+/* Ajustes para o ScrollArea */
+.builder-scroll-area .scroll-area-viewport {
+  padding-bottom: 100px !important;
+}
+
+/* Estilos para o canvas */
+.canvas-container {
+  min-height: 300px;
+  padding-bottom: 100px !important;
+  margin-bottom: 100px !important;
+}
+
+/* Evitar problemas de borda no rodapé */
+.canvas-container::after {
+  content: '';
+  display: block;
+  height: 100px;
+  width: 100%;
+  position: relative;
+  bottom: 0;
+}
+
+/* Garantir que os elementos tenham espaçamento adequado */
+.canvas-element-wrapper {
+  margin-bottom: 15px !important;
+}
+
+/* Ajuste específico para dispositivos móveis */
+@media (max-width: 768px) {
+  .canvas-container {
+    padding-bottom: 150px !important;
+    margin-bottom: 150px !important;
+  }
+  
+  .builder-scroll-area .scroll-area-viewport {
+    padding-bottom: 150px !important;
+  }
+} 

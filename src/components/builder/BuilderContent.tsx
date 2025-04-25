@@ -52,7 +52,7 @@ const BuilderContent = ({
               </div>
             </ScrollArea>
           ) : (
-            <ScrollArea className="h-[calc(100vh-64px)]">
+            <ScrollArea className="h-[calc(100vh-64px)] builder-scroll-area" extraPadding={true}>
               <div className="p-6">
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}

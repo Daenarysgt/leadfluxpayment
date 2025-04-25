@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import BuilderContent from "@/components/builder/BuilderContent";
 import BuilderEmptyState from "@/components/builder/BuilderEmptyState";
+import "@/components/builder/BuilderStyles.css"; // Importar os estilos específicos
 
 const Builder = () => {
   const { toast } = useToast();
@@ -128,6 +129,7 @@ const Builder = () => {
         transform-origin: 0 0;
         width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
         height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+        overflow: hidden !important;
       }
       
       /* Ajustes para resolver o espaço no rodapé */
@@ -135,6 +137,7 @@ const Builder = () => {
         min-height: 111.12vh !important;
         display: flex !important;
         flex-direction: column !important;
+        overflow: hidden !important;
       }
       
       /* Garantir que o conteúdo principal preencha todo o espaço disponível */
@@ -165,6 +168,23 @@ const Builder = () => {
         min-height: calc(111.12vh - 57px) !important;
         overflow-y: auto !important;
       }
+      
+      /* Correção para evitar borda no rodapé quando há muitos elementos */
+      [class*="scroll-area"] {
+        overflow: hidden !important;
+        padding-bottom: 50px !important; /* Padding extra para evitar borda no fim da página */
+      }
+      
+      [class*="scroll-area"] [class*="scroll-area-viewport"] {
+        overflow-y: auto !important;
+        padding-bottom: 50px !important; /* Padding extra para evitar borda no fim da página */
+      }
+      
+      /* Ajuste específico para o canvas com muitos elementos */
+      [class*="BuilderCanvas"] {
+        padding-bottom: 50px !important;
+        margin-bottom: 50px !important;
+      }
     `;
     
     // Adicionar ao head
@@ -190,6 +210,30 @@ const Builder = () => {
           panelElement.style.minHeight = 'calc(111.12vh - 57px)';
           panelElement.style.overflowY = 'auto';
         });
+        
+        // Ajustar áreas de scroll e canvas
+        const scrollAreas = document.querySelectorAll('[class*="scroll-area"]');
+        scrollAreas.forEach((area: Element) => {
+          const areaElement = area as HTMLElement;
+          areaElement.style.overflow = 'hidden';
+          areaElement.style.paddingBottom = '50px';
+        });
+        
+        // Ajustar viewports das áreas de scroll
+        const scrollViewports = document.querySelectorAll('[class*="scroll-area-viewport"]');
+        scrollViewports.forEach((viewport: Element) => {
+          const viewportElement = viewport as HTMLElement;
+          viewportElement.style.overflowY = 'auto';
+          viewportElement.style.paddingBottom = '50px';
+        });
+        
+        // Ajustar o canvas
+        const canvasElements = document.querySelectorAll('[class*="BuilderCanvas"]');
+        canvasElements.forEach((canvas: Element) => {
+          const canvasElement = canvas as HTMLElement;
+          canvasElement.style.paddingBottom = '50px';
+          canvasElement.style.marginBottom = '50px';
+        });
       }
     };
     
@@ -197,6 +241,8 @@ const Builder = () => {
     setTimeout(applySpecificFixes, 100);
     // Executar também depois de 500ms para maior garantia
     setTimeout(applySpecificFixes, 500);
+    // Executar novamente após 1s para casos em que o DOM muda
+    setTimeout(applySpecificFixes, 1000);
     
     // Limpar ao desmontar
     return () => {
@@ -216,7 +262,7 @@ const Builder = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50" ref={builderContainerRef}>
+    <div className="flex flex-col h-screen bg-gray-50 builder-container" ref={builderContainerRef}>
       <BuilderHeader 
         funnelName={currentFunnel.name}
         funnelId={currentFunnel.id}
