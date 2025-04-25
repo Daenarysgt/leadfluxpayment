@@ -135,8 +135,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
         ...containerStyles,
         minHeight: 'max-content',
         paddingBottom: '2rem',
-        paddingTop: '0', // Remover padding superior
-        marginTop: '-5px', // Adicionar margem negativa para aproximar do header
+        paddingTop: '0.5rem' // Reduzir o padding superior
       }}
     >
       {canvasElements.map((element, index) => {
