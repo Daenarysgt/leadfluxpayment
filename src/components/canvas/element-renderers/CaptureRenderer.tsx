@@ -331,6 +331,9 @@ const CaptureRenderer = (props: ElementRendererProps) => {
         text-align: ${placeholderAlignment} !important;
         color: ${placeholderColor} !important;
       }
+      .capture-input-${element.id} {
+        text-align: ${placeholderAlignment};
+      }
     `;
     document.head.appendChild(styleEl);
     
@@ -391,29 +394,32 @@ const CaptureRenderer = (props: ElementRendererProps) => {
         
         {!submitted ? (
           <form onSubmit={handleSubmit} className="space-y-2 flex flex-col items-center w-full">
-            <div style={{ width: `${fieldWidth}%` }} className="flex flex-col items-center w-full">
-              {captureFields.map((field) => (
-                <Input
-                  key={field.id}
-                  type={getInputType(field.type)}
-                  placeholder={field.placeholder}
-                  value={formValues[field.id] || ''}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                  onBlur={handleBlur}
-                  className={`w-full mb-2 capture-input-${element.id}`}
-                  style={inputStyle}
-                  required
-                />
-              ))}
+            <div className="w-full flex flex-col items-center">
+              <div style={{ width: `${fieldWidth}%` }} className="w-full">
+                {captureFields.map((field) => (
+                  <Input
+                    key={field.id}
+                    type={getInputType(field.type)}
+                    placeholder={field.placeholder}
+                    value={formValues[field.id] || ''}
+                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    onBlur={handleBlur}
+                    className={`w-full mb-2 capture-input-${element.id}`}
+                    style={inputStyle}
+                    required
+                  />
+                ))}
+              </div>
               {showButton && (
                 <Button 
-                  type="submit" 
-                  className="w-full"
+                  type="submit"
                   style={{ 
                     backgroundColor: primaryColor,
                     borderColor: primaryColor,
-                    borderRadius: `${borderRadius}px`
+                    borderRadius: `${borderRadius}px`,
+                    width: `${fieldWidth}%`
                   }}
+                  className="mt-2"
                 >
                   {buttonText}
                 </Button>
