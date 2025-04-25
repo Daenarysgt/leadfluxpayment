@@ -641,6 +641,72 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
     });
   };
 
+  const handleOptionSelectedBackgroundColorChange = (optionId: string, backgroundColor: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            selectedBackgroundColor: backgroundColor 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
+  const handleOptionSelectedBorderColorChange = (optionId: string, borderColor: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            selectedBorderColor: borderColor 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
+  const handleOptionSelectedTextColorChange = (optionId: string, textColor: string) => {
+    const updatedOptions = element.content.options.map((option: any) => {
+      if (option.id === optionId) {
+        return { 
+          ...option, 
+          style: { 
+            ...(option.style || {}), 
+            selectedTextColor: textColor 
+          } 
+        };
+      }
+      return option;
+    });
+    
+    onUpdate({
+      content: {
+        ...element.content,
+        options: updatedOptions
+      }
+    });
+  };
+
   return (
     <div className="p-4 pb-16 space-y-6">
       <Tabs defaultValue="content" value={activeTab} onValueChange={setActiveTab}>
@@ -670,12 +736,14 @@ const MultipleChoiceConfig = ({ element, onUpdate }: MultipleChoiceConfigProps) 
             onOptionBackgroundColorChange={handleOptionBackgroundColorChange}
             onOptionBorderColorChange={handleOptionBorderColorChange}
             onOptionTextColorChange={handleOptionTextColorChange}
+            onSelectedBackgroundColorChange={handleOptionSelectedBackgroundColorChange}
+            onSelectedBorderColorChange={handleOptionSelectedBorderColorChange}
+            onSelectedTextColorChange={handleOptionSelectedTextColorChange}
             onOptionNavigationTypeChange={handleOptionNavigationTypeChange}
             onOptionStepIdChange={handleOptionStepIdChange}
             onOptionUrlChange={handleOptionUrlChange}
             onDeleteOption={handleDeleteOption}
             onAddOption={handleAddOption}
-            onOptionSelectedStyleChange={handleOptionSelectedStyleChange}
           />
         </TabsContent>
         

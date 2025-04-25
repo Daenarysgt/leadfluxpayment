@@ -363,9 +363,25 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   };
   
   // Definir o estilo das opções com base na configuração
-  const getOptionStyle = (isSelected: boolean) => {
+  const getOptionStyle = (isSelected: boolean, option: any) => {
+    // Obter estilos personalizados da opção, se existirem
+    const optionCustomStyle = option.style || {};
+    
+    // Usar cores personalizadas da opção quando disponíveis, caso contrário usar valores padrão
+    const backgroundColor = isSelected 
+      ? optionCustomStyle.selectedBackgroundColor || `${indicatorColor}10`
+      : optionCustomStyle.backgroundColor || 'white';
+    
+    const borderColor = isSelected 
+      ? optionCustomStyle.selectedBorderColor || indicatorColor 
+      : optionCustomStyle.borderColor || '#e2e8f0';
+    
+    const textColor = isSelected
+      ? optionCustomStyle.selectedTextColor || 'inherit'
+      : optionCustomStyle.textColor || 'inherit';
+
     let optionStyle: React.CSSProperties = {
-      border: `1px solid ${isSelected ? indicatorColor : '#e2e8f0'}`,
+      border: `1px solid ${borderColor}`,
       borderRadius: `${borderRadiusValue}px`,
       padding: '10px 16px',
       cursor: 'pointer',
@@ -374,7 +390,8 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       alignItems: 'center',
       justifyContent: indicatorAlign === 'left' ? 'flex-start' : 'space-between',
       gap: '12px',
-      backgroundColor: isSelected ? `${indicatorColor}10` : 'white',
+      backgroundColor,
+      color: textColor,
       fontFamily: formatFontFamily(fontFamily),
       fontSize: `${optionFontSize}px`,
       fontWeight: optionsBold ? 'bold' : 'normal'
@@ -392,9 +409,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       case 'neumorphism':
         optionStyle = {
           ...optionStyle,
-          backgroundColor: '#f0f0f0',
+          backgroundColor: backgroundColor !== 'white' ? backgroundColor : '#f0f0f0',
           boxShadow: isSelected
-            ? `inset 3px 3px 6px rgba(0,0,0,0.2), inset -3px -3px 6px rgba(255,255,255,0.7), 0 0 0 2px ${indicatorColor}`
+            ? `inset 3px 3px 6px rgba(0,0,0,0.2), inset -3px -3px 6px rgba(255,255,255,0.7), 0 0 0 2px ${borderColor}`
             : '3px 3px 6px rgba(0,0,0,0.2), -3px -3px 6px rgba(255,255,255,0.7)',
           border: 'none'
         };
@@ -404,7 +421,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
           ...optionStyle,
           backgroundColor: isSelected ? `${indicatorColor}20` : 'rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(7px)',
-          border: isSelected ? `1px solid ${indicatorColor}60` : '1px solid rgba(255, 255, 255, 0.3)',
+          border: isSelected ? `1px solid ${borderColor}60` : '1px solid rgba(255, 255, 255, 0.3)',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
         };
         break;
@@ -464,10 +481,13 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             const isSelected = selectedOptions.includes(option.id);
             const shouldShowIndicator = showIndicators;
             
+            // Obter o estilo personalizado da opção
+            const optionStyle = getOptionStyle(isSelected, option);
+            
             return (
               <div
                 key={option.id}
-                style={getOptionStyle(isSelected)}
+                style={optionStyle}
                 className="group"
                 onClick={() => handleOptionClick(option)}
                 role="button"

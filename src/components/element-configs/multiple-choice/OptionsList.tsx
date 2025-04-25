@@ -17,7 +17,7 @@ interface OptionsListProps {
       selectedTextColor?: string;
     };
     navigation?: {
-      type: "next" | "step" | "url";
+      type: "next" | "step" | "url" | "none";
       stepId?: string;
       url?: string;
     };
@@ -31,10 +31,10 @@ interface OptionsListProps {
   onOptionBackgroundColorChange: (optionId: string, color: string) => void;
   onOptionBorderColorChange: (optionId: string, color: string) => void;
   onOptionTextColorChange: (optionId: string, color: string) => void;
-  onOptionSelectedBackgroundColorChange?: (optionId: string, color: string) => void;
-  onOptionSelectedBorderColorChange?: (optionId: string, color: string) => void;
-  onOptionSelectedTextColorChange?: (optionId: string, color: string) => void;
-  onOptionNavigationTypeChange: (optionId: string, type: "next" | "step" | "url") => void;
+  onSelectedBackgroundColorChange?: (optionId: string, color: string) => void;
+  onSelectedBorderColorChange?: (optionId: string, color: string) => void;
+  onSelectedTextColorChange?: (optionId: string, color: string) => void;
+  onOptionNavigationTypeChange: (optionId: string, type: "next" | "step" | "url" | "none") => void;
   onOptionStepIdChange: (optionId: string, stepId: string) => void;
   onOptionUrlChange: (optionId: string, url: string) => void;
   onDeleteOption: (optionId: string) => void;
@@ -53,9 +53,9 @@ const OptionsList = ({
   onOptionBackgroundColorChange,
   onOptionBorderColorChange,
   onOptionTextColorChange,
-  onOptionSelectedBackgroundColorChange,
-  onOptionSelectedBorderColorChange,
-  onOptionSelectedTextColorChange,
+  onSelectedBackgroundColorChange,
+  onSelectedBorderColorChange,
+  onSelectedTextColorChange,
   onOptionNavigationTypeChange,
   onOptionStepIdChange,
   onOptionUrlChange,
@@ -67,24 +67,24 @@ const OptionsList = ({
   const handleSelectedBackgroundColorChange = (optionId: string, color: string) => {
     if (onOptionSelectedStyleChange) {
       onOptionSelectedStyleChange(optionId, 'selectedBackgroundColor', color);
-    } else if (onOptionSelectedBackgroundColorChange) {
-      onOptionSelectedBackgroundColorChange(optionId, color);
+    } else if (onSelectedBackgroundColorChange) {
+      onSelectedBackgroundColorChange(optionId, color);
     }
   };
   
   const handleSelectedBorderColorChange = (optionId: string, color: string) => {
     if (onOptionSelectedStyleChange) {
       onOptionSelectedStyleChange(optionId, 'selectedBorderColor', color);
-    } else if (onOptionSelectedBorderColorChange) {
-      onOptionSelectedBorderColorChange(optionId, color);
+    } else if (onSelectedBorderColorChange) {
+      onSelectedBorderColorChange(optionId, color);
     }
   };
   
   const handleSelectedTextColorChange = (optionId: string, color: string) => {
     if (onOptionSelectedStyleChange) {
       onOptionSelectedStyleChange(optionId, 'selectedTextColor', color);
-    } else if (onOptionSelectedTextColorChange) {
-      onOptionSelectedTextColorChange(optionId, color);
+    } else if (onSelectedTextColorChange) {
+      onSelectedTextColorChange(optionId, color);
     }
   };
 
