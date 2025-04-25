@@ -37,8 +37,8 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Verificação se estamos no funil público (iframe)
-  const isIframe = typeof window !== 'undefined' && window.self !== window.top;
-  
+  const isPublic = typeof window !== 'undefined' && (window.self !== window.top || previewMode);
+
   // Função para mostrar a notificação
   const showNotification = () => {
     console.log('[Notification] Mostrando notificação');
@@ -62,7 +62,7 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
 
   // Efeito para inicializar o áudio
   useEffect(() => {
-    if (soundEnabled && (isIframe || previewMode)) {
+    if (soundEnabled && isPublic) {
       const soundUrl = `/sounds/${soundType}.mp3`;
       const audio = new Audio(soundUrl);
       
@@ -86,29 +86,30 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
 
   // Efeito para inicializar o sistema de repetição
   useEffect(() => {
-    if (isIframe || previewMode) {
-      // Primeira exibição após 1 segundo
+    if (isPublic && toastEnabled) {
+      console.log('[Notification] Iniciando sistema de repetição');
+      
+      // Primeira exibição após 2 segundos
       const initialTimer = setTimeout(() => {
         showNotification();
-      }, 1000);
+      }, 2000);
 
-      // Configurar intervalo de repetição (a cada 30 segundos)
+      // Configurar intervalo de repetição (a cada 20 segundos)
       intervalRef.current = setInterval(() => {
         showNotification();
-      }, 30000); // 30 segundos
+      }, 20000);
 
-      // Cleanup
       return () => {
         clearTimeout(initialTimer);
         if (intervalRef.current) clearInterval(intervalRef.current);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
     }
-  }, [isIframe, previewMode]);
+  }, [isPublic, toastEnabled]);
 
   // Efeito para lidar com interação do usuário (necessário para som em alguns navegadores)
   useEffect(() => {
-    if (isIframe || previewMode) {
+    if (isPublic && soundEnabled) {
       const handleUserInteraction = () => {
         if (audioRef.current) {
           audioRef.current.play()
@@ -125,13 +126,12 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
         document.removeEventListener('touchstart', handleUserInteraction);
       };
     }
-  }, [isIframe, previewMode]);
-  
+  }, [isPublic, soundEnabled]);
+
   // Renderiza a visualização no builder/editor (estática)
   const renderEditorView = () => {
     // Se estivermos no funil público, não mostramos o elemento estático
-    // exceto se ele estiver selecionado no editor
-    if (isIframe && !isSelected) {
+    if (isPublic) {
       return null;
     }
     
@@ -165,9 +165,8 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   
   // Renderiza a notificação flutuante temporária
   const renderFloatingNotification = () => {
-    if (!toastEnabled) return null;
+    if (!toastEnabled || (!isPublic && !isSelected)) return null;
 
-    // Configurar as classes de posicionamento
     const positionClasses = {
       'top-right': 'top-4 right-4',
       'top-left': 'top-4 left-4',
@@ -177,27 +176,20 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2'
     };
     
-    // Definir posição e animação
     const position = positionClasses[toastPosition as keyof typeof positionClasses];
-    const animation = isVisible 
-      ? 'animate-in fade-in slide-in-from-bottom-5 duration-500' 
-      : 'animate-out fade-out slide-out-to-bottom-5 duration-500';
-    
-    // Somente renderiza se estiver visível ou foi inicializado
-    if (!isVisible && !didInitialize) return null;
     
     return (
       <div
         id="floating-notification"
-        className={`fixed ${position} z-[9999] flex items-center shadow-lg ${animation}`}
+        className={`fixed ${position} z-[9999] flex items-center shadow-lg transition-all duration-500 ease-in-out`}
         style={{
           backgroundColor: toastColor,
           color: toastTextColor,
           borderRadius: `${borderRadius}px`,
           maxWidth: '320px',
-          transition: 'all 0.5s ease',
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+          pointerEvents: 'none',
         }}
       >
         {showImage && (
@@ -231,10 +223,7 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       index={index}
       totalElements={totalElements}
     >
-      {/* Elemento estático para o editor */}
       {renderEditorView()}
-      
-      {/* Notificação temporária para o funil público/preview */}
       {renderFloatingNotification()}
     </ElementWrapper>
   );
