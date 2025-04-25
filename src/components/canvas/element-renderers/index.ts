@@ -24,7 +24,6 @@ import GenericElementRenderer from './GenericElementRenderer';
 import NotesRenderer from './NotesRenderer';
 import TimerRenderer from './TimerRenderer';
 import AccordionRenderer from './AccordionRenderer';
-import NotificationRenderer from './NotificationRenderer';
 
 // Export all renderers
 export {
@@ -51,8 +50,7 @@ export {
   GenericElementRenderer,
   NotesRenderer,
   TimerRenderer,
-  AccordionRenderer,
-  NotificationRenderer
+  AccordionRenderer
 };
 
 // Export ElementFactory as default

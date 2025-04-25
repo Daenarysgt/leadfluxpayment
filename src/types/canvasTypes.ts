@@ -109,20 +109,3 @@ export interface ButtonContent {
   facebookEventParams?: Record<string, any>;
   facebookEventDebugMode?: boolean;
 }
-
-export interface NotificationContent {
-  notificationTitle?: string;
-  notificationText?: string;
-  notificationCode?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  accentColor?: string;
-  showTime?: boolean;
-  timeText?: string;
-  displayDuration?: number;
-  stackSize?: number;
-  soundEnabled?: boolean;
-  soundType?: string;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
-  enabled?: boolean;
-}
