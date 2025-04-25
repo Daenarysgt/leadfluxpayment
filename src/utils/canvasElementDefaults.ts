@@ -254,7 +254,12 @@ export const getDefaultContent = (componentType: string) => {
         facebookEventDebugMode: false,
         style: {
           primaryColor: "#8B5CF6",
-          titleAlignment: "center"
+          titleAlignment: "center",
+          placeholderAlignment: "left",
+          fieldWidth: 100,
+          borderRadius: 4,
+          textColor: "#000000",
+          placeholderColor: "#71717A"
         }
       };
     case ComponentType.Loading:

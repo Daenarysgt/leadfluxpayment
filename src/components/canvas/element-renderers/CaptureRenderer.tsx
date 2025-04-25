@@ -60,6 +60,9 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   const borderRadius = content?.style?.borderRadius || 4;
   const textColor = content?.style?.textColor || "#000000";
   const placeholderColor = content?.style?.placeholderColor || "#71717A";
+  // Novas configurações de estilo
+  const placeholderAlignment = content?.style?.placeholderAlignment || "left";
+  const fieldWidth = content?.style?.fieldWidth || 100;
   
   // Efeito para salvar dados de campo de texto automaticamente depois de 500ms
   useEffect(() => {
@@ -311,11 +314,37 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     marginTop: marginTop !== undefined ? `${marginTop}px` : undefined
   };
 
+  // Criar um estilo CSS para o placeholder
+  const getPlaceholderStyle = () => {
+    return {
+      '--tw-placeholder-color': placeholderColor,
+      '--tw-placeholder-align': placeholderAlignment,
+    } as React.CSSProperties;
+  };
+
+  // Adicionar um estilo CSS inline diretamente para lidar com o alinhamento do placeholder
+  useEffect(() => {
+    // Criar estilo para os placeholders
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      .capture-input-${element.id}::placeholder {
+        text-align: ${placeholderAlignment} !important;
+        color: ${placeholderColor} !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+    
+    return () => {
+      document.head.removeChild(styleEl);
+    };
+  }, [element.id, placeholderAlignment, placeholderColor]);
+  
   // Estilo personalizado para os campos de entrada
   const inputStyle = {
     borderRadius: `${borderRadius}px`,
     color: textColor,
-    "--placeholder-color": placeholderColor
+    "--placeholder-color": placeholderColor,
+    textAlign: placeholderAlignment
   } as React.CSSProperties;
 
   // Função para salvar dados quando o usuário sai do campo
@@ -361,33 +390,35 @@ const CaptureRenderer = (props: ElementRendererProps) => {
         )}
         
         {!submitted ? (
-          <form onSubmit={handleSubmit} className="space-y-2">
-            {captureFields.map((field) => (
-              <Input
-                key={field.id}
-                type={getInputType(field.type)}
-                placeholder={field.placeholder}
-                value={formValues[field.id] || ''}
-                onChange={(e) => handleChange(field.id, e.target.value)}
-                onBlur={handleBlur}
-                className="w-full [&::placeholder]:text-[var(--placeholder-color)]"
-                style={inputStyle}
-                required
-              />
-            ))}
-            {showButton && (
-              <Button 
-                type="submit" 
-                className="w-full"
-                style={{ 
-                  backgroundColor: primaryColor,
-                  borderColor: primaryColor,
-                  borderRadius: `${borderRadius}px`
-                }}
-              >
-                {buttonText}
-              </Button>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-2 flex flex-col items-center w-full">
+            <div style={{ width: `${fieldWidth}%` }} className="flex flex-col items-center w-full">
+              {captureFields.map((field) => (
+                <Input
+                  key={field.id}
+                  type={getInputType(field.type)}
+                  placeholder={field.placeholder}
+                  value={formValues[field.id] || ''}
+                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  onBlur={handleBlur}
+                  className={`w-full mb-2 capture-input-${element.id}`}
+                  style={inputStyle}
+                  required
+                />
+              ))}
+              {showButton && (
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  style={{ 
+                    backgroundColor: primaryColor,
+                    borderColor: primaryColor,
+                    borderRadius: `${borderRadius}px`
+                  }}
+                >
+                  {buttonText}
+                </Button>
+              )}
+            </div>
           </form>
         ) : (
           <div className="flex flex-col items-center justify-center p-6 text-center" style={{ color: textColor }}>

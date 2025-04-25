@@ -404,6 +404,45 @@ const CaptureConfig = ({ element, onUpdate }: CaptureConfigProps) => {
               Esta cor será aplicada ao texto do placeholder nos campos
             </p>
           </div>
+          
+          {/* Alinhamento do placeholder */}
+          <div className="space-y-2">
+            <ConfigLabel>Alinhamento do placeholder</ConfigLabel>
+            <div className="grid grid-cols-3 gap-2">
+              {['left', 'center', 'right'].map((align) => (
+                <button
+                  key={align}
+                  type="button"
+                  className={`border rounded p-2 ${style.placeholderAlignment === align ? 'bg-primary text-white' : 'bg-background'}`}
+                  onClick={() => handleStyleChange('placeholderAlignment', align)}
+                >
+                  {align.charAt(0).toUpperCase() + align.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Define o alinhamento do texto dos placeholders nos campos
+            </p>
+          </div>
+          
+          {/* Largura dos campos */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <ConfigLabel htmlFor="field-width">Largura dos campos</ConfigLabel>
+              <span className="text-sm text-muted-foreground">{style.fieldWidth || 100}%</span>
+            </div>
+            <Slider
+              id="field-width"
+              min={50}
+              max={100}
+              step={5}
+              value={[style.fieldWidth || 100]}
+              onValueChange={(value) => handleStyleChange('fieldWidth', value[0])}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ajusta a largura dos campos do formulário (de 50% a 100%)
+            </p>
+          </div>
         </TabsContent>
         
         <TabsContent value="action" className="space-y-6">
