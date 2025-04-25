@@ -91,8 +91,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Classes sem ajustes específicos para mobile
   const wrapperClass = "w-full";
-  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
-  const logoWrapperClass = "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
+  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto pt-1 pb-4 px-2 sm:pb-8 sm:px-0";
+  const logoWrapperClass = "w-full flex justify-center pt-1 pb-3 mb-1 sm:pb-4 sm:mb-2";
   const progressBarClass = "w-full rounded-full overflow-hidden mb-4 sm:mb-6";
   const contentClass = "w-full";
 
@@ -130,7 +130,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           </div>
         )}
 
-        {activeFunnel.settings.showProgressBar && (
+        {activeFunnel.settings.showProgressBar ? (
           <div 
             className={progressBarClass}
             style={{
@@ -146,6 +146,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
               }}
             ></div>
           </div>
+        ) : (
+          // Se não houver barra de progresso, adicionar um pequeno espaçador
+          <div className="h-2"></div>
         )}
 
         <div className={contentClass} style={mainContainerStyle}>

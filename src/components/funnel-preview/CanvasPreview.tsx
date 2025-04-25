@@ -95,8 +95,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
-    margin: isMobile ? '0 auto' : '0 auto',
+    padding: isMobile ? '0.25rem' : '0.5rem 1rem 1rem', // Reduzir padding superior
+    margin: '0 auto',
     position: 'relative',
     left: isMobile ? '0' : 'auto',
     right: isMobile ? '0' : 'auto',

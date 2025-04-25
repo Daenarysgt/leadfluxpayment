@@ -313,6 +313,24 @@
   }
 }
 
+/* Ajuste específico para funis públicos - Reduzir espaço superior */
+div[class*="FunnelPreview"],
+div[class*="CanvasPreview"],
+div[class*="DomainFunnel"] {
+  padding-top: 8px !important;
+}
+
+div[class*="FunnelPreview"] > div,
+div[class*="CanvasPreview"] > div,
+div[class*="DomainFunnel"] > div {
+  padding-top: 0 !important;
+}
+
+/* Adicionar margem extra apenas quando há logotipo visível */
+div[class*="FunnelPreview"] img[alt="Logo"] + div[class*="rounded-full"] {
+  margin-top: 8px !important;
+}
+
 /* Regras específicas para dispositivos móveis para garantir que não haja margens ou paddings */
 @media (max-width: 768px) {
   /* Mantenha o estilo original do desktop quando visualizado em funis públicos */
