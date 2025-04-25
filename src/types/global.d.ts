@@ -14,6 +14,18 @@ interface LeadfluxAppHooks {
   preventCanvasReload: (stepId?: string) => void;
 }
 
+// Global type definitions
+interface Window {
+  LEADFLUX_APP_HOOKS?: {
+    preventCanvasReload?: (stepId?: string) => void;
+    [key: string]: any;
+  };
+  preloadedCanvasElements?: {
+    [stepId: string]: any[];
+  };
+  canvasResizeObserver?: MutationObserver;
+}
+
 declare global {
   interface Window {
     stepsDatabaseAdapter?: StepsDatabaseAdapter;

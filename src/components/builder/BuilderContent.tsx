@@ -6,6 +6,8 @@ import BuilderCanvas from "@/components/BuilderCanvas";
 import BuilderPreview from "@/components/builder/BuilderPreview";
 import { CanvasElement } from "@/types/canvasTypes";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCanvasResize } from "@/hooks/useCanvasResize";
+import { useEffect } from "react";
 
 interface BuilderContentProps {
   viewMode: "desktop" | "mobile";
@@ -32,6 +34,20 @@ const BuilderContent = ({
   onElementsChange,
   onCloseElementConfig
 }: BuilderContentProps) => {
+  const { fixCanvasWhiteSpace } = useCanvasResize();
+  
+  useEffect(() => {
+    if (!previewActive) {
+      const timeoutId = setTimeout(fixCanvasWhiteSpace, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [localCanvasElements, previewActive, fixCanvasWhiteSpace]);
+  
+  useEffect(() => {
+    const timeoutId = setTimeout(fixCanvasWhiteSpace, 200);
+    return () => clearTimeout(timeoutId);
+  }, [viewMode, previewActive, selectedElement, fixCanvasWhiteSpace]);
+
   return (
     <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
       <ResizablePanelGroup direction="horizontal">
@@ -52,8 +68,18 @@ const BuilderContent = ({
               </div>
             </ScrollArea>
           ) : (
-            <ScrollArea className="h-[calc(100vh-64px)]">
-              <div className="p-6">
+            <ScrollArea 
+              className="h-[calc(100vh-64px)]"
+              style={{
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <div className="p-6 flex-grow" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: '100%' 
+              }}>
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}
                   isMobile={viewMode === 'mobile'} 

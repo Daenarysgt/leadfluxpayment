@@ -165,6 +165,26 @@ const Builder = () => {
         min-height: calc(111.12vh - 57px) !important;
         overflow-y: auto !important;
       }
+      
+      /* Correção para o problema da borda branca no final do canvas */
+      .ScrollAreaViewport {
+        height: auto !important;
+        min-height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Garantir que o div do canvas preencha todo o espaço disponível */
+      .ScrollAreaViewport > div {
+        flex-grow: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      /* Impedir que o zoom afete o cálculo de altura das áreas de rolagem */
+      [data-radix-scroll-area-viewport] {
+        transform: scale(1) !important; /* Anular o efeito de escala para height */
+      }
     `;
     
     // Adicionar ao head
@@ -191,6 +211,23 @@ const Builder = () => {
           panelElement.style.overflowY = 'auto';
         });
       }
+      
+      // Ajustar especificamente as áreas de rolagem para impedir a borda branca
+      const viewports = document.querySelectorAll('[data-radix-scroll-area-viewport]');
+      viewports.forEach((viewport: Element) => {
+        const viewportElement = viewport as HTMLElement;
+        viewportElement.style.display = 'flex';
+        viewportElement.style.flexDirection = 'column';
+        viewportElement.style.minHeight = '100%';
+        
+        // Garantir que o primeiro filho (div de conteúdo) preencha o espaço disponível
+        if (viewportElement.firstElementChild) {
+          const contentDiv = viewportElement.firstElementChild as HTMLElement;
+          contentDiv.style.flexGrow = '1';
+          contentDiv.style.display = 'flex';
+          contentDiv.style.flexDirection = 'column';
+        }
+      });
     };
     
     // Executar após um pequeno delay para garantir que o DOM esteja pronto

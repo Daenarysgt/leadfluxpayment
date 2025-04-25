@@ -7,6 +7,7 @@ import CanvasDropZone from "@/components/canvas/CanvasDropZone";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@/utils/store";
 import ProgressBar from "@/components/funnel-preview/ProgressBar";
+import { useCanvasResize } from "@/hooks/useCanvasResize";
 
 const BuilderCanvas = ({ 
   isMobile, 
@@ -23,6 +24,9 @@ const BuilderCanvas = ({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
+  
+  // Usar o hook de redimensionamento do canvas para evitar a borda branca
+  const { fixCanvasWhiteSpace } = useCanvasResize();
   
   // Função para ajustar os elementos para renderização mais próxima da pré-visualização
   const adjustElementsForConsistentDisplay = (elementsToAdjust: CanvasElement[]): CanvasElement[] => {
@@ -77,7 +81,10 @@ const BuilderCanvas = ({
     
     // Reset drag state
     setIsExternalDragOver(false);
-  }, [addElement, onElementSelect]);
+    
+    // Corrigir a borda branca após adicionar um elemento
+    setTimeout(fixCanvasWhiteSpace, 100);
+  }, [addElement, onElementSelect, fixCanvasWhiteSpace]);
   
   const handleElementSelect = useCallback((id: string) => {
     console.log("BuilderCanvas - Selecting element with ID:", id);
@@ -306,14 +313,19 @@ const BuilderCanvas = ({
           title: "Elemento adicionado",
           description: `Novo elemento ${componentType} adicionado com sucesso.`
         });
+        
+        // Corrigir a borda branca após adicionar um elemento
+        setTimeout(fixCanvasWhiteSpace, 100);
       }
     }
     
     // Forçar atualização da UI
     setTimeout(() => {
       setRenderKey(prev => prev + 1);
+      // Chamar novamente após a renderização
+      setTimeout(fixCanvasWhiteSpace, 100);
     }, 100);
-  }, [addElement, onElementSelect, toast]);
+  }, [addElement, onElementSelect, toast, fixCanvasWhiteSpace]);
   
   // Force re-render when element updates are received - place all effects after all callbacks
   useEffect(() => {
@@ -359,17 +371,16 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto pb-10 rounded-lg relative", 
+          "w-full mx-auto rounded-lg relative",
           isMobile ? "max-w-[375px]" : "max-w-[600px]",
           isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}
         style={{
           backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
           transition: 'all 0.3s ease',
-          // Adicionar padding extra lateral apenas para o canvas (não para os elementos)
-          // para permitir espaço para os controles flutuantes externos
           paddingLeft: '16px',
-          paddingRight: '16px'
+          paddingRight: '16px',
+          minHeight: isCanvasEmpty ? '200px' : 'auto'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}
@@ -413,7 +424,11 @@ const BuilderCanvas = ({
             />
           </div>
         )}
-        <div className="relative" style={{ marginLeft: '-16px', marginRight: '-16px' }}>
+        <div className="relative" style={{ 
+          marginLeft: '-16px', 
+          marginRight: '-16px',
+          marginBottom: '0'
+        }}>
           {displayElements.map((element, index) => {
             // Create a unique key that forces re-render when elements or selections change
             const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
@@ -431,7 +446,6 @@ const BuilderCanvas = ({
                   e.stopPropagation();
                 }}
                 onDrop={handleElementDrop}
-                // Remover espaçamentos entre elementos para igualar ao preview
                 style={{ 
                   marginBottom: '0px',
                   paddingLeft: '16px',
