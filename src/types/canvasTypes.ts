@@ -112,6 +112,8 @@ export interface ButtonContent {
 
 export interface NotificationContent {
   toastText?: string;
+  toastTitle?: string;
+  toastSubtitle?: string;
   toastEnabled?: boolean;
   soundEnabled?: boolean;
   soundType?: 'sale' | 'success' | 'alert' | 'notification';
@@ -122,4 +124,9 @@ export interface NotificationContent {
   customSound?: string;
   showIcon?: boolean;
   iconType?: 'success' | 'error' | 'info' | 'warning';
+  showImage?: boolean;
+  customImage?: string;
+  borderRadius?: number;
+  titleFontSize?: number;
+  subtitleFontSize?: number;
 }

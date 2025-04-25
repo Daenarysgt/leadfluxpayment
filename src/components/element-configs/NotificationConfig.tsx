@@ -15,7 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Trash2, Volume2, Settings } from "lucide-react";
+import { Bell, Trash2, Volume2, Settings, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationContent } from "@/types/canvasTypes";
 import { Slider } from "@/components/ui/slider";
@@ -35,15 +35,22 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
   // Valores padrão
   const initialContent = {
     toastText: content.toastText || "Nova venda realizada!",
+    toastTitle: content.toastTitle || "Venda realizada com Pix",
+    toastSubtitle: content.toastSubtitle || "Sua comissão: R$34,90 - #P00000009",
     toastEnabled: content.toastEnabled !== undefined ? content.toastEnabled : true,
     soundEnabled: content.soundEnabled !== undefined ? content.soundEnabled : true,
     soundType: content.soundType || "sale",
-    toastColor: content.toastColor || "#4caf50",
+    toastColor: content.toastColor || "#FF5733",
     toastTextColor: content.toastTextColor || "#ffffff",
     toastDuration: content.toastDuration || 5,
-    toastPosition: content.toastPosition || "top-right",
+    toastPosition: content.toastPosition || "bottom-right",
     showIcon: content.showIcon !== undefined ? content.showIcon : true,
     iconType: content.iconType || "success",
+    showImage: content.showImage !== undefined ? content.showImage : true,
+    customImage: content.customImage || "",
+    borderRadius: content.borderRadius || 8,
+    titleFontSize: content.titleFontSize || 14,
+    subtitleFontSize: content.subtitleFontSize || 12,
   };
   
   const [localContent, setLocalContent] = useState<NotificationContent>(initialContent);
@@ -106,12 +113,13 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
   const showTestToast = () => {
     if (localContent.toastEnabled) {
       toast({
-        title: "Notificação",
-        description: localContent.toastText || "Nova venda realizada!",
+        title: localContent.toastTitle || "Venda realizada com Pix",
+        description: localContent.toastSubtitle || "Sua comissão: R$34,90 - #P00000009",
         variant: "default",
         style: {
           backgroundColor: localContent.toastColor,
           color: localContent.toastTextColor,
+          borderRadius: `${localContent.borderRadius || 8}px`,
         },
       });
     }
@@ -189,11 +197,21 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
         <TabsContent value="toast" className="space-y-4">
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="toastText">Texto do Toast</Label>
+              <Label htmlFor="toastTitle">Título da Notificação</Label>
               <Input
-                id="toastText"
-                value={localContent.toastText}
-                onChange={(e) => handleChange("toastText", e.target.value)}
+                id="toastTitle"
+                value={localContent.toastTitle}
+                onChange={(e) => handleChange("toastTitle", e.target.value)}
+                disabled={!localContent.toastEnabled}
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="toastSubtitle">Subtítulo da Notificação</Label>
+              <Input
+                id="toastSubtitle"
+                value={localContent.toastSubtitle}
+                onChange={(e) => handleChange("toastSubtitle", e.target.value)}
                 disabled={!localContent.toastEnabled}
               />
             </div>
@@ -234,6 +252,22 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
                   disabled={!localContent.toastEnabled}
                 />
                 <span className="w-10 text-right">{localContent.toastDuration || 5}s</span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="borderRadius">Arredondamento dos Cantos</Label>
+              <div className="flex items-center space-x-2">
+                <Slider
+                  id="borderRadius"
+                  value={[localContent.borderRadius || 8]}
+                  min={0}
+                  max={20}
+                  step={1}
+                  onValueChange={(value) => handleChange("borderRadius", value[0])}
+                  disabled={!localContent.toastEnabled}
+                />
+                <span className="w-10 text-right">{localContent.borderRadius || 8}px</span>
               </div>
             </div>
             
@@ -279,38 +313,63 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
             
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="showIcon">Mostrar Ícone</Label>
+                <Label htmlFor="showImage">Mostrar Imagem</Label>
                 <Switch
-                  id="showIcon"
-                  checked={localContent.showIcon}
-                  onCheckedChange={(checked) => handleChange("showIcon", checked)}
+                  id="showImage"
+                  checked={localContent.showImage}
+                  onCheckedChange={(checked) => handleChange("showImage", checked)}
                   disabled={!localContent.toastEnabled}
                 />
               </div>
             </div>
             
-            {localContent.showIcon && (
+            {localContent.showImage && (
               <div className="space-y-1">
-                <Label htmlFor="iconType">Tipo de Ícone</Label>
-                <Select
-                  value={localContent.iconType}
-                  onValueChange={(value) => handleChange("iconType", value)}
-                  disabled={!localContent.toastEnabled || !localContent.showIcon}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de ícone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="success">Sucesso</SelectItem>
-                      <SelectItem value="error">Erro</SelectItem>
-                      <SelectItem value="info">Informação</SelectItem>
-                      <SelectItem value="warning">Aviso</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="customImage">URL da Imagem</Label>
+                <Input
+                  id="customImage"
+                  value={localContent.customImage}
+                  onChange={(e) => handleChange("customImage", e.target.value)}
+                  placeholder="https://url-da-sua-imagem.jpg"
+                  disabled={!localContent.toastEnabled || !localContent.showImage}
+                />
+                <p className="text-xs text-gray-500">
+                  Deixe vazio para usar o ícone padrão
+                </p>
               </div>
             )}
+            
+            <div className="space-y-1">
+              <Label htmlFor="titleFontSize">Tamanho da Fonte do Título</Label>
+              <div className="flex items-center space-x-2">
+                <Slider
+                  id="titleFontSize"
+                  value={[localContent.titleFontSize || 14]}
+                  min={10}
+                  max={24}
+                  step={1}
+                  onValueChange={(value) => handleChange("titleFontSize", value[0])}
+                  disabled={!localContent.toastEnabled}
+                />
+                <span className="w-10 text-right">{localContent.titleFontSize || 14}px</span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="subtitleFontSize">Tamanho da Fonte do Subtítulo</Label>
+              <div className="flex items-center space-x-2">
+                <Slider
+                  id="subtitleFontSize"
+                  value={[localContent.subtitleFontSize || 12]}
+                  min={8}
+                  max={18}
+                  step={1}
+                  onValueChange={(value) => handleChange("subtitleFontSize", value[0])}
+                  disabled={!localContent.toastEnabled}
+                />
+                <span className="w-10 text-right">{localContent.subtitleFontSize || 12}px</span>
+              </div>
+            </div>
             
             <Button
               variant="outline"

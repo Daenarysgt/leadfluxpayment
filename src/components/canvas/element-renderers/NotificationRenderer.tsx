@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
-import { Bell, Volume2, VolumeX, XCircle } from "lucide-react";
+import { Bell, Volume2, VolumeX, XCircle, Image as ImageIcon } from "lucide-react";
 import { NotificationContent } from "@/types/canvasTypes";
 import ElementWrapper from "../ElementWrapper";
 
@@ -11,20 +11,27 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   // Valores padrão
   const {
     toastText = "Nova venda realizada!",
+    toastTitle = "Venda realizada com Pix",
+    toastSubtitle = "Sua comissão: R$34,90 - #P00000009", 
     toastEnabled = true,
     soundEnabled = true,
     soundType = "sale",
-    toastColor = "#4caf50",
+    toastColor = "#FF5733",
     toastTextColor = "#ffffff",
     toastDuration = 5,
-    toastPosition = "top-right",
+    toastPosition = "bottom-right",
     showIcon = true,
-    iconType = "success"
+    iconType = "success",
+    showImage = true,
+    customImage = "",
+    borderRadius = 8,
+    titleFontSize = 14,
+    subtitleFontSize = 12,
   } = content;
   
   const [showToast, setShowToast] = useState(false);
 
-  // Renderizar o preview do toast
+  // Renderizar o toast no estilo da imagem de referência
   const renderToast = () => {
     if (!toastEnabled) return null;
     
@@ -38,33 +45,33 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2'
     };
     
-    // Determinar ícone
-    const IconComponent = () => {
-      switch (iconType) {
-        case 'success': return <Bell className="h-5 w-5" />;
-        case 'error': return <XCircle className="h-5 w-5" />;
-        case 'info': return <Bell className="h-5 w-5" />;
-        case 'warning': return <Bell className="h-5 w-5" />;
-        default: return <Bell className="h-5 w-5" />;
-      }
-    };
-    
     return (
       <div 
-        className={`fixed ${positionClasses[toastPosition as keyof typeof positionClasses]} z-50 flex items-center p-4 mb-4 rounded-lg shadow transition-opacity ${showToast ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed ${positionClasses[toastPosition as keyof typeof positionClasses]} z-50 flex items-center shadow-lg transition-opacity ${showToast ? 'opacity-100' : 'opacity-0'}`}
         style={{
           backgroundColor: toastColor,
           color: toastTextColor,
+          borderRadius: `${borderRadius}px`,
           maxWidth: '320px',
+          overflow: 'hidden',
           pointerEvents: 'none'
         }}
       >
-        {showIcon && (
-          <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 rounded-lg">
-            <IconComponent />
+        {showImage && (
+          <div className="flex-shrink-0 p-3" style={{backgroundColor: 'rgba(0,0,0,0.1)'}}>
+            {customImage ? (
+              <img src={customImage} alt="Notification" className="h-10 w-10" />
+            ) : (
+              <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full">
+                <Bell className="h-6 w-6" style={{color: toastColor}} />
+              </div>
+            )}
           </div>
         )}
-        <div className="text-sm font-normal">{toastText}</div>
+        <div className="py-3 px-4">
+          <div className="font-medium" style={{fontSize: `${titleFontSize}px`}}>{toastTitle}</div>
+          <div className="opacity-90" style={{fontSize: `${subtitleFontSize}px`}}>{toastSubtitle}</div>
+        </div>
       </div>
     );
   };
@@ -87,7 +94,7 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   // Mostrar toast e tocar som quando em modo preview
   useEffect(() => {
     if (previewMode) {
-      // Exibir toast se ativado
+      // Exibir toast se ativado - sempre que entrar na etapa
       if (toastEnabled) {
         setShowToast(true);
         
@@ -150,7 +157,8 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
         
         {toastEnabled && (
           <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-            Texto: {toastText}
+            <div><strong>Título:</strong> {toastTitle}</div>
+            <div><strong>Subtítulo:</strong> {toastSubtitle}</div>
           </div>
         )}
       </div>
