@@ -372,7 +372,8 @@ const BuilderCanvas = ({
           paddingRight: '16px',
           minHeight: '80vh',
           position: 'relative',
-          zIndex: 0
+          zIndex: 0,
+          overflow: 'visible'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}

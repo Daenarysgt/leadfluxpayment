@@ -118,7 +118,7 @@ const Builder = () => {
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        overflow: auto !important;
+        overflow: hidden !important;
         width: 100vw !important;
         height: 100vh !important;
       }
@@ -136,6 +136,7 @@ const Builder = () => {
         min-height: 111.12vh !important;
         display: flex !important;
         flex-direction: column !important;
+        overflow: hidden !important;
       }
       
       /* Garantir que o conteúdo principal preencha todo o espaço disponível */
@@ -168,6 +169,7 @@ const Builder = () => {
       .absolute.bottom-0.left-0.right-0 {
         z-index: auto !important;
         position: relative !important;
+        display: none !important;
       }
       
       /* Corrigir o rodapé cinza */
