@@ -89,18 +89,14 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Detectar se estamos na visualização do builder ou na URL pública
-  const isBuilderPreview = window.location.pathname.includes('/builder/') && 
-                          window.location.pathname.includes('/preview');
-  
   // Determinar o estilo baseado na configuração e tipo de dispositivo
   let containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.3s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '0.5rem 1rem 1rem', // Reduzir padding superior
-    margin: '0 auto',
+    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
+    margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
     left: isMobile ? '0' : 'auto',
     right: isMobile ? '0' : 'auto',
@@ -108,9 +104,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   };
 
   // Classes condicionais para desktop e mobile
-  const containerClass = isBuilderPreview 
-    ? "w-full mx-auto min-h-[300px] rounded-lg builder-canvas" 
-    : "w-full mx-auto min-h-[300px] rounded-lg public-canvas";
+  const containerClass = isMobile 
+    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+    : "w-full mx-auto min-h-[300px] rounded-lg";
   
   // Adicionar logs para monitorar eventos de clique e registros de interação
 
@@ -138,8 +134,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '2rem',
-        paddingTop: '0.25rem' // Reduzir ainda mais o padding superior
+        paddingBottom: '2rem'
       }}
     >
       {canvasElements.map((element, index) => {

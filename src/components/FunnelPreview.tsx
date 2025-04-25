@@ -89,16 +89,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Calcular a altura do cabeçalho fixo para o ajuste de espaçamento
-  const headerHeight = validLogo ? "56px" : "24px";
-  
-  // Detectar se estamos na visualização do builder ou na URL pública
-  const isBuilderPreview = window.location.pathname.includes('/builder/') && 
-                           window.location.pathname.includes('/preview');
-  const containerClass = isBuilderPreview ? "funnel-preview builder-preview" : "funnel-preview public-view";
+  // Classes sem ajustes específicos para mobile
+  const wrapperClass = "w-full";
+  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
+  const logoWrapperClass = "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
+  const progressBarClass = "w-full rounded-full overflow-hidden mb-4 sm:mb-6";
+  const contentClass = "w-full";
+
+  // Sem estilos específicos para mobile
+  const mainContainerStyle = {};
 
   return (
-    <div className={`w-full ${containerClass}`} style={customStyles}>
+    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -108,47 +110,32 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      {/* Header fixo no topo */}
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: isBuilderPreview ? 'auto' : 0,
-          right: isBuilderPreview ? 'auto' : 0,
-          zIndex: 50,
-          backgroundColor: activeFunnel.settings.backgroundColor || 'white',
-          padding: '8px 0 4px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          width: isBuilderPreview ? '100%' : '100vw',
-          maxWidth: isBuilderPreview ? '840px' : '100%',
-          margin: isBuilderPreview ? '0 auto' : 0
-        }}
-      >
-        {/* Logo */}
+      <div className={contentWrapperClass}>
+        {/* Logotipo */}
         {validLogo && (
-          <div className="w-full flex justify-center">
+          <div className={logoWrapperClass}>
             <img 
               src={validLogo} 
               alt="Logo" 
-              className="max-h-10 object-contain"
+              className="max-h-14 object-contain"
               onError={(e) => {
                 console.error("FunnelPreview - Erro ao carregar logo:", e);
+                // Esconder o elemento em caso de erro
                 e.currentTarget.style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log("FunnelPreview - Logo carregado com sucesso");
               }}
             />
           </div>
         )}
 
-        {/* Barra de progresso */}
         {activeFunnel.settings.showProgressBar && (
           <div 
+            className={progressBarClass}
             style={{
-              width: '90%',
-              margin: '4px auto',
-              backgroundColor: `${primaryColor}30`,
-              height: '8px',
-              borderRadius: '9999px',
-              overflow: 'hidden'
+              backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
+              height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
             }}
           >
             <div 
@@ -160,14 +147,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
             ></div>
           </div>
         )}
-      </div>
 
-      {/* Espaçador para compensar o header fixo */}
-      <div style={{ height: headerHeight }}></div>
-      
-      {/* Conteúdo principal */}
-      <div className="flex flex-col items-center w-full max-w-xl mx-auto px-2 sm:px-0 pt-1">
-        <div className="w-full">
+        <div className={contentClass} style={mainContainerStyle}>
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}
