@@ -243,8 +243,8 @@ const PublicFunnel = () => {
 
   // Classes condicionais baseadas no tipo de dispositivo
   const containerClass = isMobile 
-    ? "min-h-screen flex flex-col items-center justify-center p-0 m-0 mobile-full-width" 
-    : "min-h-screen flex flex-col items-center justify-center p-4 md:p-8";
+    ? "min-h-screen flex flex-col items-center justify-start p-0 m-0 mobile-full-width pt-1" 
+    : "min-h-screen flex flex-col items-center justify-start p-4 md:p-8 pt-2";
   
   const innerClass = isMobile 
     ? "w-full mobile-full-width" 

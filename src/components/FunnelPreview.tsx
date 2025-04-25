@@ -91,9 +91,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Classes sem ajustes específicos para mobile
   const wrapperClass = "w-full";
-  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto py-4 px-2 sm:py-8 sm:px-0";
-  const logoWrapperClass = "w-full flex justify-center py-3 mb-1 sm:py-4 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-4 sm:mb-6";
+  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto py-2 px-2 sm:py-4 sm:px-0";
+  const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
+  const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
   const contentClass = "w-full";
 
   // Sem estilos específicos para mobile

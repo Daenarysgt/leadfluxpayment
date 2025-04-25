@@ -134,7 +134,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '2rem'
+        paddingBottom: '1.5rem',
+        paddingTop: '0.5rem'
       }}
     >
       {canvasElements.map((element, index) => {
