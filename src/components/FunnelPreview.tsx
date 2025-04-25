@@ -90,7 +90,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
   // Calcular a altura do cabeçalho fixo para o ajuste de espaçamento
-  const headerHeight = validLogo ? "45px" : "20px";
+  const headerHeight = validLogo ? "36px" : "16px";
 
   return (
     <div className="w-full" style={customStyles}>
@@ -112,7 +112,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           right: 0,
           zIndex: 50,
           backgroundColor: activeFunnel.settings.backgroundColor || 'white',
-          padding: '8px 0 4px',
+          padding: '4px 0 2px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
         }}
       >

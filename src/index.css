@@ -322,13 +322,13 @@ div[class*="DomainFunnel"] > div[style*="position: fixed"] {
   right: 0 !important;
   z-index: 9999 !important;
   background-color: inherit !important;
-  padding: 4px 0 2px !important;
+  padding: 2px 0 0px !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
 
 /* Garantir que o logo tenha tamanho adequado no header fixo */
 div[style*="position: fixed"] img[alt="Logo"] {
-  max-height: 28px !important;
+  max-height: 24px !important;
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -336,9 +336,15 @@ div[style*="position: fixed"] img[alt="Logo"] {
 /* Ajustar a barra de progresso no cabeçalho fixo */
 div[style*="position: fixed"] > div[style*="overflow: hidden"] {
   width: 90% !important;
-  margin: 2px auto !important;
-  height: 6px !important;
+  margin: 1px auto !important;
+  height: 4px !important;
   border-radius: 9999px !important;
+}
+
+/* Reduzir ao máximo o espaçador de compensação */
+div[style*="height: 36px"],
+div[style*="height: 16px"] {
+  height: 30px !important;
 }
 
 /* Remover espaços entre o cabeçalho e o conteúdo */
@@ -348,9 +354,34 @@ div[class*="DomainFunnel"] > div[style*="height"] + div {
   padding-top: 0 !important;
 }
 
-/* Componentes dentro do conteúdo principal também não devem ter margens no topo */
+/* Componentes dentro do conteúdo principal não devem ter margens no topo */
 div[class*="FunnelPreview"] .w-full > div:first-child,
-div[class*="DomainFunnel"] .w-full > div:first-child {
+div[class*="DomainFunnel"] .w-full > div:first-child,
+div[class*="CanvasPreview"] > div:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Elementos de título e texto também não devem ter margens superiores */
+div[class*="element-renderer"] h1,
+div[class*="element-renderer"] h2,
+div[class*="element-renderer"] h3,
+div[class*="element-renderer"] p,
+div[class*="element-renderer"] div.p-4 {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Para elementos específicos de imagem e texto */
+div[class*="TextRenderer"],
+div[class*="ImageRenderer"],
+div[class*="MultipleChoiceImageRenderer"] {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Ajuste específico para elementos dentro do canvas */
+div[class*="CanvasPreview"] > div > div {
   margin-top: 0 !important;
   padding-top: 0 !important;
 }

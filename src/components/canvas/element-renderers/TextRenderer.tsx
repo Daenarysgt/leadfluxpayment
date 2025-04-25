@@ -139,7 +139,7 @@ const TextRenderer = (props: ElementRendererProps) => {
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={containerStyle}>
+      <div className={`px-4 ${element.previewMode ? 'pt-0 pb-4' : 'p-4'}`} style={containerStyle}>
         {renderFormattedText()}
       </div>
     </BaseElementRenderer>
