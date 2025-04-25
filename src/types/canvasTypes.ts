@@ -111,22 +111,18 @@ export interface ButtonContent {
 }
 
 export interface NotificationContent {
-  toastText?: string;
-  toastTitle?: string;
-  toastSubtitle?: string;
-  toastEnabled?: boolean;
+  notificationTitle?: string;
+  notificationText?: string;
+  notificationCode?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  showTime?: boolean;
+  timeText?: string;
+  displayDuration?: number;
+  stackSize?: number;
   soundEnabled?: boolean;
-  soundType?: 'sale' | 'success' | 'alert' | 'notification';
-  toastColor?: string;
-  toastTextColor?: string;
-  toastDuration?: number;
-  toastPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
-  customSound?: string;
-  showIcon?: boolean;
-  iconType?: 'success' | 'error' | 'info' | 'warning';
-  showImage?: boolean;
-  customImage?: string;
-  borderRadius?: number;
-  titleFontSize?: number;
-  subtitleFontSize?: number;
+  soundType?: string;
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  enabled?: boolean;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Trash2, Volume2, Settings, ImageIcon } from "lucide-react";
+import { Volume2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationContent } from "@/types/canvasTypes";
 import { Slider } from "@/components/ui/slider";
@@ -34,30 +33,26 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
   
   // Valores padrão
   const initialContent = {
-    toastText: content.toastText || "Nova venda realizada!",
-    toastTitle: content.toastTitle || "Venda realizada com Pix",
-    toastSubtitle: content.toastSubtitle || "Sua comissão: R$34,90 - #P00000009",
-    toastEnabled: content.toastEnabled !== undefined ? content.toastEnabled : true,
+    notificationTitle: content.notificationTitle || "Venda realizada com o Pix",
+    notificationText: content.notificationText || "Sua comissão: R$34,90",
+    notificationCode: content.notificationCode || "#P00000009",
+    backgroundColor: content.backgroundColor || "rgba(23, 23, 23, 0.95)",
+    textColor: content.textColor || "#ffffff",
+    accentColor: content.accentColor || "#ff4d4d",
+    showTime: content.showTime !== undefined ? content.showTime : true,
+    timeText: content.timeText || "há 1h",
+    displayDuration: content.displayDuration || 5,
+    stackSize: content.stackSize || 3,
     soundEnabled: content.soundEnabled !== undefined ? content.soundEnabled : true,
     soundType: content.soundType || "sale",
-    toastColor: content.toastColor || "#FF5733",
-    toastTextColor: content.toastTextColor || "#ffffff",
-    toastDuration: content.toastDuration || 5,
-    toastPosition: content.toastPosition || "bottom-right",
-    showIcon: content.showIcon !== undefined ? content.showIcon : true,
-    iconType: content.iconType || "success",
-    showImage: content.showImage !== undefined ? content.showImage : true,
-    customImage: content.customImage || "",
-    borderRadius: content.borderRadius || 8,
-    titleFontSize: content.titleFontSize || 14,
-    subtitleFontSize: content.subtitleFontSize || 12,
+    position: content.position || "bottom-right",
+    enabled: content.enabled !== undefined ? content.enabled : true,
   };
   
-  const [localContent, setLocalContent] = useState<NotificationContent>(initialContent);
-  const [activeTab, setActiveTab] = useState("geral");
+  const [localContent, setLocalContent] = React.useState<NotificationContent>(initialContent);
+  const [activeTab, setActiveTab] = React.useState("geral");
 
-  useEffect(() => {
-    // Atualiza o estado local quando o elemento muda
+  React.useEffect(() => {
     setLocalContent({
       ...initialContent,
       ...content
@@ -77,7 +72,6 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
       ...localContent,
       [field]: value,
     };
-    
     setLocalContent(updatedContent);
     handleUpdate(updatedContent);
   };
@@ -85,41 +79,27 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
   // Tocar som de teste
   const playSound = () => {
     if (localContent.soundEnabled) {
-      const soundType = localContent.soundType || "sale";
-      const soundPath = `/sounds/${soundType}.mp3`;
-      const audio = new Audio(soundPath);
-      
-      try {
-        audio.play().catch(error => {
-          console.error("Erro ao reproduzir o som:", error);
-          toast({
-            title: "Erro",
-            description: "Não foi possível reproduzir o som. Verifique se o arquivo existe.",
-            variant: "destructive",
-          });
-        });
-      } catch (error) {
+      const audio = new Audio(`/sounds/${localContent.soundType}.mp3`);
+      audio.play().catch(error => {
         console.error("Erro ao reproduzir o som:", error);
         toast({
           title: "Erro",
           description: "Não foi possível reproduzir o som. Verifique se o arquivo existe.",
           variant: "destructive",
         });
-      }
+      });
     }
   };
   
-  // Mostrar teste de toast
-  const showTestToast = () => {
-    if (localContent.toastEnabled) {
+  // Mostrar teste de notificação
+  const showTestNotification = () => {
+    if (localContent.enabled) {
       toast({
-        title: localContent.toastTitle || "Venda realizada com Pix",
-        description: localContent.toastSubtitle || "Sua comissão: R$34,90 - #P00000009",
-        variant: "default",
+        title: localContent.notificationTitle,
+        description: `${localContent.notificationText} - ${localContent.notificationCode}`,
         style: {
-          backgroundColor: localContent.toastColor,
-          color: localContent.toastTextColor,
-          borderRadius: `${localContent.borderRadius || 8}px`,
+          backgroundColor: localContent.backgroundColor,
+          color: localContent.textColor,
         },
       });
     }
@@ -130,7 +110,7 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           <div className="bg-purple-100 p-2 rounded-full mr-3">
-            <Bell className="h-5 w-5 text-purple-600" />
+            <Settings className="h-5 w-5 text-purple-600" />
           </div>
           <h2 className="text-lg font-medium">Configuração de Notificação</h2>
         </div>
@@ -141,8 +121,8 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
           <TabsTrigger value="geral" className="flex-1">
             Geral
           </TabsTrigger>
-          <TabsTrigger value="toast" className="flex-1">
-            Toast
+          <TabsTrigger value="estilo" className="flex-1">
+            Estilo
           </TabsTrigger>
           <TabsTrigger value="som" className="flex-1">
             Som
@@ -153,75 +133,84 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="toastEnabled">Exibir Toast</Label>
+                <Label htmlFor="enabled">Ativar Notificações</Label>
                 <Switch
-                  id="toastEnabled"
-                  checked={localContent.toastEnabled}
-                  onCheckedChange={(checked) => handleChange("toastEnabled", checked)}
+                  id="enabled"
+                  checked={localContent.enabled}
+                  onCheckedChange={(checked) => handleChange("enabled", checked)}
                 />
               </div>
               <p className="text-xs text-gray-500">
-                Mostrar notificação visual
+                Ativar/desativar todas as notificações
               </p>
             </div>
             
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="soundEnabled">Reproduzir Som</Label>
+                <Label htmlFor="showTime">Mostrar Tempo</Label>
                 <Switch
-                  id="soundEnabled"
-                  checked={localContent.soundEnabled}
-                  onCheckedChange={(checked) => handleChange("soundEnabled", checked)}
+                  id="showTime"
+                  checked={localContent.showTime}
+                  onCheckedChange={(checked) => handleChange("showTime", checked)}
                 />
               </div>
               <p className="text-xs text-gray-500">
-                Reproduzir som de notificação
+                Exibir indicador de tempo
               </p>
             </div>
           </div>
           
-          <Separator className="my-4" />
-          
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              showTestToast();
-              playSound();
-            }}
-          >
-            Testar Notificação
-          </Button>
-        </TabsContent>
-        
-        <TabsContent value="toast" className="space-y-4">
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="toastTitle">Título da Notificação</Label>
+              <Label htmlFor="notificationTitle">Título da Notificação</Label>
               <Input
-                id="toastTitle"
-                value={localContent.toastTitle}
-                onChange={(e) => handleChange("toastTitle", e.target.value)}
-                disabled={!localContent.toastEnabled}
+                id="notificationTitle"
+                value={localContent.notificationTitle}
+                onChange={(e) => handleChange("notificationTitle", e.target.value)}
+                disabled={!localContent.enabled}
               />
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="toastSubtitle">Subtítulo da Notificação</Label>
+              <Label htmlFor="notificationText">Texto da Notificação</Label>
               <Input
-                id="toastSubtitle"
-                value={localContent.toastSubtitle}
-                onChange={(e) => handleChange("toastSubtitle", e.target.value)}
-                disabled={!localContent.toastEnabled}
+                id="notificationText"
+                value={localContent.notificationText}
+                onChange={(e) => handleChange("notificationText", e.target.value)}
+                disabled={!localContent.enabled}
               />
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="toastPosition">Posição do Toast</Label>
+              <Label htmlFor="notificationCode">Código da Notificação</Label>
+              <Input
+                id="notificationCode"
+                value={localContent.notificationCode}
+                onChange={(e) => handleChange("notificationCode", e.target.value)}
+                disabled={!localContent.enabled}
+              />
+            </div>
+            
+            {localContent.showTime && (
+              <div className="space-y-1">
+                <Label htmlFor="timeText">Texto do Tempo</Label>
+                <Input
+                  id="timeText"
+                  value={localContent.timeText}
+                  onChange={(e) => handleChange("timeText", e.target.value)}
+                  disabled={!localContent.enabled}
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="position">Posição das Notificações</Label>
               <Select
-                value={localContent.toastPosition}
-                onValueChange={(value) => handleChange("toastPosition", value)}
-                disabled={!localContent.toastEnabled}
+                value={localContent.position}
+                onValueChange={(value) => handleChange("position", value)}
+                disabled={!localContent.enabled}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a posição" />
@@ -232,164 +221,132 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
                     <SelectItem value="top-left">Superior Esquerdo</SelectItem>
                     <SelectItem value="bottom-right">Inferior Direito</SelectItem>
                     <SelectItem value="bottom-left">Inferior Esquerdo</SelectItem>
-                    <SelectItem value="top-center">Superior Centro</SelectItem>
-                    <SelectItem value="bottom-center">Inferior Centro</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="toastDuration">Duração (segundos)</Label>
+              <Label htmlFor="displayDuration">Duração da Exibição (segundos)</Label>
               <div className="flex items-center space-x-2">
                 <Slider
-                  id="toastDuration"
-                  value={[localContent.toastDuration || 5]}
+                  id="displayDuration"
+                  value={[localContent.displayDuration || 5]}
                   min={1}
                   max={10}
                   step={1}
-                  onValueChange={(value) => handleChange("toastDuration", value[0])}
-                  disabled={!localContent.toastEnabled}
+                  onValueChange={(value) => handleChange("displayDuration", value[0])}
+                  disabled={!localContent.enabled}
                 />
-                <span className="w-10 text-right">{localContent.toastDuration || 5}s</span>
+                <span className="w-10 text-right">{localContent.displayDuration || 5}s</span>
               </div>
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="borderRadius">Arredondamento dos Cantos</Label>
+              <Label htmlFor="stackSize">Quantidade de Notificações</Label>
               <div className="flex items-center space-x-2">
                 <Slider
-                  id="borderRadius"
-                  value={[localContent.borderRadius || 8]}
-                  min={0}
-                  max={20}
+                  id="stackSize"
+                  value={[localContent.stackSize || 3]}
+                  min={1}
+                  max={5}
                   step={1}
-                  onValueChange={(value) => handleChange("borderRadius", value[0])}
-                  disabled={!localContent.toastEnabled}
+                  onValueChange={(value) => handleChange("stackSize", value[0])}
+                  disabled={!localContent.enabled}
                 />
-                <span className="w-10 text-right">{localContent.borderRadius || 8}px</span>
+                <span className="w-10 text-right">{localContent.stackSize || 3}</span>
               </div>
             </div>
-            
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="estilo" className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="toastColor">Cor de Fundo</Label>
+              <Label htmlFor="backgroundColor">Cor de Fundo</Label>
               <div className="flex items-center space-x-2">
                 <Input
-                  id="toastColor"
+                  id="backgroundColor"
                   type="color"
-                  value={localContent.toastColor}
-                  onChange={(e) => handleChange("toastColor", e.target.value)}
+                  value={localContent.backgroundColor}
+                  onChange={(e) => handleChange("backgroundColor", e.target.value)}
                   className="w-10 h-10 p-1"
-                  disabled={!localContent.toastEnabled}
+                  disabled={!localContent.enabled}
                 />
                 <Input
-                  value={localContent.toastColor}
-                  onChange={(e) => handleChange("toastColor", e.target.value)}
+                  value={localContent.backgroundColor}
+                  onChange={(e) => handleChange("backgroundColor", e.target.value)}
                   className="flex-1"
-                  disabled={!localContent.toastEnabled}
+                  disabled={!localContent.enabled}
                 />
               </div>
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="toastTextColor">Cor do Texto</Label>
+              <Label htmlFor="textColor">Cor do Texto</Label>
               <div className="flex items-center space-x-2">
                 <Input
-                  id="toastTextColor"
+                  id="textColor"
                   type="color"
-                  value={localContent.toastTextColor}
-                  onChange={(e) => handleChange("toastTextColor", e.target.value)}
+                  value={localContent.textColor}
+                  onChange={(e) => handleChange("textColor", e.target.value)}
                   className="w-10 h-10 p-1"
-                  disabled={!localContent.toastEnabled}
+                  disabled={!localContent.enabled}
                 />
                 <Input
-                  value={localContent.toastTextColor}
-                  onChange={(e) => handleChange("toastTextColor", e.target.value)}
+                  value={localContent.textColor}
+                  onChange={(e) => handleChange("textColor", e.target.value)}
                   className="flex-1"
-                  disabled={!localContent.toastEnabled}
+                  disabled={!localContent.enabled}
                 />
               </div>
             </div>
             
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="showImage">Mostrar Imagem</Label>
-                <Switch
-                  id="showImage"
-                  checked={localContent.showImage}
-                  onCheckedChange={(checked) => handleChange("showImage", checked)}
-                  disabled={!localContent.toastEnabled}
-                />
-              </div>
-            </div>
-            
-            {localContent.showImage && (
-              <div className="space-y-1">
-                <Label htmlFor="customImage">URL da Imagem</Label>
+              <Label htmlFor="accentColor">Cor de Destaque</Label>
+              <div className="flex items-center space-x-2">
                 <Input
-                  id="customImage"
-                  value={localContent.customImage}
-                  onChange={(e) => handleChange("customImage", e.target.value)}
-                  placeholder="https://url-da-sua-imagem.jpg"
-                  disabled={!localContent.toastEnabled || !localContent.showImage}
+                  id="accentColor"
+                  type="color"
+                  value={localContent.accentColor}
+                  onChange={(e) => handleChange("accentColor", e.target.value)}
+                  className="w-10 h-10 p-1"
+                  disabled={!localContent.enabled}
                 />
-                <p className="text-xs text-gray-500">
-                  Deixe vazio para usar o ícone padrão
-                </p>
-              </div>
-            )}
-            
-            <div className="space-y-1">
-              <Label htmlFor="titleFontSize">Tamanho da Fonte do Título</Label>
-              <div className="flex items-center space-x-2">
-                <Slider
-                  id="titleFontSize"
-                  value={[localContent.titleFontSize || 14]}
-                  min={10}
-                  max={24}
-                  step={1}
-                  onValueChange={(value) => handleChange("titleFontSize", value[0])}
-                  disabled={!localContent.toastEnabled}
+                <Input
+                  value={localContent.accentColor}
+                  onChange={(e) => handleChange("accentColor", e.target.value)}
+                  className="flex-1"
+                  disabled={!localContent.enabled}
                 />
-                <span className="w-10 text-right">{localContent.titleFontSize || 14}px</span>
               </div>
             </div>
-            
-            <div className="space-y-1">
-              <Label htmlFor="subtitleFontSize">Tamanho da Fonte do Subtítulo</Label>
-              <div className="flex items-center space-x-2">
-                <Slider
-                  id="subtitleFontSize"
-                  value={[localContent.subtitleFontSize || 12]}
-                  min={8}
-                  max={18}
-                  step={1}
-                  onValueChange={(value) => handleChange("subtitleFontSize", value[0])}
-                  disabled={!localContent.toastEnabled}
-                />
-                <span className="w-10 text-right">{localContent.subtitleFontSize || 12}px</span>
-              </div>
-            </div>
-            
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={showTestToast}
-              disabled={!localContent.toastEnabled}
-            >
-              Testar Toast
-            </Button>
           </div>
         </TabsContent>
         
         <TabsContent value="som" className="space-y-4">
           <div className="space-y-3">
             <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="soundEnabled">Ativar Som</Label>
+                <Switch
+                  id="soundEnabled"
+                  checked={localContent.soundEnabled}
+                  onCheckedChange={(checked) => handleChange("soundEnabled", checked)}
+                  disabled={!localContent.enabled}
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                Reproduzir som ao mostrar notificação
+              </p>
+            </div>
+            
+            <div className="space-y-1">
               <Label htmlFor="soundType">Tipo de Som</Label>
               <Select
                 value={localContent.soundType}
                 onValueChange={(value) => handleChange("soundType", value)}
-                disabled={!localContent.soundEnabled}
+                disabled={!localContent.enabled || !localContent.soundEnabled}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo de som" />
@@ -409,18 +366,28 @@ const NotificationConfig: React.FC<NotificationConfigProps> = ({
               variant="outline"
               className="w-full"
               onClick={playSound}
-              disabled={!localContent.soundEnabled}
+              disabled={!localContent.enabled || !localContent.soundEnabled}
             >
               <Volume2 className="mr-2 h-4 w-4" />
               Testar Som
             </Button>
-            
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-xs text-yellow-700">
-              <p>Nota: Certifique-se de que os arquivos de som necessários estejam disponíveis em public/sounds/ com nomes correspondentes (ex: sale.mp3, success.mp3).</p>
-            </div>
           </div>
         </TabsContent>
       </Tabs>
+      
+      <Separator className="my-4" />
+      
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => {
+          showTestNotification();
+          if (localContent.soundEnabled) playSound();
+        }}
+        disabled={!localContent.enabled}
+      >
+        Testar Notificação
+      </Button>
     </div>
   );
 };

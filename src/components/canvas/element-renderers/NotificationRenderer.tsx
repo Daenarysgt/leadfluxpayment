@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
-import { Bell } from "lucide-react";
 import { NotificationContent } from "@/types/canvasTypes";
 import ElementWrapper from "../ElementWrapper";
 
@@ -8,205 +7,166 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   const { element, isSelected, onSelect, onRemove, onDuplicate, onMoveUp, onMoveDown, index, totalElements, previewMode } = props;
   const content = element.content as NotificationContent || {};
   
-  // Valores padrão
+  // Valores padrão com novo estilo
   const {
-    toastTitle = "Venda realizada com Pix",
-    toastSubtitle = "Sua comissão: R$34,90 - #P00000009", 
-    toastEnabled = true,
+    notificationTitle = "Venda realizada com o Pix",
+    notificationText = "Sua comissão: R$34,90",
+    notificationCode = "#P00000009",
+    backgroundColor = "rgba(23, 23, 23, 0.95)", // Fundo escuro semi-transparente
+    textColor = "#ffffff",
+    accentColor = "#ff4d4d", // Cor de destaque (vermelho)
+    showTime = true,
+    timeText = "há 1h",
+    displayDuration = 5,
+    stackSize = 3, // Quantidade de notificações empilhadas
     soundEnabled = true,
     soundType = "sale",
-    toastColor = "#FF5733",
-    toastTextColor = "#ffffff",
-    toastDuration = 5,
-    toastPosition = "bottom-right",
-    showImage = true,
-    customImage = "",
-    borderRadius = 8,
-    titleFontSize = 14,
-    subtitleFontSize = 12,
+    position = "bottom-right",
+    enabled = true,
   } = content;
-  
-  // Estado para controlar visibilidade da notificação flutuante
-  const [isVisible, setIsVisible] = useState(false);
-  const [didInitialize, setDidInitialize] = useState(false);
-  const [audioLoaded, setAudioLoaded] = useState(false);
 
-  // Refs para gerenciar recursos
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Estados
+  const [notifications, setNotifications] = useState<Array<{id: number, visible: boolean}>>([]);
+  const [isPublic] = useState(typeof window !== 'undefined' && (window.self !== window.top || previewMode));
+  
+  // Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Verificação se estamos no funil público (iframe)
-  const isPublic = typeof window !== 'undefined' && (window.self !== window.top || previewMode);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Função para mostrar a notificação
-  const showNotification = () => {
-    console.log('[Notification] Mostrando notificação');
-    setIsVisible(true);
-    setDidInitialize(true);
+  // Função para criar uma nova notificação
+  const createNotification = () => {
+    const newNotification = { id: Date.now(), visible: true };
     
-    // Tocar o som se estiver carregado
-    if (soundEnabled && audioRef.current && audioLoaded) {
+    setNotifications(prev => {
+      // Mantém apenas as últimas notificações baseado no stackSize
+      const updated = [newNotification, ...prev].slice(0, stackSize);
+      return updated;
+    });
+
+    // Remove a notificação após o tempo definido
+    setTimeout(() => {
+      setNotifications(prev => 
+        prev.filter(n => n.id !== newNotification.id)
+      );
+    }, displayDuration * 1000);
+
+    // Toca o som se habilitado
+    if (soundEnabled && audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play()
-        .catch(err => console.warn('[Notification] Erro ao tocar som:', err));
+      audioRef.current.play().catch(err => console.warn('Erro ao tocar som:', err));
     }
-    
-    // Configurar timer para esconder
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      console.log('[Notification] Escondendo notificação');
-      setIsVisible(false);
-    }, toastDuration * 1000);
   };
 
   // Efeito para inicializar o áudio
   useEffect(() => {
     if (soundEnabled && isPublic) {
-      const soundUrl = `/sounds/${soundType}.mp3`;
-      const audio = new Audio(soundUrl);
-      
-      audio.addEventListener('canplaythrough', () => {
-        console.log('[Notification] Áudio carregado');
-        setAudioLoaded(true);
-      });
-      
-      audio.load();
+      const audio = new Audio(`/sounds/${soundType}.mp3`);
       audioRef.current = audio;
       
       return () => {
-        audio.removeEventListener('canplaythrough', () => {});
         if (audioRef.current) {
           audioRef.current.pause();
           audioRef.current = null;
         }
       };
     }
-  }, [soundEnabled, soundType]);
+  }, [soundEnabled, soundType, isPublic]);
 
-  // Efeito para inicializar o sistema de repetição
+  // Efeito para iniciar o sistema de notificações
   useEffect(() => {
-    if (isPublic && toastEnabled) {
-      console.log('[Notification] Iniciando sistema de repetição');
+    if (isPublic && enabled) {
+      // Primeira notificação após 2 segundos
+      const initialTimer = setTimeout(createNotification, 2000);
       
-      // Primeira exibição após 2 segundos
-      const initialTimer = setTimeout(() => {
-        showNotification();
-      }, 2000);
-
-      // Configurar intervalo de repetição (a cada 20 segundos)
-      intervalRef.current = setInterval(() => {
-        showNotification();
-      }, 20000);
+      // Cria novas notificações periodicamente
+      intervalRef.current = setInterval(createNotification, 15000);
 
       return () => {
         clearTimeout(initialTimer);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      };
-    }
-  }, [isPublic, toastEnabled]);
-
-  // Efeito para lidar com interação do usuário (necessário para som em alguns navegadores)
-  useEffect(() => {
-    if (isPublic && soundEnabled) {
-      const handleUserInteraction = () => {
-        if (audioRef.current) {
-          audioRef.current.play()
-            .then(() => console.log('[Notification] Som ativado após interação'))
-            .catch(err => console.warn('[Notification] Erro ao ativar som:', err));
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
         }
       };
-
-      document.addEventListener('click', handleUserInteraction);
-      document.addEventListener('touchstart', handleUserInteraction);
-
-      return () => {
-        document.removeEventListener('click', handleUserInteraction);
-        document.removeEventListener('touchstart', handleUserInteraction);
-      };
     }
-  }, [isPublic, soundEnabled]);
+  }, [isPublic, enabled]);
 
-  // Renderiza a visualização no builder/editor (estática)
+  // Renderiza a visualização estática para o editor
   const renderEditorView = () => {
-    // Se estivermos no funil público, não mostramos o elemento estático
-    if (isPublic) {
-      return null;
-    }
-    
+    if (isPublic) return null;
+
     return (
-      <div 
-        className="flex items-center shadow-md w-full overflow-hidden"
-        style={{
-          backgroundColor: toastColor,
-          color: toastTextColor,
-          borderRadius: `${borderRadius}px`,
-        }}
-      >
-        {showImage && (
-          <div className="flex-shrink-0 p-3" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
-            {customImage ? (
-              <img src={customImage} alt="Notification" className="h-10 w-10" />
-            ) : (
-              <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full">
-                <Bell className="h-6 w-6" style={{ color: toastColor }} />
-              </div>
-            )}
+      <div className="w-full p-4 bg-zinc-900 rounded-lg">
+        <div className="flex items-start gap-3 bg-zinc-800 p-4 rounded-lg">
+          <div 
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: accentColor }}
+          >
+            <img src="/icons/pix-icon.png" alt="Pix" className="w-6 h-6" />
           </div>
-        )}
-        <div className="py-3 px-4">
-          <div className="font-medium" style={{ fontSize: `${titleFontSize}px` }}>{toastTitle}</div>
-          <div className="opacity-90" style={{ fontSize: `${subtitleFontSize}px` }}>{toastSubtitle}</div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-medium">{notificationTitle}</h3>
+              {showTime && <span className="text-zinc-400 text-sm">{timeText}</span>}
+            </div>
+            <p className="text-zinc-300 text-sm mt-1">
+              {notificationText} - {notificationCode}
+            </p>
+          </div>
         </div>
       </div>
     );
   };
-  
-  // Renderiza a notificação flutuante temporária
-  const renderFloatingNotification = () => {
-    if (!toastEnabled || (!isPublic && !isSelected)) return null;
+
+  // Renderiza as notificações flutuantes
+  const renderFloatingNotifications = () => {
+    if (!enabled || (!isPublic && !isSelected)) return null;
 
     const positionClasses = {
       'top-right': 'top-4 right-4',
       'top-left': 'top-4 left-4',
       'bottom-right': 'bottom-4 right-4',
       'bottom-left': 'bottom-4 left-4',
-      'top-center': 'top-4 left-1/2 transform -translate-x-1/2',
-      'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2'
     };
-    
-    const position = positionClasses[toastPosition as keyof typeof positionClasses];
-    
+
     return (
-      <div
-        id="floating-notification"
-        className={`fixed ${position} z-[9999] flex items-center shadow-lg transition-all duration-500 ease-in-out`}
-        style={{
-          backgroundColor: toastColor,
-          color: toastTextColor,
-          borderRadius: `${borderRadius}px`,
-          maxWidth: '320px',
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-          pointerEvents: 'none',
-        }}
+      <div 
+        className={`fixed ${positionClasses[position]} z-[9999] flex flex-col gap-2`}
+        style={{ pointerEvents: 'none' }}
       >
-        {showImage && (
-          <div className="flex-shrink-0 p-3" style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}>
-            {customImage ? (
-              <img src={customImage} alt="Notification" className="h-10 w-10" />
-            ) : (
-              <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full">
-                <Bell className="h-6 w-6" style={{ color: toastColor }} />
+        {notifications.map((notification, index) => (
+          <div
+            key={notification.id}
+            className="flex items-start gap-3 p-4 rounded-lg shadow-lg transition-all duration-500"
+            style={{
+              backgroundColor,
+              opacity: notification.visible ? 1 : 0,
+              transform: `translateY(${notification.visible ? 0 : 20}px)`,
+              maxWidth: '380px',
+            }}
+          >
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: accentColor }}
+            >
+              <img src="/icons/pix-icon.png" alt="Pix" className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h3 style={{ color: textColor }} className="font-medium">
+                  {notificationTitle}
+                </h3>
+                {showTime && (
+                  <span style={{ color: 'rgba(255,255,255,0.6)' }} className="text-sm">
+                    {timeText}
+                  </span>
+                )}
               </div>
-            )}
+              <p style={{ color: 'rgba(255,255,255,0.8)' }} className="text-sm mt-1">
+                {notificationText} - {notificationCode}
+              </p>
+            </div>
           </div>
-        )}
-        <div className="py-3 px-4">
-          <div className="font-medium" style={{ fontSize: `${titleFontSize}px` }}>{toastTitle}</div>
-          <div className="opacity-90" style={{ fontSize: `${subtitleFontSize}px` }}>{toastSubtitle}</div>
-        </div>
+        ))}
       </div>
     );
   };
@@ -224,7 +184,7 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       totalElements={totalElements}
     >
       {renderEditorView()}
-      {renderFloatingNotification()}
+      {renderFloatingNotifications()}
     </ElementWrapper>
   );
 };
