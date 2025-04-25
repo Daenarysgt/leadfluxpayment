@@ -46,14 +46,14 @@ const BuilderContent = ({
         
         <ResizablePanel defaultSize={selectedElement ? 40 : 70}>
           {previewActive ? (
-            <ScrollArea className="h-[calc(100vh-64px)] builder-scroll-area no-global-scroll">
+            <ScrollArea className="h-[calc(100vh-64px)]">
               <div className="p-6">
                 <BuilderPreview isMobile={viewMode === 'mobile'} />
               </div>
             </ScrollArea>
           ) : (
-            <ScrollArea className="h-[calc(100vh-64px)] builder-scroll-area builder-canvas-scroll-area no-global-scroll">
-              <div className="p-6 canvas-wrapper">
+            <ScrollArea className="h-[calc(100vh-64px)]">
+              <div className="p-6">
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}
                   isMobile={viewMode === 'mobile'} 
@@ -73,13 +73,11 @@ const BuilderContent = ({
             <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
             
             <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-              <ScrollArea className="h-[calc(100vh-64px)] builder-scroll-area no-global-scroll">
-                <ElementConfigSidebar 
-                  selectedElement={selectedElement}
-                  onUpdate={onElementUpdate}
-                  onClose={onCloseElementConfig}
-                />
-              </ScrollArea>
+              <ElementConfigSidebar 
+                selectedElement={selectedElement}
+                onUpdate={onElementUpdate}
+                onClose={onCloseElementConfig}
+              />
             </ResizablePanel>
           </>
         )}

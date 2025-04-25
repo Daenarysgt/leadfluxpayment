@@ -359,7 +359,7 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto pb-10 rounded-lg relative builder-canvas-container", 
+          "w-full mx-auto pb-10 rounded-lg relative", 
           isMobile ? "max-w-[375px]" : "max-w-[600px]",
           isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}
@@ -369,11 +369,7 @@ const BuilderCanvas = ({
           // Adicionar padding extra lateral apenas para o canvas (não para os elementos)
           // para permitir espaço para os controles flutuantes externos
           paddingLeft: '16px',
-          paddingRight: '16px',
-          minHeight: '80vh',
-          position: 'relative',
-          zIndex: 0,
-          overflow: 'visible'
+          paddingRight: '16px'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}
