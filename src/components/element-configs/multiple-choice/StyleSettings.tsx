@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdvancedColorPicker } from "../common/AdvancedColorPicker";
 
 export interface StyleSettingsProps {
   showEmojis: boolean;
@@ -299,33 +300,25 @@ const StyleSettings: React.FC<StyleSettingsProps> = ({
                 
                 <div className="pt-3">
                   <Label className="text-xs mb-2 block">Cor do indicador selecionado</Label>
-                  <div className="flex space-x-2 items-center">
-                    <div 
-                      className="h-6 w-6 rounded border"
-                      style={{ backgroundColor: indicatorColor || '#8b5cf6' }}
+                  <div className="flex items-center space-x-2">
+                    <AdvancedColorPicker
+                      value={indicatorColor || '#8b5cf6'}
+                      onChange={onIndicatorColorChange}
+                      size="sm"
                     />
-                    <Input
-                      value={indicatorColor}
-                      onChange={(e) => onIndicatorColorChange(e.target.value)}
-                      placeholder="#8b5cf6"
-                      className="h-8 text-xs"
-                    />
+                    <span className="text-xs">{indicatorColor || '#8b5cf6'}</span>
                   </div>
                 </div>
                 
                 <div className="pt-3">
                   <Label className="text-xs mb-2 block">Cor do ícone do indicador</Label>
-                  <div className="flex space-x-2 items-center">
-                    <div 
-                      className="h-6 w-6 rounded border"
-                      style={{ backgroundColor: indicatorIconColor || '#FFFFFF' }}
+                  <div className="flex items-center space-x-2">
+                    <AdvancedColorPicker
+                      value={indicatorIconColor || '#FFFFFF'}
+                      onChange={onIndicatorIconColorChange}
+                      size="sm"
                     />
-                    <Input
-                      value={indicatorIconColor}
-                      onChange={(e) => onIndicatorIconColorChange(e.target.value)}
-                      placeholder="#FFFFFF"
-                      className="h-8 text-xs"
-                    />
+                    <span className="text-xs">{indicatorIconColor || '#FFFFFF'}</span>
                   </div>
                 </div>
               </>

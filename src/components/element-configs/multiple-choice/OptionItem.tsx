@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { AdvancedColorPicker } from "../common/AdvancedColorPicker";
 
 interface OptionItemProps {
   option: {
@@ -112,37 +113,25 @@ const OptionItem = ({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor={`bg-color-${option.id}`} className="text-xs">Cor de fundo</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.backgroundColor || '#FFFFFF' }}
+          <div className="flex items-center space-x-2">
+            <AdvancedColorPicker
+              value={option.style?.backgroundColor || '#FFFFFF'}
+              onChange={(color) => onBackgroundColorChange(option.id, color)}
+              size="sm"
             />
-            <Input
-              id={`bg-color-${option.id}`}
-              type="text"
-              value={option.style?.backgroundColor || ''}
-              onChange={(e) => onBackgroundColorChange(option.id, e.target.value)}
-              placeholder="#FFFFFF"
-              className="h-6 text-xs"
-            />
+            <span className="text-xs">{option.style?.backgroundColor || '#FFFFFF'}</span>
           </div>
         </div>
         
         <div className="space-y-1">
           <Label htmlFor={`border-color-${option.id}`} className="text-xs">Cor da borda</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.borderColor || '#E5E7EB' }}
+          <div className="flex items-center space-x-2">
+            <AdvancedColorPicker
+              value={option.style?.borderColor || '#E5E7EB'}
+              onChange={(color) => onBorderColorChange(option.id, color)}
+              size="sm"
             />
-            <Input
-              id={`border-color-${option.id}`}
-              type="text"
-              value={option.style?.borderColor || ''}
-              onChange={(e) => onBorderColorChange(option.id, e.target.value)}
-              placeholder="#E5E7EB"
-              className="h-6 text-xs"
-            />
+            <span className="text-xs">{option.style?.borderColor || '#E5E7EB'}</span>
           </div>
         </div>
       </div>
@@ -150,19 +139,13 @@ const OptionItem = ({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor={`text-color-${option.id}`} className="text-xs">Cor do texto</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.textColor || '#000000' }}
+          <div className="flex items-center space-x-2">
+            <AdvancedColorPicker
+              value={option.style?.textColor || '#000000'}
+              onChange={(color) => onTextColorChange(option.id, color)}
+              size="sm"
             />
-            <Input
-              id={`text-color-${option.id}`}
-              type="text"
-              value={option.style?.textColor || ''}
-              onChange={(e) => onTextColorChange(option.id, e.target.value)}
-              placeholder="#000000"
-              className="h-6 text-xs"
-            />
+            <span className="text-xs">{option.style?.textColor || '#000000'}</span>
           </div>
         </div>
       </div>
@@ -174,56 +157,38 @@ const OptionItem = ({
       <div className="grid grid-cols-2 gap-2 mt-2">
         <div className="space-y-1">
           <Label htmlFor={`selected-bg-color-${option.id}`} className="text-xs">Cor de fundo</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.selectedBackgroundColor || '#f5f3ff' }}
-            />
-            <Input
-              id={`selected-bg-color-${option.id}`}
-              type="text"
+          <div className="flex items-center space-x-2">
+            <AdvancedColorPicker
               value={option.style?.selectedBackgroundColor || '#f5f3ff'}
-              onChange={(e) => onSelectedBackgroundColorChange && onSelectedBackgroundColorChange(option.id, e.target.value)}
-              placeholder="#f5f3ff"
-              className="h-6 text-xs"
+              onChange={(color) => onSelectedBackgroundColorChange && onSelectedBackgroundColorChange(option.id, color)}
+              size="sm"
             />
+            <span className="text-xs">{option.style?.selectedBackgroundColor || '#f5f3ff'}</span>
           </div>
         </div>
         
         <div className="space-y-1">
           <Label htmlFor={`selected-border-color-${option.id}`} className="text-xs">Cor da borda</Label>
-          <div className="flex space-x-2">
-            <div 
-              className="h-6 w-6 rounded border"
-              style={{ backgroundColor: option.style?.selectedBorderColor || '#8b5cf6' }}
-            />
-            <Input
-              id={`selected-border-color-${option.id}`}
-              type="text"
+          <div className="flex items-center space-x-2">
+            <AdvancedColorPicker
               value={option.style?.selectedBorderColor || '#8b5cf6'}
-              onChange={(e) => onSelectedBorderColorChange && onSelectedBorderColorChange(option.id, e.target.value)}
-              placeholder="#8b5cf6"
-              className="h-6 text-xs"
+              onChange={(color) => onSelectedBorderColorChange && onSelectedBorderColorChange(option.id, color)}
+              size="sm"
             />
+            <span className="text-xs">{option.style?.selectedBorderColor || '#8b5cf6'}</span>
           </div>
         </div>
       </div>
       
       <div className="space-y-1 mt-2">
         <Label htmlFor={`selected-text-color-${option.id}`} className="text-xs">Cor do texto</Label>
-        <div className="flex space-x-2">
-          <div 
-            className="h-6 w-6 rounded border"
-            style={{ backgroundColor: option.style?.selectedTextColor || '#4c1d95' }}
-          />
-          <Input
-            id={`selected-text-color-${option.id}`}
-            type="text"
+        <div className="flex items-center space-x-2">
+          <AdvancedColorPicker
             value={option.style?.selectedTextColor || '#4c1d95'}
-            onChange={(e) => onSelectedTextColorChange && onSelectedTextColorChange(option.id, e.target.value)}
-            placeholder="#4c1d95"
-            className="h-6 text-xs w-full"
+            onChange={(color) => onSelectedTextColorChange && onSelectedTextColorChange(option.id, color)}
+            size="sm"
           />
+          <span className="text-xs">{option.style?.selectedTextColor || '#4c1d95'}</span>
         </div>
       </div>
       
