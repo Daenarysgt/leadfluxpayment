@@ -465,3 +465,25 @@ div[class*="FunnelPreview"] img[alt="Logo"] + div[class*="rounded-full"] {
     overflow-x: auto !important;
   }
 }
+
+/* Ajustar espaçamento entre cabeçalho e conteúdo */
+div[class*="FunnelPreview"] > div.flex-col,
+div[class*="DomainFunnel"] > div.flex-col {
+  padding-top: 4px !important;
+}
+
+/* Reduzir margem superior de títulos e outros primeiros elementos */
+div[class*="CanvasPreview"] h2:first-child,
+div[class*="CanvasPreview"] > div > div:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Garantir que os elementos dentro do canvas tenham menos espaço superior */
+div[class*="element-renderer"] {
+  margin-top: 4px !important;
+}
+
+div[class*="CanvasPreview"] {
+  padding-top: 0 !important;
+}
