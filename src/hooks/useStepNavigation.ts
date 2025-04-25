@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useStore } from "@/utils/store";
-import { processStepChangeNotifications } from "@/utils/notifications";
 
 export const useStepNavigation = () => {
   const { 
@@ -11,20 +10,13 @@ export const useStepNavigation = () => {
 
   // Navegar para a próxima etapa
   const navigateToNextStep = useCallback(() => {
-    if (!currentFunnel?.steps) return false;
+    if (!currentFunnel?.steps) return;
     
     // Obter o índice da próxima etapa
     const nextStep = currentStep + 1;
     
     // Verificar se existe uma próxima etapa
     if (nextStep < currentFunnel.steps.length) {
-      // Verificar se há configurações de notificação no funil
-      const notificationSettings = currentFunnel.settings?.notifications;
-      
-      // Processar notificações (som e toast)
-      processStepChangeNotifications(notificationSettings);
-      
-      // Navegar para a próxima etapa
       setCurrentStep(nextStep);
       return true;
     }
@@ -41,13 +33,6 @@ export const useStepNavigation = () => {
     
     // Se a etapa foi encontrada, navegar para ela
     if (stepIndex !== -1) {
-      // Verificar se há configurações de notificação no funil
-      const notificationSettings = currentFunnel.settings?.notifications;
-      
-      // Processar notificações (som e toast)
-      processStepChangeNotifications(notificationSettings);
-      
-      // Navegar para a etapa
       setCurrentStep(stepIndex);
       return true;
     }

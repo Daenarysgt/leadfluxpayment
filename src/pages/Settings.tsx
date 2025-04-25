@@ -22,7 +22,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { accessService } from "@/services/accessService";
 import { DomainManager } from "@/components/domains/DomainManager";
 import FacebookPixelConfig from "@/components/pixel/FacebookPixelConfig";
-import NotificationConfig from "@/components/NotificationConfig";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -477,11 +476,6 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
-            
-            <NotificationConfig 
-              notifications={currentFunnel.settings.notifications} 
-              onUpdate={handleSettingChange}
-            />
           </TabsContent>
           
           <TabsContent value="integrações" className="space-y-6 mt-0">
