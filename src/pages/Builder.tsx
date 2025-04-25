@@ -118,7 +118,7 @@ const Builder = () => {
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        overflow: hidden !important;
+        overflow: auto !important;
         width: 100vw !important;
         height: 100vh !important;
       }
@@ -128,6 +128,7 @@ const Builder = () => {
         transform-origin: 0 0;
         width: 111.12vw !important;  /* 100/0.9 = ~111.11 */
         height: 111.12vh !important; /* 100/0.9 = ~111.11 */
+        overflow: hidden !important;
       }
       
       /* Ajustes para resolver o espaço no rodapé */
@@ -141,29 +142,41 @@ const Builder = () => {
       .flex.flex-col.h-screen > div:nth-child(2) {
         flex: 1 !important;
         display: flex !important;
-        min-height: calc(111.12vh - 57px) !important;
-        height: calc(111.12vh - 57px) !important;
+        min-height: calc(111.12vh - 64px) !important;
+        height: calc(111.12vh - 64px) !important;
         overflow: hidden !important;
       }
       
-      /* Garantir que as sidebars preencham toda a altura */
-      .sidebar-left,
-      .sidebar-right,
-      [class*="sidebar"],
-      [class*="canvas"],
-      [class*="elements-panel"],
-      [class*="steps-panel"] {
-        height: 100% !important;
-        min-height: calc(111.12vh - 57px) !important;
-        max-height: none !important;
+      /* Garantir que as sidebars e scrolls funcionem corretamente */
+      [data-radix-scroll-area-viewport] {
         overflow-y: auto !important;
+        overflow-x: hidden !important;
+        z-index: 0 !important;
       }
       
-      /* Forçar todos os paineis a irem até o fim da tela */
-      .flex.flex-col.h-screen > div:nth-child(2) > div {
-        height: calc(111.12vh - 57px) !important;
-        min-height: calc(111.12vh - 57px) !important;
-        overflow-y: auto !important;
+      /* Prevenir qualquer overlay não intencional */
+      [data-radix-scroll-area-viewport]:after {
+        display: none !important;
+      }
+      
+      /* Garantir que nenhum elemento se sobreponha ao conteúdo principal */
+      .absolute.inset-0 {
+        z-index: 10;
+      }
+      
+      /* Prevenir overlays não intencionais */
+      .absolute.bottom-0.left-0.right-0 {
+        z-index: auto !important;
+        position: relative !important;
+      }
+      
+      /* Corrigir o rodapé cinza */
+      body:after {
+        display: none !important;
+      }
+      
+      .flex.flex-col.h-screen:after {
+        display: none !important;
       }
     `;
     
@@ -177,29 +190,56 @@ const Builder = () => {
       
       if (container) {
         // Ajustar o container principal
-        container.style.height = 'calc(111.12vh - 57px)';
-        container.style.minHeight = 'calc(111.12vh - 57px)';
+        container.style.height = 'calc(111.12vh - 64px)';
+        container.style.minHeight = 'calc(111.12vh - 64px)';
         container.style.display = 'flex';
         container.style.flexDirection = 'row';
         container.style.overflow = 'hidden';
-        
-        // Ajustar todos os filhos diretos (painéis)
-        Array.from(container.children).forEach((panel: Element) => {
-          const panelElement = panel as HTMLElement;
-          panelElement.style.height = 'calc(111.12vh - 57px)';
-          panelElement.style.minHeight = 'calc(111.12vh - 57px)';
-          panelElement.style.overflowY = 'auto';
-        });
       }
+      
+      // Adicionar listener para garantir scroll sempre disponível
+      const ensureScrollWorking = () => {
+        const viewports = document.querySelectorAll('[data-radix-scroll-area-viewport]');
+        viewports.forEach(viewport => {
+          const viewportElement = viewport as HTMLElement;
+          viewportElement.style.overflowY = 'auto';
+          viewportElement.style.overflowX = 'hidden';
+        });
+      };
+      
+      // Aplicar ajustes a cada 500ms para garantir que não sejam sobrescritos
+      const scrollInterval = setInterval(ensureScrollWorking, 500);
+      
+      // Remover overlays não intencionais
+      const removeOverlays = () => {
+        const overlays = document.querySelectorAll('body:after, .flex.flex-col.h-screen:after');
+        overlays.forEach(overlay => {
+          const el = overlay as HTMLElement;
+          if (el) el.style.display = 'none';
+        });
+      };
+      
+      // Executar regularmente para garantir consistência
+      const overlayInterval = setInterval(removeOverlays, 1000);
+      
+      // Retornar função de limpeza dos intervalos
+      return () => {
+        clearInterval(scrollInterval);
+        clearInterval(overlayInterval);
+      };
     };
     
     // Executar após um pequeno delay para garantir que o DOM esteja pronto
-    setTimeout(applySpecificFixes, 100);
-    // Executar também depois de 500ms para maior garantia
-    setTimeout(applySpecificFixes, 500);
+    const cleanup = setTimeout(() => {
+      const cleanupFn = applySpecificFixes();
+      return () => {
+        if (cleanupFn) cleanupFn();
+      };
+    }, 100);
     
     // Limpar ao desmontar
     return () => {
+      clearTimeout(cleanup);
       const styleToRemove = document.getElementById('builder-zoom-fix');
       if (styleToRemove) {
         styleToRemove.remove();
