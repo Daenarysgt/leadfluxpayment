@@ -12,7 +12,14 @@ export const createFunnelAction = (set: any, get: any) => async (name: string) =
         backgroundColor: '#ffffff',
         fontFamily: 'SF Pro Display',
         showProgressBar: true,
-        collectLeadData: true
+        collectLeadData: true,
+        notifications: {
+          soundEnabled: true,
+          soundChoice: 'hotmart',
+          toastEnabled: true,
+          toastStyle: 'default',
+          toastMessage: 'Nova etapa iniciada!'
+        }
       },
       steps: []
     });

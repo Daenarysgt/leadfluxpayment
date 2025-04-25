@@ -86,6 +86,15 @@ export interface FunnelSettings {
     completeRegistration?: boolean;
   };
   
+  // Notification settings
+  notifications?: {
+    soundEnabled?: boolean;
+    soundChoice?: string;
+    toastEnabled?: boolean;
+    toastStyle?: 'default' | 'destructive';
+    toastMessage?: string;
+  };
+  
   // Added missing properties with proper types
   accentColor?: string;
   textBold?: boolean; // Changed from string to boolean
@@ -145,29 +154,30 @@ export interface LeadInfo {
 }
 
 export enum ComponentType {
-  Text = "text",
-  Image = "image",
-  Button = "button",
-  Arguments = "arguments",
-  Graphics = "graphics",
-  Testimonials = "testimonials",
-  Level = "level",
-  Capture = "capture",
-  Loading = "loading",
-  Cartesian = "cartesian",
-  Spacer = "spacer",
-  MultipleChoice = "multipleChoice",
-  MultipleChoiceImage = "multipleChoiceImage",
-  Carousel = "carousel",
-  Height = "height",
-  Weight = "weight",
-  Comparison = "comparison",
-  Rating = "rating",
-  Video = "video",
-  Price = "price",
-  Notes = "notes",
-  Timer = "timer",
-  Accordion = "accordion"
+  Text = "Text",
+  MultipleChoice = "MultipleChoice",
+  MultipleChoiceImage = "MultipleChoiceImage",
+  Button = "Button",
+  Image = "Image",
+  Carousel = "Carousel",
+  Height = "Height",
+  Weight = "Weight",
+  Rating = "Rating",
+  Spacer = "Spacer",
+  Comparison = "Comparison",
+  Arguments = "Arguments",
+  Graphics = "Graphics",
+  Testimonials = "Testimonials",
+  Level = "Level",
+  Capture = "Capture",
+  Loading = "Loading", 
+  Cartesian = "Cartesian",
+  Video = "Video",
+  Price = "Price",
+  Notes = "Notes",
+  Timer = "Timer",
+  Accordion = "Accordion",
+  Notification = "Notification"
 }
 
 export interface TabOption {
