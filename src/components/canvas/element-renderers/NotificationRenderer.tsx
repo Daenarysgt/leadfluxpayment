@@ -26,112 +26,113 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
     subtitleFontSize = 12,
   } = content;
   
-  // Estados
-  const [visible, setVisible] = useState(false);
+  // Estado para controlar visibilidade da notificação flutuante
+  const [isVisible, setIsVisible] = useState(false);
+  const [didInitialize, setDidInitialize] = useState(false);
 
-  // Refs
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Refs para gerenciar recursos
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Detectar se estamos em um iframe (funil público)
-  const inIframe = () => {
-    try {
-      return window !== window.parent;
-    } catch (e) {
-      return true;
-    }
-  };
-
-  const isPublicView = inIframe();
-
-  // Lógica para mostrar e esconder a notificação
+  
+  // Verificação se estamos no funil público (iframe)
+  const isIframe = typeof window !== 'undefined' && window.self !== window.top;
+  
+  // EFEITO DE INICIALIZAÇÃO ÚNICO
+  // Este efeito roda apenas uma vez na montagem do componente
   useEffect(() => {
-    // No editor normal (não preview), apenas mostramos o elemento estático
-    if (!previewMode && !isPublicView) {
-      return;
-    }
-
-    // Limpar qualquer timeout existente
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Nos modos preview ou funil público, mostramos a notificação flutuante
-    console.log("Ativando notificação - modo:", isPublicView ? "Funil Público" : "Preview Editor");
-
-    // Mostrar a notificação após um pequeno delay
-    const showTimer = setTimeout(() => {
-      setVisible(true);
-      console.log("Notificação visível");
+    // Só queremos mostrar a notificação em preview ou no funil público
+    if (isIframe || previewMode) {
+      console.log('[Notification] Inicializando notificação', { isIframe, previewMode });
       
-      // Tentar tocar o som
-      if (soundEnabled) {
-        playSound();
-      }
+      // Forçamos um delay inicial para garantir que tudo carregou
+      const initTimer = setTimeout(() => {
+        console.log('[Notification] Mostrando notificação após delay inicial');
+        setIsVisible(true);
+        setDidInitialize(true);
+        
+        // Carregar e tentar tocar o som
+        if (soundEnabled) {
+          forcePlaySound();
+        }
+        
+        // Configurar o timer para esconder a notificação
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        
+        timeoutRef.current = setTimeout(() => {
+          console.log(`[Notification] Escondendo notificação após ${toastDuration}s`);
+          setIsVisible(false);
+        }, toastDuration * 1000);
+      }, 1000);
       
-      // Configurar o timer para esconder
-      timeoutRef.current = setTimeout(() => {
-        setVisible(false);
-        console.log("Notificação escondida após", toastDuration, "segundos");
-      }, toastDuration * 1000);
-    }, 1500);
-    
-    // Limpar timers quando o componente desmontar
-    return () => {
-      clearTimeout(showTimer);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [previewMode, toastDuration, soundEnabled]);
-
-  // Função para tocar som
-  const playSound = () => {
+      // Limpeza ao desmontar o componente
+      return () => {
+        clearTimeout(initTimer);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      };
+    }
+  }, []); // Dependência vazia significa que só executa na montagem
+  
+  // Função para forçar a reprodução do som de todas as formas possíveis
+  const forcePlaySound = () => {
     try {
-      // Criar áudio e configurar
       const soundUrl = `/sounds/${soundType}.mp3`;
-      console.log("Tentando tocar som:", soundUrl);
+      console.log('[Notification] Tentando reproduzir som:', soundUrl);
       
-      const audio = new Audio(soundUrl);
-      audio.volume = 1.0;
-      audioRef.current = audio;
+      // Criar elementos de áudio
+      const audio1 = new Audio(soundUrl);
+      const audio2 = new Audio(soundUrl);
+      audioRef.current = audio1;
       
-      // Tentar método 1: reprodução direta
-      audio.play()
-        .then(() => console.log("Som reproduzido com sucesso (método 1)"))
-        .catch(err => {
-          console.warn("Método 1 falhou:", err);
-          
-          // Método 2: tentar com carga manual
-          audio.load();
-          setTimeout(() => {
-            audio.play()
-              .then(() => console.log("Som reproduzido com sucesso (método 2)"))
-              .catch(err => console.error("Todos os métodos falharam:", err));
-          }, 300);
-        });
+      // Configurar volume máximo
+      audio1.volume = 1.0;
+      audio2.volume = 1.0;
       
-      // Método 3: tentar tocar quando o usuário interagir
-      const playOnInteraction = () => {
-        const a = new Audio(soundUrl);
-        a.play().catch(e => console.warn("Interação falhou:", e));
-        document.removeEventListener('click', playOnInteraction);
+      // MÉTODO 1: Reprodução direta e imediata
+      const playPromise = audio1.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => console.log('[Notification] Som reproduzido com sucesso (método 1)'))
+          .catch(err => {
+            console.warn('[Notification] Método 1 falhou:', err);
+            
+            // MÉTODO 2: Forçar carga e tentar novamente com delay
+            audio1.load();
+            setTimeout(() => {
+              audio1.play()
+                .then(() => console.log('[Notification] Som reproduzido com sucesso (método 2)'))
+                .catch(e => console.warn('[Notification] Método 2 falhou:', e));
+            }, 500);
+          });
+      }
+      
+      // MÉTODO 3: Tentativa após interação do usuário
+      const handleUserInteraction = () => {
+        audio2.play()
+          .then(() => console.log('[Notification] Som reproduzido após interação (método 3)'))
+          .catch(e => console.warn('[Notification] Método 3 falhou:', e));
+        
+        // Remover listener após tentativa
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
       };
       
-      document.addEventListener('click', playOnInteraction, { once: true });
+      // Adicionar listeners para interação
+      document.addEventListener('click', handleUserInteraction, { once: true });
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
       
     } catch (error) {
-      console.error("Erro ao configurar áudio:", error);
+      console.error('[Notification] Erro ao configurar áudio:', error);
     }
   };
-
-  // Renderização do elemento estático para o editor
+  
+  // Renderiza a visualização no builder/editor (estática)
   const renderEditorView = () => {
-    // No funil público, não mostrar o elemento estático
-    if (isPublicView && !isSelected) {
+    // Se estivermos no funil público, não mostramos o elemento estático
+    // exceto se ele estiver selecionado no editor
+    if (isIframe && !isSelected) {
       return null;
     }
-
+    
     return (
       <div 
         className="flex items-center shadow-md w-full overflow-hidden"
@@ -159,12 +160,12 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       </div>
     );
   };
-
-  // Renderização da notificação flutuante
+  
+  // Renderiza a notificação flutuante temporária
   const renderFloatingNotification = () => {
     if (!toastEnabled) return null;
 
-    // Determinar posição
+    // Configurar as classes de posicionamento
     const positionClasses = {
       'top-right': 'top-4 right-4',
       'top-left': 'top-4 left-4',
@@ -174,21 +175,27 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       'bottom-center': 'bottom-4 left-1/2 transform -translate-x-1/2'
     };
     
+    // Definir posição e animação
     const position = positionClasses[toastPosition as keyof typeof positionClasses];
+    const animation = isVisible 
+      ? 'animate-in fade-in slide-in-from-bottom-5 duration-500' 
+      : 'animate-out fade-out slide-out-to-bottom-5 duration-500';
     
-    // Transição para entrada/saída
-    const visibilityClass = visible 
-      ? 'opacity-100 transform translate-y-0'
-      : 'opacity-0 transform translate-y-8';
-
+    // Somente renderiza se estiver visível ou foi inicializado
+    if (!isVisible && !didInitialize) return null;
+    
     return (
-      <div 
-        className={`fixed ${position} z-[9999] flex items-center shadow-lg transition-all duration-500 ease-in-out ${visibilityClass}`}
+      <div
+        id="floating-notification"
+        className={`fixed ${position} z-[9999] flex items-center shadow-lg ${animation}`}
         style={{
           backgroundColor: toastColor,
           color: toastTextColor,
           borderRadius: `${borderRadius}px`,
           maxWidth: '320px',
+          transition: 'all 0.5s ease',
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
         }}
       >
         {showImage && (
@@ -222,10 +229,10 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       index={index}
       totalElements={totalElements}
     >
-      {/* Versão do editor */}
+      {/* Elemento estático para o editor */}
       {renderEditorView()}
       
-      {/* Notificação flutuante */}
+      {/* Notificação temporária para o funil público/preview */}
       {renderFloatingNotification()}
     </ElementWrapper>
   );
