@@ -90,7 +90,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
   // Detectar se estamos na visualização do builder ou na URL pública
-  const isBuilderPreview = window.location.pathname.includes('/builder/');
+  const isBuilderPreview = window.location.pathname.includes('/builder/') && 
+                          window.location.pathname.includes('/preview');
   
   // Determinar o estilo baseado na configuração e tipo de dispositivo
   let containerStyles: React.CSSProperties = {

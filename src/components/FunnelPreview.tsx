@@ -93,7 +93,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const headerHeight = validLogo ? "56px" : "24px";
   
   // Detectar se estamos na visualização do builder ou na URL pública
-  const isBuilderPreview = window.location.pathname.includes('/builder/');
+  const isBuilderPreview = window.location.pathname.includes('/builder/') && 
+                           window.location.pathname.includes('/preview');
   const containerClass = isBuilderPreview ? "funnel-preview builder-preview" : "funnel-preview public-view";
 
   return (
