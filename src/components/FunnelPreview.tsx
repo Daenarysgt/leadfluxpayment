@@ -89,18 +89,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Classes sem ajustes específicos para mobile
-  const wrapperClass = "w-full";
-  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto pt-1 pb-4 px-2 sm:pb-8 sm:px-0";
-  const logoWrapperClass = "w-full flex justify-center pt-1 pb-3 mb-1 sm:pb-4 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-4 sm:mb-6";
-  const contentClass = "w-full";
-
-  // Sem estilos específicos para mobile
-  const mainContainerStyle = {};
+  // Calcular a altura do cabeçalho fixo para o ajuste de espaçamento
+  const headerHeight = validLogo ? "70px" : "30px";
 
   return (
-    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
+    <div className="w-full" style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -110,32 +103,44 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
       
-      <div className={contentWrapperClass}>
-        {/* Logotipo */}
+      {/* Header fixo no topo */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          backgroundColor: activeFunnel.settings.backgroundColor || 'white',
+          padding: '8px 0 4px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}
+      >
+        {/* Logo */}
         {validLogo && (
-          <div className={logoWrapperClass}>
+          <div className="w-full flex justify-center">
             <img 
               src={validLogo} 
               alt="Logo" 
-              className="max-h-14 object-contain"
+              className="max-h-10 object-contain"
               onError={(e) => {
                 console.error("FunnelPreview - Erro ao carregar logo:", e);
-                // Esconder o elemento em caso de erro
                 e.currentTarget.style.display = 'none';
-              }}
-              onLoad={() => {
-                console.log("FunnelPreview - Logo carregado com sucesso");
               }}
             />
           </div>
         )}
 
-        {activeFunnel.settings.showProgressBar ? (
+        {/* Barra de progresso */}
+        {activeFunnel.settings.showProgressBar && (
           <div 
-            className={progressBarClass}
             style={{
-              backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
-              height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
+              width: '90%',
+              margin: '4px auto',
+              backgroundColor: `${primaryColor}30`,
+              height: '8px',
+              borderRadius: '9999px',
+              overflow: 'hidden'
             }}
           >
             <div 
@@ -146,12 +151,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
               }}
             ></div>
           </div>
-        ) : (
-          // Se não houver barra de progresso, adicionar um pequeno espaçador
-          <div className="h-2"></div>
         )}
+      </div>
 
-        <div className={contentClass} style={mainContainerStyle}>
+      {/* Espaçador para compensar o header fixo */}
+      <div style={{ height: headerHeight }}></div>
+      
+      {/* Conteúdo principal */}
+      <div className="flex flex-col items-center w-full max-w-xl mx-auto px-2 sm:px-0">
+        <div className="w-full">
           {canvasElements && canvasElements.length > 0 ? (
             <CanvasPreview
               canvasElements={canvasElements}
