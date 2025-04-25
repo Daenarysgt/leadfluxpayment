@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { Bell, Volume2, VolumeX, XCircle, Image as ImageIcon } from "lucide-react";
 import { NotificationContent } from "@/types/canvasTypes";
@@ -30,8 +30,40 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
   } = content;
   
   const [showToast, setShowToast] = useState(false);
+  const hasTriggeredRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Renderizar o toast no estilo da imagem de referência
+  // Render da notificação no estilo correto para o canvas
+  const renderNotification = () => {
+    return (
+      <div 
+        className="flex items-center shadow-md w-full overflow-hidden"
+        style={{
+          backgroundColor: toastColor,
+          color: toastTextColor,
+          borderRadius: `${borderRadius}px`,
+        }}
+      >
+        {showImage && (
+          <div className="flex-shrink-0 p-3" style={{backgroundColor: 'rgba(0,0,0,0.1)'}}>
+            {customImage ? (
+              <img src={customImage} alt="Notification" className="h-10 w-10" />
+            ) : (
+              <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full">
+                <Bell className="h-6 w-6" style={{color: toastColor}} />
+              </div>
+            )}
+          </div>
+        )}
+        <div className="py-3 px-4">
+          <div className="font-medium" style={{fontSize: `${titleFontSize}px`}}>{toastTitle}</div>
+          <div className="opacity-90" style={{fontSize: `${subtitleFontSize}px`}}>{toastSubtitle}</div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Renderizar o toast para visualização na tela (quando em previewMode)
   const renderToast = () => {
     if (!toastEnabled) return null;
     
@@ -47,7 +79,7 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
     
     return (
       <div 
-        className={`fixed ${positionClasses[toastPosition as keyof typeof positionClasses]} z-50 flex items-center shadow-lg transition-opacity ${showToast ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed ${positionClasses[toastPosition as keyof typeof positionClasses]} z-[9999] flex items-center shadow-lg transition-opacity ${showToast ? 'opacity-100' : 'opacity-0'}`}
         style={{
           backgroundColor: toastColor,
           color: toastTextColor,
@@ -76,53 +108,89 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
     );
   };
   
-  // Indicador de som
-  const renderSoundIndicator = () => {
-    if (!previewMode) return null;
-    
-    return (
-      <div className="absolute top-0 right-0 bg-gray-200 rounded-full p-1 m-2">
-        {soundEnabled ? (
-          <Volume2 className="h-4 w-4 text-gray-700" />
-        ) : (
-          <VolumeX className="h-4 w-4 text-gray-700" />
-        )}
-      </div>
-    );
-  };
-  
-  // Mostrar toast e tocar som quando em modo preview
-  useEffect(() => {
-    if (previewMode) {
-      // Exibir toast se ativado - sempre que entrar na etapa
-      if (toastEnabled) {
-        setShowToast(true);
-        
-        // Esconder o toast após o tempo configurado
-        const timer = setTimeout(() => {
-          setShowToast(false);
-        }, toastDuration * 1000);
-        
-        return () => clearTimeout(timer);
-      }
-      
-      // Tocar som se ativado
-      if (soundEnabled) {
-        // Caminho do arquivo de som baseado no tipo selecionado
-        const soundPath = `/sounds/${soundType}.mp3`;
-        const audio = new Audio(soundPath);
-        
-        // Reproduzir o som
-        try {
-          audio.play().catch(error => {
-            console.error("Erro ao reproduzir o som:", error);
-          });
-        } catch (error) {
-          console.error("Erro ao reproduzir o som:", error);
+  const playSound = () => {
+    if (soundEnabled) {
+      try {
+        // Usar o audioRef para garantir que temos apenas uma instância do áudio
+        if (!audioRef.current) {
+          const soundPath = `/sounds/${soundType}.mp3`;
+          audioRef.current = new Audio(soundPath);
         }
+        
+        // Reiniciar o áudio se já estiver carregado
+        if (audioRef.current.readyState > 0) {
+          audioRef.current.currentTime = 0;
+        }
+        
+        // Tocar o som com tratamento de erros adequado
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.warn("Erro ao reproduzir som:", error);
+          });
+        }
+      } catch (error) {
+        console.warn("Erro ao configurar o som:", error);
       }
     }
-  }, [previewMode, toastEnabled, soundEnabled, soundType, toastDuration]);
+  };
+  
+  // Função para mostrar a notificação
+  const showNotification = () => {
+    if (hasTriggeredRef.current) return; // Evitar trigger múltiplo
+    hasTriggeredRef.current = true;
+    
+    // Tocar o som
+    if (soundEnabled) {
+      playSound();
+    }
+    
+    // Mostrar o toast
+    if (toastEnabled) {
+      setShowToast(true);
+      
+      // Esconder o toast após o tempo configurado
+      setTimeout(() => {
+        setShowToast(false);
+      }, toastDuration * 1000);
+    }
+  };
+  
+  // Carregar o áudio quando o componente montar (para pré-carregar)
+  useEffect(() => {
+    if (soundEnabled) {
+      const soundPath = `/sounds/${soundType}.mp3`;
+      audioRef.current = new Audio(soundPath);
+      
+      // Preload do áudio
+      audioRef.current.load();
+    }
+    
+    // Limpar referência quando o componente desmontar
+    return () => {
+      audioRef.current = null;
+      hasTriggeredRef.current = false;
+    };
+  }, [soundType, soundEnabled]);
+  
+  // Trigger da notificação quando em modo preview ou funil público
+  useEffect(() => {
+    // Detectar se estamos em um iframe (provável visualização pública)
+    const isInIframe = window.self !== window.top;
+    const shouldActivate = previewMode || isInIframe;
+    
+    if (shouldActivate && !hasTriggeredRef.current) {
+      console.log("NotificationRenderer - Ativando notificação");
+      
+      // Pequeno delay para garantir que a página carregou completamente
+      const timer = setTimeout(() => {
+        showNotification();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [previewMode]);
 
   return (
     <ElementWrapper
@@ -136,33 +204,10 @@ const NotificationRenderer: React.FC<ElementRendererProps> = (props) => {
       index={index}
       totalElements={totalElements}
     >
-      <div className="w-full p-4 border border-dashed border-gray-300 rounded-md bg-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="bg-purple-100 p-2 rounded-full mr-3">
-              <Bell className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium">Notificação</h3>
-              <p className="text-xs text-gray-500">
-                {toastEnabled && soundEnabled ? 'Toast e Som' : 
-                 toastEnabled ? 'Apenas Toast' : 
-                 soundEnabled ? 'Apenas Som' : 'Desativado'}
-              </p>
-            </div>
-          </div>
-          
-          {renderSoundIndicator()}
-        </div>
-        
-        {toastEnabled && (
-          <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-            <div><strong>Título:</strong> {toastTitle}</div>
-            <div><strong>Subtítulo:</strong> {toastSubtitle}</div>
-          </div>
-        )}
-      </div>
+      {/* No canvas, mostrar a visualização da notificação mais bonita */}
+      {renderNotification()}
       
+      {/* Renderizar o toast que aparecerá na tela */}
       {renderToast()}
     </ElementWrapper>
   );
