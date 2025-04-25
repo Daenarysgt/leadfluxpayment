@@ -24,8 +24,7 @@ import {
   PriceRenderer,
   NotesRenderer,
   TimerRenderer,
-  AccordionRenderer,
-  FeaturesCardRenderer
+  AccordionRenderer
 } from './index';
 
 const ElementFactory = (props: ElementRendererProps) => {
@@ -104,9 +103,6 @@ const ElementFactory = (props: ElementRendererProps) => {
     
     case ComponentType.Accordion:
       return <AccordionRenderer {...props} />;
-      
-    case ComponentType.FeaturesCard:
-      return <FeaturesCardRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);

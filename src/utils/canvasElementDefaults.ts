@@ -463,52 +463,8 @@ export const getDefaultContent = (componentType: string) => {
           borderRadius: 8
         }
       };
-    case ComponentType.Accordion:
-      return { 
-        title: "Perguntas Frequentes",
-        items: [
-          { id: crypto.randomUUID(), title: "Como funciona?", content: "Detalhes sobre como funciona o nosso produto." },
-          { id: crypto.randomUUID(), title: "Quais são as formas de pagamento?", content: "Aceitamos cartão de crédito, débito e PIX." },
-          { id: crypto.randomUUID(), title: "Qual o prazo de entrega?", content: "O prazo de entrega é de 7 dias úteis." }
-        ]
-      };
-    case ComponentType.FeaturesCard:
-      return {
-        title: "Plano Mensal",
-        subtitle: "Plano básico com recursos essenciais",
-        price: "R$200",
-        priceDescription: "por mês, ilimitado",
-        items: [
-          { id: crypto.randomUUID(), text: "Acesso a todos os recursos básicos" },
-          { id: crypto.randomUUID(), text: "Suporte por email" },
-          { id: crypto.randomUUID(), text: "Até 5 usuários" },
-          { id: crypto.randomUUID(), text: "1GB de armazenamento" }
-        ],
-        showIcon: true,
-        iconColor: "#22c55e",
-        accentBarColor: "#4ade80",
-        backgroundColor: "#ffffff",
-        textColor: "#333333",
-        borderRadius: 8,
-        alignment: "left",
-        shadowEnabled: true,
-        shadowColor: "#000000",
-        shadowStrength: "medium",
-        borderEnabled: true,
-        borderColor: "#e5e7eb",
-        borderWidth: 1,
-        button: {
-          text: "Selecionar plano",
-          enabled: true,
-          variant: "default",
-          color: "#4ade80",
-          textColor: "#ffffff",
-          navigation: { type: "next" }
-        }
-      };
     default:
-      console.log("canvasElementDefaults - Unknown component type:", componentType);
-      return { title: "Elemento desconhecido" };
+      return {};
   }
 };
 
