@@ -167,7 +167,8 @@ export enum ComponentType {
   Price = "price",
   Notes = "notes",
   Timer = "timer",
-  Accordion = "accordion"
+  Accordion = "accordion",
+  Notification = "notification"
 }
 
 export interface TabOption {

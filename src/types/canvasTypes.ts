@@ -109,3 +109,17 @@ export interface ButtonContent {
   facebookEventParams?: Record<string, any>;
   facebookEventDebugMode?: boolean;
 }
+
+export interface NotificationContent {
+  toastText?: string;
+  toastEnabled?: boolean;
+  soundEnabled?: boolean;
+  soundType?: 'sale' | 'success' | 'alert' | 'notification';
+  toastColor?: string;
+  toastTextColor?: string;
+  toastDuration?: number;
+  toastPosition?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
+  customSound?: string;
+  showIcon?: boolean;
+  iconType?: 'success' | 'error' | 'info' | 'warning';
+}
