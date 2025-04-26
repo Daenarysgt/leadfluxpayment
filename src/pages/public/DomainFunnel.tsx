@@ -8,22 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Loader2 } from "lucide-react";
 
+// Detectar mobile no carregamento do componente sem esperar useEffect
+// Isso garante que a primeira renderização já saiba se é mobile
+const detectMobile = () => {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth <= 768;
+  }
+  return false; // Padrão para SSR
+};
+
 const DomainFunnel = () => {
   const [funnel, setFunnel] = useState<Funnel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  // Inicializar com detecção imediata para evitar mudanças de layout
+  const [isMobile, setIsMobile] = useState(detectMobile());
   
   useEffect(() => {
-    // Detectar se é dispositivo móvel baseado na largura da tela
+    // Detectar mudanças de tamanho da tela
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
-    // Verificar no carregamento
-    checkMobile();
     
     // Adicionar listener para redimensionamento
     window.addEventListener('resize', checkMobile);

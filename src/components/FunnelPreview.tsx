@@ -89,15 +89,24 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
   const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Classes sem ajustes específicos para mobile
-  const wrapperClass = "w-full";
-  const contentWrapperClass = "flex flex-col items-center w-full max-w-xl mx-auto py-2 px-2 sm:py-4 sm:px-0";
+  // Melhorar estilos para prevenção de layout shifts
+  const responsiveClass = isMobile ? 'mobile-view' : 'desktop-view';
+  
+  // Classes melhoradas para responsividade
+  const wrapperClass = `w-full ${responsiveClass}`;
+  const contentWrapperClass = `flex flex-col items-center w-full mx-auto py-2 px-2 sm:py-4 sm:px-0 ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
   const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
   const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
-  const contentClass = "w-full";
+  const contentClass = `w-full ${responsiveClass}`;
 
-  // Sem estilos específicos para mobile
-  const mainContainerStyle = {};
+  // Estilos específicos para o tipo de dispositivo
+  const mainContainerStyle: React.CSSProperties = {
+    transition: 'all 0.4s ease',
+    width: isMobile ? '100%' : 'auto',
+    maxWidth: isMobile ? '100%' : 'auto',
+    padding: isMobile ? '0.25rem' : '0.5rem',
+    overflow: 'hidden', // Evitar layout shifts
+  };
 
   return (
     <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
@@ -156,6 +165,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
                 activeStep={safeCurrentStep}
                 onStepChange={handleStepChange}
                 funnel={activeFunnel}
+                isMobile={isMobile}
               />
             </div>
           ) : (

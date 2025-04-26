@@ -2,9 +2,30 @@ import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import FunnelPreview from "@/components/FunnelPreview";
 import { useStore } from "@/utils/store";
+import { useState, useEffect } from "react";
+
+// Detectar mobile no carregamento inicial
+const detectMobile = () => {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth <= 768;
+  }
+  return false;
+};
 
 const PreviewSection = () => {
   const { currentFunnel, currentStep, setCurrentStep } = useStore();
+  const [isMobile, setIsMobile] = useState(detectMobile());
+  
+  // Adicionar listener para redimensionamento
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Debug: verificar se o logo existe no funnel
   console.log("PreviewSection - Logo existe no funnel:", !!currentFunnel?.settings?.logo);
@@ -28,6 +49,7 @@ const PreviewSection = () => {
             stepIndex={currentStep}
             onNextStep={handleStepChange}
             key={`preview-${currentFunnel?.id}`}
+            isMobile={isMobile}
           />
         </div>
       </div>

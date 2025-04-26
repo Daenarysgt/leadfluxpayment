@@ -8,12 +8,31 @@ import { Link } from "react-router-dom";
 import { Funnel } from "@/utils/types";
 import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
 
+// Detectar mobile no carregamento inicial
+const detectMobile = () => {
+  if (typeof window !== 'undefined') {
+    return window.innerWidth <= 768;
+  }
+  return false; // Padrão para SSR
+};
+
 const Preview = () => {
   const { funnelId } = useParams<{ funnelId: string }>();
   const { funnels } = useStore();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(detectMobile());
   const [loadedFunnel, setLoadedFunnel] = useState<Funnel | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  
+  // Adicionar listener para redimensionamento
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   useEffect(() => {
     if (funnelId) {

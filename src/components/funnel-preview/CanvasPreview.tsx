@@ -9,28 +9,12 @@ interface CanvasPreviewProps {
   activeStep: number;
   onStepChange: (newStep: number) => void;
   funnel?: Funnel;
+  isMobile?: boolean;
 }
 
-const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: CanvasPreviewProps) => {
-  console.log("CanvasPreview - Rendering with", canvasElements.length, "elements");
+const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMobile = false }: CanvasPreviewProps) => {
+  console.log("CanvasPreview - Rendering with", canvasElements.length, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    // Detectar se é dispositivo móvel
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    // Verificar no carregamento
-    checkMobile();
-    
-    // Adicionar listener para redimensionamento
-    window.addEventListener('resize', checkMobile);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
   
   useEffect(() => {
     const initSession = async () => {
@@ -92,7 +76,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.5s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
+    padding: isMobile ? '0.25rem' : '1rem',
     margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
     left: isMobile ? '0' : 'auto',
@@ -127,12 +111,19 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   
   return (
     <div 
-      className={containerClass}
+      className={`${containerClass} canvas-container`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
         paddingBottom: '1.5rem',
-        paddingTop: '0.5rem'
+        paddingTop: '0.5rem',
+        // Garantir que a altura seja preservada durante a transição
+        // para evitar reajustes de layout
+        minWidth: isMobile ? '100%' : 'auto',
+        maxWidth: isMobile ? '100%' : 'auto',
+        transform: 'translate3d(0,0,0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000
       }}
     >
       {canvasElements.map((element, index) => {
@@ -149,15 +140,17 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
             activeStep,
             onStepChange: handleStepChange,
             funnel,
-            isMobile: false // Forçar modo desktop sempre
+            isMobile,
           }
         };
         
-        // Usar a mesma classe para desktop e mobile
-        const elementWrapperClass = "w-full";
+        // Classe específica para mobile ou desktop
+        const elementWrapperClass = `w-full ${isMobile ? 'mobile-element' : 'desktop-element'}`;
         
-        // Sem estilos específicos para mobile
-        const elementWrapperStyle: React.CSSProperties = {};
+        // Estilos específicos para tipo de dispositivo
+        const elementWrapperStyle: React.CSSProperties = isMobile 
+          ? { maxWidth: '100%', overflow: 'hidden' } 
+          : {};
         
         return (
           <div 
@@ -180,6 +173,22 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
           </div>
         );
       })}
+      
+      {/* Estilo global para transições suaves */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .canvas-container {
+          will-change: contents;
+          transform: translateZ(0);
+        }
+        .mobile-element, .desktop-element {
+          transition: opacity 0.3s ease, transform 0.3s ease;
+          will-change: transform, opacity;
+        }
+        .mobile-view, .desktop-view {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+        }
+      `}} />
     </div>
   );
 };
