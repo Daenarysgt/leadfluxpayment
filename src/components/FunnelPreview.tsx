@@ -23,9 +23,42 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
+  const [dataReady, setDataReady] = useState(false);
   
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
+  
+  // Verificar se os dados estão prontos para renderização
+  useEffect(() => {
+    if (!activeFunnel) {
+      console.log("FunnelPreview - Funil não disponível");
+      setDataReady(false);
+      return;
+    }
+    
+    if (!Array.isArray(activeFunnel.steps) || activeFunnel.steps.length === 0) {
+      console.log("FunnelPreview - Funil não tem steps");
+      setDataReady(false);
+      return;
+    }
+    
+    const safeStepIndex = Math.min(activeStep, activeFunnel.steps.length - 1);
+    const stepData = activeFunnel.steps[safeStepIndex];
+    
+    if (!stepData) {
+      console.log("FunnelPreview - Step não encontrado para índice:", safeStepIndex);
+      setDataReady(false);
+      return;
+    }
+    
+    // Verificar elementos do canvas
+    const hasValidCanvasElements = 
+      Array.isArray(stepData.canvasElements) && 
+      stepData.canvasElements.every(element => element && element.id && element.type);
+    
+    console.log("FunnelPreview - Dados prontos:", hasValidCanvasElements);
+    setDataReady(true);
+  }, [activeFunnel, activeStep]);
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
@@ -47,7 +80,25 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
 
   // If no funnel is available, show a message
   if (!activeFunnel) {
-    return <div className="text-center py-8">No funnel selected</div>;
+    return <div className="text-center py-8">Funil não encontrado</div>;
+  }
+
+  // Se os dados não estiverem prontos, mostrar loading
+  if (!dataReady) {
+    return (
+      <div className="flex justify-center items-center p-8 min-h-[300px]">
+        <div className="animate-pulse flex flex-col items-center space-y-4">
+          <div className="rounded-full bg-gray-200 h-12 w-12"></div>
+          <div className="flex-1 space-y-4 w-full max-w-md">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Make sure activeStep is within bounds of available steps
@@ -88,6 +139,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
 
   // Get the canvas elements from the current step's questions
   const canvasElements = stepData.canvasElements || [];
+  
+  // Verificação adicional para garantir que canvasElements é um array
+  if (!Array.isArray(canvasElements)) {
+    console.error("FunnelPreview - canvasElements não é um array:", canvasElements);
+    return <div className="text-center py-8">Erro nos dados do funil</div>;
+  }
 
   const handleStepChange = (newStep: number) => {
     console.log("FunnelPreview - Changing step to:", newStep);

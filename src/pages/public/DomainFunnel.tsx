@@ -215,6 +215,27 @@ const DomainFunnel = () => {
     );
   }
 
+  // Verificação de segurança adicional para evitar o erro minificado #310
+  // Garantir que a etapa atual exista e que seus elementos estejam definidos
+  const safeCurrentStepIndex = Math.min(currentStepIndex, funnel.steps.length - 1);
+  const currentStep = funnel.steps[safeCurrentStepIndex];
+  
+  // Se a etapa atual não estiver completamente carregada, exibir loading
+  if (!currentStep || !Array.isArray(currentStep.canvasElements)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <div className="flex flex-col items-center">
+          <div className="relative h-16 w-16">
+            <div className="absolute top-0 left-0 right-0 bottom-0 rounded-full border-4 border-transparent border-t-blue-600 border-r-purple-600 animate-spin"></div>
+            <div className="absolute top-1 left-1 right-1 bottom-1 rounded-full border-4 border-transparent border-t-blue-400 border-r-purple-400 animate-spin" style={{ animationDuration: '1.5s' }}></div>
+            <div className="absolute top-2 left-2 right-2 bottom-2 rounded-full border-4 border-transparent border-t-blue-300 border-r-purple-300 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">Carregando etapa do funil...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Classes condicionais baseadas no tipo de dispositivo
   const containerClass = isMobile 
     ? "h-[100dvh] flex flex-col items-center justify-start p-0 m-0 mobile-full-width pt-1" 
@@ -274,7 +295,7 @@ const DomainFunnel = () => {
         <FunnelPreview 
           funnel={funnel} 
           isMobile={isMobile} 
-          stepIndex={currentStepIndex}
+          stepIndex={safeCurrentStepIndex}
           onNextStep={handleStepChange} 
           key={`domain-${funnel.id}`}
           centerContent={true}

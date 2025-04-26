@@ -17,6 +17,35 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   console.log("CanvasPreview - Rendering with", canvasElements.length, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
+  const [elementsReady, setElementsReady] = useState(false);
+  
+  // Verificar se todos os elementos estão carregados de forma adequada
+  useEffect(() => {
+    // Garantir que canvasElements é um array válido
+    if (!Array.isArray(canvasElements)) {
+      console.error("CanvasPreview - canvasElements não é um array:", canvasElements);
+      setElementsReady(false);
+      return;
+    }
+    
+    // Verificar se o array não está vazio
+    if (canvasElements.length === 0) {
+      console.warn("CanvasPreview - canvasElements está vazio");
+      setElementsReady(true); // Consideramos como pronto mesmo vazio
+      return;
+    }
+    
+    // Verificar se todos os elementos têm as propriedades necessárias
+    const allElementsValid = canvasElements.every(element => 
+      element && 
+      typeof element === 'object' && 
+      element.id && 
+      element.type
+    );
+    
+    console.log("CanvasPreview - Elementos válidos:", allElementsValid);
+    setElementsReady(allElementsValid);
+  }, [canvasElements]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -99,17 +128,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     ? "w-full mx-auto min-h-[300px] mobile-full-width" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
-  // Adicionar logs para monitorar eventos de clique e registros de interação
-
   // Melhorar a função handleNextStep para garantir que interações sejam registradas
   const handleNextStep = (event: React.MouseEvent) => {
     // Evitar comportamento padrão do botão
     event.preventDefault();
     
     console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
-    
-    // Removemos o registro automático de interação aqui
-    // As interações devem ser registradas apenas quando o usuário realmente interage com elementos
     
     // Avançar para o próximo passo
     if (onStepChange) {
@@ -118,6 +142,24 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
       onStepChange(nextStep);
     }
   };
+  
+  // Se os elementos não estiverem prontos, mostrar um loading simples
+  if (!elementsReady) {
+    return (
+      <div className="flex justify-center items-center p-8 min-h-[300px]">
+        <div className="animate-pulse flex space-x-4">
+          <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+          <div className="flex-1 space-y-4 py-1">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div 
@@ -145,6 +187,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     >
       {canvasElements.map((element, index) => {
         console.log("CanvasPreview - Processing element:", element.id, element.type);
+        
+        // Verificação de segurança para garantir que temos um elemento válido
+        if (!element || !element.id || !element.type) {
+          console.error("CanvasPreview - Elemento inválido:", element);
+          return null;
+        }
         
         // Manter elementos com o mesmo estilo do desktop
         const adjustedElement = { ...element };
