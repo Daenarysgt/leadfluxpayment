@@ -88,4 +88,47 @@
     background-color: inherit;
     z-index: 5;
   }
+  
+  /* CORREÇÃO ESPECÍFICA PARA LINHA AZUL MARCADA */
+  body form + div, 
+  body div + div[class*="grid-cols-2"],
+  body div:has(input) + div {
+    margin-top: -2px !important;
+    border-top: 4px solid inherit !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  
+  /* Correção específica para os elementos de formulário */
+  body form {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    display: block !important;
+    border-bottom: 2px solid inherit !important;
+  }
+  
+  /* Correção específica para os MultipleChoiceImage */
+  body div[class*="grid-cols-2"] {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: 2px solid inherit !important;
+  }
+  
+  /* Remover todos os espaços entre componentes */
+  body * + * {
+    margin-top: 0 !important;
+  }
+  
+  /* Overlay universal para prevenir qualquer espaço branco */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: inherit;
+    z-index: -1;
+    pointer-events: none;
+  }
 } 

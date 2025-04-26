@@ -146,11 +146,31 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         position: 'relative', // Importante para o posicionamento absoluto
       }}
     >
+      {/* Background sólido contínuo para evitar qualquer linha branca */}
+      {isMobile && (
+        <div 
+          className="continuous-background"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
+            zIndex: 1
+          }}
+        />
+      )}
+      
       {/* Renderizar dentro de um container único sem gaps */}
       <div className="elements-container" style={{
         position: 'relative',
         backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        zIndex: 5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0
       }}>
         {canvasElements.map((element, index) => {
           console.log("CanvasPreview - Processing element:", element.id, element.type);
@@ -182,7 +202,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
                 padding: 0, 
                 backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 10,
+                // Adicionar linha de fundo para cobrir qualquer espaço
+                borderBottom: `2px solid ${funnel?.settings?.backgroundColor || '#ffffff'}`
               } 
             : {};
           
@@ -233,7 +255,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         }
         
         .no-gap-element + .no-gap-element {
-          margin-top: -1px !important;
+          margin-top: 0 !important;
         }
         
         .mobile-view, .desktop-view {
@@ -249,7 +271,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
           }
           
           .mobile-element + .mobile-element {
-            margin-top: -1px !important;
+            margin-top: 0 !important;
           }
           
           .mobile-element > div, 
@@ -265,28 +287,27 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
             overflow: hidden !important;
           }
           
-          /* Pseudo-elementos para cobrir espaços entre elementos */
-          .mobile-element::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -1px;
-            height: 2px;
-            background-color: inherit;
-            z-index: 10;
+          /* Estratégia radical: remover todo espaçamento */
+          input, select, textarea, button {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
           }
           
-          /* Aplicar um fundo sólido para todo o container */
-          .elements-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: inherit;
-            z-index: 0;
+          /* Solução específica para linha azul marcada */
+          form + div {
+            border-top: 4px solid inherit;
+            margin-top: 0 !important;
+          }
+          
+          /* Corrigir qualquer espaço entre componentes com background */
+          div[class^="grid"] {
+            background-color: inherit !important;
+          }
+          
+          /* Remover margin de qualquer elemento que possa criá-la */
+          * {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
           }
         }
       `}} />

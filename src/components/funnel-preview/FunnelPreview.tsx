@@ -82,9 +82,24 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       className="flex flex-col w-full min-h-screen transition-all duration-500 public-funnel-container"
       style={{ 
         backgroundColor: funnelBgColor,
-        overflow: 'hidden' // Evitar vazamentos
+        overflow: 'hidden', // Evitar vazamentos
+        position: 'relative' // Para posicionamento do overlay
       }}
     >
+      {/* Background overlay para eliminar qualquer espaço branco */}
+      <div 
+        className="background-overlay" 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: funnelBgColor,
+          zIndex: 1
+        }}
+      />
+      
       {/* Facebook Pixel integration with proper parameters */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -98,7 +113,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         className="flex flex-col items-center w-full max-w-xl mx-auto funnel-content-wrapper" 
         style={{
           ...customStyles,
-          overflow: 'hidden' // Evitar vazamentos
+          overflow: 'hidden', // Evitar vazamentos
+          position: 'relative',
+          zIndex: 5 // Acima do overlay
         }}
       >
         {/* Logo */}
@@ -162,72 +179,58 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       <style dangerouslySetInnerHTML={{__html: `
         /* Corrigir linhas brancas em production/slugs/domains */
         @media (max-width: 768px) {
+          /* Estilo global para layout */
           body, #__next, main, .public-funnel-container, .funnel-content-wrapper, .funnel-step-container {
             overflow-x: hidden !important;
             background-color: ${funnelBgColor} !important;
           }
           
-          /* Prevenir linhas brancas entre componentes */
-          div[class*="mobile-element"] {
+          /* Estratégia radical: remover completamente margens e paddings */
+          * {
             margin: 0 !important;
             padding: 0 !important;
-            overflow: hidden !important;
-            background-color: ${funnelBgColor} !important;
-            position: relative !important;
-          }
-          
-          /* Usar posicionamento relativo para controlar os elementos */
-          .funnel-step-container {
-            position: relative !important;
-            z-index: 1 !important;
-          }
-          
-          /* Estratégia alternativa: margens negativas para sobreposição */
-          div[class*="mobile-element"] + div[class*="mobile-element"] {
-            margin-top: -1px !important;
-          }
-          
-          /* Usar pseudo-elementos para preencher gaps */
-          div[class*="mobile-element"]::before {
-            content: '';
-            position: absolute;
-            top: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: ${funnelBgColor};
-            z-index: 10;
-          }
-          
-          div[class*="mobile-element"]::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: ${funnelBgColor};
-            z-index: 10;
-          }
-          
-          /* Remover espaçamento padrão */
-          * {
             box-sizing: border-box !important;
           }
           
-          /* Garantir que caixas de imagens não tenham espaços */
+          /* Adicionar padding apenas onde absolutamente necessário */
+          .mobile-element > div > input,
+          .mobile-element > div > select,
+          .mobile-element > div > textarea,
+          .mobile-element > div > button {
+            padding: 8px !important;
+          }
+          
+          /* Correção específica para o problema da linha azul marcada */
+          div[class*="mobile-element"]:not(:last-child) {
+            border-bottom: 2px solid ${funnelBgColor} !important;
+          }
+          
+          /* Garantir que divs de grid não tenham margens */
           div[class*="grid-cols-2"] {
-            gap: 8px !important;
-            overflow: hidden !important;
-            background-color: ${funnelBgColor} !important;
             margin: 0 !important;
             padding: 0 !important;
           }
           
-          /* Forçar que elements dentro de div com classe grid tenham background consistente */
-          div[class*="grid-cols-2"] > div {
-            background-color: ${funnelBgColor} !important;
-            overflow: hidden !important;
+          /* Estratégia radical com position absolute para elementos do formulário */
+          .canvas-container {
+            position: relative !important;
+          }
+          
+          /* Corrigir qualquer espaço entre campos do formulário e botões */
+          form > div + div {
+            margin-top: 0 !important;
+          }
+          
+          /* Overlay específico para cobrir linhas brancas */
+          .elements-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: ${funnelBgColor};
+            z-index: 0;
           }
         }
       `}} />

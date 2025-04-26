@@ -384,7 +384,10 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4" style={containerStyle}>
+      <div className="p-4 multichoice-image-component" style={{
+        ...containerStyle,
+        marginTop: isMobile ? '-2px' : containerStyle.marginTop // Solução para a linha azul em mobile
+      }}>
         {content?.title && (
           <h2 
             className="font-semibold text-center mb-4"
@@ -403,7 +406,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         )}
         <div className={`grid grid-cols-2 gap-4`} style={{
           backgroundColor: 'inherit', // Herdar o background do elemento pai
-          overflow: 'hidden' // Evitar vazamento de elementos
+          overflow: 'hidden', // Evitar vazamento de elementos
+          marginTop: 0, // Importante para evitar espaços em mobile
+          paddingTop: 0 // Importante para evitar espaços em mobile
         }}>
           {renderedOptions}
         </div>
@@ -443,6 +448,27 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             gap: 8px !important; /* Reduzir o gap entre elementos no mobile */
             overflow: hidden !important;
             background-color: inherit !important;
+          }
+          
+          /* Correção específica para o problema da linha azul */
+          .multichoice-image-component {
+            position: relative;
+            z-index: 10;
+            margin-top: -2px !important;
+            padding-top: 0.5rem !important;
+            border-top: 2px solid inherit;
+          }
+          
+          /* Hack para eliminar linha branca antes do componente */
+          div:has(.multichoice-image-component)::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: inherit;
+            z-index: 5;
           }
         }
       `}} />
