@@ -10,9 +10,10 @@ interface CanvasPreviewProps {
   onStepChange: (newStep: number) => void;
   funnel?: Funnel;
   isMobile?: boolean;
+  centerContent?: boolean;
 }
 
-const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMobile = false }: CanvasPreviewProps) => {
+const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   console.log("CanvasPreview - Rendering with", canvasElements.length, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
   
@@ -127,7 +128,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: centerContent ? 'center' : 'flex-start',
         width: '100%'
       }}
     >

@@ -195,6 +195,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
                   onStepChange={handleStepChange}
                   funnel={activeFunnel}
                   isMobile={isMobile}
+                  centerContent={centerContent}
                 />
               </div>
             ) : (
