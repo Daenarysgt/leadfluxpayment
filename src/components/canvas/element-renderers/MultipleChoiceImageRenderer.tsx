@@ -252,7 +252,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         position: "relative",
         width: "100%",
         color: "white", // Garantir que o texto seja visível
-        padding: isMobile ? "12px" : "8px", // Aumentando padding para mobile de 6px para 12px
+        padding: isMobile ? "10px" : "8px", // Ajustando padding para mobile
         minHeight: isMobile ? "40px" : "auto", // Adicionando altura mínima para mobile
         zIndex: 5
       };
@@ -368,8 +368,10 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             
             {/* Barra de texto com opção - Ajuste para garantir visibilidade em mobile */}
             <div className="absolute bottom-0 left-0 right-0 p-3 option-label" style={textStyle}>
-              <span className="text-inherit font-medium flex-grow truncate">{option.text}</span>
-              {showArrows && <ChevronRight className={`text-inherit ml-1 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />}
+              <div className="w-full flex items-center" style={{justifyContent: textAlign === "center" ? "center" : (textAlign === "right" ? "flex-end" : "flex-start")}}>
+                <span className="text-inherit font-medium truncate">{option.text}</span>
+                {showArrows && <ChevronRight className={`text-inherit ml-1 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0`} />}
+              </div>
             </div>
           </div>
         </div>
@@ -428,10 +430,20 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           }
           
           .multiple-choice-image-grid .option-label {
-            padding: inherit !important;
+            padding: 8px !important;
             min-height: 40px !important; /* Garantir altura mínima para tarjas em mobile */
             display: flex !important;
             align-items: center !important;
+          }
+          
+          .option-label > div {
+            width: 100%;
+            display: flex;
+            align-items: center;
+          }
+          
+          .option-label span {
+            max-width: calc(100% - 20px); /* Garantir espaço para o ícone */
           }
         }
         
