@@ -8,7 +8,6 @@ import CarouselRenderer from './CarouselRenderer';
 import HeightRenderer from './HeightRenderer';
 import WeightRenderer from './WeightRenderer';
 import ComparisonRenderer from './ComparisonRenderer';
-import ElementFactory from './ElementFactory';
 import ArgumentsRenderer from './ArgumentsRenderer';
 import GraphicsRenderer from './GraphicsRenderer';
 import TestimonialsRenderer from './TestimonialsRenderer';
@@ -24,6 +23,7 @@ import GenericElementRenderer from './GenericElementRenderer';
 import NotesRenderer from './NotesRenderer';
 import TimerRenderer from './TimerRenderer';
 import AccordionRenderer from './AccordionRenderer';
+import ElementFactory from './ElementFactory';
 
 // Export all renderers
 export {

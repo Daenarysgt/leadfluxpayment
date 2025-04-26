@@ -26,6 +26,7 @@ import {
   TimerRenderer,
   AccordionRenderer
 } from './index';
+import FeatureCardsRenderer from './FeatureCardsRenderer';
 
 const ElementFactory = (props: ElementRendererProps) => {
   const { element } = props;
@@ -103,6 +104,9 @@ const ElementFactory = (props: ElementRendererProps) => {
     
     case ComponentType.Accordion:
       return <AccordionRenderer {...props} />;
+      
+    case ComponentType.FeatureCards:
+      return <FeatureCardsRenderer {...props} />;
       
     default:
       console.log("ElementFactory - Unknown element type:", type);
