@@ -42,6 +42,10 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 262 83% 58%;
+    
+    /* Variáveis para transição */
+    --page-transition-duration: 350ms;
+    --page-transition-timing: ease-out;
   }
 
   .dark {
@@ -136,6 +140,55 @@
     0% { transform: translateX(-100%); }
     50% { transform: translateX(0); }
     100% { transform: translateX(100%); }
+  }
+  
+  /* Sistema de transição de páginas simplificado */
+  /* Isso cria um backdrop que cobre toda a página durante a navegação */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffffff;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--page-transition-duration) var(--page-transition-timing);
+  }
+  
+  /* Classe que é adicionada ao body durante navegação */
+  body.page-transitioning::after {
+    opacity: 1;
+    pointer-events: all;
+  }
+  
+  /* Evitar flash durante mudanças de etapa em funis */
+  div[id*="funnel"],
+  div[id*="step"], 
+  div[class*="funnel"],
+  div[class*="step"],
+  div[class*="Funnel"],
+  div[class*="Step"],
+  div[class*="Canvas"],
+  div[class*="canvas"] {
+    animation: fade-in 400ms ease-out;
+  }
+  
+  /* Desativar todos os skeletons globalmente */
+  [class*="skeleton"],
+  [class*="Skeleton"],
+  .animate-pulse,
+  [class*="placeholder"] {
+    opacity: 0 !important;
+    animation: none !important;
+  }
+  
+  /* Keyframe para fade-in suave */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }
 
@@ -432,33 +485,4 @@
   html {
     overflow-x: auto !important;
   }
-}
-
-/* Adicionar animações para o componente FeatureCards */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.5s ease-in-out forwards;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.5s ease-in-out forwards;
 }
