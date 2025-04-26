@@ -18,6 +18,70 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   
+  // Efeito para remover transformações adicionadas dinamicamente em mobile
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    // Função para remover todas as transformações e estilos problemáticos
+    const fixTransforms = () => {
+      // Lista de seletores que podem causar problemas
+      const selectors = [
+        'body', 'html', '#root', '.canvas-container', 
+        'input', 'button', 'textarea', '.rounded', 
+        '[style*="border-radius"]', '[style*="box-shadow"]',
+        'div[class*="element-renderer"]'
+      ];
+      
+      selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          if (el instanceof HTMLElement) {
+            // Remover transformações
+            el.style.transform = 'none';
+            el.style.webkitTransform = 'none';
+            el.style.backfaceVisibility = 'visible';
+            el.style.webkitBackfaceVisibility = 'visible';
+            el.style.perspective = 'none';
+            el.style.webkitPerspective = 'none';
+            el.style.transformStyle = 'flat';
+            el.style.webkitTransformStyle = 'flat';
+            el.style.willChange = 'auto';
+            
+            // Especialmente para o corpo e elementos do viewport
+            if (selector === 'body' || selector === 'html' || selector === '#root') {
+              el.style.zoom = '1';
+              el.style.overflowX = 'hidden';
+              el.style.overflowY = 'visible';
+            }
+          }
+        });
+      });
+    };
+    
+    // Executar a correção no mount
+    fixTransforms();
+    
+    // Também adicionar um listener para executar após mudanças de DOM ou carregamento de recursos
+    const observer = new MutationObserver(fixTransforms);
+    observer.observe(document.body, { 
+      subtree: true, 
+      childList: true, 
+      attributes: true, 
+      attributeFilter: ['style', 'class'] 
+    });
+    
+    // Checar também após carregamento de imagens e recursos
+    window.addEventListener('load', fixTransforms);
+    window.addEventListener('resize', fixTransforms);
+    
+    // Cleanup
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('load', fixTransforms);
+      window.removeEventListener('resize', fixTransforms);
+    };
+  }, [isMobile]);
+  
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
     // Se tiver muitos elementos, não centraliza (começa do topo)
