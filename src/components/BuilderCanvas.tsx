@@ -381,7 +381,9 @@ const BuilderCanvas = ({
           paddingLeft: '16px',
           paddingRight: '16px',
           paddingBottom: isExternalDragOver ? '50px' : '0px',
-          minHeight: isCanvasEmpty ? '200px' : 'auto'
+          minHeight: isCanvasEmpty ? '200px' : 'auto',
+          overflow: 'hidden',
+          boxShadow: 'none'
         }}
         onDragOver={handleCanvasDragOver}
         onDragLeave={handleCanvasDragLeave}
@@ -428,7 +430,8 @@ const BuilderCanvas = ({
         <div className="relative" style={{ 
           marginLeft: '-16px', 
           marginRight: '-16px',
-          marginBottom: '0'
+          marginBottom: '0',
+          backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff'
         }}>
           {displayElements.map((element, index) => {
             // Create a unique key that forces re-render when elements or selections change
@@ -450,7 +453,9 @@ const BuilderCanvas = ({
                 style={{ 
                   marginBottom: '0px',
                   paddingLeft: '16px',
-                  paddingRight: '16px'
+                  paddingRight: '16px',
+                  backgroundColor: currentFunnel?.settings?.backgroundColor || '#ffffff',
+                  marginTop: 0
                 }}
               >
                 <CanvasElementRenderer

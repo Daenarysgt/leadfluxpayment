@@ -401,7 +401,10 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className={`grid grid-cols-2 gap-4`}>
+        <div className={`grid grid-cols-2 gap-4`} style={{
+          backgroundColor: 'inherit', // Herdar o background do elemento pai
+          overflow: 'hidden' // Evitar vazamento de elementos
+        }}>
           {renderedOptions}
         </div>
       </div>
@@ -424,6 +427,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             min-height: inherit !important;
             min-width: inherit !important;
             font-size: inherit !important;
+            margin: 0 !important; /* Evitar qualquer margem entre elementos */
+            overflow: hidden !important; /* Impedir overflow */
           }
           
           .grid-cols-2 > div .p-3 {
@@ -431,6 +436,13 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             min-height: 40px !important; /* Garantir altura mínima para tarjas em mobile */
             display: flex !important;
             align-items: center !important;
+          }
+          
+          /* Remover espaços em branco entre elementos no grid */
+          .grid-cols-2 {
+            gap: 8px !important; /* Reduzir o gap entre elementos no mobile */
+            overflow: hidden !important;
+            background-color: inherit !important;
           }
         }
       `}} />
