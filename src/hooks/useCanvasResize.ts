@@ -16,14 +16,12 @@ export const useCanvasResize = () => {
       viewportEl.style.minHeight = '100%';
       viewportEl.style.display = 'flex';
       viewportEl.style.flexDirection = 'column';
-      viewportEl.style.overflow = 'hidden'; // Garantir que não haja overflow
       
       // Garantir que o container do canvas tenha altura automática
       const containerEl = canvasContainer as HTMLElement;
       containerEl.style.flexGrow = '1';
       containerEl.style.display = 'flex';
       containerEl.style.flexDirection = 'column';
-      containerEl.style.overflow = 'hidden'; // Garantir que não haja overflow
       
       // Ajustar qualquer 'padding-bottom' excessivo que possa estar causando o espaço em branco
       // Mas preservar um pequeno padding para permitir o drag and drop
@@ -38,19 +36,6 @@ export const useCanvasResize = () => {
           // Garantir um espaço mínimo para permitir drag-and-drop
           el.style.paddingBottom = '20px';
         }
-        
-        // Certificar que não haja margens entre elementos que causam os espaços brancos
-        el.style.marginTop = '0';
-        el.style.marginBottom = '0';
-        el.style.overflow = 'hidden'; // Impedir overflow
-        
-        // Garantir que o background seja aplicado corretamente
-        const bgColor = getComputedStyle(el.parentElement as HTMLElement).backgroundColor;
-        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-          el.style.backgroundColor = bgColor;
-        } else {
-          el.style.backgroundColor = '#ffffff'; // Fallback para branco
-        }
       });
       
       // Garantir que a área de arrastar esteja visível
@@ -61,14 +46,6 @@ export const useCanvasResize = () => {
         dropAreaEl.style.opacity = '1';
         dropAreaEl.style.pointerEvents = 'auto';
       }
-      
-      // Corrigir problemas específicos do mobile com elementos inset visíveis
-      const mobileCanvasParents = document.querySelectorAll('.max-w-\\[375px\\]');
-      mobileCanvasParents.forEach((element) => {
-        const el = element as HTMLElement;
-        el.style.overflow = 'hidden';
-        el.style.backgroundColor = getComputedStyle(el).backgroundColor;
-      });
     }
   }, []);
   

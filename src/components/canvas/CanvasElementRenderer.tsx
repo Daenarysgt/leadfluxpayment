@@ -101,10 +101,7 @@ const CanvasElementRenderer = (props: ElementRendererProps) => {
       style={{
         // Remover qualquer espaçamento que prejudique a consistência com o preview
         margin: 0,
-        padding: 0,
-        backgroundColor: 'inherit', // Herdar o background do elemento pai
-        position: 'relative',
-        isolation: 'isolate' // Criar um novo contexto de empilhamento para evitar artefatos visuais
+        padding: 0
       }}
     >
       <ElementFactory 

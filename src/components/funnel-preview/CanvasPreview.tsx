@@ -121,7 +121,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   
   return (
     <div 
-      className={`${containerClass} canvas-container w-full no-gap-container`}
+      className={`${containerClass} canvas-container w-full`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
@@ -141,174 +141,69 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        overflow: 'hidden', // Evitar linhas brancas
-        backgroundColor: funnel?.settings?.backgroundColor || '#ffffff', // Garantir background consistente
-        position: 'relative', // Importante para o posicionamento absoluto
       }}
     >
-      {/* Background sólido contínuo para evitar qualquer linha branca */}
-      {isMobile && (
-        <div 
-          className="continuous-background"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
-            zIndex: 1
-          }}
-        />
-      )}
-      
-      {/* Renderizar dentro de um container único sem gaps */}
-      <div className="elements-container" style={{
-        position: 'relative',
-        backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
-        overflow: 'hidden',
-        zIndex: 5,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0
-      }}>
-        {canvasElements.map((element, index) => {
-          console.log("CanvasPreview - Processing element:", element.id, element.type);
-          
-          // Manter elementos com o mesmo estilo do desktop
-          const adjustedElement = { ...element };
-          
-          // Add preview properties to the element for navigation
-          const elementWithPreviewProps = {
-            ...adjustedElement,
-            previewMode: true,
-            previewProps: {
-              activeStep,
-              onStepChange: handleStepChange,
-              funnel,
-              isMobile,
-            }
-          };
-          
-          // Classe específica para mobile ou desktop
-          const elementWrapperClass = `w-full ${isMobile ? 'mobile-element no-gap-element' : 'desktop-element'}`;
-          
-          // Estilos específicos para tipo de dispositivo
-          const elementWrapperStyle: React.CSSProperties = isMobile 
-            ? { 
-                maxWidth: '100%', 
-                overflow: 'hidden', 
-                margin: 0, 
-                padding: 0, 
-                backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
-                position: 'relative',
-                zIndex: 10,
-                // Adicionar linha de fundo para cobrir qualquer espaço
-                borderBottom: `2px solid ${funnel?.settings?.backgroundColor || '#ffffff'}`
-              } 
-            : {};
-          
-          return (
-            <div 
-              key={element.id} 
-              className={elementWrapperClass}
-              style={elementWrapperStyle}
-            >
-              <ElementFactory 
-                element={elementWithPreviewProps}
-                onSelect={() => {}} 
-                isSelected={false} 
-                isDragging={false}
-                onRemove={() => {}}
-                index={index}
-                totalElements={canvasElements.length}
-                // Pass null for drag functions to disable drag in preview
-                onDragStart={null}
-                onDragEnd={null}
-              />
-            </div>
-          );
-        })}
-      </div>
+      {canvasElements.map((element, index) => {
+        console.log("CanvasPreview - Processing element:", element.id, element.type);
+        
+        // Manter elementos com o mesmo estilo do desktop
+        const adjustedElement = { ...element };
+        
+        // Add preview properties to the element for navigation
+        const elementWithPreviewProps = {
+          ...adjustedElement,
+          previewMode: true,
+          previewProps: {
+            activeStep,
+            onStepChange: handleStepChange,
+            funnel,
+            isMobile,
+          }
+        };
+        
+        // Classe específica para mobile ou desktop
+        const elementWrapperClass = `w-full ${isMobile ? 'mobile-element' : 'desktop-element'}`;
+        
+        // Estilos específicos para tipo de dispositivo
+        const elementWrapperStyle: React.CSSProperties = isMobile 
+          ? { maxWidth: '100%', overflow: 'hidden' } 
+          : {};
+        
+        return (
+          <div 
+            key={element.id} 
+            className={elementWrapperClass}
+            style={elementWrapperStyle}
+          >
+            <ElementFactory 
+              element={elementWithPreviewProps}
+              onSelect={() => {}} 
+              isSelected={false} 
+              isDragging={false}
+              onRemove={() => {}}
+              index={index}
+              totalElements={canvasElements.length}
+              // Pass null for drag functions to disable drag in preview
+              onDragStart={null}
+              onDragEnd={null}
+            />
+          </div>
+        );
+      })}
       
       {/* Estilo global para transições suaves */}
       <style dangerouslySetInnerHTML={{__html: `
         .canvas-container {
           will-change: contents;
           transform: translateZ(0);
-          overflow: hidden !important;
         }
-        
-        .elements-container {
-          display: flex;
-          flex-direction: column;
-          overflow: hidden !important;
-          width: 100%;
-        }
-        
         .mobile-element, .desktop-element {
           transition: opacity 0.3s ease, transform 0.3s ease;
           will-change: transform, opacity;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
         }
-        
-        .no-gap-element + .no-gap-element {
-          margin-top: 0 !important;
-        }
-        
         .mobile-view, .desktop-view {
           transform: translateZ(0);
           backface-visibility: hidden;
-          overflow: hidden !important;
-        }
-        
-        /* Eliminar espaços entre elementos em formato mobile */
-        @media (max-width: 768px) {
-          .no-gap-container {
-            isolation: isolate;
-          }
-          
-          .mobile-element + .mobile-element {
-            margin-top: 0 !important;
-          }
-          
-          .mobile-element > div, 
-          .mobile-element > form {
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            background-color: inherit !important;
-          }
-          
-          .canvas-container > div {
-            margin: 0 !important;
-            overflow: hidden !important;
-          }
-          
-          /* Estratégia radical: remover todo espaçamento */
-          input, select, textarea, button {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-          }
-          
-          /* Solução específica para linha azul marcada */
-          form + div {
-            border-top: 4px solid inherit;
-            margin-top: 0 !important;
-          }
-          
-          /* Corrigir qualquer espaço entre componentes com background */
-          div[class^="grid"] {
-            background-color: inherit !important;
-          }
-          
-          /* Remover margin de qualquer elemento que possa criá-la */
-          * {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-          }
         }
       `}} />
     </div>
