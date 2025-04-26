@@ -80,7 +80,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   return (
     <div
       className="flex flex-col w-full min-h-screen transition-all duration-500"
-      style={{ backgroundColor: funnelBgColor }}
+      style={{ 
+        backgroundColor: funnelBgColor,
+        overflow: 'hidden' // Evitar vazamentos
+      }}
     >
       {/* Facebook Pixel integration with proper parameters */}
       {activeFunnel.settings.facebookPixelId && (
@@ -91,7 +94,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         />
       )}
 
-      <div className="flex flex-col items-center w-full max-w-xl mx-auto" style={customStyles}>
+      <div 
+        className="flex flex-col items-center w-full max-w-xl mx-auto" 
+        style={{
+          ...customStyles,
+          overflow: 'hidden' // Evitar vazamentos
+        }}
+      >
         {/* Logo */}
         {validLogo && (
           <div className="w-full flex justify-center py-4">
@@ -122,7 +131,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           />
         )}
 
-        <div className="w-full">
+        <div className="w-full" style={{ overflow: 'hidden' }}>
           {canvasElements && canvasElements.length > 0 ? (
             // If we have canvas elements, render them
             <CanvasPreview 
@@ -130,6 +139,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
               activeStep={safeCurrentStep}
               onStepChange={handleStepChange}
               funnel={activeFunnel}
+              isMobile={isMobile}
             />
           ) : (
             // Otherwise, fall back to the traditional question rendering
@@ -144,6 +154,36 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           )}
         </div>
       </div>
+      
+      {/* Estilos globais para corrigir problemas específicos de produção */}
+      <style dangerouslySetInnerHTML={{__html: `
+        /* Corrigir linhas brancas em production/slugs/domains */
+        @media (max-width: 768px) {
+          body, #__next, main {
+            overflow-x: hidden !important;
+          }
+          
+          /* Prevenir linhas brancas entre componentes */
+          div[class*="mobile-element"] {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            background-color: ${funnelBgColor} !important;
+          }
+          
+          /* Ajustar elementos de formulário para não ter espaços */
+          input, select, textarea, button {
+            margin-bottom: 0 !important;
+          }
+          
+          /* Ajustes para MultipleChoiceImage */
+          div[class*="grid-cols-2"] {
+            gap: 8px !important;
+            overflow: hidden !important;
+            background-color: ${funnelBgColor} !important;
+          }
+        }
+      `}} />
     </div>
   );
 };

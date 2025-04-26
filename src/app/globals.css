@@ -1,0 +1,52 @@
+/* Fix para espaços brancos entre componentes no mobile */
+@media (max-width: 768px) {
+  /* Remover espaços entre elementos no mobile */
+  body div[class*="canvas-container"] > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background-color: inherit !important;
+  }
+  
+  /* Elementos adjacentes em funnels não devem ter gaps */
+  body div[class*="canvas-container"] > div + div {
+    margin-top: 0 !important;
+  }
+  
+  /* Garantir que não haja bordas brancas */
+  body div[class*="canvas-container"],
+  body div[class*="mobile-element"],
+  body div[class*="desktop-element"] {
+    overflow: hidden !important;
+    background-color: inherit !important;
+  }
+  
+  /* Prevenir vazamento de conteúdo */
+  body div[class*="canvas-container"] * {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  /* Remover qualquer espaço entre componentes de formulário */
+  body div[class*="mobile-element"] > div,
+  body div[class*="mobile-element"] > form {
+    margin: 0 !important;
+    background-color: inherit !important;
+  }
+  
+  /* Para elementos MultipleChoiceImage */
+  body div[class*="grid-cols-2"] {
+    gap: 8px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    background-color: inherit !important;
+    overflow: hidden !important;
+  }
+  
+  /* Remover qualquer linha branca entre componentes */
+  body div[class*="mobile-full-width"] {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background-color: inherit !important;
+  }
+} 

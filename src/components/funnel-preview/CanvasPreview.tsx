@@ -141,6 +141,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        overflow: 'hidden', // Evitar linhas brancas
+        backgroundColor: funnel?.settings?.backgroundColor || '#ffffff', // Garantir background consistente
       }}
     >
       {canvasElements.map((element, index) => {
@@ -166,7 +168,13 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         
         // Estilos específicos para tipo de dispositivo
         const elementWrapperStyle: React.CSSProperties = isMobile 
-          ? { maxWidth: '100%', overflow: 'hidden' } 
+          ? { 
+              maxWidth: '100%', 
+              overflow: 'hidden', 
+              margin: 0, 
+              padding: 0, 
+              backgroundColor: funnel?.settings?.backgroundColor || '#ffffff'
+            } 
           : {};
         
         return (
@@ -196,14 +204,36 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         .canvas-container {
           will-change: contents;
           transform: translateZ(0);
+          overflow: hidden !important;
         }
         .mobile-element, .desktop-element {
           transition: opacity 0.3s ease, transform 0.3s ease;
           will-change: transform, opacity;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
         }
         .mobile-view, .desktop-view {
           transform: translateZ(0);
           backface-visibility: hidden;
+          overflow: hidden !important;
+        }
+        /* Eliminar espaços entre elementos em formato mobile */
+        @media (max-width: 768px) {
+          .mobile-element + .mobile-element {
+            margin-top: 0 !important;
+          }
+          .mobile-element > div, 
+          .mobile-element > form {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            background-color: inherit !important;
+          }
+          .canvas-container > div {
+            margin: 0 !important;
+            overflow: hidden !important;
+          }
         }
       `}} />
     </div>
