@@ -251,7 +251,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         position: "relative",
         width: "100%",
         color: "white", // Garantir que o texto seja visível
-        padding: isMobile ? "6px" : "8px",
+        padding: isMobile ? "12px" : "8px", // Aumentando padding para mobile de 6px para 12px
+        minHeight: isMobile ? "40px" : "auto", // Adicionando altura mínima para mobile
         zIndex: 5
       };
       
@@ -427,6 +428,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           
           .grid-cols-2 > div .p-3 {
             padding: inherit !important;
+            min-height: 40px !important; /* Garantir altura mínima para tarjas em mobile */
+            display: flex !important;
+            align-items: center !important;
           }
         }
       `}} />
