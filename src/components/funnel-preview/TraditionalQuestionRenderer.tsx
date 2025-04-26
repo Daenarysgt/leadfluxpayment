@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,29 +22,8 @@ const TraditionalQuestionRenderer = ({
   isLastStep, 
   primaryColor 
 }: TraditionalQuestionRendererProps) => {
-  const previousStepRef = useRef<number>(activeStep);
-  const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev'>('next');
-  
-  // Atualizar a direção da transição quando a etapa ativa mudar
-  useEffect(() => {
-    if (previousStepRef.current < activeStep) {
-      setTransitionDirection('next');
-    } else if (previousStepRef.current > activeStep) {
-      setTransitionDirection('prev');
-    }
-    
-    previousStepRef.current = activeStep;
-  }, [activeStep]);
-  
-  // Estilo para animação de entrada
-  const animationStyle: React.CSSProperties = {
-    animation: `fadeIn${transitionDirection === 'next' ? 'Right' : 'Left'} 0.35s ease-out forwards`,
-    position: 'relative',
-    width: '100%'
-  };
-  
   return (
-    <div className="space-y-6" style={animationStyle}>
+    <div className="space-y-6">
       <h2 className="text-xl font-semibold text-center">{stepData.title}</h2>
       
       {stepData.questions.map((question: any) => (
@@ -193,10 +172,7 @@ const TraditionalQuestionRenderer = ({
         {activeStep > 0 && (
           <Button 
             variant="outline"
-            onClick={() => {
-              setTransitionDirection('prev');
-              handleNextStep(Math.max(0, activeStep - 1));
-            }}
+            onClick={() => handleNextStep(Math.max(0, activeStep - 1))}
           >
             Voltar
           </Button>
@@ -206,7 +182,6 @@ const TraditionalQuestionRenderer = ({
           style={{ backgroundColor: primaryColor }}
           onClick={() => {
             // Verificar se há mais etapas após esta
-            setTransitionDirection('next');
             handleNextStep(activeStep + 1);
           }}
         >

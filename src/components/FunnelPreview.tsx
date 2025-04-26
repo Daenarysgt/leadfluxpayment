@@ -177,7 +177,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
       return;
     }
     
-    // Usando animação sutil, sem precisar recarregar componentes
+    // Nenhuma animação, apenas mudar diretamente para evitar o flash
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
@@ -217,6 +217,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
 
   // Estilos específicos para o tipo de dispositivo e centralização
   const mainContainerStyle: React.CSSProperties = {
+    transition: 'all 0.4s ease',
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
     overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
