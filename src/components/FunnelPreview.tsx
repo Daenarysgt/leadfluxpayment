@@ -213,16 +213,16 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
   
   // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+  const headerWrapperClass = "w-full flex flex-col items-center py-1 px-2 sm:py-2 sm:px-0";
   
   // Wrapper para o conteúdo principal (centralizado ou não)
   const mainContentWrapperClass = shouldCenter 
-    ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
-    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+    ? "w-full flex-1 flex flex-col items-center justify-center py-1 px-2 sm:py-2 sm:px-0" 
+    : "w-full flex flex-col items-center py-1 px-2 sm:py-2 sm:px-0";
   
-  const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
-  const contentClass = `w-full ${responsiveClass}`;
+  const logoWrapperClass = "w-full flex justify-center py-1 mb-1";
+  const progressBarClass = "w-full rounded-full overflow-hidden mb-1 sm:mb-2";
+  const contentClass = `w-full ${responsiveClass} preview-content`;
 
   // Estilos específicos para o tipo de dispositivo e centralização
   const mainContainerStyle: React.CSSProperties = {
@@ -230,6 +230,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
     overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
+    padding: 0,
+    margin: 0
   };
   
   // Estilo do contêiner principal quando centralizado
@@ -240,13 +242,17 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     justifyContent: 'center',
     alignItems: 'center',
     overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
+    padding: 0,
+    margin: 0
   } : {
     // Estilo quando não está centralizado
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible'
+    overflowY: isMobile ? 'auto' : 'visible',
+    padding: 0,
+    margin: 0
   };
 
   return (
@@ -311,10 +317,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         </div>
 
         {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
-          <div className={contentClass} style={mainContainerStyle}>
+        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible', padding: 0, margin: 0}}>
+          <div className={contentClass} style={{...mainContainerStyle, padding: 0, margin: 0}}>
             {canvasElements && canvasElements.length > 0 ? (
-              <div className="w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
+              <div className="w-full compact-preview" style={{padding: 0, margin: 0, overflowY: isMobile ? 'auto' : 'visible'}}>
                 <CanvasPreview
                   canvasElements={canvasElements}
                   activeStep={safeCurrentStep}

@@ -515,3 +515,45 @@
     transition: opacity 150ms ease-in-out;
   }
 }
+
+/* Correções de espaçamento vertical para o preview */
+.canvas-container {
+  padding: 0.25rem 0 !important;
+  margin: 0 !important;
+}
+
+.canvas-elements-container {
+  position: relative;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.canvas-element-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remover espaçamento vertical padrão entre divs */
+.multiple-choice-image-grid {
+  gap: 1rem !important;
+}
+
+/* Remover padding extra em contêineres */
+div[class^="FunnelPreview"] .p-4,
+.mainContentWrapperClass .p-4,
+.canvas-container .p-4 {
+  padding: 0.5rem !important;
+}
+
+/* Remover margens entre os elementos */
+.canvas-element > div, 
+.canvas-element-mobile > div {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Apenas preservar margens explicitamente definidas no canvas */
+.canvas-element[style*="margin-top"],
+.canvas-element-mobile[style*="margin-top"] {
+  margin-top: var(--custom-margin-top, 0) !important;
+}

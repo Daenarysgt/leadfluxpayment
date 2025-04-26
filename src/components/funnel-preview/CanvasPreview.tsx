@@ -246,43 +246,58 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               left: 0,
               width: '100%',
               pointerEvents: stepData.index === visibleStep ? 'auto' : 'none',
-              zIndex: stepData.index === visibleStep ? 2 : 1
+              zIndex: stepData.index === visibleStep ? 2 : 1,
+              // Eliminar margens extras que possam causar espaçamento vertical
+              margin: 0,
+              padding: 0
             }}
           >
-            {stepData.elements.map((element, elementIndex) => {
-              // Adicionar propriedades de preview para navegação
-              const elementWithPreviewProps = {
-                ...element,
-                previewMode: true,
-                previewProps: {
-                  activeStep,
-                  onStepChange: handleStepChange,
-                  funnel,
-                  isMobile,
-                },
-                // Adicionar flag para evitar loading states
-                skipLoading: true
-              };
-              
-              // Classe específica para mobile ou desktop
-              const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-              
-              return (
-                <div key={element.id} className={elementClassName}>
-                  <ElementFactory 
-                    element={elementWithPreviewProps}
-                    isSelected={false} 
-                    isDragging={false}
-                    onSelect={noopFunction}
-                    onRemove={noopFunction}
-                    index={elementIndex}
-                    totalElements={stepData.elements.length}
-                    onDragStart={null}
-                    onDragEnd={null}
-                  />
-                </div>
-              );
-            })}
+            <div className="canvas-elements-container" style={{ margin: 0, padding: 0 }}>
+              {stepData.elements.map((element, elementIndex) => {
+                // Adicionar propriedades de preview para navegação
+                const elementWithPreviewProps = {
+                  ...element,
+                  previewMode: true,
+                  previewProps: {
+                    activeStep,
+                    onStepChange: handleStepChange,
+                    funnel,
+                    isMobile,
+                  },
+                  // Adicionar flag para evitar loading states
+                  skipLoading: true
+                };
+                
+                // Classe específica para mobile ou desktop
+                const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+                
+                return (
+                  <div 
+                    key={element.id} 
+                    className={`${elementClassName} canvas-element-wrapper`}
+                    style={{
+                      // Preservar posicionamento original do canvas
+                      position: typeof element.position === 'string' && element.position === 'absolute' ? 'absolute' : 'relative',
+                      // Remover margens extras
+                      marginTop: element.style?.marginTop || 0,
+                      marginBottom: element.style?.marginBottom || 0
+                    }}
+                  >
+                    <ElementFactory 
+                      element={elementWithPreviewProps}
+                      isSelected={false} 
+                      isDragging={false}
+                      onSelect={noopFunction}
+                      onRemove={noopFunction}
+                      index={elementIndex}
+                      totalElements={stepData.elements.length}
+                      onDragStart={null}
+                      onDragEnd={null}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))
       ) : (
@@ -303,7 +318,17 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName}>
+            <div 
+              key={element.id} 
+              className={`${elementClassName} canvas-element-wrapper`}
+              style={{
+                // Preservar posicionamento original do canvas
+                position: typeof element.position === 'string' && element.position === 'absolute' ? 'absolute' : 'relative',
+                // Remover margens extras
+                marginTop: element.style?.marginTop || 0,
+                marginBottom: element.style?.marginBottom || 0
+              }}
+            >
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
@@ -327,18 +352,41 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
 const fadeInStyle = `
 <style>
   .step-transition-in {
-    opacity: 1;
-    transition: opacity 150ms ease-in-out;
+    animation: fadeIn 150ms ease-out forwards;
+    will-change: opacity;
   }
   
   .step-transition-out {
-    opacity: 0;
-    transition: opacity 150ms ease-in-out;
+    animation: fadeOut 150ms ease-in forwards;
+    will-change: opacity;
   }
   
   .step-transition-changing {
     opacity: 0;
     pointer-events: none;
+  }
+  
+  /* Corrigir espaçamento vertical */
+  .canvas-container {
+    margin: 0 !important;
+    padding: 0.25rem 0 !important;
+  }
+  
+  .canvas-elements-container {
+    position: relative;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .canvas-element-wrapper {
+    /* Garantir que elemento preserve seu posicionamento original */
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Preservar espaço vertical apenas entre componentes reais */
+  .canvas-element-wrapper + .canvas-element-wrapper {
+    margin-top: 0.5rem;
   }
 </style>
 `;
