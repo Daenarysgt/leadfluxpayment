@@ -27,7 +27,7 @@ const PreviewSection = () => {
             funnel={currentFunnel}
             stepIndex={currentStep}
             onNextStep={handleStepChange}
-            key={`preview-${currentFunnel?.id}-step-${currentStep}`}
+            key={`preview-${currentFunnel?.id}`}
           />
         </div>
       </div>

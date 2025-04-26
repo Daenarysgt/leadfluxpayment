@@ -94,7 +94,7 @@ const Preview = () => {
             isMobile={isMobile} 
             stepIndex={currentStepIndex}
             onNextStep={handleStepChange} 
-            key={`preview-${loadedFunnel.id}-step-${currentStepIndex}`}
+            key={`preview-${loadedFunnel.id}`}
           />
         </div>
       </main>

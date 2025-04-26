@@ -78,11 +78,8 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
     
     console.log("CanvasPreview - Changing step to:", index);
     
-    // Garantir que a mudança de etapa não seja bloqueada pelo processamento assíncrono
-    setTimeout(() => {
-      console.log("CanvasPreview - Executando mudança de etapa para:", index);
-      onStepChange(index);
-    }, 100);
+    // Aplicar a mudança de etapa diretamente, sem setTimeout
+    onStepChange(index);
   };
   
   const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
@@ -93,7 +90,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel }: Can
   let containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.5s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
     padding: isMobile ? '0.25rem' : '1rem', // Pequeno padding para mobile
     margin: isMobile ? '0 auto' : '0 auto',

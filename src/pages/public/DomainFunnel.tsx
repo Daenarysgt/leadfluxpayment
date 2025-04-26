@@ -207,7 +207,7 @@ const DomainFunnel = () => {
           isMobile={isMobile} 
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
-          key={`domain-${funnel.id}-step-${currentStepIndex}`}
+          key={`domain-${funnel.id}`}
         />
       </div>
     </div>

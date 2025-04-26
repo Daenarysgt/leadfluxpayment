@@ -185,8 +185,7 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
             // Log para confirmar que os dados foram salvos
             console.log(`Interação registrada com sucesso para opção: "${selection}" (ID: ${option.id}) na etapa ${activeStep + 1}`);
             
-            // MODIFICAÇÃO: Reduzimos o atraso para melhorar a experiência do usuário
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Executar navegação sem delay para melhorar a experiência do usuário
             
             switch (navigationType) {
               case "next":

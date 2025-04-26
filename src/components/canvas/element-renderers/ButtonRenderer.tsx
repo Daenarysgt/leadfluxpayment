@@ -271,9 +271,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               } else {
                 console.log("Executando navegação para o índice de etapa:", stepIndex);
                 
-                setTimeout(() => {
-                  onStepChange(stepIndex);
-                }, 50); // Adicionar pequeno delay para garantir que a navegação seja executada
+                onStepChange(stepIndex);
               }
             } else {
               console.error(`Erro: Não foi possível encontrar a etapa com ID ${navigation.stepId}`);
