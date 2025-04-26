@@ -79,7 +79,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
   return (
     <div
-      className="flex flex-col w-full min-h-screen transition-all duration-500"
+      className="flex flex-col w-full min-h-screen transition-all duration-500 public-funnel-container"
       style={{ 
         backgroundColor: funnelBgColor,
         overflow: 'hidden' // Evitar vazamentos
@@ -95,7 +95,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       )}
 
       <div 
-        className="flex flex-col items-center w-full max-w-xl mx-auto" 
+        className="flex flex-col items-center w-full max-w-xl mx-auto funnel-content-wrapper" 
         style={{
           ...customStyles,
           overflow: 'hidden' // Evitar vazamentos
@@ -131,7 +131,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           />
         )}
 
-        <div className="w-full" style={{ overflow: 'hidden' }}>
+        <div className="w-full funnel-step-container" style={{ 
+          overflow: 'hidden', 
+          backgroundColor: funnelBgColor
+        }}>
           {canvasElements && canvasElements.length > 0 ? (
             // If we have canvas elements, render them
             <CanvasPreview 
@@ -159,8 +162,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       <style dangerouslySetInnerHTML={{__html: `
         /* Corrigir linhas brancas em production/slugs/domains */
         @media (max-width: 768px) {
-          body, #__next, main {
+          body, #__next, main, .public-funnel-container, .funnel-content-wrapper, .funnel-step-container {
             overflow-x: hidden !important;
+            background-color: ${funnelBgColor} !important;
           }
           
           /* Prevenir linhas brancas entre componentes */
@@ -169,18 +173,61 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
             padding: 0 !important;
             overflow: hidden !important;
             background-color: ${funnelBgColor} !important;
+            position: relative !important;
           }
           
-          /* Ajustar elementos de formulário para não ter espaços */
-          input, select, textarea, button {
-            margin-bottom: 0 !important;
+          /* Usar posicionamento relativo para controlar os elementos */
+          .funnel-step-container {
+            position: relative !important;
+            z-index: 1 !important;
           }
           
-          /* Ajustes para MultipleChoiceImage */
+          /* Estratégia alternativa: margens negativas para sobreposição */
+          div[class*="mobile-element"] + div[class*="mobile-element"] {
+            margin-top: -1px !important;
+          }
+          
+          /* Usar pseudo-elementos para preencher gaps */
+          div[class*="mobile-element"]::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: ${funnelBgColor};
+            z-index: 10;
+          }
+          
+          div[class*="mobile-element"]::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: ${funnelBgColor};
+            z-index: 10;
+          }
+          
+          /* Remover espaçamento padrão */
+          * {
+            box-sizing: border-box !important;
+          }
+          
+          /* Garantir que caixas de imagens não tenham espaços */
           div[class*="grid-cols-2"] {
             gap: 8px !important;
             overflow: hidden !important;
             background-color: ${funnelBgColor} !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          /* Forçar que elements dentro de div com classe grid tenham background consistente */
+          div[class*="grid-cols-2"] > div {
+            background-color: ${funnelBgColor} !important;
+            overflow: hidden !important;
           }
         }
       `}} />

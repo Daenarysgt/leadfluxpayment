@@ -121,7 +121,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   
   return (
     <div 
-      className={`${containerClass} canvas-container w-full`}
+      className={`${containerClass} canvas-container w-full no-gap-container`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
@@ -143,61 +143,71 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
         overflow: 'hidden', // Evitar linhas brancas
         backgroundColor: funnel?.settings?.backgroundColor || '#ffffff', // Garantir background consistente
+        position: 'relative', // Importante para o posicionamento absoluto
       }}
     >
-      {canvasElements.map((element, index) => {
-        console.log("CanvasPreview - Processing element:", element.id, element.type);
-        
-        // Manter elementos com o mesmo estilo do desktop
-        const adjustedElement = { ...element };
-        
-        // Add preview properties to the element for navigation
-        const elementWithPreviewProps = {
-          ...adjustedElement,
-          previewMode: true,
-          previewProps: {
-            activeStep,
-            onStepChange: handleStepChange,
-            funnel,
-            isMobile,
-          }
-        };
-        
-        // Classe específica para mobile ou desktop
-        const elementWrapperClass = `w-full ${isMobile ? 'mobile-element' : 'desktop-element'}`;
-        
-        // Estilos específicos para tipo de dispositivo
-        const elementWrapperStyle: React.CSSProperties = isMobile 
-          ? { 
-              maxWidth: '100%', 
-              overflow: 'hidden', 
-              margin: 0, 
-              padding: 0, 
-              backgroundColor: funnel?.settings?.backgroundColor || '#ffffff'
-            } 
-          : {};
-        
-        return (
-          <div 
-            key={element.id} 
-            className={elementWrapperClass}
-            style={elementWrapperStyle}
-          >
-            <ElementFactory 
-              element={elementWithPreviewProps}
-              onSelect={() => {}} 
-              isSelected={false} 
-              isDragging={false}
-              onRemove={() => {}}
-              index={index}
-              totalElements={canvasElements.length}
-              // Pass null for drag functions to disable drag in preview
-              onDragStart={null}
-              onDragEnd={null}
-            />
-          </div>
-        );
-      })}
+      {/* Renderizar dentro de um container único sem gaps */}
+      <div className="elements-container" style={{
+        position: 'relative',
+        backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
+        overflow: 'hidden'
+      }}>
+        {canvasElements.map((element, index) => {
+          console.log("CanvasPreview - Processing element:", element.id, element.type);
+          
+          // Manter elementos com o mesmo estilo do desktop
+          const adjustedElement = { ...element };
+          
+          // Add preview properties to the element for navigation
+          const elementWithPreviewProps = {
+            ...adjustedElement,
+            previewMode: true,
+            previewProps: {
+              activeStep,
+              onStepChange: handleStepChange,
+              funnel,
+              isMobile,
+            }
+          };
+          
+          // Classe específica para mobile ou desktop
+          const elementWrapperClass = `w-full ${isMobile ? 'mobile-element no-gap-element' : 'desktop-element'}`;
+          
+          // Estilos específicos para tipo de dispositivo
+          const elementWrapperStyle: React.CSSProperties = isMobile 
+            ? { 
+                maxWidth: '100%', 
+                overflow: 'hidden', 
+                margin: 0, 
+                padding: 0, 
+                backgroundColor: funnel?.settings?.backgroundColor || '#ffffff',
+                position: 'relative',
+                zIndex: 1
+              } 
+            : {};
+          
+          return (
+            <div 
+              key={element.id} 
+              className={elementWrapperClass}
+              style={elementWrapperStyle}
+            >
+              <ElementFactory 
+                element={elementWithPreviewProps}
+                onSelect={() => {}} 
+                isSelected={false} 
+                isDragging={false}
+                onRemove={() => {}}
+                index={index}
+                totalElements={canvasElements.length}
+                // Pass null for drag functions to disable drag in preview
+                onDragStart={null}
+                onDragEnd={null}
+              />
+            </div>
+          );
+        })}
+      </div>
       
       {/* Estilo global para transições suaves */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -206,6 +216,14 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
           transform: translateZ(0);
           overflow: hidden !important;
         }
+        
+        .elements-container {
+          display: flex;
+          flex-direction: column;
+          overflow: hidden !important;
+          width: 100%;
+        }
+        
         .mobile-element, .desktop-element {
           transition: opacity 0.3s ease, transform 0.3s ease;
           will-change: transform, opacity;
@@ -213,16 +231,27 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
           padding: 0 !important;
           overflow: hidden !important;
         }
+        
+        .no-gap-element + .no-gap-element {
+          margin-top: -1px !important;
+        }
+        
         .mobile-view, .desktop-view {
           transform: translateZ(0);
           backface-visibility: hidden;
           overflow: hidden !important;
         }
+        
         /* Eliminar espaços entre elementos em formato mobile */
         @media (max-width: 768px) {
-          .mobile-element + .mobile-element {
-            margin-top: 0 !important;
+          .no-gap-container {
+            isolation: isolate;
           }
+          
+          .mobile-element + .mobile-element {
+            margin-top: -1px !important;
+          }
+          
           .mobile-element > div, 
           .mobile-element > form {
             margin: 0 !important;
@@ -230,9 +259,34 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
             overflow: hidden !important;
             background-color: inherit !important;
           }
+          
           .canvas-container > div {
             margin: 0 !important;
             overflow: hidden !important;
+          }
+          
+          /* Pseudo-elementos para cobrir espaços entre elementos */
+          .mobile-element::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 2px;
+            background-color: inherit;
+            z-index: 10;
+          }
+          
+          /* Aplicar um fundo sólido para todo o container */
+          .elements-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: inherit;
+            z-index: 0;
           }
         }
       `}} />
