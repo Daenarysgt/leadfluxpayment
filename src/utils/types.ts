@@ -261,9 +261,5 @@ export interface FeatureCardsContent {
     forceSideBySideOnMobile?: boolean;
     verticalTextAlignment?: 'top' | 'center' | 'bottom';
     showFullText?: boolean;
-    cardTitleMarginTop?: number;
-    cardTitleMarginBottom?: number;
-    cardDescriptionMarginTop?: number;
-    cardDescriptionMarginBottom?: number;
   };
 }
