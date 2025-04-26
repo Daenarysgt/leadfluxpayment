@@ -329,7 +329,7 @@ const PublicFunnel = () => {
           isMobile={isMobile} 
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
-          key={`public-${funnel.id}-step-${currentStepIndex}`}
+          key={`public-${funnel.id}`}
           centerContent={true}
         />
       </div>

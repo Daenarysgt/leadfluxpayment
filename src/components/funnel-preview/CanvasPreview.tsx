@@ -16,23 +16,9 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
-  // Manter um registro de todas as etapas já visualizadas para evitar re-renders
-  const [renderedSteps, setRenderedSteps] = useState<Record<number, boolean>>({});
+  // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
-  
-  // Marcar todas as etapas como pré-renderizadas para evitar skeleton em transições
-  useEffect(() => {
-    if (!funnel || !Array.isArray(funnel.steps)) return;
-    
-    // Inicializar todas as etapas como já visualizadas
-    const allStepsRendered = funnel.steps.reduce((acc, _, index) => {
-      acc[index] = true;
-      return acc;
-    }, {} as Record<number, boolean>);
-    
-    setRenderedSteps(allStepsRendered);
-  }, [funnel]);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -50,6 +36,31 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       element.type
     );
   }, [canvasElements]);
+  
+  // Pré-renderizar todas as etapas do funil
+  const allFunnelStepsElements = useMemo(() => {
+    if (!funnel || !Array.isArray(funnel.steps)) {
+      return [];
+    }
+    
+    // Mapear todas as etapas e seus elementos de canvas
+    return funnel.steps.map((step, index) => {
+      const stepElements = Array.isArray(step.canvasElements) 
+        ? step.canvasElements.filter(element => 
+            element && 
+            typeof element === 'object' && 
+            element.id && 
+            element.type
+          )
+        : [];
+      
+      return {
+        index,
+        elements: stepElements,
+        stepId: step.id
+      };
+    });
+  }, [funnel]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -170,43 +181,87 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         transition: 'none'
       }}
     >
-      {validCanvasElements.map((element, index) => {
-        // Manter elementos com o mesmo estilo do desktop
-        const adjustedElement = { ...element };
-        
-        // Add preview properties to the element for navigation
-        const elementWithPreviewProps = {
-          ...adjustedElement,
-          previewMode: true,
-          previewProps: {
-            activeStep,
-            onStepChange: handleStepChange,
-            funnel,
-            isMobile,
-          },
-          // Adicionar flag para evitar loading states
-          skipLoading: true
-        };
-        
-        // Classe específica para mobile ou desktop
-        const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-        
-        return (
-          <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
-            <ElementFactory 
-              element={elementWithPreviewProps}
-              isSelected={false} 
-              isDragging={false}
-              onSelect={noopFunction}
-              onRemove={noopFunction}
-              index={index}
-              totalElements={validCanvasElements.length}
-              onDragStart={null}
-              onDragEnd={null}
-            />
+      {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
+      {allFunnelStepsElements.length > 0 ? (
+        allFunnelStepsElements.map((stepData) => (
+          <div 
+            key={`step-${stepData.index}-${stepData.stepId}`} 
+            className="w-full transition-opacity duration-100" 
+            style={{ 
+              display: stepData.index === activeStep ? 'block' : 'none',
+              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
+            }}
+          >
+            {stepData.elements.map((element, elementIndex) => {
+              // Adicionar propriedades de preview para navegação
+              const elementWithPreviewProps = {
+                ...element,
+                previewMode: true,
+                previewProps: {
+                  activeStep,
+                  onStepChange: handleStepChange,
+                  funnel,
+                  isMobile,
+                },
+                // Adicionar flag para evitar loading states
+                skipLoading: true
+              };
+              
+              // Classe específica para mobile ou desktop
+              const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+              
+              return (
+                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                  <ElementFactory 
+                    element={elementWithPreviewProps}
+                    isSelected={false} 
+                    isDragging={false}
+                    onSelect={noopFunction}
+                    onRemove={noopFunction}
+                    index={elementIndex}
+                    totalElements={stepData.elements.length}
+                    onDragStart={null}
+                    onDragEnd={null}
+                  />
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        ))
+      ) : (
+        // Caso fallback para usar os elementos passados diretamente como prop
+        validCanvasElements.map((element, index) => {
+          const elementWithPreviewProps = {
+            ...element,
+            previewMode: true,
+            previewProps: {
+              activeStep,
+              onStepChange: handleStepChange,
+              funnel,
+              isMobile,
+            },
+            skipLoading: true
+          };
+          
+          const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+          
+          return (
+            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+              <ElementFactory 
+                element={elementWithPreviewProps}
+                isSelected={false} 
+                isDragging={false}
+                onSelect={noopFunction}
+                onRemove={noopFunction}
+                index={index}
+                totalElements={validCanvasElements.length}
+                onDragStart={null}
+                onDragEnd={null}
+              />
+            </div>
+          );
+        })
+      )}
     </div>
   );
 };
