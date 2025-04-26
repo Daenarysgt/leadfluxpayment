@@ -194,8 +194,8 @@ const DomainFunnel = () => {
     : "min-h-screen flex flex-col items-center justify-start bg-white p-4 md:p-8 pt-2";
   
   const innerClass = isMobile 
-    ? "w-full mobile-full-width" 
-    : "w-full max-w-2xl mx-auto";
+    ? "w-full mobile-full-width flex flex-col h-full" 
+    : "w-full max-w-2xl mx-auto flex flex-col h-full";
     
   // Estilos específicos para mobile
   const containerStyle = isMobile ? {
@@ -215,6 +215,7 @@ const DomainFunnel = () => {
           stepIndex={currentStepIndex}
           onNextStep={handleStepChange} 
           key={`domain-${funnel.id}`}
+          centerContent={true}
         />
       </div>
     </div>

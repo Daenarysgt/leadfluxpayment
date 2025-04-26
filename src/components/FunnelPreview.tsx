@@ -16,9 +16,10 @@ interface FunnelPreviewProps {
   funnel?: Funnel;
   stepIndex?: number;
   onNextStep?: (index: number) => void;
+  centerContent?: boolean;
 }
 
-const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
+const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, centerContent = false }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   
@@ -94,18 +95,32 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Classes melhoradas para responsividade
   const wrapperClass = `w-full ${responsiveClass}`;
-  const contentWrapperClass = `flex flex-col items-center w-full mx-auto py-2 px-2 sm:py-4 sm:px-0 ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
+  
+  // Wrapper para todo o conteúdo
+  const contentWrapperClass = `flex flex-col w-full mx-auto py-2 px-2 sm:py-4 sm:px-0 ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
+  
+  // Wrapper apenas para o logo e barra de progresso
+  const headerWrapperClass = "w-full flex flex-col items-center";
+  
+  // Wrapper para o conteúdo principal (centralizado ou não)
+  const mainContentWrapperClass = centerContent 
+    ? "w-full flex-1 flex flex-col items-center justify-center" 
+    : "w-full flex flex-col items-center";
+  
   const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
   const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
   const contentClass = `w-full ${responsiveClass}`;
 
-  // Estilos específicos para o tipo de dispositivo
+  // Estilos específicos para o tipo de dispositivo e centralização
   const mainContainerStyle: React.CSSProperties = {
     transition: 'all 0.4s ease',
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
     padding: isMobile ? '0.25rem' : '0.5rem',
     overflow: 'hidden', // Evitar layout shifts
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: centerContent ? 'calc(100vh - 60px)' : 'auto', // Altura ajustada para centralização
   };
 
   return (
@@ -120,226 +135,233 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
       )}
       
       <div className={contentWrapperClass}>
-        {/* Logotipo */}
-        {validLogo && (
-          <div className={logoWrapperClass}>
-            <img 
-              src={validLogo} 
-              alt="Logo" 
-              className="max-h-14 object-contain"
-              onError={(e) => {
-                console.error("FunnelPreview - Erro ao carregar logo:", e);
-                // Esconder o elemento em caso de erro
-                e.currentTarget.style.display = 'none';
-              }}
-              onLoad={() => {
-                console.log("FunnelPreview - Logo carregado com sucesso");
-              }}
-            />
-          </div>
-        )}
-
-        {activeFunnel.settings.showProgressBar && (
-          <div 
-            className={progressBarClass}
-            style={{
-              backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
-              height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
-            }}
-          >
-            <div 
-              className="h-full transition-all duration-500 ease-out"
-              style={{ 
-                width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
-                backgroundColor: primaryColor 
-              }}
-            ></div>
-          </div>
-        )}
-
-        <div className={contentClass} style={mainContainerStyle}>
-          {canvasElements && canvasElements.length > 0 ? (
-            <div className="transition-opacity duration-300 ease-in-out">
-              <CanvasPreview
-                canvasElements={canvasElements}
-                activeStep={safeCurrentStep}
-                onStepChange={handleStepChange}
-                funnel={activeFunnel}
-                isMobile={isMobile}
+        {/* Header Section - Logo e barra de progresso */}
+        <div className={headerWrapperClass}>
+          {/* Logotipo */}
+          {validLogo && (
+            <div className={logoWrapperClass}>
+              <img 
+                src={validLogo} 
+                alt="Logo" 
+                className="max-h-14 object-contain"
+                onError={(e) => {
+                  console.error("FunnelPreview - Erro ao carregar logo:", e);
+                  // Esconder o elemento em caso de erro
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => {
+                  console.log("FunnelPreview - Logo carregado com sucesso");
+                }}
               />
             </div>
-          ) : (
-            // Otherwise, fall back to the traditional question rendering
-            <div className="transition-opacity duration-300 ease-in-out">
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-center">{stepData.title}</h2>
-                
-                {stepData.questions.map((question) => (
-                  <div key={question.id} className="space-y-3">
-                    <h3 className="font-medium">{question.title}</h3>
-                    {question.description && (
-                      <p className="text-sm text-muted-foreground">{question.description}</p>
-                    )}
-                    
-                    {(question.type === QuestionType.ShortText || 
-                      question.type === QuestionType.Email ||
-                      question.type === QuestionType.Phone ||
-                      question.type === QuestionType.Name ||
-                      question.type === QuestionType.Website ||
-                      question.type === QuestionType.Number) && (
-                      <Input placeholder={`Enter your ${question.type}`} />
-                    )}
-                    
-                    {question.type === QuestionType.LongText && (
-                      <Textarea 
-                        placeholder="Type your answer here..."
-                        className="min-h-[100px]"
-                      />
-                    )}
-                    
-                    {(question.type === QuestionType.SingleChoice || 
-                      question.type === QuestionType.MultipleChoice) && 
-                      question.options && (
-                      <div className="space-y-2">
-                        {question.options.map((option) => (
-                          <div 
-                            key={option.id} 
-                            className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
-                          >
-                            <input 
-                              type={question.type === QuestionType.SingleChoice ? "radio" : "checkbox"} 
-                              id={option.id} 
-                              name={question.id}
-                              className="h-4 w-4"
-                              style={{ accentColor: primaryColor }}
-                            />
-                            <Label htmlFor={option.id} className="cursor-pointer flex-1">
-                              {option.text}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {question.type === QuestionType.ImageChoice && question.options && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {question.options.map((option) => (
-                          <div 
-                            key={option.id} 
-                            className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors"
-                          >
-                            {option.emoji && (
-                              <span className="text-2xl mb-2">{option.emoji}</span>
-                            )}
-                            {option.image && (
-                              <img 
-                                src={option.image} 
-                                alt={option.text} 
-                                className="w-full h-20 object-cover mb-2 rounded-md" 
-                              />
-                            )}
-                            <div className="flex items-center gap-2">
+          )}
+
+          {/* Barra de Progresso */}
+          {activeFunnel.settings.showProgressBar && (
+            <div 
+              className={progressBarClass}
+              style={{
+                backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
+                height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
+              }}
+            >
+              <div 
+                className="h-full transition-all duration-500 ease-out"
+                style={{ 
+                  width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
+                  backgroundColor: primaryColor 
+                }}
+              ></div>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
+        <div className={mainContentWrapperClass}>
+          <div className={contentClass}>
+            {canvasElements && canvasElements.length > 0 ? (
+              <div className="transition-opacity duration-300 ease-in-out">
+                <CanvasPreview
+                  canvasElements={canvasElements}
+                  activeStep={safeCurrentStep}
+                  onStepChange={handleStepChange}
+                  funnel={activeFunnel}
+                  isMobile={isMobile}
+                />
+              </div>
+            ) : (
+              // Otherwise, fall back to the traditional question rendering
+              <div className="transition-opacity duration-300 ease-in-out">
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold text-center">{stepData.title}</h2>
+                  
+                  {stepData.questions.map((question) => (
+                    <div key={question.id} className="space-y-3">
+                      <h3 className="font-medium">{question.title}</h3>
+                      {question.description && (
+                        <p className="text-sm text-muted-foreground">{question.description}</p>
+                      )}
+                      
+                      {(question.type === QuestionType.ShortText || 
+                        question.type === QuestionType.Email ||
+                        question.type === QuestionType.Phone ||
+                        question.type === QuestionType.Name ||
+                        question.type === QuestionType.Website ||
+                        question.type === QuestionType.Number) && (
+                        <Input placeholder={`Enter your ${question.type}`} />
+                      )}
+                      
+                      {question.type === QuestionType.LongText && (
+                        <Textarea 
+                          placeholder="Type your answer here..."
+                          className="min-h-[100px]"
+                        />
+                      )}
+                      
+                      {(question.type === QuestionType.SingleChoice || 
+                        question.type === QuestionType.MultipleChoice) && 
+                        question.options && (
+                        <div className="space-y-2">
+                          {question.options.map((option) => (
+                            <div 
+                              key={option.id} 
+                              className="flex items-center space-x-2 p-3 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                            >
                               <input 
-                                type="radio" 
+                                type={question.type === QuestionType.SingleChoice ? "radio" : "checkbox"} 
                                 id={option.id} 
                                 name={question.id}
                                 className="h-4 w-4"
+                                style={{ accentColor: primaryColor }}
                               />
-                              <Label htmlFor={option.id}>{option.text}</Label>
+                              <Label htmlFor={option.id} className="cursor-pointer flex-1">
+                                {option.text}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {question.type === QuestionType.ImageChoice && question.options && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {question.options.map((option) => (
+                            <div 
+                              key={option.id} 
+                              className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors"
+                            >
+                              {option.emoji && (
+                                <span className="text-2xl mb-2">{option.emoji}</span>
+                              )}
+                              {option.image && (
+                                <img 
+                                  src={option.image} 
+                                  alt={option.text} 
+                                  className="w-full h-20 object-cover mb-2 rounded-md" 
+                                />
+                              )}
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  type="radio" 
+                                  id={option.id} 
+                                  name={question.id}
+                                  className="h-4 w-4"
+                                />
+                                <Label htmlFor={option.id}>{option.text}</Label>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {question.type === QuestionType.Gender && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
+                            <span className="text-2xl mb-2">👨</span>
+                            <Label>Masculino</Label>
+                          </div>
+                          <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
+                            <span className="text-2xl mb-2">👩</span>
+                            <Label>Feminino</Label>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {question.type === QuestionType.Rating && (
+                        <div className="flex justify-between items-center">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <div 
+                              key={rating} 
+                              className="w-10 h-10 flex items-center justify-center border rounded-full hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
+                            >
+                              {rating}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {question.type === QuestionType.Height && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Metros</Label>
+                              <Input type="number" min="0" max="3" step="1" placeholder="1" />
+                            </div>
+                            <div>
+                              <Label>Centímetros</Label>
+                              <Input type="number" min="0" max="99" step="1" placeholder="75" />
                             </div>
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex justify-center">
+                            <div className="h-40 w-8 bg-gray-100 rounded-full relative flex items-center justify-center">
+                              <div className="absolute text-xs">175 cm</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {question.type === QuestionType.Weight && (
+                        <div className="space-y-4">
+                          <div className="flex gap-4">
+                            <div className="flex-1">
+                              <Label>Peso (kg)</Label>
+                              <Input type="number" min="1" step="1" placeholder="70" />
+                            </div>
+                          </div>
+                          <div className="flex justify-center">
+                            <div className="h-8 w-40 bg-gray-100 rounded-full relative flex items-center justify-center">
+                              <div className="absolute text-xs">70 kg</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  <div className="flex justify-between pt-4">
+                    {safeCurrentStep > 0 && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => handleStepChange(Math.max(0, safeCurrentStep - 1))}
+                      >
+                        Voltar
+                      </Button>
                     )}
-                    
-                    {question.type === QuestionType.Gender && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
-                          <span className="text-2xl mb-2">👨</span>
-                          <Label>Masculino</Label>
-                        </div>
-                        <div className="border rounded-md p-3 flex flex-col items-center hover:bg-muted/50 cursor-pointer transition-colors">
-                          <span className="text-2xl mb-2">👩</span>
-                          <Label>Feminino</Label>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {question.type === QuestionType.Rating && (
-                      <div className="flex justify-between items-center">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <div 
-                            key={rating} 
-                            className="w-10 h-10 flex items-center justify-center border rounded-full hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
-                          >
-                            {rating}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {question.type === QuestionType.Height && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Metros</Label>
-                            <Input type="number" min="0" max="3" step="1" placeholder="1" />
-                          </div>
-                          <div>
-                            <Label>Centímetros</Label>
-                            <Input type="number" min="0" max="99" step="1" placeholder="75" />
-                          </div>
-                        </div>
-                        <div className="flex justify-center">
-                          <div className="h-40 w-8 bg-gray-100 rounded-full relative flex items-center justify-center">
-                            <div className="absolute text-xs">175 cm</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {question.type === QuestionType.Weight && (
-                      <div className="space-y-4">
-                        <div className="flex gap-4">
-                          <div className="flex-1">
-                            <Label>Peso (kg)</Label>
-                            <Input type="number" min="1" step="1" placeholder="70" />
-                          </div>
-                        </div>
-                        <div className="flex justify-center">
-                          <div className="h-8 w-40 bg-gray-100 rounded-full relative flex items-center justify-center">
-                            <div className="absolute text-xs">70 kg</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                <div className="flex justify-between pt-4">
-                  {safeCurrentStep > 0 && (
                     <Button 
-                      variant="outline"
-                      onClick={() => handleStepChange(Math.max(0, safeCurrentStep - 1))}
+                      className="ml-auto" 
+                      style={{ backgroundColor: primaryColor }}
+                      onClick={() => {
+                        if (safeCurrentStep < activeFunnel.steps.length - 1) {
+                          handleStepChange(safeCurrentStep + 1);
+                        }
+                      }}
                     >
-                      Voltar
+                      {stepData.buttonText || 'Continuar'} <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
-                  )}
-                  <Button 
-                    className="ml-auto" 
-                    style={{ backgroundColor: primaryColor }}
-                    onClick={() => {
-                      if (safeCurrentStep < activeFunnel.steps.length - 1) {
-                        handleStepChange(safeCurrentStep + 1);
-                      }
-                    }}
-                  >
-                    {stepData.buttonText || 'Continuar'} <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
