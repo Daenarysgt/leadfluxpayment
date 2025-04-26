@@ -22,6 +22,7 @@ interface FunnelPreviewProps {
 const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, centerContent = false }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
+  const [shouldCenter, setShouldCenter] = useState(centerContent);
   
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
@@ -30,6 +31,19 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   useEffect(() => {
     setActiveStep(stepIndex);
   }, [funnel?.id, currentFunnel?.id, stepIndex]);
+
+  // Determinar se deve centralizar com base no número de elementos
+  useEffect(() => {
+    if (!activeFunnel) return;
+    
+    const stepData = activeFunnel.steps[Math.min(activeStep, activeFunnel.steps.length - 1)];
+    if (!stepData) return;
+    
+    const canvasElements = stepData.canvasElements || [];
+    // Se tiver muitos elementos, não centraliza (começa do topo)
+    const manyElements = canvasElements.length > 3;
+    setShouldCenter(centerContent && !manyElements);
+  }, [activeStep, activeFunnel, centerContent]);
 
   // If no funnel is available, show a message
   if (!activeFunnel) {
@@ -106,7 +120,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
   
   // Wrapper para o conteúdo principal (centralizado ou não)
-  const mainContentWrapperClass = centerContent 
+  const mainContentWrapperClass = shouldCenter 
     ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
     : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
   
@@ -123,14 +137,21 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   };
   
   // Estilo do contêiner principal quando centralizado
-  const centerContentStyle: React.CSSProperties = centerContent ? {
+  const centerContentStyle: React.CSSProperties = shouldCenter ? {
     minHeight: `calc(100dvh - ${headerHeight}px)`,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
     overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
-  } : {};
+  } : {
+    // Estilo quando não está centralizado
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    overflowY: isMobile ? 'auto' : 'visible'
+  };
 
   return (
     <div className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
@@ -196,7 +217,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
                   onStepChange={handleStepChange}
                   funnel={activeFunnel}
                   isMobile={isMobile}
-                  centerContent={centerContent}
+                  centerContent={shouldCenter}
                 />
               </div>
             ) : (

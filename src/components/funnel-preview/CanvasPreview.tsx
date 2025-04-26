@@ -16,6 +16,14 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   console.log("CanvasPreview - Rendering with", canvasElements.length, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [shouldCenter, setShouldCenter] = useState(centerContent);
+  
+  // Determinar se deve centralizar com base no número de elementos
+  useEffect(() => {
+    // Se tiver muitos elementos, não centraliza (começa do topo)
+    const manyElements = canvasElements.length > 3;
+    setShouldCenter(centerContent && !manyElements);
+  }, [canvasElements.length, centerContent]);
   
   useEffect(() => {
     const initSession = async () => {
@@ -129,7 +137,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: centerContent ? 'center' : 'flex-start',
+        justifyContent: shouldCenter ? 'center' : 'flex-start',
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile

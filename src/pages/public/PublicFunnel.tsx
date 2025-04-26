@@ -21,6 +21,16 @@ const PublicFunnel = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   
+  // Scroll para o topo quando a página carrega
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
+  // Scroll para o topo quando muda de step
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStepIndex]);
+
   useEffect(() => {
     // Detectar se é dispositivo móvel
     const checkMobile = () => {
@@ -137,6 +147,9 @@ const PublicFunnel = () => {
     if (!funnel) return;
     
     console.log(`Mudando para o passo ${index+1} de ${funnel.steps.length}`);
+    
+    // Scroll para o topo ao mudar de etapa
+    window.scrollTo(0, 0);
     
     try {
       // Registrar o progresso
