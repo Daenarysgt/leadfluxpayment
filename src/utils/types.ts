@@ -259,5 +259,6 @@ export interface FeatureCardsContent {
     defaultImageHeight?: number;
     defaultImageFit?: 'cover' | 'contain' | 'fill';
     forceSideBySideOnMobile?: boolean;
+    verticalTextAlignment?: 'top' | 'center' | 'bottom';
   };
 }

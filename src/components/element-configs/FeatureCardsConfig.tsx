@@ -758,6 +758,26 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
                 </SelectContent>
               </Select>
             </div>
+            
+            <div>
+              <Label>Alinhamento Vertical do Texto</Label>
+              <Select
+                value={content.style?.verticalTextAlignment || 'top'}
+                onValueChange={(value) => updateStyle('verticalTextAlignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="top">Topo</SelectItem>
+                  <SelectItem value="center">Centralizado</SelectItem>
+                  <SelectItem value="bottom">Base</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Define como o texto será alinhado verticalmente dentro dos cards
+              </p>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

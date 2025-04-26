@@ -70,7 +70,8 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     gap = 24,
     borderRadius = 8,
     animation = 'fade-in',
-    forceSideBySideOnMobile = true // Por padrão, forçar lado a lado
+    forceSideBySideOnMobile = true, // Por padrão, forçar lado a lado
+    verticalTextAlignment = 'top' // Alinhamento vertical do texto
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -201,7 +202,16 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   </div>
                 )}
                 
-                <div className="p-2 sm:p-3 md:p-4 flex-1 flex flex-col"> {/* Padding menor em mobile */}
+                <div 
+                  className={cn(
+                    "p-2 sm:p-3 md:p-4 flex-1 flex flex-col", // Padding menor em mobile
+                    {
+                      'justify-start': verticalTextAlignment === 'top',
+                      'justify-center': verticalTextAlignment === 'center',
+                      'justify-end': verticalTextAlignment === 'bottom'
+                    }
+                  )}
+                >
                   <h3 
                     className={cn(
                       "text-base sm:text-lg font-semibold mb-1 sm:mb-2", // Texto menor e margem menor em telas pequenas
