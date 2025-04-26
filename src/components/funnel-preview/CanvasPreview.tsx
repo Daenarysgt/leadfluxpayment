@@ -178,18 +178,18 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem',
-    margin: isMobile ? '0 auto' : '0 auto',
+    padding: isMobile ? '0' : '0.5rem', // Remover padding em mobile
+    margin: '0',
     position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
-    width: isMobile ? '100%' : 'auto',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
+    left: '0',
+    right: '0',
+    width: '100%',
+    overflowY: isMobile ? 'auto' : 'visible',
   };
 
   // Classes condicionais para desktop e mobile
   const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+    ? "w-full mx-auto min-h-[300px] mobile-full-width no-spacing-mobile" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
   // Função para próximo passo
@@ -214,11 +214,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '1.5rem',
-        paddingTop: '0.5rem',
+        paddingBottom: isMobile ? '0' : '1rem',
+        paddingTop: isMobile ? '0' : '0.5rem',
         // Garantir que a altura seja preservada durante a transição
-        minWidth: isMobile ? '100%' : 'auto',
-        maxWidth: isMobile ? '100%' : 'auto',
+        minWidth: '100%',
+        maxWidth: '100%',
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden',
         perspective: 1000,
@@ -227,8 +227,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         flexDirection: 'column',
         justifyContent: shouldCenter ? 'center' : 'flex-start',
         width: '100%',
-        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
-        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        overflowY: isMobile ? 'auto' : 'visible',
+        maxHeight: isMobile ? 'none' : undefined,
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -369,7 +369,7 @@ const fadeInStyle = `
   /* Corrigir espaçamento vertical */
   .canvas-container {
     margin: 0 !important;
-    padding: 0.25rem 0 !important;
+    padding: 0 !important;
   }
   
   .canvas-elements-container {
@@ -387,6 +387,38 @@ const fadeInStyle = `
   /* Preservar espaço vertical apenas entre componentes reais */
   .canvas-element-wrapper + .canvas-element-wrapper {
     margin-top: 0.5rem;
+  }
+  
+  /* Classe específica para mobile que remove todos os espaçamentos */
+  .no-spacing-mobile * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Permitir apenas espaçamentos controlados em mobile */
+  @media (max-width: 768px) {
+    .canvas-element-wrapper + .canvas-element-wrapper {
+      margin-top: 6px !important;
+    }
+    
+    /* Redefine o tamanho dos elementos para corresponder ao design original */
+    .canvas-element, .canvas-element-mobile {
+      min-height: auto !important;
+      height: auto !important;
+    }
+    
+    /* Ajuste específico para componentes de imagem */
+    .option-card, .multiple-choice-image-grid {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Ajuste para grids de elementos */
+    .grid-cols-2 {
+      gap: 8px !important;
+    }
   }
 </style>
 `;
