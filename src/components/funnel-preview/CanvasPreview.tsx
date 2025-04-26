@@ -155,6 +155,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
+        transform: 'translate3d(0,0,0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000,
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -162,6 +165,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        // Remover qualquer animação de fade-in
+        opacity: 1,
+        transition: 'none'
       }}
     >
       {validCanvasElements.map((element, index) => {
@@ -186,10 +192,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
         
         return (
-          <div 
-            key={element.id} 
-            className={elementClassName} 
-          >
+          <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
             <ElementFactory 
               element={elementWithPreviewProps}
               isSelected={false} 
@@ -208,4 +211,20 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-export default CanvasPreview;
+// Removemos o estilo de animação fade-in
+const fadeInStyle = `
+<style>
+  /* Estilos removidos para evitar qualquer animação de fade */
+</style>
+`;
+
+const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
+  return (
+    <>
+      {/* Remover a injeção de estilos de animação */}
+      <CanvasPreview {...props} />
+    </>
+  );
+};
+
+export default CanvasPreviewWithStyle;
