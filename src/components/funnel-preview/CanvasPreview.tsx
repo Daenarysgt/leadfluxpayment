@@ -16,10 +16,23 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
-  // Remover estados que causam re-renders desnecessários entre navegações
-  const [renderedSteps, setRenderedSteps] = useState<Record<number, boolean>>({[activeStep]: true});
+  // Manter um registro de todas as etapas já visualizadas para evitar re-renders
+  const [renderedSteps, setRenderedSteps] = useState<Record<number, boolean>>({});
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
+  
+  // Marcar todas as etapas como pré-renderizadas para evitar skeleton em transições
+  useEffect(() => {
+    if (!funnel || !Array.isArray(funnel.steps)) return;
+    
+    // Inicializar todas as etapas como já visualizadas
+    const allStepsRendered = funnel.steps.reduce((acc, _, index) => {
+      acc[index] = true;
+      return acc;
+    }, {} as Record<number, boolean>);
+    
+    setRenderedSteps(allStepsRendered);
+  }, [funnel]);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -44,42 +57,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     const manyElements = validCanvasElements.length > 3;
     setShouldCenter(centerContent && !manyElements);
   }, [validCanvasElements.length, centerContent]);
-  
-  // Pré-renderizar a próxima etapa quando uma etapa é carregada
-  useEffect(() => {
-    if (!funnel || !Array.isArray(funnel.steps)) return;
-    
-    // Atualizar o mapa de etapas renderizadas
-    setRenderedSteps(prev => ({
-      ...prev,
-      [activeStep]: true
-    }));
-    
-    // Pré-renderizar a próxima etapa (se existir)
-    const nextStepIndex = activeStep + 1;
-    if (nextStepIndex < funnel.steps.length) {
-      // Registrar a próxima etapa como pré-renderizada
-      setRenderedSteps(prev => ({
-        ...prev,
-        [nextStepIndex]: true
-      }));
-    }
-    
-    // Executar animação de transição se mudar de etapa
-    if (previousStepRef.current !== activeStep && transitionRef.current) {
-      // Aplicar transição ao mudar de etapa
-      const container = transitionRef.current;
-      // Reset de classe para animação
-      container.classList.remove('fade-in');
-      // Forçar reflow para reiniciar a animação
-      void container.offsetWidth;
-      // Adicionar classe de animação
-      container.classList.add('fade-in');
-    }
-    
-    // Atualizar a referência da etapa atual
-    previousStepRef.current = activeStep;
-  }, [activeStep, funnel]);
   
   // Inicializar sessão somente uma vez
   useEffect(() => {
@@ -169,7 +146,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   return (
     <div 
       ref={transitionRef}
-      className={`${containerClass} canvas-container w-full fade-in`}
+      className={`${containerClass} canvas-container w-full`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
@@ -188,6 +165,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        // Remover qualquer animação de fade-in
+        opacity: 1,
+        transition: 'none'
       }}
     >
       {validCanvasElements.map((element, index) => {
@@ -203,14 +183,16 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             onStepChange: handleStepChange,
             funnel,
             isMobile,
-          }
+          },
+          // Adicionar flag para evitar loading states
+          skipLoading: true
         };
         
         // Classe específica para mobile ou desktop
         const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
         
         return (
-          <div key={element.id} className={elementClassName}>
+          <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
             <ElementFactory 
               element={elementWithPreviewProps}
               isSelected={false} 
@@ -229,31 +211,17 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-// Adicione este CSS à sua aplicação para a animação de transição
-// Pode ser adicionado também a um arquivo CSS separado
+// Removemos o estilo de animação fade-in
 const fadeInStyle = `
 <style>
-  .fade-in {
-    animation: fadeIn 0.25s ease-out forwards;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0.5;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  /* Estilos removidos para evitar qualquer animação de fade */
 </style>
 `;
 
 const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: fadeInStyle }} />
+      {/* Remover a injeção de estilos de animação */}
       <CanvasPreview {...props} />
     </>
   );

@@ -11,10 +11,15 @@ const imageCache: Record<string, boolean> = {};
 const ImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content } = element;
+  // Começar com isLoading como false para evitar skeleton em todas as situações
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const imageUrlRef = useRef<string | null>(null);
+  
+  // Verificar se precisamos pular o loading (no modo preview)
+  // Usar operador opcional para evitar erro de tipagem
+  const skipLoading = (element as any).skipLoading === true || (element as any).previewMode === true;
   
   // Carregamento de imagem com efeito
   useEffect(() => {
@@ -32,36 +37,46 @@ const ImageRenderer = (props: ElementRendererProps) => {
       return;
     }
     
-    // Verificar se a imagem já foi carregada anteriormente (cache)
-    if (imageCache[imageUrl]) {
-      // Se já carregamos esta imagem antes, definimos o src diretamente sem mostrar loading
-      setSrc(imageUrl);
-      setIsLoading(false);
-      imageUrlRef.current = imageUrl;
-      return;
-    }
+    // Sempre definir o src imediatamente para evitar estado de loading
+    setSrc(imageUrl);
     
-    // Para novas imagens, verificamos se já estão no cache do navegador
-    // tentando carregar a imagem de forma síncrona primeiro
-    const img = new Image();
-    img.src = imageUrl;
-    
-    if (img.complete) {
-      // A imagem já está no cache do navegador
-      setSrc(imageUrl);
+    // Se estamos no modo de preview ou se skipLoading é true, nunca mostrar loading
+    if (skipLoading) {
       setIsLoading(false);
       imageCache[imageUrl] = true;
       imageUrlRef.current = imageUrl;
       return;
     }
     
-    // Apenas mostrar loading para novas imagens que não estão em nenhum cache
-    setIsLoading(true);
+    // Verificar se a imagem já foi carregada anteriormente (cache)
+    if (imageCache[imageUrl]) {
+      // Se já carregamos esta imagem antes, definimos o src diretamente sem mostrar loading
+      setIsLoading(false);
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Para novas imagens, verificamos se já estão no cache do navegador
+    const img = new Image();
+    img.src = imageUrl;
+    
+    if (img.complete) {
+      // A imagem já está no cache do navegador
+      setIsLoading(false);
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Apenas mostrar loading para novas imagens se não estivermos no modo de preview
+    if (!(element as any).previewMode) {
+      setIsLoading(true);
+    }
+    
     setIsError(false);
     
     // Carregar a imagem em segundo plano
     img.onload = () => {
-      setSrc(imageUrl);
       setIsLoading(false);
       // Adicionar ao cache para carregamentos futuros
       imageCache[imageUrl] = true;
@@ -81,7 +96,7 @@ const ImageRenderer = (props: ElementRendererProps) => {
         img.onerror = null;
       }
     };
-  }, [content?.imageUrl, src]);
+  }, [content?.imageUrl, src, skipLoading, element]);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -122,10 +137,10 @@ const ImageRenderer = (props: ElementRendererProps) => {
     borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
     maxHeight: content?.height ? `${content.height}px` : 'auto',
     width: content?.width ? `${content.width}px` : 'auto',
+    opacity: 1, // Sempre visible
   };
   
   // Usar um espaço reservado invisível em vez de um skeleton
-  // Isso mantém a altura consistente mas não mostra o skeleton
   const placeholderStyle = {
     height: content?.height ? `${content.height}px` : '150px',
     width: '100%',
@@ -134,13 +149,16 @@ const ImageRenderer = (props: ElementRendererProps) => {
     opacity: 0
   };
   
+  // Sempre usar a URL da imagem diretamente para evitar loading
+  const imageUrl = content?.imageUrl || '';
+  
   return (
     <BaseElementRenderer {...props}>
       <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
-        {content?.imageUrl ? (
+        {imageUrl ? (
           <>
-            {/* Estado de carregamento - usar placeholder invisível em vez de skeleton */}
-            {isLoading && !src && (
+            {/* Nunca mostrar estado de carregamento no modo preview */}
+            {isLoading && !skipLoading && (
               <div style={placeholderStyle}></div>
             )}
             
@@ -158,14 +176,14 @@ const ImageRenderer = (props: ElementRendererProps) => {
               </div>
             )}
             
-            {/* Imagem carregada ou em cache - mostrar imediatamente */}
-            {!isError && (src || imageCache[content.imageUrl]) && (
+            {/* Imagem - sempre mostrar diretamente no modo preview */}
+            {!isError && (
               <>
-                {/* Se for um GIF animado, evitar usar AspectRatio para não quebrar a animação */}
+                {/* Se for um GIF animado, evitar usar AspectRatio */}
                 {content?.isAnimatedGif ? (
                   <img 
-                    src={src || content.imageUrl} 
-                    alt={content.altText || "Imagem"}
+                    src={imageUrl} 
+                    alt={content?.altText || "Imagem"}
                     className="max-w-full object-contain"
                     style={imageStyle}
                   />
@@ -178,8 +196,8 @@ const ImageRenderer = (props: ElementRendererProps) => {
                   >
                     <AspectRatio ratio={aspectRatio}>
                       <img 
-                        src={src || content.imageUrl} 
-                        alt={content.altText || "Imagem"} 
+                        src={imageUrl} 
+                        alt={content?.altText || "Imagem"} 
                         className="w-full h-full object-cover"
                         style={{ 
                           borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
@@ -189,8 +207,8 @@ const ImageRenderer = (props: ElementRendererProps) => {
                   </div>
                 ) : (
                   <img 
-                    src={src || content.imageUrl} 
-                    alt={content.altText || "Imagem"} 
+                    src={imageUrl} 
+                    alt={content?.altText || "Imagem"} 
                     className="max-w-full object-contain"
                     style={imageStyle}
                   />
@@ -199,8 +217,14 @@ const ImageRenderer = (props: ElementRendererProps) => {
             )}
           </>
         ) : (
-          // Fallback quando não há URL de imagem (sem animação/skeleton)
-          <div className="h-40 w-full flex items-center justify-center bg-gray-50" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
+          // Fallback quando não há URL de imagem (sem animação)
+          <div 
+            className="h-40 w-full flex items-center justify-center bg-gray-50" 
+            style={{ 
+              borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
+              opacity: 1
+            }}
+          >
             <ImageIcon className="h-12 w-12 text-gray-300" />
           </div>
         )}

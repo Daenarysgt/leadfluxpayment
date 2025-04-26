@@ -14,22 +14,9 @@ interface FunnelPreviewProps {
   onNextStep?: (index: number) => void; // Added callback for step navigation
 }
 
-// Estilos de transição para uso nas transições entre etapas
+// Removemos os estilos de transição para evitar qualquer efeito visual durante as mudanças
 const transitionStyles = `
-  .step-transition {
-    animation: stepTransition 0.3s ease-out forwards;
-  }
-  
-  @keyframes stepTransition {
-    from {
-      opacity: 0.7;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  /* Estilos de transição removidos para evitar skeleton */
 `;
 
 const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
@@ -40,34 +27,21 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
-  // Usar o hook de pré-carregamento de imagens
-  const { imagesPreloaded, isPreloading } = useImagePreloader(activeFunnel, activeStep);
-  
-  useEffect(() => {
-    if (isPreloading) {
-      console.log('[FunnelPreview] Pré-carregando imagens das próximas etapas...');
-    }
-    if (imagesPreloaded) {
-      console.log('[FunnelPreview] Imagens pré-carregadas com sucesso!');
-    }
-  }, [isPreloading, imagesPreloaded]);
+  // Usar o hook de pré-carregamento de imagens sem mostrar indicadores visuais
+  const { imagesPreloaded } = useImagePreloader(activeFunnel, activeStep);
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
     setActiveStep(stepIndex);
   }, [funnel?.id, currentFunnel?.id, stepIndex]);
 
-  // Aplicar animação de transição quando a etapa muda
+  // Remove animações de transição
   useEffect(() => {
     if (containerRef.current) {
-      // Remover a classe para resetar a animação
-      containerRef.current.classList.remove('step-transition');
-      
-      // Forçar um reflow para garantir que a classe seja aplicada novamente
-      void containerRef.current.offsetWidth;
-      
-      // Adicionar a classe para animar
-      containerRef.current.classList.add('step-transition');
+      // Remover qualquer classe que possa estar causando animação
+      containerRef.current.className = containerRef.current.className
+        .replace('step-transition', '')
+        .trim();
     }
   }, [activeStep]);
 
@@ -88,11 +62,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   const { primaryColor, backgroundColor, logo } = activeFunnel.settings;
   // Use backgroundColor from settings or fallback to white
   const funnelBgColor = backgroundColor || '#ffffff';
-  
-  // Debug log para verificar se o logo está chegando
-  console.log("FunnelPreview - Logo encontrado nas settings:", !!logo, typeof logo);
-  console.log("FunnelPreview - Valor do logo:", logo);
-  console.log("FunnelPreview - Settings completo:", activeFunnel.settings);
   
   // Verificar se o logo é uma string base64 válida
   let validLogo = logo;
@@ -125,12 +94,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
   return (
     <>
-      {/* Adicionar estilos de transição globalmente */}
-      <div dangerouslySetInnerHTML={{ __html: `<style>${transitionStyles}</style>` }} />
-      
+      {/* Removemos estilos de transição */}
       <div
-        className="flex flex-col w-full min-h-screen transition-colors duration-300"
-        style={{ backgroundColor: funnelBgColor }}
+        className="flex flex-col w-full min-h-screen"
+        style={{ 
+          backgroundColor: funnelBgColor,
+          transition: 'none' // Desativar transições
+        }}
       >
         {/* Facebook Pixel integration with proper parameters */}
         {activeFunnel.settings.facebookPixelId && (
@@ -143,8 +113,12 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
         <div 
           ref={containerRef}
-          className="flex flex-col items-center w-full max-w-xl mx-auto step-transition" 
-          style={customStyles}
+          className="flex flex-col items-center w-full max-w-xl mx-auto" 
+          style={{
+            ...customStyles,
+            opacity: 1, // Forçar opacidade total
+            transition: 'none', // Desativar transições
+          }}
         >
           {/* Logo */}
           {validLogo && (
@@ -155,14 +129,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
                 className="max-h-14 object-contain"
                 onError={(e) => {
                   console.error("FunnelPreview - Erro ao carregar logo:", e);
-                  // Adicionar fallback se necessário
-                  // e.currentTarget.src = '/placeholder-logo.png';
-                  // Ou esconder o elemento
                   e.currentTarget.style.display = 'none';
                 }}
-                onLoad={() => {
-                  console.log("FunnelPreview - Logo carregado com sucesso");
-                }}
+                style={{ opacity: 1 }} // Forçar opacidade total
               />
             </div>
           )}
@@ -176,14 +145,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
             />
           )}
 
-          <div className="w-full">
-            {/* Indicador de pré-carregamento mais sutil */}
-            {isPreloading && (
-              <div className="absolute top-2 right-2 w-2 h-2 opacity-50">
-                <div className="animate-ping absolute h-2 w-2 rounded-full bg-blue-400 opacity-50"></div>
-                <div className="relative rounded-full h-2 w-2 bg-blue-500"></div>
-              </div>
-            )}
+          <div className="w-full" style={{ opacity: 1 }}>
+            {/* Remover indicador de pré-carregamento */}
             
             {canvasElements && canvasElements.length > 0 ? (
               // If we have canvas elements, render them
