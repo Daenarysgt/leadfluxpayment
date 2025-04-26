@@ -7,7 +7,18 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const content = element.content as FeatureCardsContent;
   
-  if (!content) return null;
+  console.log("FeatureCardsRenderer - Rendering with content:", JSON.stringify(content));
+  
+  // Se não houver conteúdo, exibir mensagem de placeholder
+  if (!content) {
+    console.log("FeatureCardsRenderer - No content provided");
+    return (
+      <div className="p-4 bg-violet-100 rounded-md text-center">
+        <h3 className="text-lg font-medium text-violet-800">Cards de Recursos</h3>
+        <p className="text-sm text-violet-600">Adicione cards no painel de configuração</p>
+      </div>
+    );
+  }
   
   const {
     title,
@@ -50,6 +61,19 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
 
   // Definir o grid de colunas com base no número especificado
   const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+  
+  // Se não houver cards, exibir mensagem
+  if (!cards || cards.length === 0) {
+    console.log("FeatureCardsRenderer - No cards in content");
+    return (
+      <div className="p-4 bg-violet-100 rounded-md text-center">
+        <h3 className="text-lg font-medium text-violet-800">{title || "Cards de Recursos"}</h3>
+        <p className="text-sm text-violet-600">{description || "Adicione cards no painel de configuração"}</p>
+      </div>
+    );
+  }
+  
+  console.log("FeatureCardsRenderer - Rendering cards:", cards.length);
   
   return (
     <div 
@@ -123,7 +147,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
               )}
             >
               <img
-                src={card.imageUrl}
+                src={card.imageUrl || '/placeholder.svg'}
                 alt={card.title}
                 className="object-contain h-auto max-w-full"
                 style={{ maxHeight: '150px' }}
