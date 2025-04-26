@@ -163,53 +163,38 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
               <div
                 key={card.id || index}
                 className={cn(
-                  "rounded-lg overflow-hidden flex flex-col text-sm sm:text-base",
+                  "rounded-lg overflow-hidden",
                   shadowClasses[cardShadow as keyof typeof shadowClasses]
                 )}
                 style={{ 
                   backgroundColor: cardBackgroundColor,
                   borderRadius: `${borderRadius}px`,
-                  color: cardTextColor,
-                  height: '100%',
-                  minHeight: '100px',
-                  display: 'flex',
-                  flexDirection: 'column'
+                  color: cardTextColor
                 }}
               >
+                {/* Imagem com altura fixa e sem espaço extra */}
                 {card.imageUrl && (
-                  <div 
-                    className="relative w-full overflow-hidden"
+                  <img
+                    src={card.imageUrl}
+                    alt={card.title || `Imagem ${index + 1}`}
                     style={{ 
-                      height: `${card.imageHeight || content.style?.defaultImageHeight || 120}px`
+                      width: '100%',
+                      height: `${card.imageHeight || content.style?.defaultImageHeight || 120}px`,
+                      objectFit: (card.imageFit || content.style?.defaultImageFit || 'cover') as 'cover' | 'contain' | 'fill',
+                      display: 'block', // Evita espaço extra
+                      margin: 0, // Evita margens
+                      padding: 0 // Evita padding
                     }}
-                  > 
-                    <img
-                      src={card.imageUrl}
-                      alt={card.title || `Imagem ${index + 1}`}
-                      className="w-full h-full"
-                      style={{ 
-                        objectFit: (card.imageFit || content.style?.defaultImageFit || 'cover') as 'cover' | 'contain' | 'fill' 
-                      }}
-                      onError={(e) => {
-                        // Fallback para quando a imagem não carregar
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                  </div>
+                    onError={(e) => {
+                      // Fallback para quando a imagem não carregar
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
                 )}
                 
-                {/* Container de conteúdo com centralização vertical fixa */}
-                <div 
-                  className="p-2 sm:p-3 md:p-4 flex-1 flex items-center"
-                  style={{ 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    height: '100%',
-                    flex: '1'
-                  }}
-                >
-                  <div style={{ width: '100%' }}>
+                {/* Container de texto simples sem flex ou centralização */}
+                <div style={{ padding: '12px' }}>
+                  {card.title && (
                     <h3 
                       className={cn(
                         "text-base sm:text-lg font-semibold mb-2",
@@ -222,28 +207,23 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                     >
                       {card.title}
                     </h3>
-                    
-                    {card.description && (
-                      <p 
-                        className={cn(
-                          "w-full text-xs sm:text-sm",
-                          {
-                            'text-left': cardDescriptionAlignment === 'left',
-                            'text-center': cardDescriptionAlignment === 'center',
-                            'text-right': cardDescriptionAlignment === 'right'
-                          }
-                        )}
-                        style={{ 
-                          overflow: 'visible',
-                          textOverflow: 'clip',
-                          whiteSpace: 'normal',
-                          wordWrap: 'break-word'
-                        }}
-                      >
-                        {card.description}
-                      </p>
-                    )}
-                  </div>
+                  )}
+                  
+                  {card.description && (
+                    <p 
+                      className={cn(
+                        "text-xs sm:text-sm",
+                        {
+                          'text-left': cardDescriptionAlignment === 'left',
+                          'text-center': cardDescriptionAlignment === 'center',
+                          'text-right': cardDescriptionAlignment === 'right'
+                        }
+                      )}
+                      style={{ margin: 0 }}
+                    >
+                      {card.description}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
