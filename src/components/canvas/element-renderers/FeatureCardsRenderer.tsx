@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { ElementRendererProps } from "@/types/canvasTypes";
 import { FeatureCardsContent } from '@/utils/types';
+import BaseElementRenderer from './BaseElementRenderer';
 
 // Definição de classes para sombras
 const shadowClasses = {
@@ -29,7 +30,7 @@ const EmptyState = ({ title, description, className }: { title: string; descript
 );
 
 const FeatureCardsRenderer = (props: ElementRendererProps) => {
-  const { element, isSelected, previewMode } = props;
+  const { element, isSelected, previewMode, onSelect } = props;
   
   // Determinar quando estamos editando (não em modo de preview)
   const isEditing = !previewMode;
@@ -74,13 +75,15 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
   // Placeholder para quando estiver no modo de edição e não houver cards
   if (isEditing && (!content.cards || content.cards.length === 0)) {
     return (
-      <div className="w-full p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-        <EmptyState
-          title="Sem cards"
-          description="Adicione cards no painel de configuração"
-          className="h-48"
-        />
-      </div>
+      <BaseElementRenderer {...props}>
+        <div className="w-full p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <EmptyState
+            title="Sem cards"
+            description="Adicione cards no painel de configuração"
+            className="h-48"
+          />
+        </div>
+      </BaseElementRenderer>
     );
   }
   
@@ -97,115 +100,126 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
     4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
   }[Math.min(Math.max(columns, 1), 4)];
+
+  // Handler para selecionar o elemento
+  const handleClick = (e: React.MouseEvent) => {
+    if (onSelect && !previewMode) {
+      e.stopPropagation();
+      onSelect(element.id);
+    }
+  };
   
   return (
-    <div
-      className="w-full py-8 pb-16" // Adicionando padding bottom maior
-      style={{ backgroundColor }}
-      data-element-id={element.id}
-    >
-      <div className="container mx-auto px-4">
-        {content.title && (
-          <h2 
-            className={cn(
-              "text-3xl font-bold mb-3",
-              {
-                'text-left': titleAlignment === 'left',
-                'text-center': titleAlignment === 'center',
-                'text-right': titleAlignment === 'right'
-              }
-            )}
-          >
-            {content.title}
-          </h2>
-        )}
-        
-        {content.description && (
-          <p 
-            className={cn(
-              "text-lg text-gray-600 mb-8",
-              {
-                'text-left': descriptionAlignment === 'left',
-                'text-center': descriptionAlignment === 'center',
-                'text-right': descriptionAlignment === 'right'
-              }
-            )}
-          >
-            {content.description}
-          </p>
-        )}
-        
-        <div 
-          className={cn(
-            "grid gap-6", 
-            colsClass,
-            animation && animationClasses[animation]
-          )}
-          style={{ gap: `${gap}px` }}
-        >
-          {content.cards?.map((card, index) => (
-            <div
-              key={card.id || index}
+    <BaseElementRenderer {...props}>
+      <div
+        className={cn("w-full py-8 pb-16", isSelected && "outline-dashed outline-2 outline-blue-500")} 
+        style={{ backgroundColor }}
+        data-element-id={element.id}
+        onClick={handleClick}
+      >
+        <div className="container mx-auto px-4">
+          {content.title && (
+            <h2 
               className={cn(
-                "rounded-lg overflow-hidden flex flex-col",
-                shadowClasses[cardShadow as keyof typeof shadowClasses]
+                "text-3xl font-bold mb-3",
+                {
+                  'text-left': titleAlignment === 'left',
+                  'text-center': titleAlignment === 'center',
+                  'text-right': titleAlignment === 'right'
+                }
               )}
-              style={{ 
-                backgroundColor: cardBackgroundColor,
-                borderRadius: `${borderRadius}px`,
-                color: cardTextColor,
-                maxHeight: '350px', // Reduzindo mais a altura máxima para cards mais quadrados
-                height: 'auto' // Altura automática baseada no conteúdo
-              }}
             >
-              {card.imageUrl && (
-                <div className="relative w-full h-40 overflow-hidden"> {/* Reduzindo a altura da imagem */}
-                  <img
-                    src={card.imageUrl}
-                    alt={card.title || `Imagem ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback para quando a imagem não carregar
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
-                </div>
+              {content.title}
+            </h2>
+          )}
+          
+          {content.description && (
+            <p 
+              className={cn(
+                "text-lg text-gray-600 mb-8",
+                {
+                  'text-left': descriptionAlignment === 'left',
+                  'text-center': descriptionAlignment === 'center',
+                  'text-right': descriptionAlignment === 'right'
+                }
               )}
-              
-              <div className="p-4 flex-1 flex flex-col">
-                <h3 
-                  className={cn(
-                    "text-xl font-semibold mb-2",
-                    {
-                      'text-left': cardTitleAlignment === 'left',
-                      'text-center': cardTitleAlignment === 'center',
-                      'text-right': cardTitleAlignment === 'right'
-                    }
-                  )}
-                >
-                  {card.title}
-                </h3>
+            >
+              {content.description}
+            </p>
+          )}
+          
+          <div 
+            className={cn(
+              "grid gap-6", 
+              colsClass,
+              animation && animationClasses[animation]
+            )}
+            style={{ gap: `${gap}px` }}
+          >
+            {content.cards?.map((card, index) => (
+              <div
+                key={card.id || index}
+                className={cn(
+                  "rounded-lg overflow-hidden flex flex-col",
+                  shadowClasses[cardShadow as keyof typeof shadowClasses]
+                )}
+                style={{ 
+                  backgroundColor: cardBackgroundColor,
+                  borderRadius: `${borderRadius}px`,
+                  color: cardTextColor,
+                  maxHeight: '350px', // Reduzindo mais a altura máxima para cards mais quadrados
+                  height: 'auto' // Altura automática baseada no conteúdo
+                }}
+              >
+                {card.imageUrl && (
+                  <div className="relative w-full h-40 overflow-hidden"> {/* Reduzindo a altura da imagem */}
+                    <img
+                      src={card.imageUrl}
+                      alt={card.title || `Imagem ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback para quando a imagem não carregar
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                )}
                 
-                {card.description && (
-                  <p 
+                <div className="p-4 flex-1 flex flex-col">
+                  <h3 
                     className={cn(
-                      "line-clamp-3 flex-1", // Limitar a 3 linhas para cards mais compactos
+                      "text-xl font-semibold mb-2",
                       {
-                        'text-left': cardDescriptionAlignment === 'left',
-                        'text-center': cardDescriptionAlignment === 'center',
-                        'text-right': cardDescriptionAlignment === 'right'
+                        'text-left': cardTitleAlignment === 'left',
+                        'text-center': cardTitleAlignment === 'center',
+                        'text-right': cardTitleAlignment === 'right'
                       }
                     )}
                   >
-                    {card.description}
-                  </p>
-                )}
+                    {card.title}
+                  </h3>
+                  
+                  {card.description && (
+                    <p 
+                      className={cn(
+                        "line-clamp-3 flex-1", // Limitar a 3 linhas para cards mais compactos
+                        {
+                          'text-left': cardDescriptionAlignment === 'left',
+                          'text-center': cardDescriptionAlignment === 'center',
+                          'text-right': cardDescriptionAlignment === 'right'
+                        }
+                      )}
+                    >
+                      {card.description}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </BaseElementRenderer>
   );
 };
 
