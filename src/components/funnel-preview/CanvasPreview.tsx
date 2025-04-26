@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { CanvasElement } from "@/types/canvasTypes";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import { Funnel } from '@/utils/types';
@@ -13,59 +13,73 @@ interface CanvasPreviewProps {
   centerContent?: boolean;
 }
 
-const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
-  console.log("CanvasPreview - Rendering with", canvasElements.length, "elements", isMobile ? "on mobile" : "on desktop");
+const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
+  console.log("CanvasPreview - Rendering with", Array.isArray(canvasElements) ? canvasElements.length : 0, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   const [elementsReady, setElementsReady] = useState(false);
+  const [renderAttempt, setRenderAttempt] = useState(0);
+  const [renderKey] = useState(`canvas-${Date.now()}`);
   
-  // Verificar se todos os elementos estão carregados de forma adequada
-  useEffect(() => {
-    // Garantir que canvasElements é um array válido
+  // Usar elementos válidos
+  const validCanvasElements = useMemo(() => {
+    // Garantir que canvasElements é um array
     if (!Array.isArray(canvasElements)) {
       console.error("CanvasPreview - canvasElements não é um array:", canvasElements);
-      setElementsReady(false);
-      return;
+      return [];
     }
     
-    // Verificar se o array não está vazio
-    if (canvasElements.length === 0) {
-      console.warn("CanvasPreview - canvasElements está vazio");
-      setElementsReady(true); // Consideramos como pronto mesmo vazio
-      return;
-    }
-    
-    // Verificar se todos os elementos têm as propriedades necessárias
-    const allElementsValid = canvasElements.every(element => 
+    // Filtrar elementos inválidos
+    return canvasElements.filter(element => 
       element && 
       typeof element === 'object' && 
       element.id && 
       element.type
     );
-    
-    console.log("CanvasPreview - Elementos válidos:", allElementsValid);
-    setElementsReady(allElementsValid);
   }, [canvasElements]);
+  
+  // Verificar se todos os elementos estão carregados de forma adequada
+  useEffect(() => {
+    // Garantir que temos elementos válidos
+    if (validCanvasElements.length === 0 && canvasElements.length > 0) {
+      console.warn("CanvasPreview - Elementos inválidos foram filtrados");
+    }
+    
+    // Um pequeno atraso para garantir que o DOM esteja pronto
+    const timer = setTimeout(() => {
+      setElementsReady(true);
+      console.log("CanvasPreview - Elementos prontos para renderização");
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [validCanvasElements, canvasElements.length]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
     // Se tiver muitos elementos, não centraliza (começa do topo)
-    const manyElements = canvasElements.length > 3;
+    const manyElements = validCanvasElements.length > 3;
     setShouldCenter(centerContent && !manyElements);
-  }, [canvasElements.length, centerContent]);
+  }, [validCanvasElements.length, centerContent]);
   
+  // Inicializar sessão somente uma vez
   useEffect(() => {
     const initSession = async () => {
-      if (funnel) {
-        const newSessionId = await accessService.logAccess(funnel.id);
-        setSessionId(newSessionId);
+      if (funnel && !sessionId) {
+        try {
+          const newSessionId = await accessService.logAccess(funnel.id);
+          setSessionId(newSessionId);
+          console.log("CanvasPreview - Sessão inicializada:", newSessionId);
+        } catch (error) {
+          console.error("CanvasPreview - Erro ao inicializar sessão:", error);
+        }
       }
     };
     
     initSession();
-  }, [funnel]);
+  }, [funnel, sessionId]);
   
-  const handleStepChange = async (index: number) => {
+  // Handler para mudança de etapa com verificação de segurança
+  const handleStepChange = useCallback(async (index: number) => {
     console.log("CanvasPreview - handleStepChange called com índice:", index);
     
     if (!funnel) {
@@ -82,9 +96,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     console.log(`CanvasPreview - Navegando da etapa ${activeStep} para etapa ${index}`);
     
     try {
-      // Removemos o registro automático de interação 'click' aqui
-      // Agora apenas atualizamos o progresso sem registrar interações falsas
-      
       // Se chegou na última etapa
       if (index === funnel.steps.length - 1) {
         // Apenas atualiza o progresso e marca como conversão
@@ -100,16 +111,16 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     
     console.log("CanvasPreview - Changing step to:", index);
     
-    // Aplicar a mudança de etapa diretamente, sem setTimeout
+    // Aplicar a mudança de etapa diretamente
     onStepChange(index);
-  };
+  }, [funnel, activeStep, sessionId, onStepChange]);
   
-  const useBackgroundOpacity = funnel?.settings?.backgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
-  const hasBackgroundImage = !!funnel?.settings?.backgroundImage;
-  const contentStyle = 'transparent'; // Força estilo sempre como transparent
+  // Detectar propriedades visuais do funnel com valores padrão seguros
+  const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
+  const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
   
-  // Determinar o estilo baseado na configuração e tipo de dispositivo
-  let containerStyles: React.CSSProperties = {
+  // Estilos de container com valores padrão seguros
+  const containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     transition: 'all 0.5s ease',
@@ -128,20 +139,32 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     ? "w-full mx-auto min-h-[300px] mobile-full-width" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
-  // Melhorar a função handleNextStep para garantir que interações sejam registradas
-  const handleNextStep = (event: React.MouseEvent) => {
-    // Evitar comportamento padrão do botão
+  // Função para próximo passo
+  const handleNextStep = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
-    
     console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
     
-    // Avançar para o próximo passo
-    if (onStepChange) {
-      const nextStep = activeStep + 1;
+    const nextStep = activeStep + 1;
+    if (funnel && nextStep < funnel.steps.length) {
       console.log(`Alterando para o passo ${nextStep}`);
       onStepChange(nextStep);
+    } else {
+      console.warn("CanvasPreview - Tentativa de avançar além do último passo");
     }
-  };
+  }, [activeStep, funnel, onStepChange]);
+  
+  // Tentar novamente se a renderização falhar
+  useEffect(() => {
+    if (!elementsReady && renderAttempt < 3) {
+      const retryTimer = setTimeout(() => {
+        console.log("CanvasPreview - Tentando renderizar novamente...", renderAttempt + 1);
+        setRenderAttempt(prev => prev + 1);
+        setElementsReady(true);
+      }, 300 * (renderAttempt + 1));
+      
+      return () => clearTimeout(retryTimer);
+    }
+  }, [elementsReady, renderAttempt]);
   
   // Se os elementos não estiverem prontos, mostrar um loading simples
   if (!elementsReady) {
@@ -160,9 +183,28 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
       </div>
     );
   }
+
+  // Se depois de várias tentativas não tivermos elementos válidos, mostrar mensagem de erro
+  if (validCanvasElements.length === 0 && renderAttempt >= 3) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-muted-foreground mb-2">Não foi possível carregar o conteúdo</p>
+        <button 
+          onClick={() => {
+            setRenderAttempt(0);
+            setElementsReady(false);
+          }}
+          className="text-sm text-blue-500 hover:underline"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
   
   return (
     <div 
+      key={renderKey}
       className={`${containerClass} canvas-container w-full`}
       style={{
         ...containerStyles,
@@ -170,7 +212,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         paddingBottom: '1.5rem',
         paddingTop: '0.5rem',
         // Garantir que a altura seja preservada durante a transição
-        // para evitar reajustes de layout
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
         transform: 'translate3d(0,0,0)',
@@ -185,13 +226,10 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
       }}
     >
-      {canvasElements.map((element, index) => {
-        console.log("CanvasPreview - Processing element:", element.id, element.type);
-        
-        // Verificação de segurança para garantir que temos um elemento válido
-        if (!element || !element.id || !element.type) {
-          console.error("CanvasPreview - Elemento inválido:", element);
-          return null;
+      {validCanvasElements.map((element, index) => {
+        // Evitar log excessivo em produção
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("CanvasPreview - Processing element:", element.id, element.type);
         }
         
         // Manter elementos com o mesmo estilo do desktop
@@ -217,9 +255,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
           ? { maxWidth: '100%', overflow: 'hidden' } 
           : {};
         
+        // Cada elemento com uma key única e estável
+        const elementKey = `element-${element.id}-${index}`;
+        
         return (
           <div 
-            key={element.id} 
+            key={elementKey}
             className={elementWrapperClass}
             style={elementWrapperStyle}
           >
@@ -230,7 +271,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
               isDragging={false}
               onRemove={() => {}}
               index={index}
-              totalElements={canvasElements.length}
+              totalElements={validCanvasElements.length}
               // Pass null for drag functions to disable drag in preview
               onDragStart={null}
               onDragEnd={null}

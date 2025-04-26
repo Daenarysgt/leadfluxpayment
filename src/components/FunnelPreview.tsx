@@ -24,21 +24,30 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const [activeStep, setActiveStep] = useState(stepIndex);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   const [dataReady, setDataReady] = useState(false);
+  const [renderKey, setRenderKey] = useState(`preview-${Date.now()}`);
   
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
+  // Garantir que o componente seja remontado quando o funil muda
+  useEffect(() => {
+    if (funnel?.id) {
+      setRenderKey(`preview-${funnel.id}-${Date.now()}`);
+    }
+  }, [funnel?.id]);
+  
   // Verificar se os dados estão prontos para renderização
   useEffect(() => {
+    // Reset dataReady quando o funil mudar
+    setDataReady(false);
+    
     if (!activeFunnel) {
       console.log("FunnelPreview - Funil não disponível");
-      setDataReady(false);
       return;
     }
     
     if (!Array.isArray(activeFunnel.steps) || activeFunnel.steps.length === 0) {
       console.log("FunnelPreview - Funil não tem steps");
-      setDataReady(false);
       return;
     }
     
@@ -47,17 +56,30 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     
     if (!stepData) {
       console.log("FunnelPreview - Step não encontrado para índice:", safeStepIndex);
-      setDataReady(false);
       return;
     }
     
-    // Verificar elementos do canvas
-    const hasValidCanvasElements = 
-      Array.isArray(stepData.canvasElements) && 
-      stepData.canvasElements.every(element => element && element.id && element.type);
+    // Validar e garantir que canvasElements seja um array
+    if (!Array.isArray(stepData.canvasElements)) {
+      console.error("FunnelPreview - canvasElements não é um array, corrigindo");
+      // Clone o objeto para não modificar o original diretamente
+      const updatedSteps = [...activeFunnel.steps];
+      updatedSteps[safeStepIndex] = {
+        ...stepData,
+        canvasElements: []
+      };
+      
+      // Não podemos atualizar o funil diretamente, então apenas ajustamos nossa exibição
+      console.warn("FunnelPreview - Step ajustado para renderização segura");
+    }
     
-    console.log("FunnelPreview - Dados prontos:", hasValidCanvasElements);
-    setDataReady(true);
+    // Adicionar um pequeno atraso para garantir que o DOM tenha tempo de se preparar
+    const timer = setTimeout(() => {
+      setDataReady(true);
+      console.log("FunnelPreview - Dados prontos para renderização");
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [activeFunnel, activeStep]);
   
   // Reset active step when funnel changes or stepIndex changes
@@ -72,7 +94,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     const stepData = activeFunnel.steps[Math.min(activeStep, activeFunnel.steps.length - 1)];
     if (!stepData) return;
     
-    const canvasElements = stepData.canvasElements || [];
+    const canvasElements = Array.isArray(stepData.canvasElements) ? stepData.canvasElements : [];
     // Se tiver muitos elementos, não centraliza (começa do topo)
     const manyElements = canvasElements.length > 3;
     setShouldCenter(centerContent && !manyElements);
@@ -107,10 +129,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   
   // If for some reason stepData is undefined, display a fallback
   if (!stepData) {
-    return <div className="text-center py-8">No step data available</div>;
+    return <div className="text-center py-8">Dados da etapa não disponíveis</div>;
   }
   
-  const { primaryColor, backgroundColor, logo } = activeFunnel.settings;
+  // Usar configurações com garantia de valores padrão
+  const { 
+    primaryColor = "#3b82f6", 
+    backgroundColor = "#ffffff", 
+    logo = null 
+  } = activeFunnel.settings || {};
   
   // Check if this is the last step of the funnel
   const isLastStep = safeCurrentStep === activeFunnel.steps.length - 1;
@@ -137,17 +164,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     }
   }
 
-  // Get the canvas elements from the current step's questions
-  const canvasElements = stepData.canvasElements || [];
-  
-  // Verificação adicional para garantir que canvasElements é um array
-  if (!Array.isArray(canvasElements)) {
-    console.error("FunnelPreview - canvasElements não é um array:", canvasElements);
-    return <div className="text-center py-8">Erro nos dados do funil</div>;
-  }
+  // Get the canvas elements from the current step's questions and garantir que seja array válido
+  const canvasElements = Array.isArray(stepData.canvasElements) ? stepData.canvasElements : [];
 
   const handleStepChange = (newStep: number) => {
     console.log("FunnelPreview - Changing step to:", newStep);
+    
+    // Validar o índice da etapa
+    if (newStep < 0 || (activeFunnel && newStep >= activeFunnel.steps.length)) {
+      console.error("FunnelPreview - Índice de etapa inválido:", newStep);
+      return;
+    }
+    
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
@@ -211,13 +239,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   };
 
   return (
-    <div className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
+    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
       {/* Facebook Pixel integration */}
-      {activeFunnel.settings.facebookPixelId && (
+      {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 
           pixelId={activeFunnel.settings.facebookPixelId}
-          trackPageView={activeFunnel.settings.pixelTracking?.pageView !== false}
-          trackRegistrationComplete={isLastStep && activeFunnel.settings.pixelTracking?.completeRegistration !== false}
+          trackPageView={activeFunnel.settings?.pixelTracking?.pageView !== false}
+          trackRegistrationComplete={isLastStep && activeFunnel.settings?.pixelTracking?.completeRegistration !== false}
         />
       )}
       
