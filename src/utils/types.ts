@@ -167,7 +167,8 @@ export enum ComponentType {
   Price = "price",
   Notes = "notes",
   Timer = "timer",
-  Accordion = "accordion"
+  Accordion = "accordion",
+  FeatureCards = "featureCards"
 }
 
 export interface TabOption {
@@ -226,4 +227,32 @@ export interface MultipleChoiceContent {
   borderRadius?: number;
   showBorders?: boolean;
   borderColor?: string;
+}
+
+export interface FeatureCard {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+}
+
+export interface FeatureCardsContent {
+  title?: string;
+  description?: string;
+  cards: FeatureCard[];
+  style?: {
+    titleAlignment?: 'left' | 'center' | 'right';
+    descriptionAlignment?: 'left' | 'center' | 'right';
+    cardTitleAlignment?: 'left' | 'center' | 'right';
+    cardDescriptionAlignment?: 'left' | 'center' | 'right';
+    backgroundColor?: string;
+    borderRadius?: number;
+    cardBackgroundColor?: string;
+    cardTextColor?: string;
+    cardShadow?: 'none' | 'sm' | 'md' | 'lg';
+    imagePosition?: 'top' | 'center';
+    columns?: number; // Número padrão de colunas (não pode ser menor que 2)
+    gap?: number; // Espaçamento entre os cards
+    animation?: 'none' | 'fade-in' | 'slide-up';
+  };
 }

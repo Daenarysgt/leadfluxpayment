@@ -468,6 +468,52 @@ export const getDefaultContent = (componentType: string) => {
           borderRadius: 8
         }
       };
+    case ComponentType.FeatureCards:
+      return {
+        title: "Recursos Principais",
+        description: "Conheça os principais recursos da nossa solução",
+        cards: [
+          {
+            id: crypto.randomUUID(),
+            title: "Fácil de Usar",
+            description: "Interface intuitiva que não requer conhecimentos técnicos avançados.",
+            imageUrl: "/placeholder.svg"
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Altamente Personalizável",
+            description: "Adapte a aparência e funcionalidades de acordo com suas necessidades.",
+            imageUrl: "/placeholder.svg"
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Resultados Rápidos",
+            description: "Obtenha métricas e insights valiosos em tempo real.",
+            imageUrl: "/placeholder.svg"
+          },
+          {
+            id: crypto.randomUUID(),
+            title: "Suporte Premium",
+            description: "Equipe especializada disponível para ajudar quando precisar.",
+            imageUrl: "/placeholder.svg"
+          }
+        ],
+        style: {
+          titleAlignment: "center",
+          descriptionAlignment: "center",
+          cardTitleAlignment: "center",
+          cardDescriptionAlignment: "center",
+          backgroundColor: "#ffffff",
+          borderRadius: 8,
+          cardBackgroundColor: "#ffffff",
+          cardTextColor: "#333333",
+          cardShadow: "md",
+          imagePosition: "top",
+          columns: 2,
+          gap: 24,
+          animation: "fade-in"
+        }
+      };
     default:
       return {};
   }
