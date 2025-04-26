@@ -70,8 +70,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     gap = 24,
     borderRadius = 8,
     animation = 'fade-in',
-    forceSideBySideOnMobile = true,
-    verticalTextAlignment = 'top'
+    forceSideBySideOnMobile = true
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -110,31 +109,6 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     if (onSelect && !previewMode) {
       e.stopPropagation();
       onSelect(element.id);
-    }
-  };
-  
-  // Função para determinar o estilo de alinhamento vertical
-  const getVerticalAlignStyle = () => {
-    switch (verticalTextAlignment) {
-      case 'center':
-        return {
-          display: 'flex',
-          flexDirection: 'column' as const,
-          justifyContent: 'center'
-        };
-      case 'bottom':
-        return {
-          display: 'flex',
-          flexDirection: 'column' as const,
-          justifyContent: 'flex-end'
-        };
-      case 'top':
-      default:
-        return {
-          display: 'flex',
-          flexDirection: 'column' as const,
-          justifyContent: 'flex-start'
-        };
     }
   };
   
@@ -196,8 +170,10 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   backgroundColor: cardBackgroundColor,
                   borderRadius: `${borderRadius}px`,
                   color: cardTextColor,
-                  height: 'auto',
-                  minHeight: '100px'
+                  height: '100%',
+                  minHeight: '100px',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
               >
                 {card.imageUrl && (
@@ -222,19 +198,21 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   </div>
                 )}
                 
-                {/* Container para o conteúdo de texto com alinhamento vertical */}
+                {/* Container de conteúdo com centralização vertical fixa */}
                 <div 
-                  className="p-2 sm:p-3 md:p-4 flex-1"
+                  className="p-2 sm:p-3 md:p-4 flex-1 flex items-center"
                   style={{ 
-                    ...getVerticalAlignStyle(),
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
                     height: '100%',
-                    minHeight: card.imageUrl ? '100px' : '160px'
+                    flex: '1'
                   }}
                 >
                   <div style={{ width: '100%' }}>
                     <h3 
                       className={cn(
-                        "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
+                        "text-base sm:text-lg font-semibold mb-2",
                         {
                           'text-left': cardTitleAlignment === 'left',
                           'text-center': cardTitleAlignment === 'center',
