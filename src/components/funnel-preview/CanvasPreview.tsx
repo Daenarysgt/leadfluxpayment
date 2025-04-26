@@ -20,7 +20,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   const [renderedSteps, setRenderedSteps] = useState<Record<number, boolean>>({});
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Marcar todas as etapas como pré-renderizadas para evitar skeleton em transições
   useEffect(() => {
@@ -34,44 +33,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     setRenderedSteps(allStepsRendered);
   }, [funnel]);
-  
-  // Adicionar transição suave quando a etapa muda
-  useEffect(() => {
-    // Só realizar a transição se não for a primeira renderização
-    if (previousStepRef.current !== activeStep && transitionRef.current) {
-      // Iniciar a transição
-      setIsTransitioning(true);
-      const container = transitionRef.current;
-      
-      // Reset e início da animação
-      container.style.opacity = '0';
-      container.style.transform = 'translateY(10px)';
-      
-      // Forçar reflow para iniciar a animação
-      void container.offsetWidth;
-      
-      // Iniciar transição
-      container.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
-      container.style.opacity = '1';
-      container.style.transform = 'translateY(0)';
-      
-      // Limpar estado de transição após a animação
-      const transitionEnd = () => {
-        setIsTransitioning(false);
-        container.removeEventListener('transitionend', transitionEnd);
-      };
-      
-      container.addEventListener('transitionend', transitionEnd);
-      
-      // Limpar evento se o componente for desmontado durante a transição
-      return () => {
-        container.removeEventListener('transitionend', transitionEnd);
-      };
-    }
-    
-    // Atualizar referência da etapa atual
-    previousStepRef.current = activeStep;
-  }, [activeStep]);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -160,9 +121,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
     overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
-    willChange: 'transform, opacity', // Melhorar performance de animação
-    opacity: 1, // Iniciar visível mas será animado na troca de etapas
-    transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
   };
 
   // Classes condicionais para desktop e mobile
@@ -197,9 +155,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
-        transform: 'translate3d(0,0,0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -207,9 +162,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        // Aplicar aceleração de hardware para animações
-        WebkitTransformStyle: 'preserve-3d',
-        WebkitBackfaceVisibility: 'hidden'
       }}
     >
       {validCanvasElements.map((element, index) => {
@@ -237,12 +189,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           <div 
             key={element.id} 
             className={elementClassName} 
-            style={{ 
-              opacity: 1,
-              transition: 'opacity 0.3s ease-out',
-              willChange: 'opacity',
-              WebkitTransformStyle: 'preserve-3d'
-            }}
           >
             <ElementFactory 
               element={elementWithPreviewProps}
@@ -262,20 +208,4 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-// Removemos o estilo de animação fade-in
-const fadeInStyle = `
-<style>
-  /* Estilos removidos para evitar qualquer animação de fade */
-</style>
-`;
-
-const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
-  return (
-    <>
-      {/* Remover a injeção de estilos de animação */}
-      <CanvasPreview {...props} />
-    </>
-  );
-};
-
-export default CanvasPreviewWithStyle;
+export default CanvasPreview;
