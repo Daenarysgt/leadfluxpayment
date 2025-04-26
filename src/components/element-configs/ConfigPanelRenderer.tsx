@@ -23,7 +23,6 @@ import PriceConfig from "./PriceConfig";
 import NotesConfig from "./NotesConfig";
 import TimerConfig from "./TimerConfig";
 import AccordionConfig from "./AccordionConfig";
-import FeatureCardsConfig from "./FeatureCardsConfig";
 
 interface ConfigPanelRendererProps {
   element: CanvasElement;
@@ -236,15 +235,6 @@ const ConfigPanelRenderer = ({ element, onUpdate }: ConfigPanelRendererProps) =>
     case ComponentType.Accordion:
       return (
         <AccordionConfig
-          key={stableKey}
-          element={element}
-          onUpdate={onUpdate}
-        />
-      );
-      
-    case ComponentType.FeatureCards:
-      return (
-        <FeatureCardsConfig
           key={stableKey}
           element={element}
           onUpdate={onUpdate}

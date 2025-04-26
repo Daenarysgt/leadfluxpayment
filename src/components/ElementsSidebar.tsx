@@ -28,8 +28,7 @@ import {
   Video as VideoIcon,
   DollarSign,
   Clock,
-  ChevronDown,
-  Layout
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +52,6 @@ const ElementsSidebar = () => {
     { id: ComponentType.Weight, name: "Peso", icon: Weight, color: "bg-orange-100 text-orange-600" },
     { id: ComponentType.Comparison, name: "Comparação de Itens", icon: SlidersHorizontal, color: "bg-teal-100 text-teal-600" },
     { id: ComponentType.Price, name: "Preço", icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
-    { id: ComponentType.FeatureCards, name: "Cards de Recursos", icon: Layout, color: "bg-sky-100 text-sky-600" },
   ];
   
   const advancedComponents = [
