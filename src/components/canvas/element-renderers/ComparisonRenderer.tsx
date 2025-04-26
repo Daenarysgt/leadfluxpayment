@@ -13,7 +13,7 @@ const ComparisonRenderer = (props: ElementRendererProps) => {
   ]);
   const [title, setTitle] = useState(content?.title || "Comparação de opções");
   const [leftTitle, setLeftTitle] = useState(content?.leftTitle || "VSL / Typebot / LP");
-  const [rightTitle, setRightTitle] = useState(content?.rightTitle || "Plataforma Inlead");
+  const [rightTitle, setRightTitle] = useState(content?.rightTitle || "LeadFlux");
   
   // Cores do texto
   const style = content?.style || {};
