@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { CanvasElement } from "@/types/canvasTypes";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import { Funnel } from '@/utils/types';
@@ -14,12 +14,12 @@ interface CanvasPreviewProps {
 }
 
 const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
-  console.log("CanvasPreview - Rendering with", Array.isArray(canvasElements) ? canvasElements.length : 0, "elements", isMobile ? "on mobile" : "on desktop");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
-  const [elementsReady, setElementsReady] = useState(false);
-  const [renderAttempt, setRenderAttempt] = useState(0);
-  const [renderKey] = useState(`canvas-${Date.now()}`);
+  // Remover estados que causam re-renders desnecessários entre navegações
+  const [renderedSteps, setRenderedSteps] = useState<Record<number, boolean>>({[activeStep]: true});
+  const previousStepRef = useRef<number>(activeStep);
+  const transitionRef = useRef<HTMLDivElement>(null);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -38,28 +38,48 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     );
   }, [canvasElements]);
   
-  // Verificar se todos os elementos estão carregados de forma adequada
-  useEffect(() => {
-    // Garantir que temos elementos válidos
-    if (validCanvasElements.length === 0 && canvasElements.length > 0) {
-      console.warn("CanvasPreview - Elementos inválidos foram filtrados");
-    }
-    
-    // Um pequeno atraso para garantir que o DOM esteja pronto
-    const timer = setTimeout(() => {
-      setElementsReady(true);
-      console.log("CanvasPreview - Elementos prontos para renderização");
-    }, 50);
-    
-    return () => clearTimeout(timer);
-  }, [validCanvasElements, canvasElements.length]);
-  
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
     // Se tiver muitos elementos, não centraliza (começa do topo)
     const manyElements = validCanvasElements.length > 3;
     setShouldCenter(centerContent && !manyElements);
   }, [validCanvasElements.length, centerContent]);
+  
+  // Pré-renderizar a próxima etapa quando uma etapa é carregada
+  useEffect(() => {
+    if (!funnel || !Array.isArray(funnel.steps)) return;
+    
+    // Atualizar o mapa de etapas renderizadas
+    setRenderedSteps(prev => ({
+      ...prev,
+      [activeStep]: true
+    }));
+    
+    // Pré-renderizar a próxima etapa (se existir)
+    const nextStepIndex = activeStep + 1;
+    if (nextStepIndex < funnel.steps.length) {
+      // Registrar a próxima etapa como pré-renderizada
+      setRenderedSteps(prev => ({
+        ...prev,
+        [nextStepIndex]: true
+      }));
+    }
+    
+    // Executar animação de transição se mudar de etapa
+    if (previousStepRef.current !== activeStep && transitionRef.current) {
+      // Aplicar transição ao mudar de etapa
+      const container = transitionRef.current;
+      // Reset de classe para animação
+      container.classList.remove('fade-in');
+      // Forçar reflow para reiniciar a animação
+      void container.offsetWidth;
+      // Adicionar classe de animação
+      container.classList.add('fade-in');
+    }
+    
+    // Atualizar a referência da etapa atual
+    previousStepRef.current = activeStep;
+  }, [activeStep, funnel]);
   
   // Inicializar sessão somente uma vez
   useEffect(() => {
@@ -68,7 +88,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         try {
           const newSessionId = await accessService.logAccess(funnel.id);
           setSessionId(newSessionId);
-          console.log("CanvasPreview - Sessão inicializada:", newSessionId);
         } catch (error) {
           console.error("CanvasPreview - Erro ao inicializar sessão:", error);
         }
@@ -80,8 +99,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Handler para mudança de etapa com verificação de segurança
   const handleStepChange = useCallback(async (index: number) => {
-    console.log("CanvasPreview - handleStepChange called com índice:", index);
-    
     if (!funnel) {
       console.warn("CanvasPreview - No funnel available for navigation");
       return;
@@ -92,8 +109,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
       return;
     }
-    
-    console.log(`CanvasPreview - Navegando da etapa ${activeStep} para etapa ${index}`);
     
     try {
       // Se chegou na última etapa
@@ -109,11 +124,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       // Continue com a navegação mesmo com erro de registro
     }
     
-    console.log("CanvasPreview - Changing step to:", index);
-    
     // Aplicar a mudança de etapa diretamente
     onStepChange(index);
-  }, [funnel, activeStep, sessionId, onStepChange]);
+  }, [funnel, sessionId, onStepChange]);
   
   // Detectar propriedades visuais do funnel com valores padrão seguros
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
@@ -123,7 +136,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   const containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
-    transition: 'all 0.5s ease',
     borderRadius: isMobile ? '0' : '0.5rem',
     padding: isMobile ? '0.25rem' : '1rem',
     margin: isMobile ? '0 auto' : '0 auto',
@@ -142,70 +154,22 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Função para próximo passo
   const handleNextStep = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
-    console.log('Botão clicado em CanvasPreview. Avançando para próximo passo.');
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      console.log(`Alterando para o passo ${nextStep}`);
       onStepChange(nextStep);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
     }
   }, [activeStep, funnel, onStepChange]);
   
-  // Tentar novamente se a renderização falhar
-  useEffect(() => {
-    if (!elementsReady && renderAttempt < 3) {
-      const retryTimer = setTimeout(() => {
-        console.log("CanvasPreview - Tentando renderizar novamente...", renderAttempt + 1);
-        setRenderAttempt(prev => prev + 1);
-        setElementsReady(true);
-      }, 300 * (renderAttempt + 1));
-      
-      return () => clearTimeout(retryTimer);
-    }
-  }, [elementsReady, renderAttempt]);
-  
-  // Se os elementos não estiverem prontos, mostrar um loading simples
-  if (!elementsReady) {
-    return (
-      <div className="flex justify-center items-center p-8 min-h-[300px]">
-        <div className="animate-pulse flex space-x-4">
-          <div className="rounded-full bg-gray-200 h-10 w-10"></div>
-          <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Se depois de várias tentativas não tivermos elementos válidos, mostrar mensagem de erro
-  if (validCanvasElements.length === 0 && renderAttempt >= 3) {
-    return (
-      <div className="text-center p-4">
-        <p className="text-muted-foreground mb-2">Não foi possível carregar o conteúdo</p>
-        <button 
-          onClick={() => {
-            setRenderAttempt(0);
-            setElementsReady(false);
-          }}
-          className="text-sm text-blue-500 hover:underline"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
+  // Funções de placeholder que não fazem nada no modo de visualização
+  const noopFunction = () => {};
   
   return (
     <div 
-      key={renderKey}
-      className={`${containerClass} canvas-container w-full`}
+      ref={transitionRef}
+      className={`${containerClass} canvas-container w-full fade-in`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
@@ -227,11 +191,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       }}
     >
       {validCanvasElements.map((element, index) => {
-        // Evitar log excessivo em produção
-        if (process.env.NODE_ENV !== 'production') {
-          console.log("CanvasPreview - Processing element:", element.id, element.type);
-        }
-        
         // Manter elementos com o mesmo estilo do desktop
         const adjustedElement = { ...element };
         
@@ -248,55 +207,56 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         };
         
         // Classe específica para mobile ou desktop
-        const elementWrapperClass = `w-full ${isMobile ? 'mobile-element' : 'desktop-element'}`;
-        
-        // Estilos específicos para tipo de dispositivo
-        const elementWrapperStyle: React.CSSProperties = isMobile 
-          ? { maxWidth: '100%', overflow: 'hidden' } 
-          : {};
-        
-        // Cada elemento com uma key única e estável
-        const elementKey = `element-${element.id}-${index}`;
+        const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
         
         return (
-          <div 
-            key={elementKey}
-            className={elementWrapperClass}
-            style={elementWrapperStyle}
-          >
+          <div key={element.id} className={elementClassName}>
             <ElementFactory 
               element={elementWithPreviewProps}
-              onSelect={() => {}} 
               isSelected={false} 
               isDragging={false}
-              onRemove={() => {}}
+              onSelect={noopFunction}
+              onRemove={noopFunction}
               index={index}
               totalElements={validCanvasElements.length}
-              // Pass null for drag functions to disable drag in preview
               onDragStart={null}
               onDragEnd={null}
             />
           </div>
         );
       })}
-      
-      {/* Estilo global para transições suaves */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .canvas-container {
-          will-change: contents;
-          transform: translateZ(0);
-        }
-        .mobile-element, .desktop-element {
-          transition: opacity 0.3s ease, transform 0.3s ease;
-          will-change: transform, opacity;
-        }
-        .mobile-view, .desktop-view {
-          transform: translateZ(0);
-          backface-visibility: hidden;
-        }
-      `}} />
     </div>
   );
 };
 
-export default CanvasPreview;
+// Adicione este CSS à sua aplicação para a animação de transição
+// Pode ser adicionado também a um arquivo CSS separado
+const fadeInStyle = `
+<style>
+  .fade-in {
+    animation: fadeIn 0.25s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0.5;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+`;
+
+const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
+  return (
+    <>
+      <div dangerouslySetInnerHTML={{ __html: fadeInStyle }} />
+      <CanvasPreview {...props} />
+    </>
+  );
+};
+
+export default CanvasPreviewWithStyle;

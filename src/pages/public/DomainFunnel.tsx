@@ -316,7 +316,7 @@ const DomainFunnel = () => {
   return (
     <FunnelContent 
       funnel={funnelData} 
-      isMobile={isMobile} 
+          isMobile={isMobile} 
       currentStepIndex={currentStepIndex} 
       onStepChange={handleStepChange} 
     />

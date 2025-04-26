@@ -3,15 +3,19 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+
+// Cache global para imagens já carregadas
+const imageCache: Record<string, boolean> = {};
 
 const ImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content } = element;
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
-
+  const imageUrlRef = useRef<string | null>(null);
+  
   // Carregamento de imagem com efeito
   useEffect(() => {
     if (!content?.imageUrl) {
@@ -19,42 +23,53 @@ const ImageRenderer = (props: ElementRendererProps) => {
       return;
     }
     
-    // Reset state quando a URL mudar
+    const imageUrl = content.imageUrl;
+    
+    // Se a URL é a mesma da anterior, não precisamos recarregar
+    if (imageUrlRef.current === imageUrl && src) {
+      return;
+    }
+    
+    // Verificar se a imagem já foi carregada anteriormente (cache)
+    if (imageCache[imageUrl]) {
+      // Se já carregamos esta imagem antes, definimos o src diretamente
+      setSrc(imageUrl);
+      setIsLoading(false);
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Caso contrário, iniciamos o carregamento
     setIsLoading(true);
     setIsError(false);
-    
-    // Tempo limite para o carregamento da imagem
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn("ImageRenderer - Tempo limite de carregamento excedido:", content.imageUrl);
-      }
-    }, 5000); // 5 segundos de tempo limite
     
     // Carregar a imagem em segundo plano
     const img = new Image();
     
     img.onload = () => {
-      setSrc(content.imageUrl);
+      setSrc(imageUrl);
       setIsLoading(false);
-      clearTimeout(timeoutId);
+      // Adicionar ao cache para carregamentos futuros
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
     };
     
     img.onerror = () => {
-      console.error("ImageRenderer - Erro ao carregar imagem:", content.imageUrl);
+      console.error("ImageRenderer - Erro ao carregar imagem:", imageUrl);
       setIsError(true);
       setIsLoading(false);
-      clearTimeout(timeoutId);
     };
     
-    img.src = content.imageUrl;
+    img.src = imageUrl;
     
     return () => {
-      // Limpar o timeout se o componente for desmontado
-      clearTimeout(timeoutId);
-      // Cancelar carregamento da imagem
-      img.src = '';
+      // Cancelar carregamento da imagem no cleanup
+      if (img.src) {
+        img.onload = null;
+        img.onerror = null;
+      }
     };
-  }, [content?.imageUrl]);
+  }, [content?.imageUrl, src]);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
