@@ -608,7 +608,7 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
             <div className="flex items-center space-x-2 mt-2">
               <Switch
                 id="showFullText"
-                checked={content.style?.showFullText === true}
+                checked={content.style?.showFullText !== false}
                 onCheckedChange={(checked) => updateStyle('showFullText', checked)}
               />
               <Label htmlFor="showFullText" className="cursor-pointer">

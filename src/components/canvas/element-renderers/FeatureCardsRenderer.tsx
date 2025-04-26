@@ -70,9 +70,9 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     gap = 24,
     borderRadius = 8,
     animation = 'fade-in',
-    forceSideBySideOnMobile = true, // Por padrão, forçar lado a lado
-    verticalTextAlignment = 'top', // Alinhamento vertical do texto
-    showFullText = false // Por padrão, trunca o texto
+    forceSideBySideOnMobile = true,
+    verticalTextAlignment = 'top',
+    showFullText = true  // Por padrão, mostrar texto completo
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -100,9 +100,9 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
   const colsClass = forceSideBySideOnMobile 
     ? {
         1: 'grid-cols-1',
-        2: 'grid-cols-2', // Sempre 2 colunas em qualquer tamanho de tela
-        3: 'grid-cols-3', // Sempre 3 colunas em qualquer tamanho de tela
-        4: 'grid-cols-4'  // Sempre 4 colunas em qualquer tamanho de tela
+        2: 'grid-cols-2',
+        3: 'grid-cols-3',
+        4: 'grid-cols-4'
       }[Math.min(Math.max(columns, 1), 4)]
     : {
         1: 'grid-cols-1',
@@ -160,7 +160,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
           
           <div 
             className={cn(
-              "grid gap-2 sm:gap-4 md:gap-6", // Gap menor em mobile para os cards ficarem mais próximos
+              "grid gap-2 sm:gap-4 md:gap-6",
               colsClass,
               animation && animationClasses[animation]
             )}
@@ -170,21 +170,22 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
               <div
                 key={card.id || index}
                 className={cn(
-                  "rounded-lg overflow-hidden flex flex-col text-sm sm:text-base", // Texto menor em telas pequenas
+                  "rounded-lg overflow-hidden flex flex-col text-sm sm:text-base",
                   shadowClasses[cardShadow as keyof typeof shadowClasses]
                 )}
                 style={{ 
                   backgroundColor: cardBackgroundColor,
                   borderRadius: `${borderRadius}px`,
                   color: cardTextColor,
-                  height: 'auto' // Altura automática baseada no conteúdo
+                  height: 'auto',
+                  minHeight: '100px' // Garantir altura mínima para cards sem imagem
                 }}
               >
                 {card.imageUrl && (
                   <div 
                     className="relative w-full overflow-hidden"
                     style={{ 
-                      height: `${card.imageHeight || content.style?.defaultImageHeight || 120}px` // Altura menor para telas pequenas
+                      height: `${card.imageHeight || content.style?.defaultImageHeight || 120}px`
                     }}
                   > 
                     <img
@@ -203,19 +204,17 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                 )}
                 
                 <div 
-                  className={cn(
-                    "p-2 sm:p-3 md:p-4 flex-1 flex flex-col", // Padding menor em mobile
-                    {
-                      'justify-start': verticalTextAlignment === 'top',
-                      'justify-center': verticalTextAlignment === 'center',
-                      'justify-end': verticalTextAlignment === 'bottom'
-                    }
-                  )}
-                  style={{ height: card.imageUrl ? 'auto' : '100%' }} // Garante altura total quando não tem imagem
+                  className="p-2 sm:p-3 md:p-4 flex flex-col flex-1"
+                  style={{ 
+                    justifyContent: 
+                      verticalTextAlignment === 'center' ? 'center' : 
+                      verticalTextAlignment === 'bottom' ? 'flex-end' : 'flex-start',
+                    height: card.imageUrl ? 'auto' : '100%'
+                  }}
                 >
                   <h3 
                     className={cn(
-                      "text-base sm:text-lg font-semibold mb-1 sm:mb-2", // Texto menor e margem menor em telas pequenas
+                      "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
                       {
                         'text-left': cardTitleAlignment === 'left',
                         'text-center': cardTitleAlignment === 'center',
@@ -229,14 +228,19 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   {card.description && (
                     <p 
                       className={cn(
-                        "flex-1 text-xs sm:text-sm", // Base styles
+                        "w-full text-xs sm:text-sm",
                         {
                           'text-left': cardDescriptionAlignment === 'left',
                           'text-center': cardDescriptionAlignment === 'center',
-                          'text-right': cardDescriptionAlignment === 'right',
-                          'line-clamp-2 sm:line-clamp-3': !showFullText // Condicional: aplica line-clamp apenas se showFullText for false
+                          'text-right': cardDescriptionAlignment === 'right'
                         }
                       )}
+                      style={{ 
+                        overflow: 'visible',
+                        textOverflow: 'initial',
+                        whiteSpace: 'normal',
+                        wordWrap: 'break-word'
+                      }}
                     >
                       {card.description}
                     </p>
