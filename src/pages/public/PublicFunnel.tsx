@@ -30,6 +30,45 @@ const PublicFunnel = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentStepIndex]);
+  
+  // Aplicar estilo de página completa para desktop quando o funil é carregado
+  useEffect(() => {
+    if (funnel && !isMobile) {
+      // Aplicar o fundo à página inteira em vez de apenas ao contêiner
+      document.body.style.backgroundColor = funnel.settings?.backgroundColor || '#ffffff';
+      document.body.style.backgroundImage = funnel.settings?.backgroundImage 
+        ? `url(${funnel.settings.backgroundImage})` 
+        : 'none';
+      document.body.style.backgroundSize = funnel.settings?.backgroundImageStyle === 'contain' 
+        ? 'contain' 
+        : funnel.settings?.backgroundImageStyle === 'repeat' 
+          ? 'auto' 
+          : 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = funnel.settings?.backgroundImageStyle === 'repeat' 
+        ? 'repeat' 
+        : 'no-repeat';
+      document.body.style.backgroundAttachment = funnel.settings?.backgroundImageStyle === 'fixed' 
+        ? 'fixed' 
+        : 'scroll';
+      document.body.style.minHeight = '100vh';
+      document.body.style.margin = '0';
+    }
+  }, [funnel, isMobile]);
+  
+  // Limpar estilos do body quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      document.body.style.backgroundColor = '';
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundRepeat = '';
+      document.body.style.backgroundAttachment = '';
+      document.body.style.minHeight = '';
+      document.body.style.margin = '';
+    };
+  }, []);
 
   useEffect(() => {
     // Detectar se é dispositivo móvel
@@ -257,11 +296,11 @@ const PublicFunnel = () => {
   // Classes condicionais baseadas no tipo de dispositivo
   const containerClass = isMobile 
     ? "h-[100dvh] flex flex-col items-center justify-start p-0 m-0 mobile-full-width pt-1" 
-    : "h-[100dvh] flex flex-col items-center justify-start p-4 md:p-8 pt-2";
+    : "min-h-[100dvh] flex flex-col items-center justify-start p-4 md:p-8 pt-2";
   
   const innerClass = isMobile 
     ? "w-full mobile-full-width flex flex-col h-full" 
-    : "w-full max-w-2xl mx-auto flex flex-col h-full";
+    : "w-full max-w-2xl mx-auto flex flex-col h-full relative z-10";
     
   // Estilos específicos para mobile
   const containerStyle = isMobile ? {
@@ -278,13 +317,8 @@ const PublicFunnel = () => {
     backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
     backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
   } : {
-    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
-    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
-    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+    // Em desktop, usamos o body como fundo, então aqui só precisamos de um contêiner transparente
+    backgroundColor: 'transparent',
   };
 
   return (
