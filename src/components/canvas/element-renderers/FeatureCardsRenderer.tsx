@@ -172,11 +172,19 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                 }}
               >
                 {card.imageUrl && (
-                  <div className="relative w-full h-40 overflow-hidden"> {/* Reduzindo a altura da imagem */}
+                  <div 
+                    className="relative w-full overflow-hidden"
+                    style={{ 
+                      height: `${card.imageHeight || content.style?.defaultImageHeight || 160}px` 
+                    }}
+                  > 
                     <img
                       src={card.imageUrl}
                       alt={card.title || `Imagem ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full"
+                      style={{ 
+                        objectFit: (card.imageFit || content.style?.defaultImageFit || 'cover') as 'cover' | 'contain' | 'fill' 
+                      }}
                       onError={(e) => {
                         // Fallback para quando a imagem não carregar
                         (e.target as HTMLImageElement).src = '/placeholder.svg';

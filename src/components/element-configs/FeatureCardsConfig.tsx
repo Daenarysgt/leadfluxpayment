@@ -305,7 +305,7 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
   };
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 pb-24">
       <Tabs 
         defaultValue="content" 
         value={activeTab}
@@ -466,6 +466,43 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
                                     accept="image/*"
                                   />
                                 </div>
+                                
+                                {card.imageUrl && (
+                                  <div className="mt-2 space-y-2">
+                                    <div>
+                                      <Label className="text-xs">Altura da Imagem (px)</Label>
+                                      <Slider
+                                        min={80}
+                                        max={300}
+                                        step={10}
+                                        value={[card.imageHeight || 160]}
+                                        onValueChange={(value) => updateCard(card.id, 'imageHeight', value[0].toString())}
+                                      />
+                                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>Pequena</span>
+                                        <span>Média</span>
+                                        <span>Grande</span>
+                                      </div>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label className="text-xs">Estilo da Imagem</Label>
+                                      <Select
+                                        value={card.imageFit || 'cover'}
+                                        onValueChange={(value) => updateCard(card.id, 'imageFit', value)}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="cover">Cobrir (Crop)</SelectItem>
+                                          <SelectItem value="contain">Conter (Mostrar tudo)</SelectItem>
+                                          <SelectItem value="fill">Preencher</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -607,6 +644,39 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
                 value={content.style?.cardTextColor || '#333333'}
                 onChange={(color) => updateStyle('cardTextColor', color)}
               />
+            </div>
+            
+            <div>
+              <Label>Altura Padrão das Imagens</Label>
+              <Slider
+                min={80}
+                max={300}
+                step={10}
+                value={[content.style?.defaultImageHeight || 160]}
+                onValueChange={(value) => updateStyle('defaultImageHeight', value[0])}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>80px</span>
+                <span>160px</span>
+                <span>300px</span>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Estilo Padrão das Imagens</Label>
+              <Select
+                value={content.style?.defaultImageFit || 'cover'}
+                onValueChange={(value) => updateStyle('defaultImageFit', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cover">Cobrir (Crop)</SelectItem>
+                  <SelectItem value="contain">Conter (Mostrar tudo)</SelectItem>
+                  <SelectItem value="fill">Preencher</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>

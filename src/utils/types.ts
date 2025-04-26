@@ -234,13 +234,15 @@ export interface FeatureCard {
   title: string;
   description: string;
   imageUrl: string;
+  imageHeight?: number;
+  imageFit?: 'cover' | 'contain' | 'fill';
 }
 
 export interface FeatureCardsContent {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   cards: FeatureCard[];
-  style?: {
+  style: {
     titleAlignment?: 'left' | 'center' | 'right';
     descriptionAlignment?: 'left' | 'center' | 'right';
     cardTitleAlignment?: 'left' | 'center' | 'right';
@@ -250,9 +252,11 @@ export interface FeatureCardsContent {
     cardBackgroundColor?: string;
     cardTextColor?: string;
     cardShadow?: 'none' | 'sm' | 'md' | 'lg';
-    imagePosition?: 'top' | 'center';
-    columns?: number; // Número padrão de colunas (não pode ser menor que 2)
-    gap?: number; // Espaçamento entre os cards
+    imagePosition?: 'top' | 'bottom';
+    columns?: number;
+    gap?: number;
     animation?: 'none' | 'fade-in' | 'slide-up';
+    defaultImageHeight?: number;
+    defaultImageFit?: 'cover' | 'contain' | 'fill';
   };
 }
