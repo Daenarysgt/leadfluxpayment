@@ -131,9 +131,10 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         // para evitar reajustes de layout
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
-        transform: 'translate3d(0,0,0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
+        // Remover transformações que podem causar problemas de renderização
+        transform: isMobile ? 'none' : 'translate3d(0,0,0)',
+        backfaceVisibility: 'visible',
+        perspective: 'none',
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -194,16 +195,39 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
       {/* Estilo global para transições suaves */}
       <style dangerouslySetInnerHTML={{__html: `
         .canvas-container {
-          will-change: contents;
-          transform: translateZ(0);
+          will-change: auto;
+          transform: none !important;
         }
         .mobile-element, .desktop-element {
-          transition: opacity 0.3s ease, transform 0.3s ease;
-          will-change: transform, opacity;
+          transition: opacity 0.3s ease;
+          will-change: auto;
+          transform: none !important;
         }
         .mobile-view, .desktop-view {
-          transform: translateZ(0);
-          backface-visibility: hidden;
+          transform: none !important;
+          backface-visibility: visible !important;
+        }
+        
+        /* Correções específicas para mobile */
+        @media (max-width: 768px) {
+          input, textarea, button, select, .rounded, [style*="border-radius"] {
+            transform: none !important;
+            -webkit-transform: none !important;
+            backface-visibility: visible !important;
+            -webkit-backface-visibility: visible !important;
+            perspective: none !important;
+            -webkit-perspective: none !important;
+            will-change: auto;
+            zoom: 1 !important;
+          }
+          
+          /* Correção para elementos com box-shadow */
+          [style*="box-shadow"] {
+            transform: none !important;
+            -webkit-transform: none !important;
+            will-change: auto;
+            -webkit-font-smoothing: antialiased;
+          }
         }
       `}} />
     </div>

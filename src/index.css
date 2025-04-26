@@ -425,6 +425,40 @@
   html {
     overflow-x: auto !important;
   }
+
+  /* Correção para problemas de renderização em dispositivos móveis */
+  body, html, #root {
+    transform: none !important;
+    zoom: 1 !important;
+    overflow: visible !important;
+    backface-visibility: visible !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input, textarea, button, div, p, span {
+    transform: none !important;
+    will-change: auto;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+  }
+
+  /* Correção específica para elementos com border-radius e box-shadow */
+  input, textarea, button, .rounded, [style*="border-radius"] {
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    perspective: 1000 !important;
+    -webkit-perspective: 1000 !important;
+  }
+
+  /* Correção para elementos com box-shadow */
+  [style*="box-shadow"] {
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    will-change: auto;
+  }
 }
 
 /* Adicionar animações para o componente FeatureCards */
