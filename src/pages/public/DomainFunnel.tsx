@@ -26,6 +26,16 @@ const DomainFunnel = () => {
   // Inicializar com detecção imediata para evitar mudanças de layout
   const [isMobile, setIsMobile] = useState(detectMobile());
   
+  // Scroll para o topo quando a página carrega
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
+  // Scroll para o topo quando muda de step
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStepIndex]);
+  
   useEffect(() => {
     // Detectar mudanças de tamanho da tela
     const checkMobile = () => {
@@ -123,6 +133,9 @@ const DomainFunnel = () => {
   const handleStepChange = async (index: number) => {
     if (!funnel) return;
     
+    // Scroll para o topo ao mudar de etapa
+    window.scrollTo(0, 0);
+    
     // Registrar interação do usuário com o funil
     await accessService.updateProgress(funnel.id, index + 1, sessionId);
     
@@ -190,8 +203,8 @@ const DomainFunnel = () => {
 
   // Classes condicionais baseadas no tipo de dispositivo
   const containerClass = isMobile 
-    ? "h-[100dvh] flex flex-col items-center justify-start bg-white p-0 m-0 mobile-full-width" 
-    : "h-[100dvh] flex flex-col items-center justify-start bg-white p-4 md:p-8";
+    ? "h-[100dvh] flex flex-col items-center justify-start p-0 m-0 mobile-full-width pt-1" 
+    : "h-[100dvh] flex flex-col items-center justify-start p-4 md:p-8 pt-2";
   
   const innerClass = isMobile 
     ? "w-full mobile-full-width flex flex-col h-full" 
@@ -203,12 +216,27 @@ const DomainFunnel = () => {
     maxWidth: '100%',
     padding: '0',
     margin: '0',
-    overflow: 'hidden'
-  } : {};
+    overflow: 'auto',
+    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+  } : {
+    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+  };
 
   return (
     <div className={containerClass} style={containerStyle}>
-      <div className={innerClass}>
+      <div className={innerClass} style={isMobile ? {overflowY: 'auto', maxHeight: 'none'} : {}}>
         <FunnelPreview 
           funnel={funnel} 
           isMobile={isMobile} 
