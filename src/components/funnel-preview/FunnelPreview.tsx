@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar';
 import CanvasPreview from './CanvasPreview';
 import TraditionalPreview from './TraditionalPreview';
 import FacebookPixel from '@/components/pixel/FacebookPixel';
+import useImagePreloader from '@/hooks/useImagePreloader';
 
 interface FunnelPreviewProps {
   isMobile?: boolean;
@@ -19,6 +20,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
   
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
+  
+  // Usar o hook de pré-carregamento de imagens
+  const { imagesPreloaded, isPreloading } = useImagePreloader(activeFunnel, activeStep);
+  
+  useEffect(() => {
+    if (isPreloading) {
+      console.log('[FunnelPreview] Pré-carregando imagens das próximas etapas...');
+    }
+    if (imagesPreloaded) {
+      console.log('[FunnelPreview] Imagens pré-carregadas com sucesso!');
+    }
+  }, [isPreloading, imagesPreloaded]);
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
@@ -123,6 +136,14 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
         )}
 
         <div className="w-full">
+          {/* Indicador sutil de pré-carregamento (opcional) */}
+          {isPreloading && (
+            <div className="absolute top-2 right-2 w-3 h-3">
+              <div className="animate-ping absolute h-3 w-3 rounded-full bg-blue-400 opacity-75"></div>
+              <div className="relative rounded-full h-3 w-3 bg-blue-500"></div>
+            </div>
+          )}
+          
           {canvasElements && canvasElements.length > 0 ? (
             // If we have canvas elements, render them
             <CanvasPreview 
