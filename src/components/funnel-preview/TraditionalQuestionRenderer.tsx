@@ -36,25 +36,11 @@ const TraditionalQuestionRenderer = ({
     previousStepRef.current = activeStep;
   }, [activeStep]);
   
-  // Estilo para animação de entrada com otimizações de performance
+  // Estilo para animação de entrada
   const animationStyle: React.CSSProperties = {
     animation: `fadeIn${transitionDirection === 'next' ? 'Right' : 'Left'} 0.35s ease-out forwards`,
     position: 'relative',
-    width: '100%',
-    transform: 'translate3d(0, 0, 0)', // Força uso de GPU
-    willChange: 'transform, opacity', // Avisa o navegador para otimizar
-    backfaceVisibility: 'hidden', // Melhora a performance
-    perspective: 1000 // Cria um contexto 3D
-  };
-  
-  const handleBackClick = () => {
-    setTransitionDirection('prev');
-    handleNextStep(Math.max(0, activeStep - 1));
-  };
-  
-  const handleNextClick = () => {
-    setTransitionDirection('next');
-    handleNextStep(activeStep + 1);
+    width: '100%'
   };
   
   return (
@@ -123,7 +109,6 @@ const TraditionalQuestionRenderer = ({
                       src={option.image} 
                       alt={option.text} 
                       className="w-full h-20 object-cover mb-2 rounded-md" 
-                      loading="eager" // Força carregamento imediato
                     />
                   )}
                   <div className="flex items-center gap-2">
@@ -208,7 +193,10 @@ const TraditionalQuestionRenderer = ({
         {activeStep > 0 && (
           <Button 
             variant="outline"
-            onClick={handleBackClick}
+            onClick={() => {
+              setTransitionDirection('prev');
+              handleNextStep(Math.max(0, activeStep - 1));
+            }}
           >
             Voltar
           </Button>
@@ -216,7 +204,11 @@ const TraditionalQuestionRenderer = ({
         <Button 
           className="ml-auto" 
           style={{ backgroundColor: primaryColor }}
-          onClick={handleNextClick}
+          onClick={() => {
+            // Verificar se há mais etapas após esta
+            setTransitionDirection('next');
+            handleNextStep(activeStep + 1);
+          }}
         >
           {stepData.buttonText || 'Continuar'} <ChevronRight className="ml-1 h-4 w-4" />
         </Button>

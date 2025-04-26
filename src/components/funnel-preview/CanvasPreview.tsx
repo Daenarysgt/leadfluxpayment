@@ -16,19 +16,11 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
-  // Estado para controlar a direção da animação (avançar ou retroceder)
-  const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev'>('next');
   // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
-  const funnelRef = useRef(funnel);
-  // Mantém registro de todas as etapas pré-carregadas
-  const [allStepsLoaded, setAllStepsLoaded] = useState(false);
-  
-  // Manter funnelRef atualizado
-  useEffect(() => {
-    funnelRef.current = funnel;
-  }, [funnel]);
+  // Estado para controlar a direção da animação (avançar ou retroceder)
+  const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev'>('next');
   
   // Atualizar a direção da transição quando a etapa ativa mudar
   useEffect(() => {
@@ -65,7 +57,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     }
     
     // Mapear todas as etapas e seus elementos de canvas
-    const steps = funnel.steps.map((step, index) => {
+    return funnel.steps.map((step, index) => {
       const stepElements = Array.isArray(step.canvasElements) 
         ? step.canvasElements.filter(element => 
             element && 
@@ -81,14 +73,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         stepId: step.id
       };
     });
-    
-    // Marcar que todos os steps foram carregados
-    if (steps.length > 0 && !allStepsLoaded) {
-      setAllStepsLoaded(true);
-    }
-    
-    return steps;
-  }, [funnel, allStepsLoaded]);
+  }, [funnel]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -115,8 +100,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Handler para mudança de etapa com verificação de segurança
   const handleStepChange = useCallback(async (index: number) => {
-    const currentFunnel = funnelRef.current;
-    if (!currentFunnel) {
+    if (!funnel) {
       console.warn("CanvasPreview - No funnel available for navigation");
       return;
     }
@@ -129,32 +113,28 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     }
     
     // Validar se o índice é válido
-    if (index < 0 || index >= currentFunnel.steps.length) {
-      console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${currentFunnel.steps.length - 1}`);
+    if (index < 0 || index >= funnel.steps.length) {
+      console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
       return;
     }
     
-    // Primeiro notificar o parent para atualizar a UI
-    onStepChange(index);
-    
-    // Depois enviar o progresso para o servidor em segundo plano
     try {
       // Se chegou na última etapa
-      if (index === currentFunnel.steps.length - 1) {
+      if (index === funnel.steps.length - 1) {
         // Apenas atualiza o progresso e marca como conversão
-        accessService.updateProgress(currentFunnel.id, index + 1, sessionId, true).catch(err => {
-          console.error("Error registering conversion:", err);
-        });
+        await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
       } else {
         // Se não for a última etapa, apenas atualiza o progresso
-        accessService.updateProgress(currentFunnel.id, index + 1, sessionId).catch(err => {
-          console.error("Error updating progress:", err);
-        });
+        await accessService.updateProgress(funnel.id, index + 1, sessionId);
       }
     } catch (error) {
       console.error("CanvasPreview - Error during step interaction:", error);
+      // Continue com a navegação mesmo com erro de registro
     }
-  }, [activeStep, sessionId, onStepChange]);
+    
+    // Aplicar a mudança de etapa diretamente
+    onStepChange(index);
+  }, [funnel, sessionId, onStepChange, activeStep]);
   
   // Detectar propriedades visuais do funnel com valores padrão seguros
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
@@ -204,9 +184,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       display: isActiveStep ? 'block' : 'none',
       opacity: isActiveStep ? 1 : 0,
       position: 'relative',
-      width: '100%',
-      transform: 'translate3d(0, 0, 0)', // Força o uso de GPU para animações mais suaves
-      willChange: 'transform, opacity' // Dica para o navegador otimizar a animação
+      width: '100%'
     };
     
     // Animation styles
@@ -222,79 +200,48 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Injetar estilos CSS para as animações
   useEffect(() => {
-    const styleId = 'funnel-animations';
+    // Criar elemento de estilo
+    const styleElement = document.createElement('style');
+    styleElement.id = 'funnel-animations';
     
-    // Verificar se o estilo já existe
-    if (!document.getElementById(styleId)) {
-      // Criar elemento de estilo
-      const styleElement = document.createElement('style');
-      styleElement.id = styleId;
-      
-      // Definir as animações com transformações mais eficientes
-      styleElement.innerHTML = `
-        @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translate3d(5%, 0, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-        
-        @keyframes fadeInLeft {
-          from {
-            opacity: 0;
-            transform: translate3d(-5%, 0, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
-        }
-        
-        .canvas-step-container {
-          position: relative;
-          width: 100%;
-          transform: translate3d(0, 0, 0);
-          will-change: transform, opacity;
-        }
-        
-        .canvas-step-hidden {
-          display: none !important;
+    // Definir as animações
+    styleElement.innerHTML = `
+      @keyframes fadeInRight {
+        from {
           opacity: 0;
-          visibility: hidden;
+          transform: translateX(5%);
         }
-        
-        .canvas-step-visible {
-          display: block !important;
+        to {
           opacity: 1;
-          visibility: visible;
+          transform: translateX(0);
         }
-      `;
+      }
       
-      // Adicionar ao documento
+      @keyframes fadeInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-5%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+    `;
+    
+    // Adicionar ao documento se não existir
+    if (!document.getElementById('funnel-animations')) {
       document.head.appendChild(styleElement);
     }
     
     // Limpeza ao desmontar o componente
     return () => {
-      const existingStyle = document.getElementById(styleId);
-      if (existingStyle && existingStyle.parentNode) {
-        existingStyle.parentNode.removeChild(existingStyle);
+      const existingStyle = document.getElementById('funnel-animations');
+      if (existingStyle) {
+        existingStyle.remove();
       }
     };
   }, []);
-  
-  // Se todas as etapas não estiverem carregadas, mostrar indicador de carregamento
-  if (!allStepsLoaded && !allFunnelStepsElements.length) {
-    return (
-      <div className="flex items-center justify-center w-full min-h-[200px]">
-        <div className="animate-pulse w-10 h-10 rounded-full bg-gray-200"></div>
-      </div>
-    );
-  }
   
   return (
     <div 
@@ -326,9 +273,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
-            className={`canvas-step-container ${stepData.index === activeStep ? 'canvas-step-visible' : 'canvas-step-hidden'}`}
+            className="w-full"
             style={getTransitionStyles(stepData.index)}
-            aria-hidden={stepData.index !== activeStep}
           >
             {stepData.elements.map((element, elementIndex) => {
               // Adicionar propriedades de preview para navegação

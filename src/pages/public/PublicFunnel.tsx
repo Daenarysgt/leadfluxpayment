@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Funnel } from "@/utils/types";
 import { funnelService } from "@/services/funnelService";
 import { accessService } from "@/services/accessService";
@@ -20,18 +20,16 @@ const PublicFunnel = () => {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  // Ref para evitar atualizações desnecessárias ao mudar de step
-  const isChangingStep = useRef(false);
-  // Ref para o funnel para acessar o valor mais atualizado em funções async
-  const funnelRef = useRef<Funnel | null>(null);
   
-  // Sincronizar a ref com o estado do funnel
+  // Scroll para o topo quando a página carrega
   useEffect(() => {
-    funnelRef.current = funnel;
-  }, [funnel]);
+    window.scrollTo(0, 0);
+  }, []);
   
-  // Remover o scroll ao topo que pode estar causando problemas
-  // Em vez disso, vamos confiar nas transições de animação
+  // Scroll para o topo quando muda de step
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStepIndex]);
   
   // Aplicar estilo de página completa para desktop quando o funil é carregado
   useEffect(() => {
@@ -88,11 +86,8 @@ const PublicFunnel = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Carregar o funil apenas uma vez
   useEffect(() => {
     const loadFunnel = async () => {
-      if (isChangingStep.current) return;
-      
       try {
         setLoading(true);
         
@@ -151,15 +146,6 @@ const PublicFunnel = () => {
           // Continuar mesmo se houver erro no registro de acesso
         }
 
-        // Pré-processar e otimizar o funnel para renderização
-        if (fetchedFunnel.steps && fetchedFunnel.steps.length > 0) {
-          // Garantir que todos os steps tenham canvasElements como array
-          fetchedFunnel.steps = fetchedFunnel.steps.map(step => ({
-            ...step,
-            canvasElements: Array.isArray(step.canvasElements) ? step.canvasElements : []
-          }));
-        }
-
         setFunnel(fetchedFunnel);
         setError(null);
       } catch (err) {
@@ -197,34 +183,41 @@ const PublicFunnel = () => {
   };
 
   const handleStepChange = async (index: number) => {
-    if (!funnelRef.current) return;
+    if (!funnel) return;
     
-    // Evitar múltiplas atualizações de progresso simultâneas
-    if (isChangingStep.current) return;
-    isChangingStep.current = true;
+    console.log(`Mudando para o passo ${index+1} de ${funnel.steps.length}`);
     
-    console.log(`Mudando para o passo ${index+1} de ${funnelRef.current.steps.length}`);
-    
-    // Atualizar a UI primeiro para evitar delays perceptíveis
-    setCurrentStepIndex(index);
+    // Usar uma abordagem mais suave para o scroll
+    // Em vez de scroll instantâneo, usar um scroll suave
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
     
     try {
-      // Registrar o progresso em segundo plano
-      const progressPromise = accessService.updateProgress(funnelRef.current.id, index + 1, sessionId);
+      // Registrar o progresso
+      await accessService.updateProgress(funnel.id, index + 1, sessionId);
+      console.log(`Progresso atualizado para passo ${index+1}`);
       
       // Se chegou na última etapa, registrar como conversão
-      if (index === funnelRef.current.steps.length - 1) {
+      if (index === funnel.steps.length - 1) {
         console.log("Última etapa alcançada, registrando conversão");
         
         try {
-          await accessService.updateProgress(funnelRef.current.id, index + 1, sessionId, true);
+          await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
+          console.log("Conversão registrada com sucesso");
           
           // Tente também registrar um evento de fluxo completo diretamente
+          // para ter redundância no registro da conversão
           try {
-            await supabase.rpc('register_flow_complete', {
-              p_funnel_id: funnelRef.current.id,
+            const { error } = await supabase.rpc('register_flow_complete', {
+              p_funnel_id: funnel.id,
               p_session_id: sessionId
             });
+            
+            if (error) {
+              console.error("Erro ao registrar fluxo completo:", error);
+            }
           } catch (flowError) {
             console.error("Exceção ao registrar fluxo completo:", flowError);
           }
@@ -232,15 +225,13 @@ const PublicFunnel = () => {
           console.error("Erro ao registrar conversão:", convError);
         }
       }
-      
-      // Aguardar a conclusão do registro de progresso
-      await progressPromise;
     } catch (error) {
       console.error("Erro ao atualizar progresso:", error);
-    } finally {
-      // Liberar flag para permitir próximas transições
-      isChangingStep.current = false;
+      // Continuar a navegação mesmo se houver erro no registro
     }
+    
+    // Atualizar o estado após o registro para garantir que a UI já está pronta
+    setCurrentStepIndex(index);
   };
 
   if (loading) {
@@ -335,7 +326,6 @@ const PublicFunnel = () => {
     backgroundColor: 'transparent',
   };
 
-  // Cria uma única instância do FunnelPreview que irá persistir durante todo o ciclo de vida
   return (
     <div className={containerClass} style={containerStyle}>
       <div className={innerClass} style={isMobile ? {overflowY: 'auto', maxHeight: 'none'} : {}}>
