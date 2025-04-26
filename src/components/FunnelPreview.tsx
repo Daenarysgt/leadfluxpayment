@@ -89,23 +89,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
-    // Quando o stepIndex muda externamente, aplicar animação de fade
+    // Quando o stepIndex muda externamente, aplicar transição simples sem fade
     if (activeStep !== stepIndex) {
-      // Fade out primeiro
-      setFadeDirection("out");
-      setIsTransitioning(true);
-      
-      // Depois mudar o step e fade in
-      setTimeout(() => {
-        setActiveStep(stepIndex);
-        setFadeDirection("in");
-        
-        // Terminar a transição após completar o fade in
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 300);
-      }, 200);
-    } else {
       setActiveStep(stepIndex);
     }
   }, [funnel?.id, currentFunnel?.id, stepIndex, activeStep]);
@@ -168,8 +153,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    transition: isTransitioning ? 'opacity 200ms ease-in-out' : 'none',
-    opacity: fadeDirection === "in" ? 1 : 0.5
+    // Remover transição do componente pai para evitar efeito de duplo fade
+    transition: 'none',
+    opacity: 1
   } as React.CSSProperties;
 
   // Debug log para verificar se o logo está chegando
@@ -200,27 +186,13 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
       return;
     }
     
-    // Aplicar transição com fade
-    setFadeDirection("out");
-    setIsTransitioning(true);
+    // Apenas passar a mudança de etapa para o componente filho
+    setActiveStep(newStep);
     
-    setTimeout(() => {
-      // Mudar o step
-      setActiveStep(newStep);
-      
-      // Iniciar fade in
-      setFadeDirection("in");
-      
-      // Notify parent component if callback is provided
-      if (onNextStep) {
-        onNextStep(newStep);
-      }
-      
-      // Terminar a transição após completar o fade in
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 300);
-    }, 200);
+    // Notify parent component if callback is provided
+    if (onNextStep) {
+      onNextStep(newStep);
+    }
   };
 
   // Verificar se há imagem de fundo configurada para ajustar a visualização
@@ -280,7 +252,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   return (
     <div 
       key={renderKey} 
-      className={`${wrapperClass} transition-wrapper`} 
+      className={`${wrapperClass}`} 
       style={{
         ...customStyles, 
         overflowY: isMobile ? 'auto' : 'visible'

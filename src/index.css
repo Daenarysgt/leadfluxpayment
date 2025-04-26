@@ -481,11 +481,13 @@
 }
 
 .step-transition-in {
-  animation: fadeIn 300ms ease-in-out forwards;
+  animation: fadeIn 150ms ease-out forwards;
+  will-change: opacity;
 }
 
 .step-transition-out {
-  animation: fadeOut 200ms ease-in-out forwards;
+  animation: fadeOut 150ms ease-in forwards;
+  will-change: opacity;
 }
 
 /* Otimização de performance para animações */
@@ -499,4 +501,17 @@
 /* Otimização para renderização de fontes */
 .canvas-container * {
   text-rendering: optimizeSpeed;
+}
+
+/* Performance para carregamento entre etapas */
+.canvas-container > div {
+  contain: content;
+  content-visibility: auto;
+}
+
+/* Pré-carregamento das páginas */
+@media (prefers-reduced-motion: no-preference) {
+  .canvas-container div[style*="display: block"] {
+    transition: opacity 150ms ease-in-out;
+  }
 }
