@@ -231,6 +231,13 @@
     animation: slow-bounce 2.5s ease-in-out infinite;
   }
   
+  /* Desativar a animação animate-pulse em todo o sistema para resolver o problema de skeleton */
+  /* Isso afeta todas as animações de pulse, incluindo skeletons durante carregamento */
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  
   /* Animações para drag and drop */
   .drag-element {
     @apply transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98];
