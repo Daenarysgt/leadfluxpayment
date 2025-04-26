@@ -16,7 +16,7 @@ const FeatureCardsRenderer = ({ element, isSelected, onSelect }: ElementRenderer
     padding = 24,
     gap = 24,
     contentAlignment = "center",
-    imageSize = 48,
+    imageSize = 80,
     borderColor = "#e5e7eb",
     showBorder = true,
     titleColor = "#111827",
@@ -78,11 +78,6 @@ const FeatureCardsRenderer = ({ element, isSelected, onSelect }: ElementRenderer
     padding: `${padding}px`,
   };
 
-  const imageContainerStyle = {
-    width: `${imageSize}px`,
-    height: `${imageSize}px`,
-  };
-
   const titleStyle = {
     color: applyDarkMode.titleColor || titleColor,
   };
@@ -93,6 +88,23 @@ const FeatureCardsRenderer = ({ element, isSelected, onSelect }: ElementRenderer
 
   const descriptionStyle = {
     color: applyDarkMode.descriptionColor || descriptionColor,
+  };
+
+  // Função para obter o estilo do container da imagem com base no alinhamento
+  const getImageContainerStyle = (alignment?: string) => {
+    return {
+      width: alignment === "fill" ? "100%" : `${imageSize}px`,
+      height: alignment === "fill" ? "160px" : `${imageSize}px`,
+      overflow: "hidden",
+      marginBottom: "16px"
+    };
+  };
+
+  // Função para obter a classe CSS da imagem com base no alinhamento
+  const getImageClass = (alignment?: string) => {
+    return alignment === "fill" ? 
+      "w-full h-full object-cover" : 
+      "w-full h-full object-contain";
   };
 
   return (
@@ -144,13 +156,13 @@ const FeatureCardsRenderer = ({ element, isSelected, onSelect }: ElementRenderer
             {/* Imagem/Ícone */}
             {card.image && (
               <div 
-                className={`flex mb-4 ${getImageAlignmentClass(card.imageAlignment)}`}
-                style={card.imageAlignment === "fill" ? {} : imageContainerStyle}
+                className={`flex ${getImageAlignmentClass(card.imageAlignment)}`}
+                style={getImageContainerStyle(card.imageAlignment)}
               >
                 <img
                   src={card.image}
                   alt={card.title}
-                  className={card.imageAlignment === "fill" ? "w-full h-auto" : "w-full h-full object-contain"}
+                  className={getImageClass(card.imageAlignment)}
                 />
               </div>
             )}

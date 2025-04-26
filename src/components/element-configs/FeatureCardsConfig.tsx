@@ -319,7 +319,7 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4 pb-24">
       <Tabs 
         defaultValue="general" 
         value={activeTab} 
