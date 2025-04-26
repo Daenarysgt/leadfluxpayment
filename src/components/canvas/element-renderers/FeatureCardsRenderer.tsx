@@ -71,7 +71,8 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     borderRadius = 8,
     animation = 'fade-in',
     forceSideBySideOnMobile = true, // Por padrão, forçar lado a lado
-    verticalTextAlignment = 'top' // Alinhamento vertical do texto
+    verticalTextAlignment = 'top', // Alinhamento vertical do texto
+    showFullText = false // Por padrão, trunca o texto
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -176,7 +177,6 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   backgroundColor: cardBackgroundColor,
                   borderRadius: `${borderRadius}px`,
                   color: cardTextColor,
-                  maxHeight: '350px', // Reduzindo mais a altura máxima para cards mais quadrados
                   height: 'auto' // Altura automática baseada no conteúdo
                 }}
               >
@@ -211,6 +211,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                       'justify-end': verticalTextAlignment === 'bottom'
                     }
                   )}
+                  style={{ height: card.imageUrl ? 'auto' : '100%' }} // Garante altura total quando não tem imagem
                 >
                   <h3 
                     className={cn(
@@ -228,11 +229,12 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   {card.description && (
                     <p 
                       className={cn(
-                        "line-clamp-2 sm:line-clamp-3 flex-1 text-xs sm:text-sm", // Menos linhas e texto menor em mobile
+                        "flex-1 text-xs sm:text-sm", // Base styles
                         {
                           'text-left': cardDescriptionAlignment === 'left',
                           'text-center': cardDescriptionAlignment === 'center',
-                          'text-right': cardDescriptionAlignment === 'right'
+                          'text-right': cardDescriptionAlignment === 'right',
+                          'line-clamp-2 sm:line-clamp-3': !showFullText // Condicional: aplica line-clamp apenas se showFullText for false
                         }
                       )}
                     >

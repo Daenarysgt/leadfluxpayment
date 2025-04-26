@@ -605,6 +605,17 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
               </Label>
             </div>
             
+            <div className="flex items-center space-x-2 mt-2">
+              <Switch
+                id="showFullText"
+                checked={content.style?.showFullText === true}
+                onCheckedChange={(checked) => updateStyle('showFullText', checked)}
+              />
+              <Label htmlFor="showFullText" className="cursor-pointer">
+                Mostrar texto completo (sem truncar)
+              </Label>
+            </div>
+            
             <div>
               <Label>Espaçamento entre Cards</Label>
               <Slider
