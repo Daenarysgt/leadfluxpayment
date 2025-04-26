@@ -187,8 +187,12 @@ const PublicFunnel = () => {
     
     console.log(`Mudando para o passo ${index+1} de ${funnel.steps.length}`);
     
-    // Scroll para o topo ao mudar de etapa
-    window.scrollTo(0, 0);
+    // Usar uma abordagem mais suave para o scroll
+    // Em vez de scroll instantâneo, usar um scroll suave
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
     
     try {
       // Registrar o progresso
@@ -226,6 +230,7 @@ const PublicFunnel = () => {
       // Continuar a navegação mesmo se houver erro no registro
     }
     
+    // Atualizar o estado após o registro para garantir que a UI já está pronta
     setCurrentStepIndex(index);
   };
 

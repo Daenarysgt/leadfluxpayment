@@ -19,6 +19,19 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
+  // Estado para controlar a direção da animação (avançar ou retroceder)
+  const [transitionDirection, setTransitionDirection] = useState<'next' | 'prev'>('next');
+  
+  // Atualizar a direção da transição quando a etapa ativa mudar
+  useEffect(() => {
+    if (previousStepRef.current < activeStep) {
+      setTransitionDirection('next');
+    } else if (previousStepRef.current > activeStep) {
+      setTransitionDirection('prev');
+    }
+    
+    previousStepRef.current = activeStep;
+  }, [activeStep]);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -92,6 +105,13 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       return;
     }
     
+    // Definir a direção da transição
+    if (index > activeStep) {
+      setTransitionDirection('next');
+    } else {
+      setTransitionDirection('prev');
+    }
+    
     // Validar se o índice é válido
     if (index < 0 || index >= funnel.steps.length) {
       console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
@@ -114,7 +134,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     // Aplicar a mudança de etapa diretamente
     onStepChange(index);
-  }, [funnel, sessionId, onStepChange]);
+  }, [funnel, sessionId, onStepChange, activeStep]);
   
   // Detectar propriedades visuais do funnel com valores padrão seguros
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
@@ -154,6 +174,75 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
   
+  // Estilos para as animações de transição
+  const getTransitionStyles = (stepIndex: number) => {
+    // Verificar se é a etapa ativa
+    const isActiveStep = stepIndex === activeStep;
+    
+    // Base styles
+    const baseStyles: React.CSSProperties = {
+      display: isActiveStep ? 'block' : 'none',
+      opacity: isActiveStep ? 1 : 0,
+      position: 'relative',
+      width: '100%'
+    };
+    
+    // Animation styles
+    if (isActiveStep) {
+      return {
+        ...baseStyles,
+        animation: `fadeIn${transitionDirection === 'next' ? 'Right' : 'Left'} 0.35s ease-out forwards`,
+      };
+    }
+    
+    return baseStyles;
+  };
+  
+  // Injetar estilos CSS para as animações
+  useEffect(() => {
+    // Criar elemento de estilo
+    const styleElement = document.createElement('style');
+    styleElement.id = 'funnel-animations';
+    
+    // Definir as animações
+    styleElement.innerHTML = `
+      @keyframes fadeInRight {
+        from {
+          opacity: 0;
+          transform: translateX(5%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      
+      @keyframes fadeInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-5%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+    `;
+    
+    // Adicionar ao documento se não existir
+    if (!document.getElementById('funnel-animations')) {
+      document.head.appendChild(styleElement);
+    }
+    
+    // Limpeza ao desmontar o componente
+    return () => {
+      const existingStyle = document.getElementById('funnel-animations');
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+  
   return (
     <div 
       ref={transitionRef}
@@ -176,9 +265,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        // Remover qualquer animação de fade-in
-        opacity: 1,
-        transition: 'none'
+        overflow: 'hidden' // Esconder overflow durante as animações
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -186,11 +273,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
-            className="w-full transition-opacity duration-100" 
-            style={{ 
-              display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
-            }}
+            className="w-full"
+            style={getTransitionStyles(stepData.index)}
           >
             {stepData.elements.map((element, elementIndex) => {
               // Adicionar propriedades de preview para navegação
@@ -211,7 +295,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                <div key={element.id} className={elementClassName}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -246,7 +330,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+            <div key={element.id} className={elementClassName}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
@@ -266,20 +350,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-// Removemos o estilo de animação fade-in
-const fadeInStyle = `
-<style>
-  /* Estilos removidos para evitar qualquer animação de fade */
-</style>
-`;
-
 const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
-  return (
-    <>
-      {/* Remover a injeção de estilos de animação */}
-      <CanvasPreview {...props} />
-    </>
-  );
+  return <CanvasPreview {...props} />;
 };
 
 export default CanvasPreviewWithStyle;
