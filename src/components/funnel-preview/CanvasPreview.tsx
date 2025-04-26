@@ -18,70 +18,6 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   
-  // Efeito para remover transformações adicionadas dinamicamente em mobile
-  useEffect(() => {
-    if (!isMobile) return;
-    
-    // Função para remover todas as transformações e estilos problemáticos
-    const fixTransforms = () => {
-      // Lista de seletores que podem causar problemas
-      const selectors = [
-        'body', 'html', '#root', '.canvas-container', 
-        'input', 'button', 'textarea', '.rounded', 
-        '[style*="border-radius"]', '[style*="box-shadow"]',
-        'div[class*="element-renderer"]'
-      ];
-      
-      selectors.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(el => {
-          if (el instanceof HTMLElement) {
-            // Remover transformações
-            el.style.transform = 'none';
-            el.style.webkitTransform = 'none';
-            el.style.backfaceVisibility = 'visible';
-            el.style.webkitBackfaceVisibility = 'visible';
-            el.style.perspective = 'none';
-            el.style.webkitPerspective = 'none';
-            el.style.transformStyle = 'flat';
-            el.style.webkitTransformStyle = 'flat';
-            el.style.willChange = 'auto';
-            
-            // Especialmente para o corpo e elementos do viewport
-            if (selector === 'body' || selector === 'html' || selector === '#root') {
-              el.style.zoom = '1';
-              el.style.overflowX = 'hidden';
-              el.style.overflowY = 'visible';
-            }
-          }
-        });
-      });
-    };
-    
-    // Executar a correção no mount
-    fixTransforms();
-    
-    // Também adicionar um listener para executar após mudanças de DOM ou carregamento de recursos
-    const observer = new MutationObserver(fixTransforms);
-    observer.observe(document.body, { 
-      subtree: true, 
-      childList: true, 
-      attributes: true, 
-      attributeFilter: ['style', 'class'] 
-    });
-    
-    // Checar também após carregamento de imagens e recursos
-    window.addEventListener('load', fixTransforms);
-    window.addEventListener('resize', fixTransforms);
-    
-    // Cleanup
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('load', fixTransforms);
-      window.removeEventListener('resize', fixTransforms);
-    };
-  }, [isMobile]);
-  
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
     // Se tiver muitos elementos, não centraliza (começa do topo)
@@ -195,10 +131,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         // para evitar reajustes de layout
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
-        // Remover transformações que podem causar problemas de renderização
-        transform: isMobile ? 'none' : 'translate3d(0,0,0)',
-        backfaceVisibility: 'visible',
-        perspective: 'none',
+        transform: 'translate3d(0,0,0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000,
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -259,39 +194,16 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
       {/* Estilo global para transições suaves */}
       <style dangerouslySetInnerHTML={{__html: `
         .canvas-container {
-          will-change: auto;
-          transform: none !important;
+          will-change: contents;
+          transform: translateZ(0);
         }
         .mobile-element, .desktop-element {
-          transition: opacity 0.3s ease;
-          will-change: auto;
-          transform: none !important;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+          will-change: transform, opacity;
         }
         .mobile-view, .desktop-view {
-          transform: none !important;
-          backface-visibility: visible !important;
-        }
-        
-        /* Correções específicas para mobile */
-        @media (max-width: 768px) {
-          input, textarea, button, select, .rounded, [style*="border-radius"] {
-            transform: none !important;
-            -webkit-transform: none !important;
-            backface-visibility: visible !important;
-            -webkit-backface-visibility: visible !important;
-            perspective: none !important;
-            -webkit-perspective: none !important;
-            will-change: auto;
-            zoom: 1 !important;
-          }
-          
-          /* Correção para elementos com box-shadow */
-          [style*="box-shadow"] {
-            transform: none !important;
-            -webkit-transform: none !important;
-            will-change: auto;
-            -webkit-font-smoothing: antialiased;
-          }
+          transform: translateZ(0);
+          backface-visibility: hidden;
         }
       `}} />
     </div>

@@ -253,8 +253,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         color: "white", // Garantir que o texto seja visível
         padding: isMobile ? "12px" : "8px", // Aumentando padding para mobile de 6px para 12px
         minHeight: isMobile ? "40px" : "auto", // Adicionando altura mínima para mobile
-        zIndex: 5,
-        pointerEvents: "auto" // Garantir que eventos de mouse funcionem corretamente
+        zIndex: 5
       };
       
       // Aplicar diferentes estilos com base na escolha do usuário
@@ -320,7 +319,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             ...cardStyle,
             // Garantir que no mobile a altura mínima seja suficiente
             minHeight: isMobile ? "120px" : "auto",
-            pointerEvents: "auto", // Garantir que eventos de mouse funcionem corretamente
           }}
           onClick={() => handleOptionClick(option)}
         >
@@ -386,7 +384,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4 relative" style={{...containerStyle, zIndex: 1}}>
+      <div className="p-4" style={containerStyle}>
         {content?.title && (
           <h2 
             className="font-semibold text-center mb-4"
@@ -403,7 +401,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className={`grid grid-cols-2 gap-4 relative`} style={{ zIndex: 1 }}>
+        <div className={`grid grid-cols-2 gap-4`}>
           {renderedOptions}
         </div>
       </div>
@@ -426,8 +424,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             min-height: inherit !important;
             min-width: inherit !important;
             font-size: inherit !important;
-            position: relative;
-            z-index: 1;
           }
           
           .grid-cols-2 > div .p-3 {
@@ -435,17 +431,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             min-height: 40px !important; /* Garantir altura mínima para tarjas em mobile */
             display: flex !important;
             align-items: center !important;
-          }
-          
-          /* Garantir que elementos não interfiram em inputs */
-          .grid-cols-2 > div * {
-            pointer-events: auto;
-          }
-          
-          /* Corrigir problema de elementos invisíveis que tampam outros elementos */
-          input, textarea, select, button {
-            position: relative;
-            z-index: 10;
           }
         }
       `}} />

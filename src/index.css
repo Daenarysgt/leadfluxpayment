@@ -315,95 +315,6 @@
 
 /* Regras específicas para dispositivos móveis para garantir que não haja margens ou paddings */
 @media (max-width: 768px) {
-  /* Corrigir todos os possíveis causadores de problemas de renderização */
-  html, body, #root, div, main, section, article, 
-  header, footer, aside, nav, form, 
-  .canvas-container, [class*="container"], 
-  [class*="wrapper"], [class*="content"],
-  [class*="funnel"], [class*="preview"], [class*="mobile"] {
-    transform: none !important;
-    -webkit-transform: none !important;
-    zoom: 1 !important;
-    -webkit-zoom: 1 !important;
-    scale: 1 !important;
-    perspective: none !important;
-    -webkit-perspective: none !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-    will-change: auto !important;
-    transform-style: flat !important;
-    -webkit-transform-style: flat !important;
-    filter: none !important;
-    -webkit-filter: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    overflow-x: hidden !important;
-  }
-  
-  /* Garantir que todos os elementos com bordas e sombras sejam renderizados corretamente */
-  input, textarea, button, select, a, span, p, h1, h2, h3, h4, h5, h6,
-  div[style*="border"], div[style*="box-shadow"], div[style*="radius"],
-  .rounded, .shadow, [class*="rounded"], [class*="shadow"],
-  [style*="border-radius"], [style*="box-shadow"] {
-    transform: none !important;
-    -webkit-transform: none !important;
-    transition: none !important;
-    animation: none !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-    will-change: auto !important;
-    perspective: none !important;
-    -webkit-perspective: none !important;
-    transform-style: flat !important;
-    -webkit-transform-style: flat !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    /* Remover qualquer posicionamento 3D */
-    z-index: auto !important;
-    /* Garantir que o hardware acceleration seja desativado */
-    translate: none !important;
-    rotate: none !important;
-    scale: none !important;
-  }
-  
-  /* Específico para inputs e elementos interativos com bordas */
-  input, textarea, button, select, a, .rounded {
-    transform: none !important;
-    -webkit-transform: none !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-    border-radius: inherit !important;
-    box-shadow: inherit !important;
-    overflow: visible !important;
-  }
-  
-  /* Remover animações que possam estar causando problemas */
-  * {
-    animation-duration: 0s !important;
-    transition-duration: 0s !important;
-  }
-  
-  /* Aplicar antialiasing global para suavizar bordas */
-  * {
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    text-rendering: optimizeLegibility !important;
-  }
-  
-  /* Cancelar perspective causada pelo elemento viewport */
-  html, body {
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
-    perspective: none !important;
-    -webkit-perspective: none !important;
-    transform-style: flat !important;
-    -webkit-transform-style: flat !important;
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100vw !important;
-    position: relative !important;
-  }
-  
   /* Mantenha o estilo original do desktop quando visualizado em funis públicos */
   div[class*="FunnelPreview"],
   div[class*="CanvasPreview"],
@@ -512,52 +423,7 @@
   #root, 
   body, 
   html {
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
-    position: relative !important;
-  }
-
-  /* Correção para problemas de renderização em dispositivos móveis */
-  body, html, #root {
-    transform: none !important;
-    -webkit-transform: none !important;
-    zoom: 1 !important;
-    -webkit-zoom: 1 !important;
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  input, textarea, button, div, p, span {
-    transform: none !important;
-    -webkit-transform: none !important;
-    will-change: auto;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-  }
-
-  /* Correção específica para elementos com border-radius e box-shadow */
-  input, textarea, button, .rounded, [style*="border-radius"] {
-    transform: none !important;
-    -webkit-transform: none !important;
-    backface-visibility: visible !important;
-    -webkit-backface-visibility: visible !important;
-    perspective: none !important;
-    -webkit-perspective: none !important;
-    will-change: auto !important;
-    zoom: 1 !important;
-    -webkit-font-smoothing: antialiased !important;
-  }
-
-  /* Correção para elementos com box-shadow */
-  [style*="box-shadow"] {
-    transform: none !important;
-    -webkit-transform: none !important;
-    will-change: auto;
-    -webkit-font-smoothing: antialiased;
+    overflow-x: auto !important;
   }
 }
 
@@ -588,32 +454,4 @@
 
 .animate-slide-up {
   animation: slide-up 0.5s ease-in-out forwards;
-}
-
-/* Correção de emergência quando a classe de debug está presente */
-.mobile-fixes-applied input,
-.mobile-fixes-applied textarea,
-.mobile-fixes-applied button,
-.mobile-fixes-applied select,
-.mobile-fixes-applied .rounded,
-.mobile-fixes-applied [style*="border-radius"],
-.mobile-fixes-applied [style*="box-shadow"] {
-  transform: none !important;
-  -webkit-transform: none !important;
-  backface-visibility: visible !important;
-  -webkit-backface-visibility: visible !important;
-  perspective: none !important;
-  -webkit-perspective: none !important;
-  transform-style: flat !important;
-  -webkit-transform-style: flat !important;
-  translate: none !important;
-  scale: none !important;
-  rotate: none !important;
-  will-change: auto !important;
-  zoom: 1 !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
 }
