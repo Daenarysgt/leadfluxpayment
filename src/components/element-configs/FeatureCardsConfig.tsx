@@ -28,6 +28,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ImageIcon, PlusIcon, TrashIcon, MoveUp, MoveDown } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 
 // Componente para o seletor de cores avançado
 const AdvancedColorPicker = ({ value, onChange }: { value: string, onChange: (color: string) => void }) => {
@@ -591,6 +592,17 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
                 <span>3</span>
                 <span>4</span>
               </div>
+            </div>
+            
+            <div className="flex items-center space-x-2 mt-2">
+              <Switch
+                id="forceSideBySideOnMobile"
+                checked={content.style?.forceSideBySideOnMobile !== false}
+                onCheckedChange={(checked) => updateStyle('forceSideBySideOnMobile', checked)}
+              />
+              <Label htmlFor="forceSideBySideOnMobile" className="cursor-pointer">
+                Forçar cards lado a lado em dispositivos móveis
+              </Label>
             </div>
             
             <div>

@@ -69,7 +69,8 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     columns = 3,
     gap = 24,
     borderRadius = 8,
-    animation = 'fade-in'
+    animation = 'fade-in',
+    forceSideBySideOnMobile = true // Por padrão, forçar lado a lado
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -93,13 +94,20 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
   }
   
   // Determinar o número de colunas baseado na largura e no valor de 'columns'
-  // Garantir pelo menos duas colunas
-  const colsClass = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-  }[Math.min(Math.max(columns, 1), 4)];
+  // Verificar se devemos forçar os cards lado a lado mesmo em mobile
+  const colsClass = forceSideBySideOnMobile 
+    ? {
+        1: 'grid-cols-1',
+        2: 'grid-cols-2', // Sempre 2 colunas em qualquer tamanho de tela
+        3: 'grid-cols-3', // Sempre 3 colunas em qualquer tamanho de tela
+        4: 'grid-cols-4'  // Sempre 4 colunas em qualquer tamanho de tela
+      }[Math.min(Math.max(columns, 1), 4)]
+    : {
+        1: 'grid-cols-1',
+        2: 'grid-cols-1 sm:grid-cols-2',
+        3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+        4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+      }[Math.min(Math.max(columns, 1), 4)];
 
   // Handler para selecionar o elemento
   const handleClick = (e: React.MouseEvent) => {
@@ -150,7 +158,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
           
           <div 
             className={cn(
-              "grid gap-6", 
+              "grid gap-2 sm:gap-4 md:gap-6", // Gap menor em mobile para os cards ficarem mais próximos
               colsClass,
               animation && animationClasses[animation]
             )}
@@ -160,7 +168,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
               <div
                 key={card.id || index}
                 className={cn(
-                  "rounded-lg overflow-hidden flex flex-col",
+                  "rounded-lg overflow-hidden flex flex-col text-sm sm:text-base", // Texto menor em telas pequenas
                   shadowClasses[cardShadow as keyof typeof shadowClasses]
                 )}
                 style={{ 
@@ -175,7 +183,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   <div 
                     className="relative w-full overflow-hidden"
                     style={{ 
-                      height: `${card.imageHeight || content.style?.defaultImageHeight || 160}px` 
+                      height: `${card.imageHeight || content.style?.defaultImageHeight || 120}px` // Altura menor para telas pequenas
                     }}
                   > 
                     <img
@@ -193,10 +201,10 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   </div>
                 )}
                 
-                <div className="p-4 flex-1 flex flex-col">
+                <div className="p-2 sm:p-3 md:p-4 flex-1 flex flex-col"> {/* Padding menor em mobile */}
                   <h3 
                     className={cn(
-                      "text-xl font-semibold mb-2",
+                      "text-base sm:text-lg font-semibold mb-1 sm:mb-2", // Texto menor e margem menor em telas pequenas
                       {
                         'text-left': cardTitleAlignment === 'left',
                         'text-center': cardTitleAlignment === 'center',
@@ -210,7 +218,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   {card.description && (
                     <p 
                       className={cn(
-                        "line-clamp-3 flex-1", // Limitar a 3 linhas para cards mais compactos
+                        "line-clamp-2 sm:line-clamp-3 flex-1 text-xs sm:text-sm", // Menos linhas e texto menor em mobile
                         {
                           'text-left': cardDescriptionAlignment === 'left',
                           'text-center': cardDescriptionAlignment === 'center',

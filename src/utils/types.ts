@@ -258,5 +258,6 @@ export interface FeatureCardsContent {
     animation?: 'none' | 'fade-in' | 'slide-up';
     defaultImageHeight?: number;
     defaultImageFit?: 'cover' | 'contain' | 'fill';
+    forceSideBySideOnMobile?: boolean;
   };
 }
