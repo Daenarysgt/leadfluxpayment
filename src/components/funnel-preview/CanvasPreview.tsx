@@ -83,6 +83,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
     left: isMobile ? '0' : 'auto',
     right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
+    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
   };
 
   // Classes condicionais para desktop e mobile
@@ -129,7 +130,9 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         display: 'flex',
         flexDirection: 'column',
         justifyContent: centerContent ? 'center' : 'flex-start',
-        width: '100%'
+        width: '100%',
+        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
+        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
       }}
     >
       {canvasElements.map((element, index) => {

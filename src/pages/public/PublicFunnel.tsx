@@ -256,7 +256,7 @@ const PublicFunnel = () => {
     maxWidth: '100%',
     padding: '0',
     margin: '0',
-    overflow: 'hidden',
+    overflow: 'auto',
     backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
     backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
     backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
@@ -276,7 +276,7 @@ const PublicFunnel = () => {
 
   return (
     <div className={containerClass} style={containerStyle}>
-      <div className={innerClass}>
+      <div className={innerClass} style={isMobile ? {overflowY: 'auto', maxHeight: 'none'} : {}}>
         <FunnelPreview 
           funnel={funnel} 
           isMobile={isMobile} 

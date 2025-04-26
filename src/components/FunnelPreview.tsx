@@ -119,7 +119,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     transition: 'all 0.4s ease',
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
-    overflow: 'hidden', // Evitar layout shifts
+    overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
   };
   
   // Estilo do contêiner principal quando centralizado
@@ -129,10 +129,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
+    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
   } : {};
 
   return (
-    <div className={wrapperClass} style={{...customStyles}}>
+    <div className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -142,7 +143,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         />
       )}
       
-      <div className={contentWrapperClass}>
+      <div className={contentWrapperClass} style={isMobile ? {overflowY: 'auto'} : {}}>
         {/* Header Section - Logo e barra de progresso */}
         <div className={headerWrapperClass}>
           {/* Logotipo */}
@@ -185,10 +186,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         </div>
 
         {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={centerContentStyle}>
+        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
           <div className={contentClass} style={mainContainerStyle}>
             {canvasElements && canvasElements.length > 0 ? (
-              <div className="transition-opacity duration-300 ease-in-out w-full">
+              <div className="transition-opacity duration-300 ease-in-out w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
                 <CanvasPreview
                   canvasElements={canvasElements}
                   activeStep={safeCurrentStep}
