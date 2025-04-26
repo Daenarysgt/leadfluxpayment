@@ -20,6 +20,7 @@ const ImageRenderer = (props: ElementRendererProps) => {
   useEffect(() => {
     if (!content?.imageUrl) {
       setIsLoading(false);
+      setSrc(null);
       return;
     }
     
@@ -27,25 +28,38 @@ const ImageRenderer = (props: ElementRendererProps) => {
     
     // Se a URL é a mesma da anterior, não precisamos recarregar
     if (imageUrlRef.current === imageUrl && src) {
+      setIsLoading(false);
       return;
     }
     
     // Verificar se a imagem já foi carregada anteriormente (cache)
     if (imageCache[imageUrl]) {
-      // Se já carregamos esta imagem antes, definimos o src diretamente
+      // Se já carregamos esta imagem antes, definimos o src diretamente sem mostrar loading
       setSrc(imageUrl);
       setIsLoading(false);
       imageUrlRef.current = imageUrl;
       return;
     }
     
-    // Caso contrário, iniciamos o carregamento
+    // Para novas imagens, verificamos se já estão no cache do navegador
+    // tentando carregar a imagem de forma síncrona primeiro
+    const img = new Image();
+    img.src = imageUrl;
+    
+    if (img.complete) {
+      // A imagem já está no cache do navegador
+      setSrc(imageUrl);
+      setIsLoading(false);
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Apenas mostrar loading para novas imagens que não estão em nenhum cache
     setIsLoading(true);
     setIsError(false);
     
     // Carregar a imagem em segundo plano
-    const img = new Image();
-    
     img.onload = () => {
       setSrc(imageUrl);
       setIsLoading(false);
@@ -60,11 +74,9 @@ const ImageRenderer = (props: ElementRendererProps) => {
       setIsLoading(false);
     };
     
-    img.src = imageUrl;
-    
     return () => {
       // Cancelar carregamento da imagem no cleanup
-      if (img.src) {
+      if (img) {
         img.onload = null;
         img.onerror = null;
       }
@@ -110,29 +122,26 @@ const ImageRenderer = (props: ElementRendererProps) => {
     borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
     maxHeight: content?.height ? `${content.height}px` : 'auto',
     width: content?.width ? `${content.width}px` : 'auto',
-    transition: 'opacity 0.2s ease-in-out',
-    opacity: isLoading ? 0 : 1, // Fade in quando a imagem estiver carregada
   };
   
-  // Altura do placeholder baseado na altura configurada ou valor padrão
-  const placeholderHeight = content?.height ? `${content.height}px` : '150px';
+  // Usar um espaço reservado invisível em vez de um skeleton
+  // Isso mantém a altura consistente mas não mostra o skeleton
+  const placeholderStyle = {
+    height: content?.height ? `${content.height}px` : '150px',
+    width: '100%',
+    borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
+    // Tornar o placeholder invisível, mas manter o espaço
+    opacity: 0
+  };
   
   return (
     <BaseElementRenderer {...props}>
       <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
         {content?.imageUrl ? (
           <>
-            {/* Estado de carregamento - mostrar esqueleto */}
-            {isLoading && (
-              <div 
-                className="w-full h-full rounded bg-gray-100 animate-pulse flex items-center justify-center"
-                style={{ 
-                  minHeight: placeholderHeight,
-                  borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
-                }}
-              >
-                <ImageIcon className="h-8 w-8 text-gray-300" />
-              </div>
+            {/* Estado de carregamento - usar placeholder invisível em vez de skeleton */}
+            {isLoading && !src && (
+              <div style={placeholderStyle}></div>
             )}
             
             {/* Imagem com erro */}
@@ -140,7 +149,7 @@ const ImageRenderer = (props: ElementRendererProps) => {
               <div 
                 className="w-full h-full rounded bg-gray-50 border border-gray-200 flex flex-col items-center justify-center"
                 style={{ 
-                  minHeight: placeholderHeight,
+                  minHeight: content?.height ? `${content.height}px` : '150px',
                   borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
                 }}
               >
@@ -149,13 +158,13 @@ const ImageRenderer = (props: ElementRendererProps) => {
               </div>
             )}
             
-            {/* Imagem carregada - mostrar com fade in */}
-            {!isError && src && (
+            {/* Imagem carregada ou em cache - mostrar imediatamente */}
+            {!isError && (src || imageCache[content.imageUrl]) && (
               <>
                 {/* Se for um GIF animado, evitar usar AspectRatio para não quebrar a animação */}
                 {content?.isAnimatedGif ? (
                   <img 
-                    src={src} 
+                    src={src || content.imageUrl} 
                     alt={content.altText || "Imagem"}
                     className="max-w-full object-contain"
                     style={imageStyle}
@@ -164,26 +173,23 @@ const ImageRenderer = (props: ElementRendererProps) => {
                   <div 
                     className="w-full max-w-full" 
                     style={{ 
-                      borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
-                      display: isLoading ? 'none' : 'block'
+                      borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
                     }}
                   >
                     <AspectRatio ratio={aspectRatio}>
                       <img 
-                        src={src} 
+                        src={src || content.imageUrl} 
                         alt={content.altText || "Imagem"} 
                         className="w-full h-full object-cover"
                         style={{ 
-                          borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
-                          opacity: isLoading ? 0 : 1,
-                          transition: 'opacity 0.3s ease-in-out'
+                          borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
                         }}
                       />
                     </AspectRatio>
                   </div>
                 ) : (
                   <img 
-                    src={src} 
+                    src={src || content.imageUrl} 
                     alt={content.altText || "Imagem"} 
                     className="max-w-full object-contain"
                     style={imageStyle}
@@ -193,9 +199,9 @@ const ImageRenderer = (props: ElementRendererProps) => {
             )}
           </>
         ) : (
-          // Fallback quando não há URL de imagem
-          <div className="h-40 w-full flex items-center justify-center bg-gray-100" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
-            <ImageIcon className="h-12 w-12 text-gray-400" />
+          // Fallback quando não há URL de imagem (sem animação/skeleton)
+          <div className="h-40 w-full flex items-center justify-center bg-gray-50" style={{ borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined }}>
+            <ImageIcon className="h-12 w-12 text-gray-300" />
           </div>
         )}
       </div>
