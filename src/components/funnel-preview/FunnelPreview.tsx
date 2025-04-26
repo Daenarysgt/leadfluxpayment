@@ -14,15 +14,33 @@ interface FunnelPreviewProps {
   onNextStep?: (index: number) => void; // Added callback for step navigation
 }
 
-// Removemos os estilos de transição para evitar qualquer efeito visual durante as mudanças
+// Estilos de transição CSS para transições suaves entre etapas
 const transitionStyles = `
-  /* Estilos de transição removidos para evitar skeleton */
+  @keyframes smooth-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .smooth-transition {
+    animation: smooth-fade-in 0.3s ease-out forwards;
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    perspective: 1000;
+    transform: translate3d(0,0,0);
+  }
 `;
 
 const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
@@ -35,13 +53,40 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
     setActiveStep(stepIndex);
   }, [funnel?.id, currentFunnel?.id, stepIndex]);
 
-  // Remove animações de transição
+  // Adicionar efeito de transição suave quando muda de etapa
   useEffect(() => {
     if (containerRef.current) {
-      // Remover qualquer classe que possa estar causando animação
-      containerRef.current.className = containerRef.current.className
-        .replace('step-transition', '')
-        .trim();
+      const container = containerRef.current;
+      
+      // Iniciar a transição
+      setIsTransitioning(true);
+      
+      // Remover qualquer classe de animação anterior
+      container.classList.remove('smooth-transition');
+      
+      // Reset do estilo para iniciar a animação
+      container.style.opacity = '0';
+      container.style.transform = 'translateY(10px)';
+      
+      // Forçar reflow para iniciar a animação corretamente
+      void container.offsetWidth;
+      
+      // Adicionar classe para iniciar a animação
+      container.classList.add('smooth-transition');
+      
+      // Restaurar o estilo normal quando a animação terminar
+      const animationEnd = () => {
+        setIsTransitioning(false);
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+        container.removeEventListener('animationend', animationEnd);
+      };
+      
+      container.addEventListener('animationend', animationEnd);
+      
+      return () => {
+        container.removeEventListener('animationend', animationEnd);
+      };
     }
   }, [activeStep]);
 
@@ -94,12 +139,14 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
   return (
     <>
-      {/* Removemos estilos de transição */}
+      {/* Adicionar estilos de transição globalmente */}
+      <div dangerouslySetInnerHTML={{ __html: `<style>${transitionStyles}</style>` }} />
+      
       <div
         className="flex flex-col w-full min-h-screen"
         style={{ 
           backgroundColor: funnelBgColor,
-          transition: 'none' // Desativar transições
+          transition: 'background-color 0.5s ease-out' // Transição suave para mudanças de fundo
         }}
       >
         {/* Facebook Pixel integration with proper parameters */}
@@ -113,11 +160,14 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
 
         <div 
           ref={containerRef}
-          className="flex flex-col items-center w-full max-w-xl mx-auto" 
+          className="flex flex-col items-center w-full max-w-xl mx-auto smooth-transition" 
           style={{
             ...customStyles,
-            opacity: 1, // Forçar opacidade total
-            transition: 'none', // Desativar transições
+            opacity: 1,
+            willChange: 'opacity, transform',
+            WebkitBackfaceVisibility: 'hidden',
+            WebkitPerspective: '1000',
+            WebkitTransformStyle: 'preserve-3d'
           }}
         >
           {/* Logo */}
@@ -131,7 +181,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
                   console.error("FunnelPreview - Erro ao carregar logo:", e);
                   e.currentTarget.style.display = 'none';
                 }}
-                style={{ opacity: 1 }} // Forçar opacidade total
+                style={{ 
+                  opacity: 1,
+                  transition: 'opacity 0.3s ease-out'
+                }}
               />
             </div>
           )}
@@ -146,8 +199,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep }: 
           )}
 
           <div className="w-full" style={{ opacity: 1 }}>
-            {/* Remover indicador de pré-carregamento */}
-            
             {canvasElements && canvasElements.length > 0 ? (
               // If we have canvas elements, render them
               <CanvasPreview 
