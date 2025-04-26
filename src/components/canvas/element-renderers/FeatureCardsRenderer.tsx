@@ -71,8 +71,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     borderRadius = 8,
     animation = 'fade-in',
     forceSideBySideOnMobile = true,
-    verticalTextAlignment = 'top',
-    showFullText = true  // Por padrão, mostrar texto completo
+    verticalTextAlignment = 'top'
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -88,11 +87,6 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
         </div>
       </BaseElementRenderer>
     );
-  }
-  
-  // Logging para debug no modo de edição
-  if (isEditing) {
-    console.log('Rendering FeatureCards with content:', content);
   }
   
   // Determinar o número de colunas baseado na largura e no valor de 'columns'
@@ -116,6 +110,31 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     if (onSelect && !previewMode) {
       e.stopPropagation();
       onSelect(element.id);
+    }
+  };
+  
+  // Função para determinar o estilo de alinhamento vertical
+  const getVerticalAlignStyle = () => {
+    switch (verticalTextAlignment) {
+      case 'center':
+        return {
+          display: 'flex',
+          flexDirection: 'column' as const,
+          justifyContent: 'center'
+        };
+      case 'bottom':
+        return {
+          display: 'flex',
+          flexDirection: 'column' as const,
+          justifyContent: 'flex-end'
+        };
+      case 'top':
+      default:
+        return {
+          display: 'flex',
+          flexDirection: 'column' as const,
+          justifyContent: 'flex-start'
+        };
     }
   };
   
@@ -178,7 +197,7 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   borderRadius: `${borderRadius}px`,
                   color: cardTextColor,
                   height: 'auto',
-                  minHeight: '100px' // Garantir altura mínima para cards sem imagem
+                  minHeight: '100px'
                 }}
               >
                 {card.imageUrl && (
@@ -203,48 +222,50 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   </div>
                 )}
                 
+                {/* Container para o conteúdo de texto com alinhamento vertical */}
                 <div 
-                  className="p-2 sm:p-3 md:p-4 flex flex-col flex-1"
+                  className="p-2 sm:p-3 md:p-4 flex-1"
                   style={{ 
-                    justifyContent: 
-                      verticalTextAlignment === 'center' ? 'center' : 
-                      verticalTextAlignment === 'bottom' ? 'flex-end' : 'flex-start',
-                    height: card.imageUrl ? 'auto' : '100%'
+                    ...getVerticalAlignStyle(),
+                    height: '100%',
+                    minHeight: card.imageUrl ? '100px' : '160px'
                   }}
                 >
-                  <h3 
-                    className={cn(
-                      "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
-                      {
-                        'text-left': cardTitleAlignment === 'left',
-                        'text-center': cardTitleAlignment === 'center',
-                        'text-right': cardTitleAlignment === 'right'
-                      }
-                    )}
-                  >
-                    {card.title}
-                  </h3>
-                  
-                  {card.description && (
-                    <p 
+                  <div style={{ width: '100%' }}>
+                    <h3 
                       className={cn(
-                        "w-full text-xs sm:text-sm",
+                        "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
                         {
-                          'text-left': cardDescriptionAlignment === 'left',
-                          'text-center': cardDescriptionAlignment === 'center',
-                          'text-right': cardDescriptionAlignment === 'right'
+                          'text-left': cardTitleAlignment === 'left',
+                          'text-center': cardTitleAlignment === 'center',
+                          'text-right': cardTitleAlignment === 'right'
                         }
                       )}
-                      style={{ 
-                        overflow: 'visible',
-                        textOverflow: 'initial',
-                        whiteSpace: 'normal',
-                        wordWrap: 'break-word'
-                      }}
                     >
-                      {card.description}
-                    </p>
-                  )}
+                      {card.title}
+                    </h3>
+                    
+                    {card.description && (
+                      <p 
+                        className={cn(
+                          "w-full text-xs sm:text-sm",
+                          {
+                            'text-left': cardDescriptionAlignment === 'left',
+                            'text-center': cardDescriptionAlignment === 'center',
+                            'text-right': cardDescriptionAlignment === 'right'
+                          }
+                        )}
+                        style={{ 
+                          overflow: 'visible',
+                          textOverflow: 'clip',
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word'
+                        }}
+                      >
+                        {card.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
