@@ -93,19 +93,22 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Melhorar estilos para prevenção de layout shifts
   const responsiveClass = isMobile ? 'mobile-view' : 'desktop-view';
   
+  // Altura estimada do header (logo + barra de progresso + paddings)
+  const headerHeight = 80; // ajustável baseado na altura real do header
+  
   // Classes melhoradas para responsividade
-  const wrapperClass = `w-full ${responsiveClass}`;
+  const wrapperClass = `w-full ${responsiveClass} ${centerContent ? 'h-[100dvh] flex flex-col' : ''}`;
   
   // Wrapper para todo o conteúdo
-  const contentWrapperClass = `flex flex-col w-full mx-auto py-2 px-2 sm:py-4 sm:px-0 ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
+  const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
   
   // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center";
+  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
   
   // Wrapper para o conteúdo principal (centralizado ou não)
   const mainContentWrapperClass = centerContent 
-    ? "w-full flex-1 flex flex-col items-center justify-center" 
-    : "w-full flex flex-col items-center";
+    ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
+    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
   
   const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
   const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
@@ -116,15 +119,20 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     transition: 'all 0.4s ease',
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
-    padding: isMobile ? '0.25rem' : '0.5rem',
     overflow: 'hidden', // Evitar layout shifts
+  };
+  
+  // Estilo do contêiner principal quando centralizado
+  const centerContentStyle: React.CSSProperties = centerContent ? {
+    minHeight: `calc(100dvh - ${headerHeight}px)`,
     display: 'flex',
     flexDirection: 'column',
-    minHeight: centerContent ? 'calc(100vh - 60px)' : 'auto', // Altura ajustada para centralização
-  };
+    justifyContent: 'center',
+    alignItems: 'center',
+  } : {};
 
   return (
-    <div className={wrapperClass} style={{...customStyles, ...mainContainerStyle}}>
+    <div className={wrapperClass} style={{...customStyles}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings.facebookPixelId && (
         <FacebookPixel 
@@ -177,10 +185,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         </div>
 
         {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass}>
-          <div className={contentClass}>
+        <div className={mainContentWrapperClass} style={centerContentStyle}>
+          <div className={contentClass} style={mainContainerStyle}>
             {canvasElements && canvasElements.length > 0 ? (
-              <div className="transition-opacity duration-300 ease-in-out">
+              <div className="transition-opacity duration-300 ease-in-out w-full">
                 <CanvasPreview
                   canvasElements={canvasElements}
                   activeStep={safeCurrentStep}

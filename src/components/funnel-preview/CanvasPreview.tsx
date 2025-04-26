@@ -111,7 +111,7 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
   
   return (
     <div 
-      className={`${containerClass} canvas-container`}
+      className={`${containerClass} canvas-container w-full`}
       style={{
         ...containerStyles,
         minHeight: 'max-content',
@@ -123,7 +123,12 @@ const CanvasPreview = ({ canvasElements, activeStep, onStepChange, funnel, isMob
         maxWidth: isMobile ? '100%' : 'auto',
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden',
-        perspective: 1000
+        perspective: 1000,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        width: '100%'
       }}
     >
       {canvasElements.map((element, index) => {
