@@ -1,192 +1,209 @@
 import React from 'react';
-import { FeatureCardsContent } from '@/utils/types';
-import { ElementRendererProps } from '@/types/canvasTypes';
 import { cn } from '@/lib/utils';
+import { ElementRendererProps } from "@/types/canvasTypes";
+import { FeatureCardsContent } from '@/utils/types';
+
+// Definição de classes para sombras
+const shadowClasses = {
+  none: '',
+  sm: 'shadow-sm',
+  md: 'shadow-md',
+  lg: 'shadow-lg'
+};
+
+// Definição de classes para animações
+const animationClasses = {
+  none: '',
+  'fade-in': 'animate-fade-in',
+  'slide-up': 'animate-slide-up'
+};
+
+const EmptyState = ({ title, description, className }: { title: string; description: string; className?: string }) => (
+  <div className={cn("flex flex-col items-center justify-center text-center", className)}>
+    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+      <span className="text-2xl">📦</span>
+    </div>
+    <h3 className="font-medium text-base mb-1">{title}</h3>
+    <p className="text-sm text-gray-500">{description}</p>
+  </div>
+);
 
 const FeatureCardsRenderer = (props: ElementRendererProps) => {
-  const { element } = props;
-  const content = element.content as FeatureCardsContent;
+  const { element, isSelected, previewMode } = props;
   
-  console.log("FeatureCardsRenderer - Rendering with content:", JSON.stringify(content));
+  // Determinar quando estamos editando (não em modo de preview)
+  const isEditing = !previewMode;
   
-  // Se não houver conteúdo, exibir mensagem de placeholder
-  if (!content) {
-    console.log("FeatureCardsRenderer - No content provided");
-    return (
-      <div className="p-4 bg-violet-100 rounded-md text-center">
-        <h3 className="text-lg font-medium text-violet-800">Cards de Recursos</h3>
-        <p className="text-sm text-violet-600">Adicione cards no painel de configuração</p>
-      </div>
-    );
-  }
-  
-  const {
-    title,
-    description,
-    cards = [],
-    style = {
+  // Garantir conteúdo válido
+  const content = element.content as FeatureCardsContent || {
+    title: '',
+    description: '',
+    cards: [],
+    style: {
       titleAlignment: 'center',
       descriptionAlignment: 'center',
-      cardTitleAlignment: 'center',
-      cardDescriptionAlignment: 'center',
       backgroundColor: '#ffffff',
-      borderRadius: 8,
       cardBackgroundColor: '#ffffff',
       cardTextColor: '#333333',
       cardShadow: 'md',
-      imagePosition: 'top',
-      columns: 2,
+      cardTitleAlignment: 'center',
+      cardDescriptionAlignment: 'center',
+      columns: 3,
       gap: 24,
+      borderRadius: 8,
       animation: 'fade-in'
     }
-  } = content;
-
-  // Garantir pelo menos 2 colunas
-  const columns = Math.max(2, style.columns || 2);
-  
-  // Mapear valores de sombra para classes do Tailwind
-  const shadowClasses = {
-    'none': '',
-    'sm': 'shadow-sm',
-    'md': 'shadow-md',
-    'lg': 'shadow-xl'
   };
-
-  // Mapear valores de animação para classes
-  const animationClasses = {
-    'none': '',
-    'fade-in': 'animate-fade-in',
-    'slide-up': 'animate-slide-up'
-  };
-
-  // Definir o grid de colunas com base no número especificado
-  const gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
   
-  // Se não houver cards, exibir mensagem
-  if (!cards || cards.length === 0) {
-    console.log("FeatureCardsRenderer - No cards in content");
+  // Extrair estilos
+  const {
+    titleAlignment = 'center',
+    descriptionAlignment = 'center',
+    backgroundColor = '#ffffff',
+    cardBackgroundColor = '#ffffff',
+    cardTextColor = '#333333',
+    cardShadow = 'md',
+    cardTitleAlignment = 'center',
+    cardDescriptionAlignment = 'center',
+    columns = 3,
+    gap = 24,
+    borderRadius = 8,
+    animation = 'fade-in'
+  } = content.style || {};
+  
+  // Placeholder para quando estiver no modo de edição e não houver cards
+  if (isEditing && (!content.cards || content.cards.length === 0)) {
     return (
-      <div className="p-4 bg-violet-100 rounded-md text-center">
-        <h3 className="text-lg font-medium text-violet-800">{title || "Cards de Recursos"}</h3>
-        <p className="text-sm text-violet-600">{description || "Adicione cards no painel de configuração"}</p>
+      <div className="w-full p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <EmptyState
+          title="Sem cards"
+          description="Adicione cards no painel de configuração"
+          className="h-48"
+        />
       </div>
     );
   }
   
-  console.log("FeatureCardsRenderer - Rendering cards:", cards.length);
+  // Logging para debug no modo de edição
+  if (isEditing) {
+    console.log('Rendering FeatureCards with content:', content);
+  }
+  
+  // Determinar o número de colunas baseado na largura e no valor de 'columns'
+  // Garantir pelo menos duas colunas
+  const colsClass = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+  }[Math.min(Math.max(columns, 1), 4)];
   
   return (
-    <div 
-      className="w-full overflow-hidden" 
-      style={{ 
-        backgroundColor: style.backgroundColor || 'transparent'
-      }}
+    <div
+      className="w-full py-8 pb-16" // Adicionando padding bottom maior
+      style={{ backgroundColor }}
+      data-element-id={element.id}
     >
-      {/* Título e descrição */}
-      {title && (
-        <h2 
-          className={cn(
-            "text-2xl sm:text-3xl font-bold mb-3",
-            {
-              'text-left': style.titleAlignment === 'left',
-              'text-center': style.titleAlignment === 'center',
-              'text-right': style.titleAlignment === 'right'
-            }
-          )}
-          style={{ color: style.cardTextColor }}
-        >
-          {title}
-        </h2>
-      )}
-      
-      {description && (
-        <p 
-          className={cn(
-            "text-base sm:text-lg text-gray-600 mb-8",
-            {
-              'text-left': style.descriptionAlignment === 'left',
-              'text-center': style.descriptionAlignment === 'center',
-              'text-right': style.descriptionAlignment === 'right'
-            }
-          )}
-          style={{ color: style.cardTextColor }}
-        >
-          {description}
-        </p>
-      )}
-      
-      {/* Grid de cards */}
-      <div 
-        className="grid gap-6 w-full"
-        style={{ 
-          gridTemplateColumns,
-          gap: `${style.gap || 24}px` 
-        }}
-      >
-        {cards.map((card) => (
-          <div
-            key={card.id}
+      <div className="container mx-auto px-4">
+        {content.title && (
+          <h2 
             className={cn(
-              "relative overflow-hidden rounded-lg transition-all duration-300 hover:translate-y-[-5px]",
-              shadowClasses[style.cardShadow as keyof typeof shadowClasses],
-              animationClasses[style.animation as keyof typeof animationClasses]
+              "text-3xl font-bold mb-3",
+              {
+                'text-left': titleAlignment === 'left',
+                'text-center': titleAlignment === 'center',
+                'text-right': titleAlignment === 'right'
+              }
             )}
-            style={{
-              backgroundColor: style.cardBackgroundColor || '#ffffff',
-              borderRadius: `${style.borderRadius || 8}px`,
-              color: style.cardTextColor || '#333333'
-            }}
           >
-            {/* Imagem do card */}
-            <div 
+            {content.title}
+          </h2>
+        )}
+        
+        {content.description && (
+          <p 
+            className={cn(
+              "text-lg text-gray-600 mb-8",
+              {
+                'text-left': descriptionAlignment === 'left',
+                'text-center': descriptionAlignment === 'center',
+                'text-right': descriptionAlignment === 'right'
+              }
+            )}
+          >
+            {content.description}
+          </p>
+        )}
+        
+        <div 
+          className={cn(
+            "grid gap-6", 
+            colsClass,
+            animation && animationClasses[animation]
+          )}
+          style={{ gap: `${gap}px` }}
+        >
+          {content.cards?.map((card, index) => (
+            <div
+              key={card.id || index}
               className={cn(
-                "w-full flex justify-center items-center p-4",
-                {
-                  'mx-auto': style.imagePosition === 'center'
-                }
+                "rounded-lg overflow-hidden flex flex-col",
+                shadowClasses[cardShadow as keyof typeof shadowClasses]
               )}
+              style={{ 
+                backgroundColor: cardBackgroundColor,
+                borderRadius: `${borderRadius}px`,
+                color: cardTextColor,
+                maxHeight: '350px', // Reduzindo mais a altura máxima para cards mais quadrados
+                height: 'auto' // Altura automática baseada no conteúdo
+              }}
             >
-              <img
-                src={card.imageUrl || '/placeholder.svg'}
-                alt={card.title}
-                className="object-contain h-auto max-w-full"
-                style={{ maxHeight: '150px' }}
-              />
-            </div>
-            
-            {/* Conteúdo do card */}
-            <div className="p-5">
-              <h3 
-                className={cn(
-                  "text-xl font-semibold mb-2",
-                  {
-                    'text-left': style.cardTitleAlignment === 'left',
-                    'text-center': style.cardTitleAlignment === 'center',
-                    'text-right': style.cardTitleAlignment === 'right'
-                  }
-                )}
-              >
-                {card.title}
-              </h3>
+              {card.imageUrl && (
+                <div className="relative w-full h-40 overflow-hidden"> {/* Reduzindo a altura da imagem */}
+                  <img
+                    src={card.imageUrl}
+                    alt={card.title || `Imagem ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback para quando a imagem não carregar
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
+              )}
               
-              <p 
-                className={cn(
-                  "text-gray-600",
-                  {
-                    'text-left': style.cardDescriptionAlignment === 'left',
-                    'text-center': style.cardDescriptionAlignment === 'center',
-                    'text-right': style.cardDescriptionAlignment === 'right'
-                  }
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 
+                  className={cn(
+                    "text-xl font-semibold mb-2",
+                    {
+                      'text-left': cardTitleAlignment === 'left',
+                      'text-center': cardTitleAlignment === 'center',
+                      'text-right': cardTitleAlignment === 'right'
+                    }
+                  )}
+                >
+                  {card.title}
+                </h3>
+                
+                {card.description && (
+                  <p 
+                    className={cn(
+                      "line-clamp-3 flex-1", // Limitar a 3 linhas para cards mais compactos
+                      {
+                        'text-left': cardDescriptionAlignment === 'left',
+                        'text-center': cardDescriptionAlignment === 'center',
+                        'text-right': cardDescriptionAlignment === 'right'
+                      }
+                    )}
+                  >
+                    {card.description}
+                  </p>
                 )}
-                style={{ 
-                  color: style.cardTextColor ? `${style.cardTextColor}99` : '#33333399'
-                }}
-              >
-                {card.description}
-              </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

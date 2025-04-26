@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   TabsTrigger 
 } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { PlusCircle, Trash2, MoveVertical, Image, Upload } from 'lucide-react';
+import { PlusCircle, Trash2, MoveVertical, Image, Upload, Plus, GripVertical } from 'lucide-react';
 import { CanvasElement } from '@/types/canvasTypes';
 import { FeatureCard, FeatureCardsContent } from '@/utils/types';
 import { 
@@ -23,29 +23,76 @@ import {
 } from '@/components/ui/select';
 import { ColorPicker } from '@/components/element-configs/common/ColorPicker';
 import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { v4 as uuidv4 } from 'uuid';
+import { ImageIcon, PlusIcon, TrashIcon, MoveUp, MoveDown } from 'lucide-react';
+import { v4 as uuid } from 'uuid';
+import { toast } from 'sonner';
 
-// Componente UploadButton simples
-interface UploadButtonProps {
-  onUpload: (url: string) => void;
-  size?: 'sm' | 'default' | 'lg';
-}
+// Componente para o seletor de cores avançado
+const AdvancedColorPicker = ({ value, onChange }: { value: string, onChange: (color: string) => void }) => {
+  return (
+    <div className="flex space-x-2 items-center">
+      <input 
+        type="color" 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        className="w-10 h-10 rounded-md cursor-pointer"
+      />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex-1"
+      />
+    </div>
+  );
+};
 
-const UploadButton = ({ onUpload, size = 'default' }: UploadButtonProps) => {
+// Componente simples para substituir DragHandleIcon
+const DragHandleIcon = () => <GripVertical className="h-4 w-4 text-gray-400" />;
+
+// Componente para upload de arquivos
+const UploadButton = ({ onUpload, loading, accept }: { 
+  onUpload: (file: File) => void, 
+  loading?: boolean, 
+  accept?: string 
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleClick = () => {
-    // Simulando upload usando um placeholder
-    onUpload('/placeholder.svg');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUpload(file);
+    }
   };
 
   return (
-    <Button 
-      onClick={handleClick}
-      variant="outline" 
-      size={size}
-      className="flex items-center gap-1"
-    >
-      <Upload className="h-4 w-4" />
-      <span>Upload</span>
-    </Button>
+    <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept={accept}
+        onChange={handleFileChange}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading ? (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+        ) : (
+          <Upload className="h-4 w-4" />
+        )}
+      </Button>
+    </>
   );
 };
 
@@ -56,9 +103,12 @@ interface FeatureCardsConfigProps {
 
 const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
   const [activeTab, setActiveTab] = useState('content');
-  const content = element.content as FeatureCardsContent || {
-    title: '',
-    description: '',
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  
+  const defaultContent: FeatureCardsContent = {
+    title: 'Recursos Incríveis',
+    description: 'Explore todos os recursos incrívies que oferecemos para você',
     cards: [],
     style: {
       titleAlignment: 'center',
@@ -77,455 +127,459 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
     }
   };
   
-  // Handler para adicionar um novo card
-  const handleAddCard = () => {
-    const newCard: FeatureCard = {
-      id: crypto.randomUUID(),
-      title: 'Novo Recurso',
-      description: 'Descrição do novo recurso.',
-      imageUrl: '/placeholder.svg'
-    };
+  const content = element.content as FeatureCardsContent || defaultContent;
+  
+  useEffect(() => {
+    if (!element.content) {
+      updateElementContent(element.id, {
+        ...content,
+        title: '',
+        description: '',
+        cards: [],
+        style: {
+          titleAlignment: 'center',
+          descriptionAlignment: 'center',
+          backgroundColor: '#ffffff',
+          borderRadius: 8,
+          cardBackgroundColor: '#ffffff',
+          cardTextColor: '#333333',
+          cardShadow: 'md',
+          cardTitleAlignment: 'center',
+          cardDescriptionAlignment: 'center',
+          columns: 3,
+          gap: 24,
+          animation: 'fade-in'
+        }
+      });
+    }
     
-    const updatedCards = [...(content.cards || []), newCard];
-    
+    if (element.content?.cards) {
+      const allCardsHaveIds = element.content.cards.every(card => card.id);
+      if (!allCardsHaveIds) {
+        const updatedCards = element.content.cards.map(card => {
+          if (!card.id) {
+            return { ...card, id: uuidv4() };
+          }
+          return card;
+        });
+        
+        updateElementContent(element.id, {
+          ...element.content,
+          cards: updatedCards
+        });
+      }
+    }
+  }, [element]);
+  
+  const updateElementContent = (elementId: string, newContent: any) => {
     onUpdate({
       ...element,
-      content: {
-        ...content,
-        cards: updatedCards
-      }
+      content: newContent
     });
   };
   
-  // Handler para remover um card
-  const handleRemoveCard = (cardId: string) => {
-    const updatedCards = (content.cards || []).filter(card => card.id !== cardId);
-    
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
-        cards: updatedCards
+  const addCard = () => {
+    const newCards = [
+      ...(content.cards || []),
+      {
+        id: uuidv4(),
+        title: 'Novo Recurso',
+        description: 'Descreva o recurso aqui...',
+        imageUrl: ''
       }
+    ];
+    
+    updateElementContent(element.id, {
+      ...content,
+      cards: newCards
     });
   };
   
-  // Handler para atualizar um card
-  const handleUpdateCard = (cardId: string, field: keyof FeatureCard, value: string) => {
-    const updatedCards = (content.cards || []).map(card => {
+  const removeCard = (cardId: string) => {
+    const newCards = (content.cards || []).filter(card => card.id !== cardId);
+    
+    updateElementContent(element.id, {
+      ...content,
+      cards: newCards
+    });
+  };
+  
+  const updateCard = (cardId: string, field: string, value: string) => {
+    const newCards = (content.cards || []).map(card => {
       if (card.id === cardId) {
-        return { ...card, [field]: value };
+        return {
+          ...card,
+          [field]: value
+        };
       }
       return card;
     });
     
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
-        cards: updatedCards
-      }
+    updateElementContent(element.id, {
+      ...content,
+      cards: newCards
     });
   };
   
-  // Handler para atualizar campos de texto principais
-  const handleTextUpdate = (field: string, value: string) => {
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(content.cards || []);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    updateElementContent(element.id, {
+      ...content,
+      cards: items
+    });
+  };
+  
+  const handleImageUpload = async (cardId: string, file: File) => {
+    if (!file) return;
+    
+    try {
+      setIsUploading(true);
+      setUploadingImage(cardId);
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+        
+        // Atualiza temporariamente com a versão base64
+        updateCard(cardId, 'imageUrl', base64);
+        
+        // Aqui em um app real, você faria upload para o storage
+        // Como não temos acesso ao supabase, vamos apenas usar o base64
+        
+        // Simulando um atraso de upload
+        setTimeout(() => {
+          // Em um cenário real, você usaria a URL pública do storage
+          updateCard(cardId, 'imageUrl', base64);
+          setUploadingImage(null);
+          setIsUploading(false);
+          
+          toast("Imagem carregada com sucesso");
+        }, 1000);
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Erro ao fazer upload da imagem:', error);
+      setIsUploading(false);
+      setUploadingImage(null);
+      toast("Erro ao carregar imagem");
+    }
+  };
+
+  const moveCard = (sourceIndex: number, destinationIndex: number) => {
+    if (!content.cards) return;
+    
+    const cards = [...content.cards];
+    const [movedCard] = cards.splice(sourceIndex, 1);
+    cards.splice(destinationIndex, 0, movedCard);
+    
+    updateElementContent(element.id, {
+      ...content,
+      cards
+    });
+  };
+  
+  const moveCardUp = (index: number) => {
+    if (index === 0) return;
+    moveCard(index, index - 1);
+  };
+  
+  const moveCardDown = (index: number) => {
+    if (!content.cards || index === content.cards.length - 1) return;
+    moveCard(index, index + 1);
+  };
+
+  const updateStyle = (field: string, value: any) => {
+    updateElementContent(element.id, {
+      ...content,
+      style: {
+        ...content.style,
         [field]: value
       }
     });
   };
 
-  // Handler para atualizar o estilo
-  const handleStyleUpdate = (styleField: string, value: any) => {
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
-        style: {
-          ...(content.style || {}),
-          [styleField]: value
-        }
-      }
-    });
-  };
-
-  // Handler para atualizar a imagem de um card
-  const handleImageUpdate = (cardId: string, imageUrl: string) => {
-    const updatedCards = (content.cards || []).map(card => {
-      if (card.id === cardId) {
-        return { ...card, imageUrl };
-      }
-      return card;
-    });
-    
-    onUpdate({
-      ...element,
-      content: {
-        ...content,
-        cards: updatedCards
-      }
-    });
-  };
-  
   return (
-    <div className="space-y-4 py-2">
+    <div className="space-y-4 pb-8">
       <Tabs 
-        value={activeTab} 
+        defaultValue="content" 
+        value={activeTab}
         onValueChange={setActiveTab}
+        className="w-full"
       >
-        <TabsList className="w-full">
-          <TabsTrigger value="content" className="flex-1">Conteúdo</TabsTrigger>
-          <TabsTrigger value="style" className="flex-1">Estilo</TabsTrigger>
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="content">Conteúdo</TabsTrigger>
+          <TabsTrigger value="style">Estilo</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="content" className="space-y-4 pt-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
-              <Input
-                id="title"
+        <TabsContent value="content" className="space-y-4">
+          <div className="space-y-3">
+            <div>
+              <Label>Título</Label>
+              <Input 
+                placeholder="Título da seção" 
                 value={content.title || ''}
-                onChange={(e) => handleTextUpdate('title', e.target.value)}
-                placeholder="Recursos Principais"
+                onChange={(e) => updateElementContent(element.id, {
+                  ...content,
+                  title: e.target.value
+                })}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
+            <div>
+              <Label>Descrição</Label>
+              <Textarea 
+                placeholder="Descrição da seção" 
                 value={content.description || ''}
-                onChange={(e) => handleTextUpdate('description', e.target.value)}
-                placeholder="Conheça os principais recursos da nossa solução"
-                rows={3}
+                onChange={(e) => updateElementContent(element.id, {
+                  ...content,
+                  description: e.target.value
+                })}
+                rows={2}
               />
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label>Cards</Label>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={addCard}
+              >
+                <PlusIcon className="mr-1 h-4 w-4" />
+                Adicionar Card
+              </Button>
+            </div>
             
-            <Separator className="my-4" />
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="cards">
+                {(provided) => (
+                  <div 
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-3"
+                  >
+                    {(content.cards || []).map((card, index) => (
+                      <Draggable 
+                        key={card.id} 
+                        draggableId={card.id} 
+                        index={index}
+                      >
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className="border rounded-md p-3 bg-white"
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <div 
+                                {...provided.dragHandleProps}
+                                className="cursor-move"
+                              >
+                                <DragHandleIcon />
+                              </div>
+                              
+                              <div className="flex space-x-1">
+                                <Button 
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveCardUp(index)}
+                                  disabled={index === 0}
+                                >
+                                  <MoveUp className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button 
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => moveCardDown(index)}
+                                  disabled={!content.cards || index === content.cards.length - 1}
+                                >
+                                  <MoveDown className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => removeCard(card.id)}
+                                >
+                                  <TrashIcon className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div>
+                                <Label className="text-xs">Título do Card</Label>
+                                <Input 
+                                  placeholder="Título do recurso" 
+                                  value={card.title || ''}
+                                  onChange={(e) => updateCard(card.id, 'title', e.target.value)}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Descrição do Card</Label>
+                                <Textarea 
+                                  placeholder="Descrição do recurso" 
+                                  value={card.description || ''}
+                                  onChange={(e) => updateCard(card.id, 'description', e.target.value)}
+                                  rows={2}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label className="text-xs">Imagem</Label>
+                                <div className="flex items-center space-x-2">
+                                  <div 
+                                    className="h-10 w-10 border rounded flex items-center justify-center bg-gray-100"
+                                  >
+                                    {card.imageUrl ? (
+                                      <img 
+                                        src={card.imageUrl} 
+                                        alt={card.title}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    ) : (
+                                      <ImageIcon className="h-5 w-5 text-gray-400" />
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex-1">
+                                    <Input 
+                                      placeholder="URL da imagem" 
+                                      value={card.imageUrl || ''}
+                                      onChange={(e) => updateCard(card.id, 'imageUrl', e.target.value)}
+                                    />
+                                  </div>
+                                  
+                                  <UploadButton
+                                    onUpload={(file) => handleImageUpload(card.id, file)}
+                                    loading={isUploading && uploadingImage === card.id}
+                                    accept="image/*"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
             
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label>Cards de Recursos</Label>
+            {content.cards?.length === 0 && (
+              <div className="text-center py-6 border rounded-md bg-gray-50">
+                <p className="text-gray-500">Nenhum card adicionado ainda</p>
                 <Button 
-                  onClick={handleAddCard} 
+                  size="sm" 
                   variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-1"
+                  onClick={addCard}
+                  className="mt-2"
                 >
-                  <PlusCircle className="h-4 w-4" />
-                  <span>Adicionar</span>
+                  <PlusIcon className="mr-1 h-4 w-4" />
+                  Adicionar Card
                 </Button>
               </div>
-              
-              {(content.cards || []).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Nenhum card adicionado.</p>
-                  <p className="text-sm">Clique em "Adicionar" para criar um novo card.</p>
-                </div>
-              )}
-              
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {(content.cards || []).map((card, index) => (
-                  <div 
-                    key={card.id} 
-                    className="border border-gray-200 rounded-lg p-4 space-y-3 relative"
-                  >
-                    <div className="flex justify-between items-center">
-                      <Label className="text-sm font-medium">Card {index + 1}</Label>
-                      <Button
-                        onClick={() => handleRemoveCard(card.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`card-title-${card.id}`} className="text-xs">Título do Card</Label>
-                      <Input
-                        id={`card-title-${card.id}`}
-                        value={card.title}
-                        onChange={(e) => handleUpdateCard(card.id, 'title', e.target.value)}
-                        placeholder="Título do recurso"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`card-description-${card.id}`} className="text-xs">Descrição do Card</Label>
-                      <Textarea
-                        id={`card-description-${card.id}`}
-                        value={card.description}
-                        onChange={(e) => handleUpdateCard(card.id, 'description', e.target.value)}
-                        placeholder="Descrição do recurso"
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs">Imagem do Card</Label>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="h-16 w-16 rounded-md border border-gray-200 flex items-center justify-center overflow-hidden"
-                        >
-                          {card.imageUrl ? (
-                            <img 
-                              src={card.imageUrl} 
-                              alt={card.title} 
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <Image className="h-6 w-6 text-gray-400" />
-                          )}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <Input
-                            value={card.imageUrl}
-                            onChange={(e) => handleUpdateCard(card.id, 'imageUrl', e.target.value)}
-                            placeholder="URL da imagem"
-                            className="mb-1"
-                          />
-                          <UploadButton
-                            onUpload={(url) => handleImageUpdate(card.id, url)}
-                            size="sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </TabsContent>
         
-        <TabsContent value="style" className="space-y-4 pt-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
+        <TabsContent value="style" className="space-y-4">
+          <div className="space-y-3">
+            <div>
               <Label>Alinhamento do Título</Label>
-              <div className="flex space-x-2">
-                <Button 
-                  variant={content.style?.titleAlignment === 'left' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('titleAlignment', 'left')}
-                >
-                  Esquerda
-                </Button>
-                <Button 
-                  variant={content.style?.titleAlignment === 'center' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('titleAlignment', 'center')}
-                >
-                  Centro
-                </Button>
-                <Button 
-                  variant={content.style?.titleAlignment === 'right' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('titleAlignment', 'right')}
-                >
-                  Direita
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Alinhamento da Descrição</Label>
-              <div className="flex space-x-2">
-                <Button 
-                  variant={content.style?.descriptionAlignment === 'left' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('descriptionAlignment', 'left')}
-                >
-                  Esquerda
-                </Button>
-                <Button 
-                  variant={content.style?.descriptionAlignment === 'center' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('descriptionAlignment', 'center')}
-                >
-                  Centro
-                </Button>
-                <Button 
-                  variant={content.style?.descriptionAlignment === 'right' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('descriptionAlignment', 'right')}
-                >
-                  Direita
-                </Button>
-              </div>
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <Label>Alinhamento do Título do Card</Label>
-              <div className="flex space-x-2">
-                <Button 
-                  variant={content.style?.cardTitleAlignment === 'left' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardTitleAlignment', 'left')}
-                >
-                  Esquerda
-                </Button>
-                <Button 
-                  variant={content.style?.cardTitleAlignment === 'center' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardTitleAlignment', 'center')}
-                >
-                  Centro
-                </Button>
-                <Button 
-                  variant={content.style?.cardTitleAlignment === 'right' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardTitleAlignment', 'right')}
-                >
-                  Direita
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Alinhamento da Descrição do Card</Label>
-              <div className="flex space-x-2">
-                <Button 
-                  variant={content.style?.cardDescriptionAlignment === 'left' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardDescriptionAlignment', 'left')}
-                >
-                  Esquerda
-                </Button>
-                <Button 
-                  variant={content.style?.cardDescriptionAlignment === 'center' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardDescriptionAlignment', 'center')}
-                >
-                  Centro
-                </Button>
-                <Button 
-                  variant={content.style?.cardDescriptionAlignment === 'right' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('cardDescriptionAlignment', 'right')}
-                >
-                  Direita
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Posição da Imagem</Label>
-              <div className="flex space-x-2">
-                <Button 
-                  variant={content.style?.imagePosition === 'top' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('imagePosition', 'top')}
-                >
-                  Topo
-                </Button>
-                <Button 
-                  variant={content.style?.imagePosition === 'center' ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleStyleUpdate('imagePosition', 'center')}
-                >
-                  Centralizada
-                </Button>
-              </div>
-            </div>
-            
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <Label>Número de Colunas</Label>
               <Select
-                value={String(content.style?.columns || 2)}
-                onValueChange={(value) => handleStyleUpdate('columns', Number(value))}
+                value={content.style?.titleAlignment || 'center'}
+                onValueChange={(value) => updateStyle('titleAlignment', value)}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o número de colunas" />
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2">2 colunas</SelectItem>
-                  <SelectItem value="3">3 colunas</SelectItem>
-                  <SelectItem value="4">4 colunas</SelectItem>
+                  <SelectItem value="left">Esquerda</SelectItem>
+                  <SelectItem value="center">Centralizado</SelectItem>
+                  <SelectItem value="right">Direita</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Espaçamento entre Cards</Label>
-                <span className="text-sm text-gray-500">{content.style?.gap || 24}px</span>
+            <div>
+              <Label>Alinhamento da Descrição</Label>
+              <Select
+                value={content.style?.descriptionAlignment || 'center'}
+                onValueChange={(value) => updateStyle('descriptionAlignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Esquerda</SelectItem>
+                  <SelectItem value="center">Centralizado</SelectItem>
+                  <SelectItem value="right">Direita</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Cor de Fundo</Label>
+              <AdvancedColorPicker
+                value={content.style?.backgroundColor || '#ffffff'}
+                onChange={(color) => updateStyle('backgroundColor', color)}
+              />
+            </div>
+            
+            <div>
+              <Label>Colunas</Label>
+              <Slider
+                min={1}
+                max={4}
+                step={1}
+                value={[content.style?.columns || 2]}
+                onValueChange={(value) => updateStyle('columns', value[0])}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
               </div>
+            </div>
+            
+            <div>
+              <Label>Espaçamento entre Cards</Label>
               <Slider
                 min={8}
                 max={48}
                 step={4}
                 value={[content.style?.gap || 24]}
-                onValueChange={([value]) => handleStyleUpdate('gap', value)}
+                onValueChange={(value) => updateStyle('gap', value[0])}
               />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Arredondamento</Label>
-                <span className="text-sm text-gray-500">{content.style?.borderRadius || 8}px</span>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Pequeno</span>
+                <span>Médio</span>
+                <span>Grande</span>
               </div>
-              <Slider
-                min={0}
-                max={20}
-                step={1}
-                value={[content.style?.borderRadius || 8]}
-                onValueChange={([value]) => handleStyleUpdate('borderRadius', value)}
-              />
             </div>
             
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <Label>Sombra dos Cards</Label>
-              <Select
-                value={content.style?.cardShadow || 'md'}
-                onValueChange={(value) => handleStyleUpdate('cardShadow', value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo de sombra" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  <SelectItem value="sm">Leve</SelectItem>
-                  <SelectItem value="md">Média</SelectItem>
-                  <SelectItem value="lg">Intensa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
+            <div>
               <Label>Animação</Label>
               <Select
                 value={content.style?.animation || 'fade-in'}
-                onValueChange={(value) => handleStyleUpdate('animation', value)}
+                onValueChange={(value) => updateStyle('animation', value)}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o tipo de animação" />
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
@@ -534,31 +588,93 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="space-y-3">
+            <h3 className="font-medium text-sm">Estilo dos Cards</h3>
             
-            <Separator className="my-4" />
-            
-            <div className="space-y-2">
-              <Label>Cor de Fundo Principal</Label>
-              <ColorPicker
-                value={content.style?.backgroundColor || '#ffffff'}
-                onChange={(color) => handleStyleUpdate('backgroundColor', color)}
-              />
-            </div>
-            
-            <div className="space-y-2">
+            <div>
               <Label>Cor de Fundo dos Cards</Label>
-              <ColorPicker
+              <AdvancedColorPicker
                 value={content.style?.cardBackgroundColor || '#ffffff'}
-                onChange={(color) => handleStyleUpdate('cardBackgroundColor', color)}
+                onChange={(color) => updateStyle('cardBackgroundColor', color)}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Cor do Texto</Label>
-              <ColorPicker
+            <div>
+              <Label>Cor do Texto dos Cards</Label>
+              <AdvancedColorPicker
                 value={content.style?.cardTextColor || '#333333'}
-                onChange={(color) => handleStyleUpdate('cardTextColor', color)}
+                onChange={(color) => updateStyle('cardTextColor', color)}
               />
+            </div>
+            
+            <div>
+              <Label>Raio da Borda</Label>
+              <Slider
+                min={0}
+                max={24}
+                step={2}
+                value={[content.style?.borderRadius || 8]}
+                onValueChange={(value) => updateStyle('borderRadius', value[0])}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0px</span>
+                <span>12px</span>
+                <span>24px</span>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Sombra</Label>
+              <Select
+                value={content.style?.cardShadow || 'md'}
+                onValueChange={(value) => updateStyle('cardShadow', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="sm">Pequena</SelectItem>
+                  <SelectItem value="md">Média</SelectItem>
+                  <SelectItem value="lg">Grande</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Alinhamento do Título do Card</Label>
+              <Select
+                value={content.style?.cardTitleAlignment || 'center'}
+                onValueChange={(value) => updateStyle('cardTitleAlignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Esquerda</SelectItem>
+                  <SelectItem value="center">Centralizado</SelectItem>
+                  <SelectItem value="right">Direita</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Alinhamento da Descrição do Card</Label>
+              <Select
+                value={content.style?.cardDescriptionAlignment || 'center'}
+                onValueChange={(value) => updateStyle('cardDescriptionAlignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Esquerda</SelectItem>
+                  <SelectItem value="center">Centralizado</SelectItem>
+                  <SelectItem value="right">Direita</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </TabsContent>
