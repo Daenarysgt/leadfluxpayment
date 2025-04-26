@@ -770,6 +770,68 @@ const FeatureCardsConfig = ({ element, onUpdate }: FeatureCardsConfigProps) => {
               </Select>
             </div>
             
+            <div className="mt-6">
+              <h3 className="font-medium text-sm mb-3">Margens de Texto (Global)</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex justify-between">
+                    <span>Margem Superior do Título</span>
+                    <span className="text-xs text-gray-500">{content.style?.cardTitleMarginTop ?? 0}px</span>
+                  </Label>
+                  <Slider
+                    min={-50}
+                    max={50}
+                    step={1}
+                    value={[content.style?.cardTitleMarginTop ?? 0]}
+                    onValueChange={(value) => updateStyle('cardTitleMarginTop', value[0])}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="flex justify-between">
+                    <span>Margem Inferior do Título</span>
+                    <span className="text-xs text-gray-500">{content.style?.cardTitleMarginBottom ?? 8}px</span>
+                  </Label>
+                  <Slider
+                    min={-50}
+                    max={50}
+                    step={1}
+                    value={[content.style?.cardTitleMarginBottom ?? 8]}
+                    onValueChange={(value) => updateStyle('cardTitleMarginBottom', value[0])}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="flex justify-between">
+                    <span>Margem Superior da Descrição</span>
+                    <span className="text-xs text-gray-500">{content.style?.cardDescriptionMarginTop ?? 0}px</span>
+                  </Label>
+                  <Slider
+                    min={-50}
+                    max={50}
+                    step={1}
+                    value={[content.style?.cardDescriptionMarginTop ?? 0]}
+                    onValueChange={(value) => updateStyle('cardDescriptionMarginTop', value[0])}
+                  />
+                </div>
+                
+                <div>
+                  <Label className="flex justify-between">
+                    <span>Margem Inferior da Descrição</span>
+                    <span className="text-xs text-gray-500">{content.style?.cardDescriptionMarginBottom ?? 0}px</span>
+                  </Label>
+                  <Slider
+                    min={-50}
+                    max={50}
+                    step={1}
+                    value={[content.style?.cardDescriptionMarginBottom ?? 0]}
+                    onValueChange={(value) => updateStyle('cardDescriptionMarginBottom', value[0])}
+                  />
+                </div>
+              </div>
+            </div>
+            
             <div>
               <Label>Alinhamento Vertical do Texto</Label>
               <Select

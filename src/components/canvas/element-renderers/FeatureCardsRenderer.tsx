@@ -71,7 +71,12 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
     borderRadius = 8,
     animation = 'fade-in',
     forceSideBySideOnMobile = true,
-    verticalTextAlignment = 'top'
+    verticalTextAlignment = 'top',
+    // Margens de texto (com valores padrão)
+    cardTitleMarginTop = 0,
+    cardTitleMarginBottom = 8,
+    cardDescriptionMarginTop = 0,
+    cardDescriptionMarginBottom = 0
   } = content.style || {};
   
   // Placeholder para quando estiver no modo de edição e não houver cards
@@ -234,13 +239,17 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                   <div style={{ width: '100%' }}>
                     <h3 
                       className={cn(
-                        "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
+                        "text-base sm:text-lg font-semibold",
                         {
                           'text-left': cardTitleAlignment === 'left',
                           'text-center': cardTitleAlignment === 'center',
                           'text-right': cardTitleAlignment === 'right'
                         }
                       )}
+                      style={{ 
+                        marginTop: `${cardTitleMarginTop}px`,
+                        marginBottom: `${cardTitleMarginBottom}px`
+                      }}
                     >
                       {card.title}
                     </h3>
@@ -259,7 +268,9 @@ const FeatureCardsRenderer = (props: ElementRendererProps) => {
                           overflow: 'visible',
                           textOverflow: 'clip',
                           whiteSpace: 'normal',
-                          wordWrap: 'break-word'
+                          wordWrap: 'break-word',
+                          marginTop: `${cardDescriptionMarginTop}px`,
+                          marginBottom: `${cardDescriptionMarginBottom}px`
                         }}
                       >
                         {card.description}
