@@ -27,6 +27,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const [dataReady, setDataReady] = useState(false);
   const [renderKey, setRenderKey] = useState(`preview-${Date.now()}`);
   
+  // Estados para controlar transição com fade
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [fadeDirection, setFadeDirection] = useState("in");
+  
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
@@ -85,8 +89,26 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
-    setActiveStep(stepIndex);
-  }, [funnel?.id, currentFunnel?.id, stepIndex]);
+    // Quando o stepIndex muda externamente, aplicar animação de fade
+    if (activeStep !== stepIndex) {
+      // Fade out primeiro
+      setFadeDirection("out");
+      setIsTransitioning(true);
+      
+      // Depois mudar o step e fade in
+      setTimeout(() => {
+        setActiveStep(stepIndex);
+        setFadeDirection("in");
+        
+        // Terminar a transição após completar o fade in
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 300);
+      }, 200);
+    } else {
+      setActiveStep(stepIndex);
+    }
+  }, [funnel?.id, currentFunnel?.id, stepIndex, activeStep]);
 
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -146,7 +168,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    transition: 'none' // Remover transição para evitar o flash
+    transition: isTransitioning ? 'opacity 200ms ease-in-out' : 'none',
+    opacity: fadeDirection === "in" ? 1 : 0.5
   } as React.CSSProperties;
 
   // Debug log para verificar se o logo está chegando
@@ -177,13 +200,27 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
       return;
     }
     
-    // Nenhuma animação, apenas mudar diretamente para evitar o flash
-    setActiveStep(newStep);
+    // Aplicar transição com fade
+    setFadeDirection("out");
+    setIsTransitioning(true);
     
-    // Notify parent component if callback is provided
-    if (onNextStep) {
-      onNextStep(newStep);
-    }
+    setTimeout(() => {
+      // Mudar o step
+      setActiveStep(newStep);
+      
+      // Iniciar fade in
+      setFadeDirection("in");
+      
+      // Notify parent component if callback is provided
+      if (onNextStep) {
+        onNextStep(newStep);
+      }
+      
+      // Terminar a transição após completar o fade in
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+    }, 200);
   };
 
   // Verificar se há imagem de fundo configurada para ajustar a visualização
@@ -241,7 +278,14 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   };
 
   return (
-    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
+    <div 
+      key={renderKey} 
+      className={`${wrapperClass} transition-wrapper`} 
+      style={{
+        ...customStyles, 
+        overflowY: isMobile ? 'auto' : 'visible'
+      }}
+    >
       {/* Facebook Pixel integration */}
       {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 

@@ -20,6 +20,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
   
+  // Estado para controlar a animação de fade
+  const [fadeState, setFadeState] = useState("in"); // "in", "out", "changing"
+  const [visibleStep, setVisibleStep] = useState(activeStep);
+  
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
     // Garantir que canvasElements é um array
@@ -61,6 +65,23 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       };
     });
   }, [funnel]);
+  
+  // Efeito para gerenciar transições entre etapas com fade
+  useEffect(() => {
+    // Se a etapa ativa mudou, iniciar a animação de saída
+    if (activeStep !== previousStepRef.current) {
+      setFadeState("out");
+      
+      // Após a animação de saída, mudar para a nova etapa e iniciar a animação de entrada
+      const timeoutId = setTimeout(() => {
+        setVisibleStep(activeStep);
+        setFadeState("in");
+        previousStepRef.current = activeStep;
+      }, 200); // Duração do fade-out
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeStep]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -112,7 +133,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       // Continue com a navegação mesmo com erro de registro
     }
     
-    // Aplicar a mudança de etapa diretamente
+    // Aplicar a mudança de etapa com animação de fade
     onStepChange(index);
   }, [funnel, sessionId, onStepChange]);
   
@@ -176,9 +197,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        // Remover qualquer animação de fade-in
-        opacity: 1,
-        transition: 'none'
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -186,10 +204,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
-            className="w-full transition-opacity duration-100" 
+            className={`w-full step-transition-${fadeState}`}
             style={{ 
-              display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
+              display: stepData.index === visibleStep ? 'block' : 'none',
+              opacity: stepData.index === visibleStep ? (fadeState === "in" ? 1 : 0) : 0,
+              transition: "opacity 200ms ease-in-out",
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
@@ -211,7 +230,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                <div key={element.id} className={elementClassName}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -246,7 +265,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+            <div key={element.id} className={elementClassName}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
@@ -266,17 +285,29 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-// Removemos o estilo de animação fade-in
+// Estilo para animação de fade entre etapas
 const fadeInStyle = `
 <style>
-  /* Estilos removidos para evitar qualquer animação de fade */
+  .step-transition-in {
+    opacity: 1;
+    transition: opacity 200ms ease-in-out;
+  }
+  
+  .step-transition-out {
+    opacity: 0;
+    transition: opacity 200ms ease-in-out;
+  }
+  
+  .step-transition-changing {
+    display: none;
+  }
 </style>
 `;
 
 const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
   return (
     <>
-      {/* Remover a injeção de estilos de animação */}
+      <div dangerouslySetInnerHTML={{ __html: fadeInStyle }} />
       <CanvasPreview {...props} />
     </>
   );
