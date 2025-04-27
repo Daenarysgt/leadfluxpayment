@@ -32,6 +32,7 @@ import DiagnosticPage from '@/pages/DiagnosticPage';
 import TermsOfService from '@/pages/TermsOfService';
 import { useNavigate } from 'react-router-dom';
 import ManualCancellationPage from '@/pages/payment/ManualCancellation';
+import SessionManager from '@/components/SessionManager';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -127,6 +128,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <Router>
         <TooltipProvider>
+          <SessionManager />
           <Toaster />
           <Sonner />
           <Routes>
