@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useStore } from "@/utils/store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Monitor, Smartphone } from "lucide-react";
 import { Funnel } from "@/utils/types";
@@ -22,6 +22,7 @@ const Preview = () => {
   const [isMobile, setIsMobile] = useState(detectMobile());
   const [loadedFunnel, setLoadedFunnel] = useState<Funnel | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const contentContainerRef = useRef<HTMLDivElement>(null);
   
   // Adicionar listener para redimensionamento
   useEffect(() => {
@@ -78,8 +79,12 @@ const Preview = () => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
     
-    // Scrollar automaticamente para o topo da página
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scrollar automaticamente para o topo do container ou da página
+    if (contentContainerRef.current) {
+      contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
   
   // Obter os canvasElements do step atual
@@ -127,7 +132,8 @@ const Preview = () => {
       
       {/* Container principal com fundo e configurações de background */}
       <div 
-        className="flex-1 flex flex-col" 
+        ref={contentContainerRef}
+        className="flex-1 flex flex-col overflow-auto" 
         style={{
           backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
           backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',

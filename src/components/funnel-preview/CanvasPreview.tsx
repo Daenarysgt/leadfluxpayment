@@ -122,8 +122,12 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       // Continue com a navegação mesmo com erro de registro
     }
     
-    // Scrollar automaticamente para o topo da página
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scrollar automaticamente para o topo do container ou da página
+    if (canvasRef.current) {
+      canvasRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     
     // Aplicar a mudança de etapa diretamente
     onStepChange(index);
@@ -135,8 +139,12 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      // Scrollar automaticamente para o topo da página
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scrollar automaticamente para o topo do container ou da página
+      if (canvasRef.current) {
+        canvasRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       
       onStepChange(nextStep);
     } else {
