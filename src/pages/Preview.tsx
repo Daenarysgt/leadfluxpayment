@@ -84,12 +84,7 @@ const Preview = () => {
   useEffect(() => {
     if (typeof currentStepIndex === 'number') {
       const timeout = setTimeout(() => {
-        if (contentContainerRef.current) {
-          contentContainerRef.current.style.overflowY = 'auto';
-          contentContainerRef.current.scrollTop = 0;
-        } else {
-          window.scrollTo({ top: 0 });
-        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
       
       return () => clearTimeout(timeout);
@@ -142,7 +137,7 @@ const Preview = () => {
       {/* Container principal com fundo e configurações de background */}
       <div 
         ref={contentContainerRef}
-        className="flex-1 flex flex-col overflow-auto" 
+        className="flex-1 flex flex-col" 
         style={{
           backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
           backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
