@@ -83,15 +83,15 @@ const Preview = () => {
   // Efeito para gerenciar o scroll quando o currentStepIndex muda
   useEffect(() => {
     if (typeof currentStepIndex === 'number') {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (contentContainerRef.current) {
-            contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        });
-      });
+      const timeout = setTimeout(() => {
+        if (contentContainerRef.current) {
+          contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100); // esperar 100ms para garantir que o DOM está estático
+      
+      return () => clearTimeout(timeout);
     }
   }, [currentStepIndex]);
   
