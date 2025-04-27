@@ -67,6 +67,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   const handleStepChange = (newStep: number) => {
     setActiveStep(newStep);
     
+    // Scrollar automaticamente para o topo da página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     // Notify parent component if callback is provided
     if (onNextStep) {
       onNextStep(newStep);

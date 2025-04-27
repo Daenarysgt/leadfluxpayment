@@ -77,6 +77,9 @@ const Preview = () => {
   const handleStepChange = (index: number) => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
+    
+    // Scrollar automaticamente para o topo da página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   // Obter os canvasElements do step atual
