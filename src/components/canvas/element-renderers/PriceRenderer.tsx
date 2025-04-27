@@ -286,13 +286,13 @@ const PriceRenderer = (props: ElementRendererProps) => {
                 {/* Lado esquerdo - Informações e recursos */}
                 <div className="p-2 sm:p-5 flex-1 flex flex-col justify-center">
                   <h3 
-                    className="text-sm sm:text-lg font-bold truncate" 
+                    className="text-sm sm:text-lg font-bold" 
                     style={{ color: plan.style?.textColor || "#ffffff" }}
                   >
                     {plan.title}
                   </h3>
                   <p 
-                    className="text-[10px] sm:text-sm opacity-80 mt-0.5 sm:mt-1 truncate"
+                    className="text-[10px] sm:text-sm opacity-80 mt-0.5 sm:mt-1"
                     style={{ color: plan.style?.descriptionColor || plan.style?.textColor || "#ffffff" }}
                   >
                     {plan.description}
@@ -321,7 +321,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                           <Check className="h-1.5 w-1.5 sm:h-2 sm:w-2 text-white" />
                         </div>
                         <span 
-                          className="text-[9px] sm:text-xs truncate"
+                          className="text-[9px] sm:text-xs"
                           style={{ color: plan.style?.featureColor || "#ffffff" }}
                         >
                           {feature.text}
