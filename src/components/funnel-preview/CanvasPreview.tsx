@@ -178,18 +178,18 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0' : '0.5rem', // Remover padding em mobile
-    margin: '0',
+    padding: isMobile ? '0.25rem' : '1rem',
+    margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
-    left: '0',
-    right: '0',
-    width: '100%',
-    overflowY: isMobile ? 'auto' : 'visible',
+    left: isMobile ? '0' : 'auto',
+    right: isMobile ? '0' : 'auto',
+    width: isMobile ? '100%' : 'auto',
+    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
   };
 
   // Classes condicionais para desktop e mobile
   const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width no-spacing-mobile" 
+    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
     : "w-full mx-auto min-h-[300px] rounded-lg";
   
   // Função para próximo passo
@@ -214,11 +214,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: isMobile ? '0' : '1rem',
-        paddingTop: isMobile ? '0' : '0.5rem',
+        paddingBottom: '1.5rem',
+        paddingTop: '0.5rem',
         // Garantir que a altura seja preservada durante a transição
-        minWidth: '100%',
-        maxWidth: '100%',
+        minWidth: isMobile ? '100%' : 'auto',
+        maxWidth: isMobile ? '100%' : 'auto',
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden',
         perspective: 1000,
@@ -227,8 +227,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         flexDirection: 'column',
         justifyContent: shouldCenter ? 'center' : 'flex-start',
         width: '100%',
-        overflowY: isMobile ? 'auto' : 'visible',
-        maxHeight: isMobile ? 'none' : undefined,
+        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
+        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -246,58 +246,43 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               left: 0,
               width: '100%',
               pointerEvents: stepData.index === visibleStep ? 'auto' : 'none',
-              zIndex: stepData.index === visibleStep ? 2 : 1,
-              // Eliminar margens extras que possam causar espaçamento vertical
-              margin: 0,
-              padding: 0
+              zIndex: stepData.index === visibleStep ? 2 : 1
             }}
           >
-            <div className="canvas-elements-container" style={{ margin: 0, padding: 0 }}>
-              {stepData.elements.map((element, elementIndex) => {
-                // Adicionar propriedades de preview para navegação
-                const elementWithPreviewProps = {
-                  ...element,
-                  previewMode: true,
-                  previewProps: {
-                    activeStep,
-                    onStepChange: handleStepChange,
-                    funnel,
-                    isMobile,
-                  },
-                  // Adicionar flag para evitar loading states
-                  skipLoading: true
-                };
-                
-                // Classe específica para mobile ou desktop
-                const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-                
-                return (
-                  <div 
-                    key={element.id} 
-                    className={`${elementClassName} canvas-element-wrapper`}
-                    style={{
-                      // Preservar posicionamento original do canvas
-                      position: typeof element.position === 'string' && element.position === 'absolute' ? 'absolute' : 'relative',
-                      // Remover margens extras
-                      marginTop: element.style?.marginTop || 0,
-                      marginBottom: element.style?.marginBottom || 0
-                    }}
-                  >
-                    <ElementFactory 
-                      element={elementWithPreviewProps}
-                      isSelected={false} 
-                      isDragging={false}
-                      onSelect={noopFunction}
-                      onRemove={noopFunction}
-                      index={elementIndex}
-                      totalElements={stepData.elements.length}
-                      onDragStart={null}
-                      onDragEnd={null}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+            {stepData.elements.map((element, elementIndex) => {
+              // Adicionar propriedades de preview para navegação
+              const elementWithPreviewProps = {
+                ...element,
+                previewMode: true,
+                previewProps: {
+                  activeStep,
+                  onStepChange: handleStepChange,
+                  funnel,
+                  isMobile,
+                },
+                // Adicionar flag para evitar loading states
+                skipLoading: true
+              };
+              
+              // Classe específica para mobile ou desktop
+              const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+              
+              return (
+                <div key={element.id} className={elementClassName}>
+                  <ElementFactory 
+                    element={elementWithPreviewProps}
+                    isSelected={false} 
+                    isDragging={false}
+                    onSelect={noopFunction}
+                    onRemove={noopFunction}
+                    index={elementIndex}
+                    totalElements={stepData.elements.length}
+                    onDragStart={null}
+                    onDragEnd={null}
+                  />
+                </div>
+              );
+            })}
           </div>
         ))
       ) : (
@@ -318,17 +303,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div 
-              key={element.id} 
-              className={`${elementClassName} canvas-element-wrapper`}
-              style={{
-                // Preservar posicionamento original do canvas
-                position: typeof element.position === 'string' && element.position === 'absolute' ? 'absolute' : 'relative',
-                // Remover margens extras
-                marginTop: element.style?.marginTop || 0,
-                marginBottom: element.style?.marginBottom || 0
-              }}
-            >
+            <div key={element.id} className={elementClassName}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
@@ -352,73 +327,18 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
 const fadeInStyle = `
 <style>
   .step-transition-in {
-    animation: fadeIn 150ms ease-out forwards;
-    will-change: opacity;
+    opacity: 1;
+    transition: opacity 150ms ease-in-out;
   }
   
   .step-transition-out {
-    animation: fadeOut 150ms ease-in forwards;
-    will-change: opacity;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
   }
   
   .step-transition-changing {
     opacity: 0;
     pointer-events: none;
-  }
-  
-  /* Corrigir espaçamento vertical */
-  .canvas-container {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  .canvas-elements-container {
-    position: relative;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  .canvas-element-wrapper {
-    /* Garantir que elemento preserve seu posicionamento original */
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-  
-  /* Preservar espaço vertical apenas entre componentes reais */
-  .canvas-element-wrapper + .canvas-element-wrapper {
-    margin-top: 0.5rem;
-  }
-  
-  /* Classe específica para mobile que remove todos os espaçamentos */
-  .no-spacing-mobile * {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-  
-  /* Permitir apenas espaçamentos controlados em mobile */
-  @media (max-width: 768px) {
-    .canvas-element-wrapper + .canvas-element-wrapper {
-      margin-top: 6px !important;
-    }
-    
-    /* Redefine o tamanho dos elementos para corresponder ao design original */
-    .canvas-element, .canvas-element-mobile {
-      min-height: auto !important;
-      height: auto !important;
-    }
-    
-    /* Ajuste específico para componentes de imagem */
-    .option-card, .multiple-choice-image-grid {
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    /* Ajuste para grids de elementos */
-    .grid-cols-2 {
-      gap: 8px !important;
-    }
   }
 </style>
 `;
