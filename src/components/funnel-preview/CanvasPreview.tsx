@@ -11,9 +11,18 @@ interface CanvasPreviewProps {
   funnel?: Funnel;
   isMobile?: boolean;
   centerContent?: boolean;
+  builderMode?: boolean;
 }
 
-const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
+const CanvasPreview = ({ 
+  canvasElements = [], 
+  activeStep = 0, 
+  onStepChange, 
+  funnel, 
+  isMobile = false, 
+  centerContent = false,
+  builderMode = false
+}: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   // Referência para evitar re-renders desnecessários
@@ -69,8 +78,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     setShouldCenter(centerContent && !manyElements);
   }, [validCanvasElements.length, centerContent]);
   
-  // Inicializar sessão somente uma vez
+  // Inicializar sessão somente uma vez (pular se estiver no modo builder)
   useEffect(() => {
+    if (builderMode) return; // Não registrar acesso quando estiver no modo builder
+    
     const initSession = async () => {
       if (funnel && !sessionId) {
         try {
@@ -83,7 +94,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     };
     
     initSession();
-  }, [funnel, sessionId]);
+  }, [funnel, sessionId, builderMode]);
   
   // Handler para mudança de etapa com verificação de segurança
   const handleStepChange = useCallback(async (index: number) => {
@@ -98,58 +109,37 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       return;
     }
     
-    try {
-      // Se chegou na última etapa
-      if (index === funnel.steps.length - 1) {
-        // Apenas atualiza o progresso e marca como conversão
-        await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
-      } else {
-        // Se não for a última etapa, apenas atualiza o progresso
-        await accessService.updateProgress(funnel.id, index + 1, sessionId);
+    // Pular registro de progresso no modo builder
+    if (!builderMode) {
+      try {
+        // Se chegou na última etapa
+        if (index === funnel.steps.length - 1) {
+          // Apenas atualiza o progresso e marca como conversão
+          await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
+        } else {
+          // Se não for a última etapa, apenas atualiza o progresso
+          await accessService.updateProgress(funnel.id, index + 1, sessionId);
+        }
+      } catch (error) {
+        console.error("CanvasPreview - Error during step interaction:", error);
+        // Continue com a navegação mesmo com erro de registro
       }
-    } catch (error) {
-      console.error("CanvasPreview - Error during step interaction:", error);
-      // Continue com a navegação mesmo com erro de registro
     }
     
     // Aplicar a mudança de etapa diretamente
     onStepChange(index);
-  }, [funnel, sessionId, onStepChange]);
+  }, [funnel, sessionId, onStepChange, builderMode]);
   
   // Detectar propriedades visuais do funnel com valores padrão seguros
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
   const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
   
-  // Estilos de container com valores padrão seguros
-  const containerStyles: React.CSSProperties = {
-    backgroundColor: 'transparent',
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem',
-    margin: isMobile ? '0 auto' : '0 auto',
-    position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
-    width: isMobile ? '100%' : 'auto',
-    overflowY: 'visible', // Sempre usar visible para evitar scrolls duplicados
-  };
-
-  // Classes condicionais para desktop e mobile
-  const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
-    : "w-full mx-auto min-h-[300px] rounded-lg";
-  
-  // Função para próximo passo
-  const handleNextStep = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    
-    const nextStep = activeStep + 1;
-    if (funnel && nextStep < funnel.steps.length) {
-      onStepChange(nextStep);
-    } else {
-      console.warn("CanvasPreview - Tentativa de avançar além do último passo");
-    }
-  }, [activeStep, funnel, onStepChange]);
+  // Classe do container - usar a mesma classe do builder quando no modo builder
+  const containerClass = builderMode
+    ? "builder-canvas-wrapper" // Usar a mesma classe do canvas do builder
+    : isMobile 
+      ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+      : "w-full mx-auto min-h-[300px] rounded-lg";
   
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
@@ -157,32 +147,39 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   return (
     <div 
       ref={transitionRef}
-      className={`${containerClass} canvas-container w-full`}
-      style={{
-        ...containerStyles,
-        minHeight: 'max-content',
-        paddingBottom: '1rem',
-        paddingTop: '0.5rem',
-        // Garantir que a altura seja preservada durante a transição
-        minWidth: isMobile ? '100%' : 'auto',
-        maxWidth: isMobile ? '100%' : 'auto',
-        transform: 'translate3d(0,0,0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: shouldCenter ? 'center' : 'flex-start',
-        width: '100%',
-        overflowY: 'visible', // Sempre usar visible para evitar scrolls duplicados
-        maxHeight: 'none', // Remover limite de altura para todos os modos
-        // Remover qualquer animação de fade-in
-        opacity: 1,
-        transition: 'none'
-      }}
+      className={`${containerClass} canvas-container`}
+      style={
+        builderMode
+          ? {} // No modo builder, não aplicar estilos personalizados
+          : {
+              backgroundColor: 'transparent',
+              color: hasBackgroundImage ? 'white' : 'inherit',
+              borderRadius: isMobile ? '0' : '0.5rem',
+              padding: isMobile ? '0.25rem' : '1rem',
+              margin: isMobile ? '0 auto' : '0 auto',
+              position: 'relative',
+              minHeight: 'max-content',
+              paddingBottom: '1rem',
+              paddingTop: '0.5rem',
+              minWidth: isMobile ? '100%' : 'auto',
+              maxWidth: isMobile ? '100%' : 'auto',
+              transform: 'translate3d(0,0,0)',
+              backfaceVisibility: 'hidden',
+              perspective: 1000,
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: shouldCenter ? 'center' : 'flex-start',
+              width: '100%',
+              overflowY: 'visible',
+              maxHeight: 'none',
+              opacity: 1,
+              transition: 'none'
+            }
+      }
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
-      {allFunnelStepsElements.length > 0 ? (
+      {allFunnelStepsElements.length > 0 && !builderMode ? (
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
@@ -229,7 +226,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           </div>
         ))
       ) : (
-        // Caso fallback para usar os elementos passados diretamente como prop
+        // Renderizar elementos diretos (usados no modo builder e fallback)
         validCanvasElements.map((element, index) => {
           const elementWithPreviewProps = {
             ...element,
@@ -243,7 +240,12 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             skipLoading: true
           };
           
-          const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+          // No modo builder, usar as mesmas classes do builder original
+          const elementClassName = builderMode 
+            ? "builder-canvas-element" 
+            : isMobile 
+              ? 'canvas-element-mobile' 
+              : 'canvas-element';
           
           return (
             <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>

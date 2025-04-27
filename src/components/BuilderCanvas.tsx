@@ -371,7 +371,7 @@ const BuilderCanvas = ({
       <div 
         ref={canvasRef}
         className={cn(
-          "w-full mx-auto rounded-lg relative",
+          "builder-canvas-wrapper w-full mx-auto rounded-lg relative",
           isMobile ? "max-w-[375px]" : "max-w-[600px]",
           isExternalDragOver && "ring-2 ring-violet-400 ring-dashed bg-violet-50/50"
         )}

@@ -96,7 +96,7 @@ const CanvasElementRenderer = (props: ElementRendererProps) => {
   
   return (
     <div 
-      className="w-full"
+      className="builder-canvas-element w-full"
       onDragOver={handleDragOver}
       style={{
         // Remover qualquer espaçamento que prejudique a consistência com o preview
