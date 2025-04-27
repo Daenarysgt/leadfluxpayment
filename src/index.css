@@ -455,10 +455,42 @@
   }
 }
 
+@keyframes fade-in-out {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-in-out forwards;
 }
 
 .animate-slide-up {
   animation: slide-up 0.5s ease-in-out forwards;
+}
+
+.step-transition-fade {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.step-transition-fade.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Classe para todos os elementos do canvas para garantir transições suaves */
+.canvas-element, .canvas-element-mobile {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Animação para quando elementos estão chegando */
+.element-entering {
+  animation: fade-in-out 0.4s ease forwards;
 }

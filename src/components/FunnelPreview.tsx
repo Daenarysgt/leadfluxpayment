@@ -146,7 +146,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    transition: 'none' // Remover transição para evitar o flash
+    transition: 'all 0.3s ease-in-out' // Adicionar transição suave
   } as React.CSSProperties;
 
   // Debug log para verificar se o logo está chegando
@@ -177,7 +177,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
       return;
     }
     
-    // Nenhuma animação, apenas mudar diretamente para evitar o flash
+    // Usar uma transição suave para a mudança de etapa
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
