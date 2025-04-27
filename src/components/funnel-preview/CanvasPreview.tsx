@@ -19,7 +19,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
-  const [allStepsReady, setAllStepsReady] = useState(false);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -62,13 +61,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       };
     });
   }, [funnel]);
-
-  // Marcar quando todas as etapas estiverem prontas para evitar o flash inicial
-  useEffect(() => {
-    if (allFunnelStepsElements.length > 0) {
-      setAllStepsReady(true);
-    }
-  }, [allFunnelStepsElements]);
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -162,19 +154,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
   
-  // Se as etapas ainda não estiverem prontas, mostrar um placeholder
-  if (!allStepsReady && allFunnelStepsElements.length > 0) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="w-16 h-16" style={{ 
-          borderRadius: '50%',
-          opacity: 0.3,
-          backgroundColor: 'rgba(0,0,0,0.3)'
-        }}></div>
-      </div>
-    );
-  }
-  
   return (
     <div 
       ref={transitionRef}
@@ -197,21 +176,20 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         width: '100%',
         overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        position: 'relative'
+        // Remover qualquer animação de fade-in
+        opacity: 1,
+        transition: 'none'
       }}
     >
-      {/* Renderizar todas as etapas do funil, mantendo-as no DOM */}
+      {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
       {allFunnelStepsElements.length > 0 ? (
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
-            className={`w-full absolute top-0 left-0 right-0 transition-all duration-300 ${stepData.index === activeStep ? 'z-10 opacity-100 translate-y-0' : 'z-0 opacity-0 translate-y-4 pointer-events-none'}`}
+            className="w-full transition-opacity duration-100" 
             style={{ 
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              padding: isMobile ? '0.25rem' : '1rem',
-              overflow: 'hidden'
+              display: stepData.index === activeStep ? 'block' : 'none',
+              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
@@ -233,7 +211,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={`${elementClassName} fade-in-element`}>
+                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -252,82 +230,56 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         ))
       ) : (
         // Caso fallback para usar os elementos passados diretamente como prop
-        <div className={`w-full transition-all duration-300 opacity-100`}>
-          {validCanvasElements.map((element, index) => {
-            const elementWithPreviewProps = {
-              ...element,
-              previewMode: true,
-              previewProps: {
-                activeStep,
-                onStepChange: handleStepChange,
-                funnel,
-                isMobile,
-              },
-              skipLoading: true
-            };
-            
-            const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-            
-            return (
-              <div key={element.id} className={`${elementClassName} fade-in-element`}>
-                <ElementFactory 
-                  element={elementWithPreviewProps}
-                  isSelected={false} 
-                  isDragging={false}
-                  onSelect={noopFunction}
-                  onRemove={noopFunction}
-                  index={index}
-                  totalElements={validCanvasElements.length}
-                  onDragStart={null}
-                  onDragEnd={null}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-      
-      {/* Espaçador para garantir que o container tenha altura suficiente quando posicionamento absoluto */}
-      {allFunnelStepsElements.length > 0 && (
-        <div style={{ height: '500px', width: '100%' }}></div>
+        validCanvasElements.map((element, index) => {
+          const elementWithPreviewProps = {
+            ...element,
+            previewMode: true,
+            previewProps: {
+              activeStep,
+              onStepChange: handleStepChange,
+              funnel,
+              isMobile,
+            },
+            skipLoading: true
+          };
+          
+          const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
+          
+          return (
+            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+              <ElementFactory 
+                element={elementWithPreviewProps}
+                isSelected={false} 
+                isDragging={false}
+                onSelect={noopFunction}
+                onRemove={noopFunction}
+                index={index}
+                totalElements={validCanvasElements.length}
+                onDragStart={null}
+                onDragEnd={null}
+              />
+            </div>
+          );
+        })
       )}
     </div>
   );
 };
 
-// Adicionar estilo global para o componente
+// Removemos o estilo de animação fade-in
+const fadeInStyle = `
+<style>
+  /* Estilos removidos para evitar qualquer animação de fade */
+</style>
+`;
+
 const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
-  // Usar efeito para adicionar os estilos globais na montagem do componente
-  useEffect(() => {
-    // Criar uma tag style
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .fade-in-element {
-        animation: fade-in 0.3s ease-out forwards;
-      }
-      
-      @keyframes step-transition {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    `;
-    
-    // Adicionar ao head
-    document.head.appendChild(style);
-    
-    // Limpar na desmontagem
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-  
-  return <CanvasPreview {...props} />;
+  return (
+    <>
+      {/* Remover a injeção de estilos de animação */}
+      <CanvasPreview {...props} />
+    </>
+  );
 };
 
 export default CanvasPreviewWithStyle;
