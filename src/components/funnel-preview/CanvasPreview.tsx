@@ -116,29 +116,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     onStepChange(index);
   }, [funnel, sessionId, onStepChange]);
   
-  // Detectar propriedades visuais do funnel com valores padrão seguros
-  const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
-  const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
-  
-  // Estilos de container com valores padrão seguros
-  const containerStyles: React.CSSProperties = {
-    backgroundColor: 'transparent',
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem',
-    margin: isMobile ? '0 auto' : '0 auto',
-    position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
-    width: isMobile ? '100%' : 'auto',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
-  };
-
-  // Classes condicionais para desktop e mobile
-  const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
-    : "w-full mx-auto min-h-[300px] rounded-lg";
-  
   // Função para próximo passo
   const handleNextStep = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -157,39 +134,15 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   return (
     <div 
       ref={transitionRef}
-      className={`${containerClass} canvas-container w-full`}
-      style={{
-        ...containerStyles,
-        minHeight: 'max-content',
-        paddingBottom: '1.5rem',
-        paddingTop: '0.5rem',
-        // Garantir que a altura seja preservada durante a transição
-        minWidth: isMobile ? '100%' : 'auto',
-        maxWidth: isMobile ? '100%' : 'auto',
-        transform: 'translate3d(0,0,0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: shouldCenter ? 'center' : 'flex-start',
-        width: '100%',
-        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
-        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        // Remover qualquer animação de fade-in
-        opacity: 1,
-        transition: 'none'
-      }}
+      className="canvas-preview w-full"
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
       {allFunnelStepsElements.length > 0 ? (
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
-            className="w-full transition-opacity duration-100" 
             style={{ 
-              display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
+              display: stepData.index === activeStep ? 'block' : 'none'
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
@@ -207,11 +160,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
                 skipLoading: true
               };
               
-              // Classe específica para mobile ou desktop
-              const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-              
               return (
-                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                <div key={element.id} className="canvas-element">
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -243,13 +193,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             skipLoading: true
           };
           
-          const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-          
           return (
-            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+            <div key={element.id} className="canvas-element">
               <ElementFactory 
                 element={elementWithPreviewProps}
-                isSelected={false} 
+                isSelected={false}
                 isDragging={false}
                 onSelect={noopFunction}
                 onRemove={noopFunction}
@@ -266,19 +214,12 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-// Removemos o estilo de animação fade-in
-const fadeInStyle = `
-<style>
-  /* Estilos removidos para evitar qualquer animação de fade */
-</style>
-`;
-
+// Wrapper component to add styling consistently
 const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
   return (
-    <>
-      {/* Remover a injeção de estilos de animação */}
+    <div className="w-full">
       <CanvasPreview {...props} />
-    </>
+    </div>
   );
 };
 

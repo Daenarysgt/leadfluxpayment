@@ -16,12 +16,12 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
     );
   }
 
-  // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
   // Determinar se há uma imagem de fundo para aplicar estilo apropriado
   const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
   
+  // Remover o container extra que causa o duplo scroll e não ajusta a visualização 1:1
   return (
-    <div className="w-full flex items-center justify-center" 
+    <div className="preview-container w-full" 
          style={{ 
            backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
            backgroundImage: hasBackgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
@@ -30,17 +30,15 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
            backgroundPosition: 'center',
            backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
            backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll',
-           minHeight: '100%',
-           paddingBottom: '3rem'
+           height: 'auto',
+           overflow: 'visible' // Garantir que não há overflow que crie scroll interno
          }}>
-      <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
-        <FunnelPreview 
-          funnel={JSON.parse(JSON.stringify(currentFunnel))} 
-          isMobile={isMobile} 
-          stepIndex={currentStep}
-          key={`preview-${currentFunnel.id}-step-${currentStep}`} 
-        />
-      </div>
+      <FunnelPreview 
+        funnel={JSON.parse(JSON.stringify(currentFunnel))} 
+        isMobile={isMobile} 
+        stepIndex={currentStep}
+        key={`preview-${currentFunnel.id}-step-${currentStep}`} 
+      />
     </div>
   );
 });

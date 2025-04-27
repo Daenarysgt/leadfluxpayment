@@ -186,62 +186,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     }
   };
 
-  // Verificar se há imagem de fundo configurada para ajustar a visualização
-  const hasBackgroundImage = !!activeFunnel.settings.backgroundImage;
-  const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
-  const contentStyle = 'transparent'; // Força estilo sempre como transparent
-  
-  // Melhorar estilos para prevenção de layout shifts
-  const responsiveClass = isMobile ? 'mobile-view' : 'desktop-view';
-  
-  // Altura estimada do header (logo + barra de progresso + paddings)
-  const headerHeight = 80; // ajustável baseado na altura real do header
-  
-  // Classes melhoradas para responsividade
-  const wrapperClass = `w-full ${responsiveClass} ${centerContent ? 'h-[100dvh] flex flex-col' : ''}`;
-  
-  // Wrapper para todo o conteúdo
-  const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
-  
-  // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
-  
-  // Wrapper para o conteúdo principal (centralizado ou não)
-  const mainContentWrapperClass = shouldCenter 
-    ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
-    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
-  
-  const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
-  const contentClass = `w-full ${responsiveClass}`;
+  // Classe simplificada para o wrapper principal
+  const wrapperClass = `funnel-preview-container w-full ${isMobile ? 'mobile-view' : 'desktop-view'}`;
 
-  // Estilos específicos para o tipo de dispositivo e centralização
-  const mainContainerStyle: React.CSSProperties = {
-    transition: 'all 0.4s ease',
-    width: isMobile ? '100%' : 'auto',
-    maxWidth: isMobile ? '100%' : 'auto',
-    overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
-  };
-  
-  // Estilo do contêiner principal quando centralizado
-  const centerContentStyle: React.CSSProperties = shouldCenter ? {
-    minHeight: `calc(100dvh - ${headerHeight}px)`,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
-  } : {
-    // Estilo quando não está centralizado
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible'
+  // Estilo simplificado para o container
+  const containerStyle: React.CSSProperties = {
+    backgroundColor: 'transparent',
+    width: '100%',
+    transition: 'none',
   };
 
   return (
-    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
+    <div key={renderKey} className={wrapperClass} style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 
@@ -251,78 +207,65 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         />
       )}
       
-      <div className={contentWrapperClass} style={isMobile ? {overflowY: 'auto'} : {}}>
-        {/* Header Section - Logo e barra de progresso */}
-        <div className={headerWrapperClass}>
-          {/* Logotipo */}
-          {validLogo && (
-            <div className={logoWrapperClass}>
-              <img 
-                src={validLogo} 
-                alt="Logo" 
-                className="max-h-14 object-contain"
-                onError={(e) => {
-                  console.error("FunnelPreview - Erro ao carregar logo:", e);
-                  // Esconder o elemento em caso de erro
-                  e.currentTarget.style.display = 'none';
-                }}
-                onLoad={() => {
-                  console.log("FunnelPreview - Logo carregado com sucesso");
-                }}
-              />
-            </div>
-          )}
-
-          {/* Barra de Progresso */}
-          {activeFunnel.settings.showProgressBar && (
-            <div 
-              className={progressBarClass}
-              style={{
-                backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
-                height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
+      {/* Header Section - Logo e barra de progresso */}
+      <header className="w-full">
+        {/* Logotipo */}
+        {validLogo && (
+          <div className="w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2">
+            <img 
+              src={validLogo} 
+              alt="Logo" 
+              className="max-h-14 object-contain"
+              onError={(e) => {
+                console.error("FunnelPreview - Erro ao carregar logo:", e);
+                e.currentTarget.style.display = 'none';
               }}
-            >
-              <div 
-                className="h-full"
-                style={{ 
-                  width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
-                  backgroundColor: primaryColor,
-                  transition: 'width 0.2s ease-out' // Manter apenas a transição na barra de progresso
-                }}
-              ></div>
-            </div>
-          )}
-        </div>
-
-        {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
-          <div className={contentClass} style={mainContainerStyle}>
-            {canvasElements && canvasElements.length > 0 ? (
-              <div className="w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
-                <CanvasPreview
-                  canvasElements={canvasElements}
-                  activeStep={safeCurrentStep}
-                  onStepChange={handleStepChange}
-                  funnel={activeFunnel}
-                  isMobile={isMobile}
-                  centerContent={shouldCenter}
-                />
-              </div>
-            ) : (
-              // Otherwise, fall back to the traditional question rendering
-              <div>
-                  <TraditionalQuestionRenderer
-                    stepData={stepData}
-                    activeStep={safeCurrentStep}
-                    handleNextStep={handleStepChange}
-                    isLastStep={isLastStep}
-                    primaryColor={primaryColor}
-                  />
-              </div>
-            )}
+            />
           </div>
-        </div>
-      </div>
+        )}
+
+        {/* Barra de Progresso */}
+        {activeFunnel.settings.showProgressBar && (
+          <div 
+            className="w-full rounded-full overflow-hidden mb-2 sm:mb-3"
+            style={{
+              backgroundColor: `${primaryColor}30`,
+              height: '10px'
+            }}
+          >
+            <div 
+              className="h-full"
+              style={{ 
+                width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
+                backgroundColor: primaryColor,
+                transition: 'width 0.2s ease-out'
+              }}
+            ></div>
+          </div>
+        )}
+      </header>
+
+      {/* Main Content */}
+      <main style={containerStyle}>
+        {canvasElements && canvasElements.length > 0 ? (
+          <CanvasPreview
+            canvasElements={canvasElements}
+            activeStep={safeCurrentStep}
+            onStepChange={handleStepChange}
+            funnel={activeFunnel}
+            isMobile={isMobile}
+            centerContent={shouldCenter}
+          />
+        ) : (
+          <TraditionalQuestionRenderer
+            stepData={stepData}
+            activeStep={safeCurrentStep}
+            handleNextStep={handleStepChange}
+            isLastStep={isLastStep}
+            primaryColor={primaryColor}
+          />
+        )}
+      </main>
     </div>
   );
 };
