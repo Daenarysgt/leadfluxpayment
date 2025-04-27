@@ -146,9 +146,9 @@ const Preview = () => {
           backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
         }}
       >
-        {/* Header fixo com logo e barra de progresso (apenas mobile) */}
+        {/* Header normal com logo e barra de progresso (apenas mobile) */}
         {isMobile && (
-          <div className="sticky top-0 bg-white z-10 w-full shadow-sm">
+          <div className="w-full bg-white shadow-sm">
             {/* Logo */}
             {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
               <div className="w-full flex justify-center py-2">
@@ -179,7 +179,7 @@ const Preview = () => {
         {/* Conteúdo principal centralizado */}
         <div className="flex-1 flex justify-center">
           {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
-          <div className={`w-full pt-20 sm:pt-0 ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+          <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
             <CanvasPreview
               canvasElements={canvasElements}
               activeStep={currentStepIndex}
