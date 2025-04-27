@@ -12,12 +12,14 @@ interface StepsDatabaseAdapter {
 // Interface para hooks da aplicação
 interface LeadfluxAppHooks {
   preventCanvasReload: (stepId?: string) => void;
+  saveCurrentStepElements?: () => void;
 }
 
 // Global type definitions
 interface Window {
   LEADFLUX_APP_HOOKS?: {
     preventCanvasReload?: (stepId?: string) => void;
+    saveCurrentStepElements?: () => void;
     [key: string]: any;
   };
   preloadedCanvasElements?: {

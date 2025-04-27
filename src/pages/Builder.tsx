@@ -52,7 +52,8 @@ const Builder = () => {
   // @ts-ignore - Definido dinamicamente
   window.LEADFLUX_APP_HOOKS = {
     ...window.LEADFLUX_APP_HOOKS,
-    preventCanvasReload: preventNextReload
+    preventCanvasReload: preventNextReload,
+    saveCurrentStepElements: saveCurrentStepElements
   };
   
   // Manter referência atualizada quando o hook mudar
@@ -60,7 +61,8 @@ const Builder = () => {
     // @ts-ignore - Definido dinamicamente
     window.LEADFLUX_APP_HOOKS = {
       ...window.LEADFLUX_APP_HOOKS,
-      preventCanvasReload: preventNextReload
+      preventCanvasReload: preventNextReload,
+      saveCurrentStepElements: saveCurrentStepElements
     };
     
     console.log("Builder - Hooks registrados no objeto window");
@@ -71,9 +73,11 @@ const Builder = () => {
       if (window.LEADFLUX_APP_HOOKS) {
         // @ts-ignore - Definido dinamicamente
         delete window.LEADFLUX_APP_HOOKS.preventCanvasReload;
+        // @ts-ignore - Definido dinamicamente
+        delete window.LEADFLUX_APP_HOOKS.saveCurrentStepElements;
       }
     };
-  }, [preventNextReload]);
+  }, [preventNextReload, saveCurrentStepElements]);
 
   // Initialize funnel if none is selected
   useEffect(() => {
