@@ -93,19 +93,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   const handleStepChange = (newStep: number) => {
     setActiveStep(newStep);
     
-    // Scrollar automaticamente para o topo do container
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ 
-        top: 0, 
-        behavior: 'smooth' 
-      });
-    } else {
-      // Fallback para window scroll
-      window.scrollTo({ 
-        top: 0, 
-        behavior: 'smooth' 
-      });
-    }
+    setTimeout(() => {
+      const scrollTarget = containerRef.current || window;
+
+      if (scrollTarget instanceof HTMLElement) {
+        scrollTarget.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
     
     // Notify parent component if callback is provided
     if (onNextStep) {
@@ -119,10 +115,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
       <>
         {/* Header fixo com logo e barra de progresso no modo preview (apenas mobile) */}
         {isMobile && (
-          <div 
-            ref={headerRef}
-            className="sticky top-0 bg-white z-10 w-full shadow-sm"
-          >
+          <div className="sticky top-0 bg-white z-10 w-full shadow-sm">
             {/* Logo */}
             {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
               <div className="w-full flex justify-center py-2">
@@ -150,16 +143,14 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
           </div>
         )}
       
-        <div style={{ paddingTop: isMobile ? `${headerHeight}px` : '0' }}>
-          <CanvasPreview 
-            canvasElements={canvasElements} 
-            activeStep={safeCurrentStep}
-            onStepChange={handleStepChange}
-            funnel={activeFunnel}
-            isMobile={isMobile}
-            isPreviewPage={true}
-          />
-        </div>
+        <CanvasPreview 
+          canvasElements={canvasElements} 
+          activeStep={safeCurrentStep}
+          onStepChange={handleStepChange}
+          funnel={activeFunnel}
+          isMobile={isMobile}
+          isPreviewPage={true}
+        />
       </>
     );
   }
@@ -186,10 +177,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
 
         <div className="flex flex-col items-center w-full max-w-xl mx-auto">
           {/* Header com logo e barra de progresso */}
-          <div 
-            ref={headerRef}
-            className={`w-full ${isMobile ? 'sticky top-0 bg-white z-10 shadow-sm' : ''}`}
-          >
+          <div className={`w-full ${isMobile ? 'sticky top-0 bg-white z-10 shadow-sm' : ''}`}>
             {/* Logo */}
             {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
               <div className="w-full flex justify-center py-4">
@@ -217,13 +205,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             )}
           </div>
 
-          <div 
-            className="w-full" 
-            style={{ 
-              opacity: 1,
-              paddingTop: isMobile ? `${headerHeight}px` : '0'
-            }}
-          >
+          <div className="w-full" style={{ opacity: 1 }}>
             {canvasElements && canvasElements.length > 0 ? (
               // If we have canvas elements, render them
               <CanvasPreview 
