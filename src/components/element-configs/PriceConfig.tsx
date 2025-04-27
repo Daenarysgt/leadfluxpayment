@@ -596,6 +596,15 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                   </div>
                   
                   <div>
+                    <Label className="text-xs">Cor do texto dos recursos</Label>
+                    <AdvancedColorPicker
+                      value={plan.style?.featureColor || "#ffffff"}
+                      onChange={color => updatePlanStyle(plan.id, { featureColor: color })}
+                      size="sm"
+                    />
+                  </div>
+                  
+                  <div>
                     <Label className="text-xs">Cor de destaque</Label>
                     <AdvancedColorPicker
                       value={plan.style?.highlightColor || "#8B5CF6"}
