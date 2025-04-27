@@ -46,25 +46,11 @@ const BuilderCanvas = ({
           };
         }
         
-        // Calcular a largura disponível considerando o container atual
-        const containerWidth = canvasRef.current ? 
-          canvasRef.current.getBoundingClientRect().width - 32 : // Subtrair o padding
-          window.innerWidth - 32; // Fallback para largura da janela
-        
         // Assegurar largura máxima para caber na tela
         if (adjustedElement.dimensions) {
           adjustedElement.dimensions = {
             ...adjustedElement.dimensions,
-            width: containerWidth // Usar a largura do container menos padding
-          };
-        }
-        
-        // Verificar se é um botão ou outro elemento interativo que precisa de ajustes adicionais
-        if (adjustedElement.type === 'button' && adjustedElement.style) {
-          // Garantir que os botões tenham estilos consistentes
-          adjustedElement.style = {
-            ...adjustedElement.style,
-            width: '100%' // Forçar largura total para botões em mobile
+            width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
           };
         }
       }

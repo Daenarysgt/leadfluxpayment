@@ -161,8 +161,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '0',
-        paddingTop: '0',
+        paddingBottom: '1.5rem',
+        paddingTop: '0.5rem',
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
@@ -178,10 +178,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
         // Remover qualquer animação de fade-in
         opacity: 1,
-        transition: 'none',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-        gap: '0', // Eliminar espaçamento entre elementos
+        transition: 'none'
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -192,36 +189,13 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             className="w-full transition-opacity duration-100" 
             style={{ 
               display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1, // Manter opacidade 1 para evitar efeito de fade
-              gap: '0',
-              marginBottom: '0',
-              paddingBottom: '0'
+              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
-              // Processar o elemento para garantir consistência com o builder
-              const processedElement = isMobile ? {
-                ...element,
-                // Forçar alinhamento à esquerda em mobile
-                position: element.position ? {
-                  ...element.position,
-                  x: 0
-                } : element.position,
-                // Ajustar dimensões para mobile
-                dimensions: element.dimensions ? {
-                  ...element.dimensions,
-                  width: window.innerWidth - 32 // Mesma lógica do BuilderCanvas
-                } : element.dimensions,
-                // Ajustes específicos para botões
-                style: element.type === 'button' && element.style ? {
-                  ...element.style,
-                  width: '100%'
-                } : element.style
-              } : element;
-              
               // Adicionar propriedades de preview para navegação
               const elementWithPreviewProps = {
-                ...processedElement,
+                ...element,
                 previewMode: true,
                 previewProps: {
                   activeStep,
@@ -237,13 +211,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName} style={{ 
-                  opacity: 1,
-                  marginBottom: '0', // Eliminar margem inferior
-                  marginTop: '0', // Eliminar margem superior
-                  paddingBottom: '0', // Eliminar padding inferior
-                  paddingTop: '0' // Eliminar padding superior
-                }}>
+                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -263,28 +231,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       ) : (
         // Caso fallback para usar os elementos passados diretamente como prop
         validCanvasElements.map((element, index) => {
-          // Processar o elemento para garantir consistência com o builder
-          const processedElement = isMobile ? {
-            ...element,
-            // Forçar alinhamento à esquerda em mobile
-            position: element.position ? {
-              ...element.position,
-              x: 0
-            } : element.position,
-            // Ajustar dimensões para mobile
-            dimensions: element.dimensions ? {
-              ...element.dimensions,
-              width: window.innerWidth - 32 // Mesma lógica do BuilderCanvas
-            } : element.dimensions,
-            // Ajustes específicos para botões
-            style: element.type === 'button' && element.style ? {
-              ...element.style,
-              width: '100%'
-            } : element.style
-          } : element;
-          
           const elementWithPreviewProps = {
-            ...processedElement,
+            ...element,
             previewMode: true,
             previewProps: {
               activeStep,
@@ -298,13 +246,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName} style={{ 
-              opacity: 1,
-              marginBottom: '0',
-              marginTop: '0',
-              paddingBottom: '0',
-              paddingTop: '0'
-            }}>
+            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
