@@ -136,6 +136,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
               currentStep={safeCurrentStep} 
               totalSteps={activeFunnel.steps.length} 
               primaryColor={primaryColor}
+              isMobile={isMobile}
             />
           )}
 

@@ -4,12 +4,13 @@ interface ProgressBarProps {
   currentStep: number;
   totalSteps: number;
   primaryColor: string;
+  isMobile?: boolean;
 }
 
-const ProgressBar = ({ currentStep, totalSteps, primaryColor }: ProgressBarProps) => {
+const ProgressBar = ({ currentStep, totalSteps, primaryColor, isMobile = false }: ProgressBarProps) => {
   return (
     <div 
-      className="w-full rounded-full overflow-hidden mb-3"
+      className={`w-full rounded-full overflow-hidden mb-3 ${isMobile ? 'mx-4' : ''}`}
       style={{ 
         backgroundColor: `${primaryColor}30`, /* Usando a mesma cor do progresso com 30% de opacidade */
         height: '10px' /* Valor intermediário entre h-2 (8px) e h-3 (12px) */

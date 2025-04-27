@@ -2,11 +2,19 @@ import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, ReactNode } from "react";
 import { useStore } from "@/utils/store";
 import { ArrowRight } from "lucide-react";
 import { accessService } from "@/services/accessService";
 import { safelyTrackEvent } from "@/utils/pixelUtils";
+
+// Adicionar interface para previewProps
+interface PreviewProps {
+  activeStep: number;
+  onStepChange: (newStep: number) => void;
+  funnel?: any;
+  isMobile?: boolean;
+}
 
 // Função para ajustar uma cor hex, tornando-a mais clara ou escura
 const adjustColor = (color: string, amount: number): string => {
@@ -338,10 +346,28 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     }
   };
 
+  const BaseElementWrapper = ({ children }: { children: ReactNode }) => {
+    // Se estiver em modo preview mobile, adicionar margens laterais
+    const isMobile = previewProps && 'isMobile' in previewProps ? previewProps.isMobile : false;
+    
+    if (previewMode && isMobile) {
+      return (
+        <BaseElementRenderer {...props}>
+          <div className="px-4 w-full">
+            {children}
+          </div>
+        </BaseElementRenderer>
+      );
+    }
+    
+    // Caso contrário, renderizar normalmente
+    return <BaseElementRenderer {...props}>{children}</BaseElementRenderer>;
+  };
+
   if (!isVisible) return null;
 
   return (
-    <BaseElementRenderer {...props}>
+    <BaseElementWrapper>
       <div className={cn("w-full flex", alignmentClass)} style={{ marginTop: `${marginTop}px` }}>
         <Button
           className={buttonClass}
@@ -386,7 +412,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
           )}
         </Button>
       </div>
-    </BaseElementRenderer>
+    </BaseElementWrapper>
   );
 };
 
