@@ -184,7 +184,7 @@ const Preview = () => {
               funnel={loadedFunnel}
               isMobile={isMobile}
               isPreviewPage={true}
-              className={isMobile ? 'px-0' : ''}
+              className={isMobile ? 'px-4' : ''}
             />
           </div>
         </div>
