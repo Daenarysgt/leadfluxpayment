@@ -77,8 +77,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     // Adicionar um pequeno atraso para garantir que o DOM tenha tempo de se preparar
     const timer = setTimeout(() => {
       setDataReady(true);
-      console.log("FunnelPreview - Dados prontos para renderização");
-    }, 100);
+    }, 50);
     
     return () => clearTimeout(timer);
   }, [activeFunnel, activeStep]);
@@ -109,7 +108,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Se os dados não estiverem prontos, mostrar loading
   if (!dataReady) {
     return (
-      <div className="flex justify-center items-center p-8 min-h-[300px]">
+      <div className="flex justify-center items-center min-h-[300px]">
         <div className="animate-pulse flex flex-col items-center space-y-4">
           <div className="rounded-full bg-gray-200 h-12 w-12"></div>
           <div className="flex-1 space-y-4 w-full max-w-md">
@@ -146,38 +145,29 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    transition: 'none' // Remover transição para evitar o flash
+    transition: 'none'
   } as React.CSSProperties;
-
-  // Debug log para verificar se o logo está chegando
-  console.log("FunnelPreview - Logo encontrado nas settings:", !!logo, typeof logo);
   
   // Verificar se o logo é uma string base64 válida
   let validLogo = logo;
   if (typeof logo === 'string' && !logo.startsWith('data:image/')) {
-    console.error("FunnelPreview - Logo não é uma string base64 válida");
-    // Tentar corrigir formatos comuns de base64 sem o prefixo
     if (logo.startsWith('/9j/') || logo.startsWith('iVBOR')) {
-      console.log("FunnelPreview - Tentando corrigir formato do logo");
       validLogo = `data:image/jpeg;base64,${logo}`;
     } else {
       validLogo = null;
     }
   }
 
-  // Get the canvas elements from the current step's questions and garantir que seja array válido
+  // Get the canvas elements from the current step
   const canvasElements = Array.isArray(stepData.canvasElements) ? stepData.canvasElements : [];
 
-  const handleStepChange = (newStep: number) => {
-    console.log("FunnelPreview - Changing step to:", newStep);
-    
+  const handleStepChange = (newStep: number) => {    
     // Validar o índice da etapa
     if (newStep < 0 || (activeFunnel && newStep >= activeFunnel.steps.length)) {
       console.error("FunnelPreview - Índice de etapa inválido:", newStep);
       return;
     }
     
-    // Nenhuma animação, apenas mudar diretamente para evitar o flash
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
@@ -186,62 +176,19 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     }
   };
 
-  // Verificar se há imagem de fundo configurada para ajustar a visualização
+  // Verificar se há imagem de fundo configurada
   const hasBackgroundImage = !!activeFunnel.settings.backgroundImage;
-  const useBackgroundOpacity = hasBackgroundImage && typeof activeFunnel.settings.backgroundOpacity === 'number';
-  const contentStyle = 'transparent'; // Força estilo sempre como transparent
   
-  // Melhorar estilos para prevenção de layout shifts
-  const responsiveClass = isMobile ? 'mobile-view' : 'desktop-view';
-  
-  // Altura estimada do header (logo + barra de progresso + paddings)
-  const headerHeight = 80; // ajustável baseado na altura real do header
-  
-  // Classes melhoradas para responsividade
-  const wrapperClass = `w-full ${responsiveClass} ${centerContent ? 'h-[100dvh] flex flex-col' : ''}`;
-  
-  // Wrapper para todo o conteúdo
-  const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
-  
-  // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
-  
-  // Wrapper para o conteúdo principal (centralizado ou não)
-  const mainContentWrapperClass = shouldCenter 
-    ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
-    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
-  
-  const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
-  const contentClass = `w-full ${responsiveClass}`;
-
-  // Estilos específicos para o tipo de dispositivo e centralização
-  const mainContainerStyle: React.CSSProperties = {
-    transition: 'all 0.4s ease',
-    width: isMobile ? '100%' : 'auto',
-    maxWidth: isMobile ? '100%' : 'auto',
-    overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
-  };
-  
-  // Estilo do contêiner principal quando centralizado
-  const centerContentStyle: React.CSSProperties = shouldCenter ? {
-    minHeight: `calc(100dvh - ${headerHeight}px)`,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
-  } : {
-    // Estilo quando não está centralizado
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible'
-  };
+  // Classes para layout responsivo
+  const wrapperClass = `w-full ${isMobile ? 'mobile-view' : 'desktop-view'}`;
+  const contentWrapperClass = `w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
+  const headerWrapperClass = "w-full flex flex-col items-center";
+  const logoWrapperClass = "w-full flex justify-center mb-1";
+  const progressBarClass = "w-full rounded-full overflow-hidden mb-2";
+  const contentClass = `w-full`;
 
   return (
-    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
+    <div key={renderKey} className={wrapperClass} style={customStyles}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 
@@ -251,7 +198,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         />
       )}
       
-      <div className={contentWrapperClass} style={isMobile ? {overflowY: 'auto'} : {}}>
+      <div className={contentWrapperClass}>
         {/* Header Section - Logo e barra de progresso */}
         <div className={headerWrapperClass}>
           {/* Logotipo */}
@@ -261,14 +208,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
                 src={validLogo} 
                 alt="Logo" 
                 className="max-h-14 object-contain"
-                onError={(e) => {
-                  console.error("FunnelPreview - Erro ao carregar logo:", e);
-                  // Esconder o elemento em caso de erro
-                  e.currentTarget.style.display = 'none';
-                }}
-                onLoad={() => {
-                  console.log("FunnelPreview - Logo carregado com sucesso");
-                }}
               />
             </div>
           )}
@@ -278,8 +217,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
             <div 
               className={progressBarClass}
               style={{
-                backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
-                height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
+                backgroundColor: `${primaryColor}30`,
+                height: '10px'
               }}
             >
               <div 
@@ -287,40 +226,33 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
                 style={{ 
                   width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
                   backgroundColor: primaryColor,
-                  transition: 'width 0.2s ease-out' // Manter apenas a transição na barra de progresso
+                  transition: 'width 0.2s ease-out'
                 }}
               ></div>
             </div>
           )}
         </div>
 
-        {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
-          <div className={contentClass} style={mainContainerStyle}>
-            {canvasElements && canvasElements.length > 0 ? (
-              <div className="w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
-                <CanvasPreview
-                  canvasElements={canvasElements}
-                  activeStep={safeCurrentStep}
-                  onStepChange={handleStepChange}
-                  funnel={activeFunnel}
-                  isMobile={isMobile}
-                  centerContent={shouldCenter}
-                />
-              </div>
-            ) : (
-              // Otherwise, fall back to the traditional question rendering
-              <div>
-                  <TraditionalQuestionRenderer
-                    stepData={stepData}
-                    activeStep={safeCurrentStep}
-                    handleNextStep={handleStepChange}
-                    isLastStep={isLastStep}
-                    primaryColor={primaryColor}
-                  />
-              </div>
-            )}
-          </div>
+        {/* Main Content Section */}
+        <div className={contentClass}>
+          {canvasElements && canvasElements.length > 0 ? (
+            <CanvasPreview
+              canvasElements={canvasElements}
+              activeStep={safeCurrentStep}
+              onStepChange={handleStepChange}
+              funnel={activeFunnel}
+              isMobile={isMobile}
+              centerContent={shouldCenter}
+            />
+          ) : (
+            <TraditionalQuestionRenderer
+              stepData={stepData}
+              activeStep={safeCurrentStep}
+              handleNextStep={handleStepChange}
+              isLastStep={isLastStep}
+              primaryColor={primaryColor}
+            />
+          )}
         </div>
       </div>
     </div>
