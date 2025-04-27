@@ -6,6 +6,8 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
+import { useIsMobile } from "@/hooks/use-mobile";
+import OptimizedImage from "@/components/ui/optimized-image";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -206,7 +208,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   // Memoize the options rendering to improve performance
   const renderedOptions = useMemo(() => {
-    return content?.options ? content.options.map((option) => {
+    if (!content?.options) return null;
+    
+    return content.options.length > 0 ? content.options.map(option => {
       const optionStyle = option.style || {};
       const backgroundColor = optionStyle.backgroundColor || funnelSettings.primaryColor || "#0F172A";
       const aspectRatio = optionStyle.aspectRatio || "1:1";
@@ -326,16 +330,14 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {aspectRatio !== "original" && ratio ? (
               <AspectRatio ratio={ratio} className="w-full">
                 {option.image ? (
-                  <img 
+                  <OptimizedImage 
                     src={option.image} 
                     alt={option.text} 
-                    className="h-full w-full object-cover" 
-                    onError={(e) => {
-                      console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
-                      // Substituir por placeholder em caso de erro
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                    loading="lazy"
+                    className="h-full w-full object-cover"
+                    objectFit="cover"
+                    priority={false}
+                    width="100%"
+                    height="100%"
                   />
                 ) : (
                   <div className="h-full w-full bg-gray-200 flex items-center justify-center">
@@ -346,16 +348,14 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             ) : (
               <div className="relative">
                 {option.image ? (
-                  <img 
+                  <OptimizedImage 
                     src={option.image} 
                     alt={option.text} 
-                    className="w-full object-contain" 
-                    onError={(e) => {
-                      console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
-                      // Substituir por placeholder em caso de erro
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                    loading="lazy"
+                    className="w-full object-contain"
+                    objectFit="contain"
+                    priority={false}
+                    width="100%"
+                    height="auto"
                   />
                 ) : (
                   <div className="h-40 w-full bg-gray-200 flex items-center justify-center">
