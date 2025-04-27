@@ -81,7 +81,9 @@ const Preview = () => {
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 30);
       });
     });
   };
