@@ -230,18 +230,18 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll no mobile
+    overflowY: 'visible', // Remover scroll para evitar duplicação
   } : {
     // Estilo quando não está centralizado
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    overflowY: isMobile ? 'auto' : 'visible'
+    overflowY: 'visible' // Remover scroll para evitar duplicação
   };
 
   return (
-    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
+    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: 'visible'}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 
@@ -295,10 +295,10 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         </div>
 
         {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
+        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: 'visible'}}>
           <div className={contentClass} style={mainContainerStyle}>
             {canvasElements && canvasElements.length > 0 ? (
-              <div className="w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
+              <div className="w-full" style={{overflow: 'visible'}}>
                 <CanvasPreview
                   canvasElements={canvasElements}
                   activeStep={safeCurrentStep}

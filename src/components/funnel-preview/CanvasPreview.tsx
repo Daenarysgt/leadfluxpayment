@@ -131,7 +131,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     left: isMobile ? '0' : 'auto',
     right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
+    overflowY: 'visible', // Sempre usar visible para evitar scrolls duplicados
   };
 
   // Classes condicionais para desktop e mobile
@@ -161,7 +161,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '1.5rem',
+        paddingBottom: '1rem',
         paddingTop: '0.5rem',
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
@@ -174,8 +174,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         flexDirection: 'column',
         justifyContent: shouldCenter ? 'center' : 'flex-start',
         width: '100%',
-        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
-        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        overflowY: 'visible', // Sempre usar visible para evitar scrolls duplicados
+        maxHeight: 'none', // Remover limite de altura para todos os modos
         // Remover qualquer animação de fade-in
         opacity: 1,
         transition: 'none'

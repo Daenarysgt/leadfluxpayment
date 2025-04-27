@@ -462,3 +462,46 @@
 .animate-slide-up {
   animation: slide-up 0.5s ease-in-out forwards;
 }
+
+/* Correções para a visualização no Builder */
+.preview-container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  min-height: 100%;
+}
+
+/* Remover espaçamentos adicionais na visualização */
+.preview-container .canvas-container {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Garantir que o espaçamento vertical seja exatamente igual ao do builder */
+.canvas-element, .canvas-element-mobile {
+  margin-bottom: 0.5rem;
+}
+
+/* Centralizar corretamente os elementos na visualização */
+.preview-container .w-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Remover scrollbars desnecessários */
+.preview-container [class*="scroll-area"] {
+  overflow: visible !important;
+}
+
+/* Eliminar qualquer scrollbar interno extra */
+.preview-container [data-radix-scroll-area-viewport] {
+  overflow: visible !important;
+}
+
+/* Ajustar a visualização de imagens para evitar distorções */
+.preview-container img {
+  max-width: 100%;
+  height: auto;
+}
