@@ -101,7 +101,7 @@ const Preview = () => {
   const { primaryColor, logo } = loadedFunnel.settings || {};
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm">
         <Link to={`/builder/${funnelId}`}>
           <Button variant="ghost" size="sm" className="gap-1">
@@ -137,7 +137,7 @@ const Preview = () => {
       {/* Container principal com fundo e configurações de background */}
       <div 
         ref={contentContainerRef}
-        className="flex-1 flex flex-col" 
+        className="w-full flex-grow" 
         style={{
           backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
           backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
@@ -181,7 +181,7 @@ const Preview = () => {
         )}
         
         {/* Conteúdo principal centralizado */}
-        <div className="flex-1 flex justify-center">
+        <div className="w-full flex justify-center">
           {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
           <div className={`w-full ${isMobile ? 'px-4 max-w-full' : 'max-w-4xl'}`}>
             <CanvasPreview
