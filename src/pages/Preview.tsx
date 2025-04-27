@@ -80,13 +80,7 @@ const Preview = () => {
     setCurrentStepIndex(index);
 
     setTimeout(() => {
-      const scrollTarget = contentContainerRef.current || window;
-
-      if (scrollTarget instanceof HTMLElement) {
-        scrollTarget.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
   };
   
@@ -149,30 +143,32 @@ const Preview = () => {
         {/* Header normal com logo e barra de progresso (apenas mobile) */}
         {isMobile && (
           <div className="w-full bg-white shadow-sm">
-            {/* Logo */}
-            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
-              <div className="w-full flex justify-center py-2">
-                <img 
-                  src={logo} 
-                  alt="Logo" 
-                  className="max-h-12 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-            
-            {/* Progress Bar com margens laterais */}
-            {loadedFunnel.settings?.showProgressBar && (
-              <div className="px-4 pb-2">
-                <ProgressBar 
-                  currentStep={currentStepIndex} 
-                  totalSteps={loadedFunnel.steps.length} 
-                  primaryColor={primaryColor}
-                />
-              </div>
-            )}
+            <div className="px-4">
+              {/* Logo */}
+              {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+                <div className="w-full flex justify-center py-2">
+                  <img 
+                    src={logo} 
+                    alt="Logo" 
+                    className="max-h-12 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Progress Bar com margens laterais */}
+              {loadedFunnel.settings?.showProgressBar && (
+                <div className="pb-2">
+                  <ProgressBar 
+                    currentStep={currentStepIndex} 
+                    totalSteps={loadedFunnel.steps.length} 
+                    primaryColor={primaryColor}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
         

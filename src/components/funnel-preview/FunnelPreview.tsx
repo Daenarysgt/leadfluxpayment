@@ -68,13 +68,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
     setActiveStep(newStep);
     
     setTimeout(() => {
-      const scrollTarget = containerRef.current || window;
-
-      if (scrollTarget instanceof HTMLElement) {
-        scrollTarget.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
     
     // Notify parent component if callback is provided
@@ -90,30 +84,32 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
         {/* Header normal (não-sticky) com logo e barra de progresso */}
         {isMobile && (
           <div className="w-full bg-white z-10 shadow-sm">
-            {/* Logo */}
-            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
-              <div className="w-full flex justify-center py-2">
-                <img 
-                  src={logo} 
-                  alt="Logo" 
-                  className="max-h-12 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-            
-            {/* Progress Bar com margens laterais */}
-            {activeFunnel.settings.showProgressBar && (
-              <div className="px-4 pb-2">
-                <ProgressBar 
-                  currentStep={safeCurrentStep} 
-                  totalSteps={activeFunnel.steps.length} 
-                  primaryColor={primaryColor}
-                />
-              </div>
-            )}
+            <div className="px-4">
+              {/* Logo */}
+              {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+                <div className="w-full flex justify-center py-2">
+                  <img 
+                    src={logo} 
+                    alt="Logo" 
+                    className="max-h-12 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Progress Bar com margens laterais */}
+              {activeFunnel.settings.showProgressBar && (
+                <div className="pb-2">
+                  <ProgressBar 
+                    currentStep={safeCurrentStep} 
+                    totalSteps={activeFunnel.steps.length} 
+                    primaryColor={primaryColor}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       
@@ -152,31 +148,33 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
         <div className="flex flex-col items-center w-full max-w-xl mx-auto">
           {/* Header normal (não-sticky) com logo e barra de progresso */}
           <div className="w-full bg-white">
-            {/* Logo */}
-            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
-              <div className="w-full flex justify-center py-4">
-                <img 
-                  src={logo} 
-                  alt="Logo" 
-                  className="max-h-14 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  style={{ opacity: 1 }} // Forçar opacidade total
-                />
-              </div>
-            )}
-            
-            {/* Progress Bar com margens no mobile */}
-            {activeFunnel.settings.showProgressBar && (
-              <div className={isMobile ? "px-4 pb-2" : "pb-2"}>
-                <ProgressBar 
-                  currentStep={safeCurrentStep} 
-                  totalSteps={activeFunnel.steps.length} 
-                  primaryColor={primaryColor}
-                />
-              </div>
-            )}
+            <div className="px-4">
+              {/* Logo */}
+              {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+                <div className="w-full flex justify-center py-4">
+                  <img 
+                    src={logo} 
+                    alt="Logo" 
+                    className="max-h-14 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    style={{ opacity: 1 }} // Forçar opacidade total
+                  />
+                </div>
+              )}
+              
+              {/* Progress Bar com margens no mobile */}
+              {activeFunnel.settings.showProgressBar && (
+                <div className={isMobile ? "pb-2" : "pb-2"}>
+                  <ProgressBar 
+                    currentStep={safeCurrentStep} 
+                    totalSteps={activeFunnel.steps.length} 
+                    primaryColor={primaryColor}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="w-full" style={{ opacity: 1 }}>
