@@ -20,6 +20,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   const previousStepRef = useRef<number>(activeStep);
   const transitionRef = useRef<HTMLDivElement>(null);
   
+  // Detectar se estamos na página de preview ou no builder
+  const isPreviewPage = window.location.pathname.includes('/preview/');
+  
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
     // Garantir que canvasElements é um array
@@ -125,15 +128,15 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isMobile ? '0.25rem' : '1rem',
+    padding: isPreviewPage ? '0' : (isMobile ? '0.25rem' : '1rem'),
     margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
     left: isMobile ? '0' : 'auto',
     right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
-    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
-    paddingTop: '0.25rem', // Reduzir espaçamento superior
-    paddingBottom: '0.25rem' // Reduzir espaçamento inferior
+    overflowY: isMobile ? 'auto' : 'visible',
+    paddingTop: isPreviewPage ? '0' : '0.25rem',
+    paddingBottom: isPreviewPage ? '0' : '0.25rem'
   };
 
   // Classes condicionais para desktop e mobile
@@ -163,8 +166,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '1.5rem',
-        paddingTop: '0.5rem',
+        paddingBottom: isPreviewPage ? '0' : '1.5rem',
+        paddingTop: isPreviewPage ? '0' : '0.5rem',
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
@@ -215,7 +218,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               return (
                 <div key={element.id} className={elementClassName} style={{ 
                   opacity: 1,
-                  marginBottom: '0.5rem' // Reduzir espaçamento entre elementos
+                  marginBottom: isPreviewPage ? '0' : '0.5rem' // Remover espaçamento entre elementos no preview
                 }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
@@ -253,7 +256,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           return (
             <div key={element.id} className={elementClassName} style={{ 
               opacity: 1,
-              marginBottom: '0.5rem' // Reduzir espaçamento entre elementos
+              marginBottom: isPreviewPage ? '0' : '0.5rem' // Remover espaçamento entre elementos no preview
             }}>
               <ElementFactory 
                 element={elementWithPreviewProps}

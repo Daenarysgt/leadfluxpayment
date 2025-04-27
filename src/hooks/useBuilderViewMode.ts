@@ -7,18 +7,8 @@ export const useBuilderViewMode = () => {
   const [previewActive, setPreviewActive] = useState(false);
   
   const togglePreview = useCallback(() => {
-    if (!previewActive) {
-      console.log("Builder - Sincronizando elementos antes de ativar preview");
-      
-      if (window.LEADFLUX_APP_HOOKS && window.LEADFLUX_APP_HOOKS.saveCurrentStepElements) {
-        window.LEADFLUX_APP_HOOKS.saveCurrentStepElements();
-      }
-      
-      setTimeout(() => setPreviewActive(true), 300);
-    } else {
-      setPreviewActive(false);
-    }
-  }, [previewActive]);
+    setPreviewActive(prev => !prev);
+  }, []);
   
   const openFullPreview = useCallback((saveFunction: () => void) => {
     if (currentFunnel) {

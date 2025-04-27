@@ -1,12 +1,12 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useStore } from "@/utils/store";
 import { useEffect, useState } from "react";
 import FunnelPreview from "@/components/FunnelPreview";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ChevronLeft, Monitor, Smartphone } from "lucide-react";
 import { Funnel } from "@/utils/types";
 import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
+import { CanvasElement } from "@/types/canvasTypes";
 
 // Detectar mobile no carregamento inicial
 const detectMobile = () => {
@@ -41,11 +41,16 @@ const Preview = () => {
       
       if (targetFunnel) {
         console.log("Preview page - Found funnel:", targetFunnel.name);
-        // Create a deep clone to avoid any reference issues
-        setLoadedFunnel(JSON.parse(JSON.stringify(targetFunnel)));
+        // Criar uma cópia sem modificar a estrutura original
+        setLoadedFunnel({...targetFunnel, 
+          steps: targetFunnel.steps.map(step => ({
+            ...step,
+            canvasElements: Array.isArray(step.canvasElements) ? 
+              [...step.canvasElements] : []
+          }))
+        });
       } else {
         console.log("Preview page - Funnel not found with ID:", funnelId);
-        console.log("Available funnels:", funnels.map(f => ({ id: f.id, name: f.name })));
       }
     }
   }, [funnelId, funnels]);
@@ -73,11 +78,14 @@ const Preview = () => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
   };
+  
+  // Determinar se há imagem de fundo para aplicar estilo apropriado
+  const hasBackgroundImage = !!loadedFunnel?.settings?.backgroundImage;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <header className="bg-white border-b py-3 px-6 flex items-center">
-        <Link to="/builder">
+    <div className="min-h-screen flex flex-col">
+      <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm">
+        <Link to={`/builder/${funnelId}`}>
           <Button variant="ghost" size="sm" className="gap-1">
             <ChevronLeft className="h-4 w-4" />
             Voltar para o construtor
@@ -85,35 +93,47 @@ const Preview = () => {
         </Link>
         
         <div className="mx-auto">
-          <h1 className="text-lg font-medium">{loadedFunnel.name} - Visualização</h1>
+          <h1 className="text-lg font-medium">{loadedFunnel.name}</h1>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex items-center">
           <Button 
             variant={isMobile ? "outline" : "default"} 
             size="sm"
+            className="rounded-r-none border-r-0"
             onClick={() => setIsMobile(false)}
           >
-            Desktop
+            <Monitor className="h-4 w-4" />
           </Button>
           <Button 
             variant={isMobile ? "default" : "outline"} 
             size="sm"
+            className="rounded-l-none"
             onClick={() => setIsMobile(true)}
           >
-            Mobile
+            <Smartphone className="h-4 w-4" />
           </Button>
         </div>
       </header>
       
-      <main className="flex-1 flex items-center justify-center p-6 bg-white">
-        <div className={`${isMobile ? 'max-w-sm' : 'w-full max-w-2xl'}`}>
+      {/* Replicar exatamente a mesma estrutura do BuilderCanvas sem wrappers adicionais */}
+      <main className="flex-1 flex overflow-auto" style={{
+        backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
+        backgroundImage: hasBackgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
+        backgroundSize: loadedFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                      loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
+      }}>
+        <div className="w-full mx-auto py-8 px-4">
           <FunnelPreview 
             funnel={loadedFunnel} 
             isMobile={isMobile} 
             stepIndex={currentStepIndex}
             onNextStep={handleStepChange} 
             key={`preview-${loadedFunnel.id}`}
+            // Desativar centralização para manter a mesma estrutura do builder
+            centerContent={false}
           />
         </div>
       </main>

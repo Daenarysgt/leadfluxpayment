@@ -27,6 +27,23 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const [dataReady, setDataReady] = useState(false);
   const [renderKey, setRenderKey] = useState(`preview-${Date.now()}`);
   
+  // Detectar se estamos na página de preview ou no builder
+  const [isPreviewPage, setIsPreviewPage] = useState(false);
+  
+  // Verificar se estamos na página de preview
+  useEffect(() => {
+    // Verificar se a URL atual contém /preview/
+    const isPreview = window.location.pathname.includes('/preview/');
+    setIsPreviewPage(isPreview);
+    
+    // Se estivermos na página de preview, forçar shouldCenter para false
+    if (isPreview) {
+      setShouldCenter(false);
+    } else {
+      setShouldCenter(centerContent);
+    }
+  }, [centerContent]);
+  
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
@@ -198,18 +215,20 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const headerHeight = 80; // ajustável baseado na altura real do header
   
   // Classes melhoradas para responsividade
-  const wrapperClass = `w-full ${responsiveClass} ${centerContent ? 'h-[100dvh] flex flex-col' : ''}`;
+  const wrapperClass = `w-full ${responsiveClass} ${centerContent && !isPreviewPage ? 'h-[100dvh] flex flex-col' : ''}`;
   
   // Wrapper para todo o conteúdo
   const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
   
   // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+  const headerWrapperClass = isPreviewPage 
+    ? "w-full flex flex-col items-center py-1 px-1"
+    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
   
   // Wrapper para o conteúdo principal (centralizado ou não)
-  const mainContentWrapperClass = shouldCenter 
+  const mainContentWrapperClass = shouldCenter && !isPreviewPage
     ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
-    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+    : "w-full flex flex-col items-center py-1 px-1";
   
   const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
   const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
@@ -217,7 +236,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
 
   // Estilos específicos para o tipo de dispositivo e centralização
   const mainContainerStyle: React.CSSProperties = {
-    transition: 'all 0.4s ease',
+    transition: isPreviewPage ? 'none' : 'all 0.4s ease',
     width: isMobile ? '100%' : 'auto',
     maxWidth: isMobile ? '100%' : 'auto',
     overflow: isMobile ? 'visible' : 'hidden', // Permitir overflow no mobile
