@@ -82,10 +82,14 @@ const Preview = () => {
   
   // Efeito para gerenciar o scroll quando o currentStepIndex muda
   useEffect(() => {
-    if (currentStepIndex !== undefined) {
+    if (typeof currentStepIndex === 'number') {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (contentContainerRef.current) {
+            contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         });
       });
     }
