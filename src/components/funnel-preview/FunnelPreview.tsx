@@ -13,9 +13,19 @@ interface FunnelPreviewProps {
   stepIndex?: number; // Added stepIndex prop
   onNextStep?: (index: number) => void; // Added callback for step navigation
   isPreviewPage?: boolean; // Added to detect if we're in preview page mode
+  centerContent?: boolean; // Added to center content
+  renderAllSteps?: boolean; // Nova opção para renderizar todas as etapas de uma vez
 }
 
-const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, isPreviewPage = false }: FunnelPreviewProps) => {
+const FunnelPreview = ({ 
+  isMobile = false, 
+  funnel, 
+  stepIndex = 0, 
+  onNextStep, 
+  isPreviewPage = false, 
+  centerContent = false,
+  renderAllSteps = false 
+}: FunnelPreviewProps) => {
   const { currentFunnel, currentStep } = useStore();
   const [activeStep, setActiveStep] = useState(stepIndex);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,48 +50,81 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
     setActiveStep(stepIndex);
-  }, [funnel?.id, currentFunnel?.id, stepIndex]);
+    
+    // Também forçar scroll para o topo quando o stepIndex mudar externamente
+    if (isMobile && !renderAllSteps) {
+      resetScrollPosition();
+    }
+  }, [funnel?.id, currentFunnel?.id, stepIndex, isMobile, renderAllSteps]);
 
-  // Scroll para o topo quando muda de etapa, especialmente importante em mobile
-  useEffect(() => {
-    const scrollToTop = () => {
-      console.log("Tentando fazer scroll para o topo...");
-      
-      // Scroll instantâneo para maior confiabilidade
+  // Função unificada para redefinir a posição do scroll
+  const resetScrollPosition = () => {
+    console.log("Executando reset da posição de scroll...");
+    
+    // 1. Primeiro, tentar o método mais direto
+    window.scrollTo(0, 0);
+    
+    // 2. Tentar uma abordagem mais agressiva com setTimeout
+    setTimeout(() => {
+      // Forçar scroll em todas as possíveis camadas
       window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
       
-      // Também tentar scrollar o contêiner pai, se existir
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
-      }
-      
-      // Se estiver dentro de um iframe, tente scrollar a janela pai também
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.scrollTo(0, 0);
-        }
-      } catch (e) {
-        // Ignora erros de segurança de cross-origin
-      }
-      
-      // Verificação adicional para ScrollingElement
       if (document.scrollingElement) {
         document.scrollingElement.scrollTop = 0;
       }
       
-      // Também garantir que o body e html estejam no topo
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-    };
-    
-    if (isMobile) {
-      // Tentar várias vezes com pequenos intervalos para garantir que funcione
-      // após toda a renderização e cálculos de layout
-      setTimeout(scrollToTop, 100);
-      setTimeout(scrollToTop, 300);
-      setTimeout(scrollToTop, 500);
+      // Contêiner local
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+      
+      // 3. Tentar obter qualquer elemento scrollável pai
+      let parent = containerRef.current?.parentElement;
+      while (parent) {
+        parent.scrollTop = 0;
+        parent = parent.parentElement;
+      }
+      
+      // 4. Para mobile, também tentar history.scrollRestoration
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      
+      // 5. Tentar desabilitar temporariamente o overflow para forçar o reposicionamento
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Restaurar depois de um breve período
+      setTimeout(() => {
+        document.body.style.overflow = originalOverflow;
+        window.scrollTo(0, 0);
+      }, 50);
+      
+    }, 0);
+  };
+
+  const handleStepChange = (newStep: number) => {
+    // Se estiver no modo de renderização única, resetar o scroll
+    if (isMobile && !renderAllSteps) {
+      resetScrollPosition();
+    } else if (renderAllSteps) {
+      // No modo de renderização completa, fazer scroll para a seção correspondente
+      const stepElement = document.getElementById(`funnel-step-${newStep}`);
+      if (stepElement) {
+        stepElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
-  }, [activeStep, isMobile]);
+    
+    // Atualizar estado local
+    setActiveStep(newStep);
+    
+    // Notificar componente pai se o callback for fornecido
+    if (onNextStep) {
+      onNextStep(newStep);
+    }
+  };
 
   // If no funnel is available, show a message
   if (!activeFunnel) {
@@ -105,20 +148,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   // Get the canvas elements from the current step's questions
   const canvasElements = stepData.canvasElements || [];
 
-  const handleStepChange = (newStep: number) => {
-    // Scroll para o topo imediatamente, antes de mudar de etapa no mobile
-    if (isMobile) {
-      window.scrollTo(0, 0);
-    }
-    
-    setActiveStep(newStep);
-    
-    // Notify parent component if callback is provided
-    if (onNextStep) {
-      onNextStep(newStep);
-    }
-  };
-
   // Se estamos em preview mode, renderizar apenas o CanvasPreview sem nenhum wrapper
   if (isInPreviewMode && canvasElements && canvasElements.length > 0) {
     return (
@@ -129,6 +158,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
         funnel={activeFunnel}
         isMobile={isMobile}
         isPreviewPage={true}
+        renderAllSteps={renderAllSteps}
       />
     );
   }
@@ -154,7 +184,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
 
         <div 
           ref={containerRef}
-          className="flex flex-col items-center w-full max-w-xl mx-auto" 
+          className={`flex flex-col items-center w-full max-w-xl mx-auto ${centerContent ? 'justify-center' : ''}`}
           style={{
             "--primary-color": primaryColor,
             opacity: 1, // Forçar opacidade total
@@ -176,8 +206,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             </div>
           )}
           
-          {/* Progress Bar */}
-          {activeFunnel.settings.showProgressBar && (
+          {/* Progress Bar - Mostrar apenas se não estiver renderizando todas as etapas */}
+          {activeFunnel.settings.showProgressBar && !renderAllSteps && (
             <ProgressBar 
               currentStep={safeCurrentStep} 
               totalSteps={activeFunnel.steps.length} 
@@ -195,6 +225,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                 onStepChange={handleStepChange}
                 funnel={activeFunnel}
                 isMobile={isMobile}
+                renderAllSteps={renderAllSteps}
               />
             ) : (
               // Otherwise, fall back to the traditional question rendering

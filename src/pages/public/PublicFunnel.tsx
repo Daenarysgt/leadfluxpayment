@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Funnel } from "@/utils/types";
 import { funnelService } from "@/services/funnelService";
@@ -6,12 +6,12 @@ import { accessService } from "@/services/accessService";
 import FunnelPreview from "@/components/FunnelPreview";
 import FunnelPasswordProtection from "@/components/FunnelPasswordProtection";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { ChevronLeft, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const PublicFunnel = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const [funnel, setFunnel] = useState<Funnel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,16 +20,29 @@ const PublicFunnel = () => {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [renderAllSteps, setRenderAllSteps] = useState(false);
+  
+  // Verificar parâmetros de URL para configurações adicionais
+  useEffect(() => {
+    // Verificar se deve renderizar todas as etapas
+    const searchParams = new URLSearchParams(location.search);
+    const shouldRenderAllSteps = searchParams.get('renderAllSteps') === 'true';
+    setRenderAllSteps(shouldRenderAllSteps);
+    
+    console.log(`Modo de renderização: ${shouldRenderAllSteps ? 'Todas as etapas' : 'Uma etapa por vez'}`);
+  }, [location]);
   
   // Scroll para o topo quando a página carrega
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
   
-  // Scroll para o topo quando muda de step
+  // Scroll para o topo quando muda de step (apenas se não estiver renderizando tudo)
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentStepIndex]);
+    if (!renderAllSteps) {
+      window.scrollTo(0, 0);
+    }
+  }, [currentStepIndex, renderAllSteps]);
   
   // Aplicar estilo de página completa para desktop quando o funil é carregado
   useEffect(() => {
@@ -187,8 +200,10 @@ const PublicFunnel = () => {
     
     console.log(`Mudando para o passo ${index+1} de ${funnel.steps.length}`);
     
-    // Scroll para o topo ao mudar de etapa
-    window.scrollTo(0, 0);
+    // Scroll para o topo ao mudar de etapa (apenas se não estiver renderizando tudo)
+    if (!renderAllSteps) {
+      window.scrollTo(0, 0);
+    }
     
     try {
       // Registrar o progresso
@@ -324,6 +339,14 @@ const PublicFunnel = () => {
   return (
     <div className={containerClass} style={containerStyle}>
       <div className={innerClass} style={isMobile ? {overflowY: 'auto', maxHeight: 'none'} : {}}>
+        {renderAllSteps && (
+          <div className="bg-primary/10 p-3 mb-4 rounded-md shadow-sm">
+            <p className="text-sm text-center text-primary font-medium">
+              Visualizando todas as etapas do funil
+            </p>
+          </div>
+        )}
+        
         <FunnelPreview 
           funnel={funnel} 
           isMobile={isMobile} 
@@ -331,6 +354,7 @@ const PublicFunnel = () => {
           onNextStep={handleStepChange} 
           key={`public-${funnel.id}`}
           centerContent={true}
+          renderAllSteps={renderAllSteps}
         />
       </div>
     </div>
