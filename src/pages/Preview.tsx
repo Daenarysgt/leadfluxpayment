@@ -79,9 +79,11 @@ const Preview = () => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
 
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-    }, 50);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
   };
   
   // Obter os canvasElements do step atual
