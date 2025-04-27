@@ -46,6 +46,57 @@ export const useCanvasResize = () => {
         dropAreaEl.style.opacity = '1';
         dropAreaEl.style.pointerEvents = 'auto';
       }
+      
+      // Sincronizar os estilos entre builder e preview
+      syncBuilderWithPreview();
+    }
+  }, []);
+  
+  // Nova função para sincronizar estilos entre builder e preview
+  const syncBuilderWithPreview = useCallback(() => {
+    // Selecionar elementos do builder e da visualização
+    const builderCanvas = document.querySelector('.w-full.mx-auto.rounded-lg.relative');
+    const previewContainer = document.querySelector('[class*="BuilderPreview"] > div');
+    
+    if (builderCanvas && previewContainer) {
+      const builderEl = builderCanvas as HTMLElement;
+      const previewEl = previewContainer as HTMLElement;
+      
+      // Verificar se a visualização está ativa
+      const isPreviewActive = document.querySelector('[class*="BuilderPreview"]');
+      if (!isPreviewActive) return;
+      
+      // Sincronizar estilos básicos
+      previewEl.style.padding = getComputedStyle(builderEl).padding;
+      previewEl.style.borderRadius = getComputedStyle(builderEl).borderRadius;
+      
+      // Sincronizar largura em mobile
+      const isMobile = document.querySelector('button[class*="text-violet-700"]')?.textContent?.includes('mobile');
+      if (isMobile) {
+        // Obter a largura do container do builder para mobile
+        const builderWidth = builderEl.getBoundingClientRect().width;
+        previewEl.style.width = `${builderWidth}px`;
+        previewEl.style.maxWidth = `${builderWidth}px`;
+      }
+      
+      // Sincronizar elementos dentro do canvas
+      const builderElements = builderEl.querySelectorAll('.relative');
+      const previewElements = previewEl.querySelectorAll('[class*="canvas-element"]');
+      
+      if (builderElements.length > 0 && previewElements.length > 0) {
+        // Apenas aplicar estilos básicos para garantir consistência
+        builderElements.forEach((element, index) => {
+          if (index < previewElements.length) {
+            const builderItem = element as HTMLElement;
+            const previewItem = previewElements[index] as HTMLElement;
+            
+            // Sincronizar margens e padding
+            previewItem.style.marginBottom = getComputedStyle(builderItem).marginBottom;
+            previewItem.style.paddingLeft = getComputedStyle(builderItem).paddingLeft;
+            previewItem.style.paddingRight = getComputedStyle(builderItem).paddingRight;
+          }
+        });
+      }
     }
   }, []);
   
@@ -74,6 +125,7 @@ export const useCanvasResize = () => {
     // Observar os painéis principais
     const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
     const canvasContainer = document.querySelector('.w-full.mx-auto.rounded-lg.relative');
+    const previewContainer = document.querySelector('[class*="BuilderPreview"]');
     
     if (viewport) {
       observer.observe(viewport, {
@@ -86,6 +138,15 @@ export const useCanvasResize = () => {
     
     if (canvasContainer) {
       observer.observe(canvasContainer, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+    }
+    
+    if (previewContainer) {
+      observer.observe(previewContainer, {
         childList: true,
         subtree: true,
         attributes: true,
@@ -115,6 +176,24 @@ export const useCanvasResize = () => {
     
     window.addEventListener('resize', handleResize);
     
+    // Adicionar um listener para mudanças de modo (desktop/mobile)
+    const viewModeButtons = document.querySelectorAll('button[class*="rounded-l-none"], button[class*="rounded-r-none"]');
+    viewModeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Dar tempo para a UI atualizar
+        setTimeout(fixCanvasWhiteSpace, 100);
+      });
+    });
+    
+    // Adicionar um listener para o botão de preview
+    const previewButton = document.querySelector('button[class*="gap-1"]');
+    if (previewButton) {
+      previewButton.addEventListener('click', () => {
+        // Dar tempo para a preview aparecer
+        setTimeout(fixCanvasWhiteSpace, 200);
+      });
+    }
+    
     // Chamar o fix periodicamente durante 5 segundos para garantir que seja aplicado
     // mesmo após todas as renderizações
     const intervalId = setInterval(fixCanvasWhiteSpace, 500);
@@ -130,6 +209,14 @@ export const useCanvasResize = () => {
       }
       clearInterval(intervalId);
       clearTimeout(timeoutId);
+      
+      viewModeButtons.forEach(button => {
+        button.removeEventListener('click', () => {});
+      });
+      
+      if (previewButton) {
+        previewButton.removeEventListener('click', () => {});
+      }
     };
   }, [fixCanvasWhiteSpace, setupResizeObserver]);
   

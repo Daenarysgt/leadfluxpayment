@@ -20,27 +20,27 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   // Determinar se há uma imagem de fundo para aplicar estilo apropriado
   const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
   
+  // Criando um wrapper de estilo para garantir consistência com o BuilderCanvas
+  const containerStyle = {
+    width: isMobile ? '100%' : 'auto',
+    maxWidth: isMobile ? '375px' : '600px', // Mesmo valor usado no BuilderCanvas
+    margin: '0 auto',
+    padding: '0',
+    minHeight: '300px',
+    borderRadius: isMobile ? '0' : '0.5rem',
+    overflow: 'hidden', // Evitar qualquer overflow indesejado
+    backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff'
+  };
+
   return (
-    <div className="w-full flex items-center justify-center" 
-         style={{ 
-           backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
-           backgroundImage: hasBackgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
-           backgroundSize: currentFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                           currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-           backgroundPosition: 'center',
-           backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-           backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll',
-           minHeight: '100%',
-           paddingBottom: '3rem'
-         }}>
-      <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
-        <FunnelPreview 
-          funnel={JSON.parse(JSON.stringify(currentFunnel))} 
-          isMobile={isMobile} 
-          stepIndex={currentStep}
-          key={`preview-${currentFunnel.id}-step-${currentStep}`} 
-        />
-      </div>
+    <div className="w-full" style={containerStyle}>
+      <FunnelPreview 
+        funnel={currentFunnel} 
+        isMobile={isMobile} 
+        stepIndex={currentStep} 
+        centerContent={false}
+        key={`preview-${currentFunnel.id}-${currentStep}-${Date.now()}`}
+      />
     </div>
   );
 });

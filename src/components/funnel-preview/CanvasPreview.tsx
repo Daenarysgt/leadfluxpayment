@@ -178,7 +178,9 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
         // Remover qualquer animação de fade-in
         opacity: 1,
-        transition: 'none'
+        transition: 'none',
+        paddingLeft: '16px',
+        paddingRight: '16px'
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -193,9 +195,29 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
+              // Processar o elemento para garantir consistência com o builder
+              const processedElement = isMobile ? {
+                ...element,
+                // Forçar alinhamento à esquerda em mobile
+                position: element.position ? {
+                  ...element.position,
+                  x: 0
+                } : element.position,
+                // Ajustar dimensões para mobile
+                dimensions: element.dimensions ? {
+                  ...element.dimensions,
+                  width: window.innerWidth - 32 // Mesma lógica do BuilderCanvas
+                } : element.dimensions,
+                // Ajustes específicos para botões
+                style: element.type === 'button' && element.style ? {
+                  ...element.style,
+                  width: '100%'
+                } : element.style
+              } : element;
+              
               // Adicionar propriedades de preview para navegação
               const elementWithPreviewProps = {
-                ...element,
+                ...processedElement,
                 previewMode: true,
                 previewProps: {
                   activeStep,
@@ -231,8 +253,28 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       ) : (
         // Caso fallback para usar os elementos passados diretamente como prop
         validCanvasElements.map((element, index) => {
-          const elementWithPreviewProps = {
+          // Processar o elemento para garantir consistência com o builder
+          const processedElement = isMobile ? {
             ...element,
+            // Forçar alinhamento à esquerda em mobile
+            position: element.position ? {
+              ...element.position,
+              x: 0
+            } : element.position,
+            // Ajustar dimensões para mobile
+            dimensions: element.dimensions ? {
+              ...element.dimensions,
+              width: window.innerWidth - 32 // Mesma lógica do BuilderCanvas
+            } : element.dimensions,
+            // Ajustes específicos para botões
+            style: element.type === 'button' && element.style ? {
+              ...element.style,
+              width: '100%'
+            } : element.style
+          } : element;
+          
+          const elementWithPreviewProps = {
+            ...processedElement,
             previewMode: true,
             previewProps: {
               activeStep,
