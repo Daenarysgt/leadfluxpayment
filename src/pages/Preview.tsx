@@ -80,8 +80,8 @@ const Preview = () => {
     setCurrentStepIndex(index);
 
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }, 50);
   };
   
   // Obter os canvasElements do step atual
@@ -168,6 +168,7 @@ const Preview = () => {
                   />
                 </div>
               )}
+              <div className="pb-6"></div>
             </div>
           </div>
         )}
@@ -175,7 +176,7 @@ const Preview = () => {
         {/* Conteúdo principal centralizado */}
         <div className="flex-1 flex justify-center">
           {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
-          <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+          <div className={`w-full ${isMobile ? 'px-4 max-w-full' : 'max-w-4xl'}`}>
             <CanvasPreview
               canvasElements={canvasElements}
               activeStep={currentStepIndex}
@@ -183,6 +184,7 @@ const Preview = () => {
               funnel={loadedFunnel}
               isMobile={isMobile}
               isPreviewPage={true}
+              className={isMobile ? 'px-0' : ''}
             />
           </div>
         </div>

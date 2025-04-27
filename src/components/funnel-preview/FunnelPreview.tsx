@@ -68,8 +68,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
     setActiveStep(newStep);
     
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }, 50);
     
     // Notify parent component if callback is provided
     if (onNextStep) {
@@ -109,18 +109,21 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                   />
                 </div>
               )}
+              <div className="pb-6"></div>
             </div>
           </div>
         )}
       
-        <CanvasPreview 
-          canvasElements={canvasElements} 
-          activeStep={safeCurrentStep}
-          onStepChange={handleStepChange}
-          funnel={activeFunnel}
-          isMobile={isMobile}
-          isPreviewPage={true}
-        />
+        <div className={`${isMobile ? 'px-4' : ''}`}>
+          <CanvasPreview 
+            canvasElements={canvasElements} 
+            activeStep={safeCurrentStep}
+            onStepChange={handleStepChange}
+            funnel={activeFunnel}
+            isMobile={isMobile}
+            isPreviewPage={true}
+          />
+        </div>
       </>
     );
   }
@@ -174,10 +177,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
                   />
                 </div>
               )}
+              <div className="pb-6"></div>
             </div>
           </div>
 
-          <div className="w-full" style={{ opacity: 1 }}>
+          <div className={`w-full ${isMobile ? 'px-4' : ''}`} style={{ opacity: 1 }}>
             {canvasElements && canvasElements.length > 0 ? (
               // If we have canvas elements, render them
               <CanvasPreview 
