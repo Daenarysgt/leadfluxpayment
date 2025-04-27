@@ -6,6 +6,7 @@ import { ChevronLeft, Monitor, Smartphone } from "lucide-react";
 import { Funnel } from "@/utils/types";
 import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
 import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
+import ProgressBar from "@/components/funnel-preview/ProgressBar";
 
 // Detectar mobile no carregamento inicial
 const detectMobile = () => {
@@ -83,6 +84,9 @@ const Preview = () => {
   const canvasElements = currentStep && Array.isArray(currentStep.canvasElements) 
     ? currentStep.canvasElements 
     : [];
+    
+  // Obter configurações de estilo
+  const { primaryColor, logo } = loadedFunnel.settings || {};
 
   return (
     <div className="flex flex-col h-screen">
@@ -120,7 +124,7 @@ const Preview = () => {
       
       {/* Container principal com fundo e configurações de background */}
       <div 
-        className="flex-1 flex justify-center" 
+        className="flex-1 flex flex-col" 
         style={{
           backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
           backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
@@ -130,16 +134,49 @@ const Preview = () => {
           backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
         }}
       >
-        {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
-        <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
-          <CanvasPreview
-            canvasElements={canvasElements}
-            activeStep={currentStepIndex}
-            onStepChange={handleStepChange}
-            funnel={loadedFunnel}
-            isMobile={isMobile}
-            isPreviewPage={true}
-          />
+        {/* Header fixo com logo e barra de progresso (apenas mobile) */}
+        {isMobile && (
+          <div className="sticky top-0 bg-white z-10 w-full shadow-sm">
+            {/* Logo */}
+            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+              <div className="w-full flex justify-center py-2">
+                <img 
+                  src={logo} 
+                  alt="Logo" 
+                  className="max-h-12 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Progress Bar com margens laterais */}
+            {loadedFunnel.settings?.showProgressBar && (
+              <div className="px-4 pb-2">
+                <ProgressBar 
+                  currentStep={currentStepIndex} 
+                  totalSteps={loadedFunnel.steps.length} 
+                  primaryColor={primaryColor}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Conteúdo principal centralizado */}
+        <div className="flex-1 flex justify-center">
+          {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
+          <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+            <CanvasPreview
+              canvasElements={canvasElements}
+              activeStep={currentStepIndex}
+              onStepChange={handleStepChange}
+              funnel={loadedFunnel}
+              isMobile={isMobile}
+              isPreviewPage={true}
+            />
+          </div>
         </div>
       </div>
       

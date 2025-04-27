@@ -76,14 +76,46 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   // Se estamos em preview mode, renderizar apenas o CanvasPreview sem nenhum wrapper
   if (isInPreviewMode && canvasElements && canvasElements.length > 0) {
     return (
-      <CanvasPreview 
-        canvasElements={canvasElements} 
-        activeStep={safeCurrentStep}
-        onStepChange={handleStepChange}
-        funnel={activeFunnel}
-        isMobile={isMobile}
-        isPreviewPage={true}
-      />
+      <>
+        {/* Header fixo com logo e barra de progresso no modo preview (apenas mobile) */}
+        {isMobile && (
+          <div className="sticky top-0 bg-white z-10 w-full shadow-sm">
+            {/* Logo */}
+            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+              <div className="w-full flex justify-center py-2">
+                <img 
+                  src={logo} 
+                  alt="Logo" 
+                  className="max-h-12 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Progress Bar com margens laterais */}
+            {activeFunnel.settings.showProgressBar && (
+              <div className="px-4 pb-2">
+                <ProgressBar 
+                  currentStep={safeCurrentStep} 
+                  totalSteps={activeFunnel.steps.length} 
+                  primaryColor={primaryColor}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      
+        <CanvasPreview 
+          canvasElements={canvasElements} 
+          activeStep={safeCurrentStep}
+          onStepChange={handleStepChange}
+          funnel={activeFunnel}
+          isMobile={isMobile}
+          isPreviewPage={true}
+        />
+      </>
     );
   }
 
@@ -115,29 +147,34 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             transition: 'none', // Desativar transições
           } as React.CSSProperties}
         >
-          {/* Logo */}
-          {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
-            <div className="w-full flex justify-center py-4">
-              <img 
-                src={logo} 
-                alt="Logo" 
-                className="max-h-14 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-                style={{ opacity: 1 }} // Forçar opacidade total
-              />
-            </div>
-          )}
-          
-          {/* Progress Bar */}
-          {activeFunnel.settings.showProgressBar && (
-            <ProgressBar 
-              currentStep={safeCurrentStep} 
-              totalSteps={activeFunnel.steps.length} 
-              primaryColor={primaryColor}
-            />
-          )}
+          {/* Header com logo e barra de progresso */}
+          <div className={`w-full ${isMobile ? 'sticky top-0 bg-white z-10 shadow-sm' : ''}`}>
+            {/* Logo */}
+            {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
+              <div className="w-full flex justify-center py-4">
+                <img 
+                  src={logo} 
+                  alt="Logo" 
+                  className="max-h-14 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  style={{ opacity: 1 }} // Forçar opacidade total
+                />
+              </div>
+            )}
+            
+            {/* Progress Bar com margens no mobile */}
+            {activeFunnel.settings.showProgressBar && (
+              <div className={isMobile ? "px-4 pb-2" : "pb-2"}>
+                <ProgressBar 
+                  currentStep={safeCurrentStep} 
+                  totalSteps={activeFunnel.steps.length} 
+                  primaryColor={primaryColor}
+                />
+              </div>
+            )}
+          </div>
 
           <div className="w-full" style={{ opacity: 1 }}>
             {canvasElements && canvasElements.length > 0 ? (
