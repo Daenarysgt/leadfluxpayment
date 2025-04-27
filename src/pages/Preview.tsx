@@ -83,55 +83,16 @@ const Preview = () => {
   // Efeito para gerenciar o scroll quando o currentStepIndex muda
   useEffect(() => {
     if (typeof currentStepIndex === 'number') {
-      // Função para executar o scroll
-      const executeScroll = () => {
+      const timeout = setTimeout(() => {
         if (contentContainerRef.current) {
-          contentContainerRef.current.scrollTo({ top: 0, behavior: 'auto' });
+          contentContainerRef.current.style.overflowY = 'auto';
+          contentContainerRef.current.scrollTop = 0;
         } else {
-          window.scrollTo({ top: 0, behavior: 'auto' });
+          window.scrollTo({ top: 0 });
         }
-      };
-
-      // Primeiro scroll imediato para casos simples
-      executeScroll();
+      }, 100);
       
-      // Configurar um MutationObserver para detectar quando o DOM estabilizar
-      let mutationTimeout: number | null = null;
-      let maxTimeout: number | null = null;
-      
-      const observer = new MutationObserver((mutations) => {
-        // Limpar timeout anterior se houver novas mutações
-        if (mutationTimeout) {
-          clearTimeout(mutationTimeout);
-        }
-        
-        // Definir novo timeout após as mutações
-        mutationTimeout = window.setTimeout(() => {
-          executeScroll();
-        }, 50);
-      });
-      
-      // Observar o container principal para mudanças
-      if (contentContainerRef.current) {
-        observer.observe(contentContainerRef.current, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          characterData: true
-        });
-      }
-      
-      // Garantir que o scroll aconteça mesmo se o MutationObserver não detectar mudanças
-      maxTimeout = window.setTimeout(() => {
-        executeScroll();
-        observer.disconnect();
-      }, 200);
-      
-      return () => {
-        observer.disconnect();
-        if (mutationTimeout) clearTimeout(mutationTimeout);
-        if (maxTimeout) clearTimeout(maxTimeout);
-      };
+      return () => clearTimeout(timeout);
     }
   }, [currentStepIndex]);
   
