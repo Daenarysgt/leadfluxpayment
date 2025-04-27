@@ -32,7 +32,7 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
            minHeight: '100%',
            paddingBottom: '3rem'
          }}>
-      <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
+      <div className={`${isMobile ? 'max-w-md' : 'w-full'} py-6`}>
         <FunnelPreview 
           funnel={JSON.parse(JSON.stringify(currentFunnel))} 
           isMobile={isMobile} 
