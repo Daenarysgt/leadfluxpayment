@@ -42,6 +42,36 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
     setActiveStep(stepIndex);
   }, [funnel?.id, currentFunnel?.id, stepIndex]);
 
+  // Scroll para o topo quando muda de etapa, especialmente importante em mobile
+  useEffect(() => {
+    if (isMobile) {
+      // Usar setTimeout para garantir que o scroll ocorra após a renderização
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+        
+        // Também tentar scrollar o contêiner pai, se existir
+        if (containerRef.current) {
+          containerRef.current.scrollTop = 0;
+        }
+        
+        // Se estiver dentro de um iframe, tente scrollar a janela pai também
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }
+        } catch (e) {
+          // Ignora erros de segurança de cross-origin
+        }
+      }, 100);
+    }
+  }, [activeStep, isMobile]);
+
   // If no funnel is available, show a message
   if (!activeFunnel) {
     return <div className="text-center py-8">No funnel selected</div>;
