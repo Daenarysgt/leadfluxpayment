@@ -143,14 +143,16 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
           </div>
         )}
       
-        <CanvasPreview 
-          canvasElements={canvasElements} 
-          activeStep={safeCurrentStep}
-          onStepChange={handleStepChange}
-          funnel={activeFunnel}
-          isMobile={isMobile}
-          isPreviewPage={true}
-        />
+        <div className="pt-20 sm:pt-0">
+          <CanvasPreview 
+            canvasElements={canvasElements} 
+            activeStep={safeCurrentStep}
+            onStepChange={handleStepChange}
+            funnel={activeFunnel}
+            isMobile={isMobile}
+            isPreviewPage={true}
+          />
+        </div>
       </>
     );
   }
@@ -205,7 +207,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
             )}
           </div>
 
-          <div className="w-full" style={{ opacity: 1 }}>
+          <div className="w-full pt-20 sm:pt-0" style={{ opacity: 1 }}>
             {canvasElements && canvasElements.length > 0 ? (
               // If we have canvas elements, render them
               <CanvasPreview 

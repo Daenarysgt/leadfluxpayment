@@ -179,7 +179,7 @@ const Preview = () => {
         {/* Conteúdo principal centralizado */}
         <div className="flex-1 flex justify-center">
           {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
-          <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+          <div className={`w-full pt-20 sm:pt-0 ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
             <CanvasPreview
               canvasElements={canvasElements}
               activeStep={currentStepIndex}

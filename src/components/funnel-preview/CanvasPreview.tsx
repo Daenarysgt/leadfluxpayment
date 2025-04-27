@@ -122,11 +122,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       // Continue com a navegação mesmo com erro de registro
     }
     
-    // Scrollar automaticamente para o topo do container ou da página
-    // Em vez de scrollar diretamente aqui, deixamos a responsabilidade para o componente pai
-    // que tem acesso aos headers e containers corretos
-    
-    // Aplicar a mudança de etapa diretamente
+    // Aplicar a mudança de etapa diretamente - apenas notificar o componente pai
+    // para que ele se encarregue do scroll
     onStepChange(index);
   }, [funnel, sessionId, onStepChange]);
   
@@ -136,8 +133,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      // Em vez de scrollar diretamente aqui, deixamos a responsabilidade para o componente pai
-      // que tem acesso aos headers e containers corretos
+      // Apenas notificar o componente pai para mudar a etapa
+      // O componente pai se encarregará do scroll
       onStepChange(nextStep);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
