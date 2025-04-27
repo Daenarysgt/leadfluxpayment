@@ -14,7 +14,7 @@ export const useBuilderViewMode = () => {
         window.LEADFLUX_APP_HOOKS.saveCurrentStepElements();
       }
       
-      setTimeout(() => setPreviewActive(true), 50);
+      setTimeout(() => setPreviewActive(true), 300);
     } else {
       setPreviewActive(false);
     }

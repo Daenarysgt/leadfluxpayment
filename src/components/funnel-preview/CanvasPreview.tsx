@@ -120,7 +120,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
   const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
   
-  // Estilos de container com valores padrão seguros
+  // Estilo do container com valores padrão seguros
   const containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
@@ -132,6 +132,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     right: isMobile ? '0' : 'auto',
     width: isMobile ? '100%' : 'auto',
     overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
+    paddingTop: '0.25rem', // Reduzir espaçamento superior
+    paddingBottom: '0.25rem' // Reduzir espaçamento inferior
   };
 
   // Classes condicionais para desktop e mobile
@@ -211,7 +213,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                <div key={element.id} className={elementClassName} style={{ 
+                  opacity: 1,
+                  marginBottom: '0.5rem' // Reduzir espaçamento entre elementos
+                }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -246,7 +251,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+            <div key={element.id} className={elementClassName} style={{ 
+              opacity: 1,
+              marginBottom: '0.5rem' // Reduzir espaçamento entre elementos
+            }}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
