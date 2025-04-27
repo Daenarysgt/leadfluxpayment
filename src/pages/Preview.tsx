@@ -83,15 +83,55 @@ const Preview = () => {
   // Efeito para gerenciar o scroll quando o currentStepIndex muda
   useEffect(() => {
     if (typeof currentStepIndex === 'number') {
-      const timeout = setTimeout(() => {
+      // Função para executar o scroll
+      const executeScroll = () => {
         if (contentContainerRef.current) {
-          contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          contentContainerRef.current.scrollTo({ top: 0, behavior: 'auto' });
         } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: 'auto' });
         }
-      }, 100); // esperar 100ms para garantir que o DOM está estático
+      };
+
+      // Primeiro scroll imediato para casos simples
+      executeScroll();
       
-      return () => clearTimeout(timeout);
+      // Configurar um MutationObserver para detectar quando o DOM estabilizar
+      let mutationTimeout: number | null = null;
+      let maxTimeout: number | null = null;
+      
+      const observer = new MutationObserver((mutations) => {
+        // Limpar timeout anterior se houver novas mutações
+        if (mutationTimeout) {
+          clearTimeout(mutationTimeout);
+        }
+        
+        // Definir novo timeout após as mutações
+        mutationTimeout = window.setTimeout(() => {
+          executeScroll();
+        }, 50);
+      });
+      
+      // Observar o container principal para mudanças
+      if (contentContainerRef.current) {
+        observer.observe(contentContainerRef.current, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
+      }
+      
+      // Garantir que o scroll aconteça mesmo se o MutationObserver não detectar mudanças
+      maxTimeout = window.setTimeout(() => {
+        executeScroll();
+        observer.disconnect();
+      }, 200);
+      
+      return () => {
+        observer.disconnect();
+        if (mutationTimeout) clearTimeout(mutationTimeout);
+        if (maxTimeout) clearTimeout(maxTimeout);
+      };
     }
   }, [currentStepIndex]);
   
