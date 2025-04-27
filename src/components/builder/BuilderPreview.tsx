@@ -1,9 +1,58 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import FunnelPreview from "@/components/FunnelPreview"; // Importação direta do componente principal
 import { useStore } from "@/utils/store";
 
 const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   const { currentFunnel, currentStep } = useStore();
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Função para aplicar correções específicas após renderização
+  useEffect(() => {
+    if (containerRef.current) {
+      // Aplicar correções diretas no DOM para remover espaçamentos indesejados
+      const removeExcessiveSpacing = () => {
+        const container = containerRef.current;
+        if (!container) return;
+        
+        // Remover espaçamentos do container principal
+        container.style.margin = '0';
+        container.style.padding = '0';
+        
+        // Encontrar elementos com espaçamento vertical e corrigir
+        const allElements = container.querySelectorAll('*');
+        allElements.forEach(el => {
+          const element = el as HTMLElement;
+          const computedStyle = window.getComputedStyle(element);
+          
+          // Identificar elementos com margens ou paddings verticais excessivos
+          const marginTop = parseFloat(computedStyle.marginTop);
+          const marginBottom = parseFloat(computedStyle.marginBottom);
+          const paddingTop = parseFloat(computedStyle.paddingTop);
+          const paddingBottom = parseFloat(computedStyle.paddingBottom);
+          
+          // Corrigir apenas espaçamentos excessivos (mais de 8px)
+          if (marginTop > 8) element.style.marginTop = '0';
+          if (marginBottom > 8) element.style.marginBottom = '0';
+          if (paddingTop > 8) element.style.paddingTop = '0';
+          if (paddingBottom > 8) element.style.paddingBottom = '0';
+        });
+        
+        // Corrigir barra de progresso (um comum causador de espaçamento)
+        const progressBar = container.querySelector('[class*="rounded-full"]');
+        if (progressBar) {
+          const progressContainer = progressBar.parentElement;
+          if (progressContainer) {
+            (progressContainer as HTMLElement).style.marginBottom = '0';
+          }
+        }
+      };
+      
+      // Executar correções após um curto delay para garantir que o DOM esteja atualizado
+      setTimeout(removeExcessiveSpacing, 50);
+      // Executar novamente depois de um tempo maior para garantir que todos os elementos estejam renderizados
+      setTimeout(removeExcessiveSpacing, 300);
+    }
+  }, [currentFunnel, currentStep, isMobile]);
   
   if (!currentFunnel) {
     return (
@@ -33,7 +82,7 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   };
 
   return (
-    <div className="w-full" style={containerStyle}>
+    <div className="w-full" style={containerStyle} ref={containerRef}>
       <FunnelPreview 
         funnel={currentFunnel} 
         isMobile={isMobile} 

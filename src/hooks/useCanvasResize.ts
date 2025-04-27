@@ -69,6 +69,35 @@ export const useCanvasResize = () => {
       // Sincronizar estilos básicos
       previewEl.style.padding = getComputedStyle(builderEl).padding;
       previewEl.style.borderRadius = getComputedStyle(builderEl).borderRadius;
+      previewEl.style.margin = '0';
+      
+      // Aplicar correções de espaçamento no container do FunnelPreview
+      const funnelPreviewEl = previewEl.querySelector('[class*="FunnelPreview"]') as HTMLElement;
+      if (funnelPreviewEl) {
+        funnelPreviewEl.style.padding = '0';
+        funnelPreviewEl.style.margin = '0';
+        
+        // Corrigir espaçamentos internos
+        const contentWrappers = funnelPreviewEl.querySelectorAll('[class*="flex"]');
+        contentWrappers.forEach(wrapper => {
+          const wrapperEl = wrapper as HTMLElement;
+          wrapperEl.style.gap = '0';
+          wrapperEl.style.marginBottom = '0';
+          wrapperEl.style.paddingBottom = '0';
+          wrapperEl.style.paddingTop = '0';
+        });
+      }
+      
+      // Selecionar o container do canvas preview para ajustes
+      const canvasPreviewEl = previewEl.querySelector('[class*="canvas-container"]') as HTMLElement;
+      if (canvasPreviewEl) {
+        // Reset todos os espaçamentos
+        canvasPreviewEl.style.padding = '16px';
+        canvasPreviewEl.style.margin = '0';
+        canvasPreviewEl.style.gap = '0';
+        canvasPreviewEl.style.paddingBottom = '0';
+        canvasPreviewEl.style.paddingTop = '0';
+      }
       
       // Sincronizar largura em mobile
       const isMobile = document.querySelector('button[class*="text-violet-700"]')?.textContent?.includes('mobile');
@@ -84,16 +113,45 @@ export const useCanvasResize = () => {
       const previewElements = previewEl.querySelectorAll('[class*="canvas-element"]');
       
       if (builderElements.length > 0 && previewElements.length > 0) {
-        // Apenas aplicar estilos básicos para garantir consistência
+        // Aplicar estilos específicos para cada elemento
         builderElements.forEach((element, index) => {
           if (index < previewElements.length) {
             const builderItem = element as HTMLElement;
             const previewItem = previewElements[index] as HTMLElement;
             
-            // Sincronizar margens e padding
-            previewItem.style.marginBottom = getComputedStyle(builderItem).marginBottom;
+            // Eliminar espaçamentos no preview
+            previewItem.style.marginBottom = '0';
+            previewItem.style.marginTop = '0';
+            previewItem.style.paddingBottom = '0';
+            previewItem.style.paddingTop = '0';
+            
+            // Para o primeiro elemento, ajustar padding superior
+            if (index === 0) {
+              previewItem.style.paddingTop = '0';
+            }
+            
+            // Sincronizar margens e padding laterais
             previewItem.style.paddingLeft = getComputedStyle(builderItem).paddingLeft;
             previewItem.style.paddingRight = getComputedStyle(builderItem).paddingRight;
+            
+            // Ajustar altura para coincidir com o builder
+            const builderHeight = builderItem.getBoundingClientRect().height;
+            // previewItem.style.height = `${builderHeight}px`;
+            
+            // Corrigir elementos internos
+            const previewInnerEls = previewItem.querySelectorAll('*');
+            previewInnerEls.forEach(innerEl => {
+              const el = innerEl as HTMLElement;
+              // Preservar apenas margens laterais e padding necessários para conteúdo
+              if (el.style.marginTop || el.style.marginBottom) {
+                el.style.marginTop = '0';
+                el.style.marginBottom = '0';
+              }
+              if (el.style.paddingTop || el.style.paddingBottom) {
+                el.style.paddingTop = '0';
+                el.style.paddingBottom = '0';
+              }
+            });
           }
         });
       }
@@ -185,11 +243,62 @@ export const useCanvasResize = () => {
       });
     });
     
-    // Adicionar um listener para o botão de preview
+    // Adicionar um listener específico para o botão de visualização
     const previewButton = document.querySelector('button[class*="gap-1"]');
     if (previewButton) {
       previewButton.addEventListener('click', () => {
-        // Dar tempo para a preview aparecer
+        // Função específica para corrigir espaçamentos na visualização
+        const fixPreviewSpacing = () => {
+          // Selecionar todos os elementos da visualização
+          const previewContainer = document.querySelector('[class*="BuilderPreview"]');
+          if (!previewContainer) return;
+          
+          // Aplicar correções agressivas em todos os elementos
+          const allElements = previewContainer.querySelectorAll('*');
+          allElements.forEach(el => {
+            const element = el as HTMLElement;
+            
+            // Remover margens e paddings verticais
+            element.style.marginTop = '0';
+            element.style.marginBottom = '0';
+            element.style.paddingTop = '0';
+            element.style.paddingBottom = '0';
+            
+            // Manter apenas espaçamentos laterais
+            const computedStyle = window.getComputedStyle(element);
+            element.style.paddingLeft = computedStyle.paddingLeft;
+            element.style.paddingRight = computedStyle.paddingRight;
+            
+            // Tratar casos específicos
+            if (element.tagName === 'H1' || element.tagName === 'H2' || element.tagName === 'H3' || element.tagName === 'P') {
+              element.style.marginBottom = '4px'; // Pequeno espaçamento para legibilidade
+            }
+            
+            // Tratar espaçamento vertical entre os elementos
+            if (element.classList.contains('canvas-element') || element.classList.contains('canvas-element-mobile')) {
+              element.style.marginBottom = '0';
+            }
+          });
+          
+          // Focar também nos containers principais
+          const mainContainers = previewContainer.querySelectorAll('[class*="canvas-container"], [class*="FunnelPreview"]');
+          mainContainers.forEach(container => {
+            const el = container as HTMLElement;
+            el.style.gap = '0';
+            el.style.marginBottom = '0';
+            el.style.paddingBottom = '0';
+            el.style.marginTop = '0';
+            el.style.paddingTop = '0';
+          });
+        };
+        
+        // Executar as correções várias vezes para garantir que sejam aplicadas
+        setTimeout(fixPreviewSpacing, 100);
+        setTimeout(fixPreviewSpacing, 300);
+        setTimeout(fixPreviewSpacing, 500);
+        setTimeout(fixPreviewSpacing, 1000);
+        
+        // Também aplicar correções normais
         setTimeout(fixCanvasWhiteSpace, 200);
       });
     }

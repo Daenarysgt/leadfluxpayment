@@ -462,3 +462,44 @@
 .animate-slide-up {
   animation: slide-up 0.5s ease-in-out forwards;
 }
+
+/* Correções de espaçamento para visualização no builder */
+.canvas-element,
+.canvas-element-mobile {
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Ajuste para espaçamento de elementos dentro do builder */
+div[class*="BuilderPreview"] div,
+div[class*="canvas-container"] > div {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  gap: 0 !important;
+}
+
+/* Ajuste para títulos e textos */
+div[class*="BuilderPreview"] h1,
+div[class*="BuilderPreview"] h2,
+div[class*="BuilderPreview"] h3,
+div[class*="BuilderPreview"] p {
+  margin-bottom: 4px !important;
+  margin-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Preservar espaçamento lateral para inputs e botões */
+div[class*="BuilderPreview"] input,
+div[class*="BuilderPreview"] button,
+div[class*="BuilderPreview"] textarea,
+div[class*="BuilderPreview"] select {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}

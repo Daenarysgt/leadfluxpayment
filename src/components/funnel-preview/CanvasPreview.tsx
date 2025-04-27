@@ -161,8 +161,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       style={{
         ...containerStyles,
         minHeight: 'max-content',
-        paddingBottom: '1.5rem',
-        paddingTop: '0.5rem',
+        paddingBottom: '0',
+        paddingTop: '0',
         // Garantir que a altura seja preservada durante a transição
         minWidth: isMobile ? '100%' : 'auto',
         maxWidth: isMobile ? '100%' : 'auto',
@@ -180,7 +180,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         opacity: 1,
         transition: 'none',
         paddingLeft: '16px',
-        paddingRight: '16px'
+        paddingRight: '16px',
+        gap: '0', // Eliminar espaçamento entre elementos
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -191,7 +192,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
             className="w-full transition-opacity duration-100" 
             style={{ 
               display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
+              opacity: 1, // Manter opacidade 1 para evitar efeito de fade
+              gap: '0',
+              marginBottom: '0',
+              paddingBottom: '0'
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
@@ -233,7 +237,13 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+                <div key={element.id} className={elementClassName} style={{ 
+                  opacity: 1,
+                  marginBottom: '0', // Eliminar margem inferior
+                  marginTop: '0', // Eliminar margem superior
+                  paddingBottom: '0', // Eliminar padding inferior
+                  paddingTop: '0' // Eliminar padding superior
+                }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -288,7 +298,13 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
+            <div key={element.id} className={elementClassName} style={{ 
+              opacity: 1,
+              marginBottom: '0',
+              marginTop: '0',
+              paddingBottom: '0',
+              paddingTop: '0'
+            }}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 

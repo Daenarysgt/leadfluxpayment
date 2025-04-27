@@ -195,7 +195,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const responsiveClass = isMobile ? 'mobile-view' : 'desktop-view';
   
   // Altura estimada do header (logo + barra de progresso + paddings)
-  const headerHeight = 80; // ajustável baseado na altura real do header
+  const headerHeight = 40; // Reduzido para minimizar espaço
   
   // Classes melhoradas para responsividade
   const wrapperClass = `w-full ${responsiveClass} ${centerContent ? 'h-[100dvh] flex flex-col' : ''}`;
@@ -204,15 +204,15 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const contentWrapperClass = `flex flex-col w-full mx-auto ${isMobile ? 'max-w-full' : 'max-w-xl'}`;
   
   // Wrapper apenas para o logo e barra de progresso
-  const headerWrapperClass = "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+  const headerWrapperClass = "w-full flex flex-col items-center p-0"; // Reduzido padding
   
   // Wrapper para o conteúdo principal (centralizado ou não)
   const mainContentWrapperClass = shouldCenter 
-    ? "w-full flex-1 flex flex-col items-center justify-center py-2 px-2 sm:py-4 sm:px-0" 
-    : "w-full flex flex-col items-center py-2 px-2 sm:py-4 sm:px-0";
+    ? "w-full flex-1 flex flex-col items-center justify-center p-0" // Removido padding
+    : "w-full flex flex-col items-center p-0"; // Removido padding
   
-  const logoWrapperClass = "w-full flex justify-center py-1 mb-1 sm:py-2 sm:mb-2";
-  const progressBarClass = "w-full rounded-full overflow-hidden mb-2 sm:mb-3";
+  const logoWrapperClass = "w-full flex justify-center py-0"; // Removido padding
+  const progressBarClass = "w-full rounded-full overflow-hidden mb-0"; // Removido margin
   const contentClass = `w-full ${responsiveClass}`;
 
   // Estilos específicos para o tipo de dispositivo e centralização
@@ -251,16 +251,17 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
         />
       )}
       
-      <div className={contentWrapperClass} style={isMobile ? {overflowY: 'auto'} : {}}>
+      <div className={contentWrapperClass} style={{overflowY: isMobile ? 'auto' : 'visible', margin: 0, padding: 0, gap: 0}}>
         {/* Header Section - Logo e barra de progresso */}
-        <div className={headerWrapperClass}>
+        <div className={headerWrapperClass} style={{margin: 0, padding: 0, marginBottom: '5px'}}>
           {/* Logotipo */}
           {validLogo && (
-            <div className={logoWrapperClass}>
+            <div className={logoWrapperClass} style={{margin: 0, padding: 0, paddingBottom: '5px'}}>
               <img 
                 src={validLogo} 
                 alt="Logo" 
                 className="max-h-14 object-contain"
+                style={{margin: 0, padding: 0, marginBottom: '5px'}}
                 onError={(e) => {
                   console.error("FunnelPreview - Erro ao carregar logo:", e);
                   // Esconder o elemento em caso de erro
@@ -279,7 +280,9 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
               className={progressBarClass}
               style={{
                 backgroundColor: `${primaryColor}30`, // Usando a mesma cor com 30% de opacidade
-                height: '10px' // Valor intermediário entre h-2 (8px) e h-3 (12px)
+                height: '6px', // Reduzido para 6px
+                margin: 0,
+                marginBottom: '5px'
               }}
             >
               <div 
@@ -287,18 +290,36 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
                 style={{ 
                   width: `${((safeCurrentStep + 1) / activeFunnel.steps.length) * 100}%`,
                   backgroundColor: primaryColor,
-                  transition: 'width 0.2s ease-out' // Manter apenas a transição na barra de progresso
+                  transition: 'width 0.2s ease-out', // Manter apenas a transição na barra de progresso
+                  margin: 0
                 }}
               ></div>
             </div>
           )}
         </div>
 
-        {/* Main Content Section - Centralizado verticalmente quando centerContent=true */}
-        <div className={mainContentWrapperClass} style={{...centerContentStyle, overflowY: isMobile ? 'auto' : 'visible'}}>
-          <div className={contentClass} style={mainContainerStyle}>
+        {/* Main Content Section */}
+        <div className={mainContentWrapperClass} style={{
+          ...centerContentStyle, 
+          overflowY: isMobile ? 'auto' : 'visible',
+          margin: 0,
+          padding: 0,
+          gap: 0,
+          marginTop: 0
+        }}>
+          <div className={contentClass} style={{
+            ...mainContainerStyle,
+            margin: 0,
+            padding: 0,
+            gap: 0
+          }}>
             {canvasElements && canvasElements.length > 0 ? (
-              <div className="w-full" style={isMobile ? {overflowY: 'auto'} : {}}>
+              <div className="w-full" style={{
+                overflowY: isMobile ? 'auto' : 'visible',
+                margin: 0,
+                padding: 0,
+                gap: 0
+              }}>
                 <CanvasPreview
                   canvasElements={canvasElements}
                   activeStep={safeCurrentStep}
