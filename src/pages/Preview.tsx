@@ -78,15 +78,18 @@ const Preview = () => {
   const handleStepChange = (index: number) => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 30);
-      });
-    });
   };
+  
+  // Efeito para gerenciar o scroll quando o currentStepIndex muda
+  useEffect(() => {
+    if (currentStepIndex !== undefined) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    }
+  }, [currentStepIndex]);
   
   // Obter os canvasElements do step atual
   const currentStep = loadedFunnel.steps[currentStepIndex];
