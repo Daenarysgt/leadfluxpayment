@@ -44,31 +44,42 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
 
   // Scroll para o topo quando muda de etapa, especialmente importante em mobile
   useEffect(() => {
+    const scrollToTop = () => {
+      console.log("Tentando fazer scroll para o topo...");
+      
+      // Scroll instantâneo para maior confiabilidade
+      window.scrollTo(0, 0);
+      
+      // Também tentar scrollar o contêiner pai, se existir
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+      
+      // Se estiver dentro de um iframe, tente scrollar a janela pai também
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.scrollTo(0, 0);
+        }
+      } catch (e) {
+        // Ignora erros de segurança de cross-origin
+      }
+      
+      // Verificação adicional para ScrollingElement
+      if (document.scrollingElement) {
+        document.scrollingElement.scrollTop = 0;
+      }
+      
+      // Também garantir que o body e html estejam no topo
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    };
+    
     if (isMobile) {
-      // Usar setTimeout para garantir que o scroll ocorra após a renderização
-      setTimeout(() => {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-        
-        // Também tentar scrollar o contêiner pai, se existir
-        if (containerRef.current) {
-          containerRef.current.scrollTop = 0;
-        }
-        
-        // Se estiver dentro de um iframe, tente scrollar a janela pai também
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.scrollTo({
-              top: 0,
-              behavior: 'smooth'
-            });
-          }
-        } catch (e) {
-          // Ignora erros de segurança de cross-origin
-        }
-      }, 100);
+      // Tentar várias vezes com pequenos intervalos para garantir que funcione
+      // após toda a renderização e cálculos de layout
+      setTimeout(scrollToTop, 100);
+      setTimeout(scrollToTop, 300);
+      setTimeout(scrollToTop, 500);
     }
   }, [activeStep, isMobile]);
 
@@ -95,6 +106,11 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, is
   const canvasElements = stepData.canvasElements || [];
 
   const handleStepChange = (newStep: number) => {
+    // Scroll para o topo imediatamente, antes de mudar de etapa no mobile
+    if (isMobile) {
+      window.scrollTo(0, 0);
+    }
+    
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
