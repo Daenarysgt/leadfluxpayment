@@ -45,6 +45,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
       buttonText: "Comprar Agora!",
       periodText: "Mensal",
       warrantyText: "7 dias de garantia",
+      cashText: "à vista",
       features: [
         { id: crypto.randomUUID(), text: "Novo recurso" },
         { id: crypto.randomUUID(), text: "Novo recurso" },
@@ -483,7 +484,7 @@ const PriceRenderer = (props: ElementRendererProps) => {
                     className="text-sm opacity-70 ml-2"
                     style={{ color: plan.style?.textColor || "#ffffff" }}
                   >
-                    à vista
+                    {plan.cashText || "à vista"}
                   </span>
                 </div>
               </div>

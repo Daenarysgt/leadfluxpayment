@@ -55,6 +55,7 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
       buttonText: "Escolher este plano",
       periodText: "Mensal",
       warrantyText: "7 dias de garantia",
+      cashText: "à vista",
       showButton: true,
       navigation: { type: "next" },
       facebookEvent: "",
@@ -484,6 +485,17 @@ const PriceConfig = ({ element, onUpdate }: PriceConfigProps) => {
                         placeholder="7 dias de garantia"
                       />
                     </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs" htmlFor={`plan-cash-text-${plan.id}`}>Texto "à vista"</Label>
+                    <Input
+                      id={`plan-cash-text-${plan.id}`}
+                      value={plan.cashText || "à vista"}
+                      onChange={e => updatePlan(plan.id, { cashText: e.target.value })}
+                      className="h-8 text-sm"
+                      placeholder="à vista"
+                    />
                   </div>
                   
                   <div className="flex items-center justify-between space-x-2 pt-1">
