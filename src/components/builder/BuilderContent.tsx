@@ -62,12 +62,24 @@ const BuilderContent = ({
         
         <ResizablePanel defaultSize={selectedElement ? 40 : 70}>
           {previewActive ? (
-            <div className="h-[calc(100vh-64px)] overflow-auto">
-              <BuilderPreview isMobile={viewMode === 'mobile'} />
-            </div>
-          ) : (
             <ScrollArea className="h-[calc(100vh-64px)]">
               <div className="p-6">
+                <BuilderPreview isMobile={viewMode === 'mobile'} />
+              </div>
+            </ScrollArea>
+          ) : (
+            <ScrollArea 
+              className="h-[calc(100vh-64px)]"
+              style={{
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <div className="p-6 flex-grow" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                minHeight: '100%' 
+              }}>
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}
                   isMobile={viewMode === 'mobile'} 

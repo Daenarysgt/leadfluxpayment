@@ -28,33 +28,31 @@ const BuilderCanvas = ({
   // Usar o hook de redimensionamento do canvas para evitar a borda branca
   const { fixCanvasWhiteSpace } = useCanvasResize();
   
-  // Função para ajustar os elementos apenas no modo móvel, preservando o comportamento original do Builder
+  // Função para ajustar os elementos para renderização mais próxima da pré-visualização
   const adjustElementsForConsistentDisplay = (elementsToAdjust: CanvasElement[]): CanvasElement[] => {
-    // Retorna os elementos originais no modo desktop
-    if (!isMobile) {
-      return elementsToAdjust;
-    }
-    
     // Clone os elementos para não modificar o original
     const adjustedElements = JSON.parse(JSON.stringify(elementsToAdjust));
     
     return adjustedElements.map((element: CanvasElement) => {
       const adjustedElement = { ...element };
       
-      // Para dispositivos móveis, modificar as posições e dimensões 
-      if (adjustedElement.position) {
-        adjustedElement.position = {
-          ...adjustedElement.position,
-          x: 0 // Forçar alinhamento à esquerda no modo mobile
-        };
-      }
-      
-      // Assegurar largura máxima para caber na tela móvel
-      if (adjustedElement.dimensions) {
-        adjustedElement.dimensions = {
-          ...adjustedElement.dimensions,
-          width: window.innerWidth - 16 // Largura ajustada para mobile
-        };
+      // Para dispositivos móveis, modificar as posições e dimensões como no CanvasPreview
+      if (isMobile) {
+        // Assegurar que elementos com position tenham left=0 para evitar deslocamento
+        if (adjustedElement.position) {
+          adjustedElement.position = {
+            ...adjustedElement.position,
+            x: 0 // Forçar alinhamento à esquerda como no CanvasPreview
+          };
+        }
+        
+        // Assegurar largura máxima para caber na tela
+        if (adjustedElement.dimensions) {
+          adjustedElement.dimensions = {
+            ...adjustedElement.dimensions,
+            width: window.innerWidth - 16 // Usar a largura total menos um pequeno espaçamento
+          };
+        }
       }
       
       return adjustedElement;
@@ -71,8 +69,8 @@ const BuilderCanvas = ({
     reorderElements
   } = useCanvasElements(initialElements, onElementsChange, elementUpdates, selectedElementId);
   
-  // Aplicar o ajuste aos elementos apenas quando necessário
-  const displayElements = isMobile ? adjustElementsForConsistentDisplay(elements) : elements;
+  // Aplicar o ajuste aos elementos
+  const displayElements = adjustElementsForConsistentDisplay(elements);
   
   // Define all callback hooks consistently at the top level
   const handleDrop = useCallback((componentType: string) => {

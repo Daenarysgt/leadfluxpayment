@@ -16,12 +16,15 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
+  // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
+  const transitionRef = useRef<HTMLDivElement>(null);
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
     // Garantir que canvasElements é um array
     if (!Array.isArray(canvasElements)) {
+      console.error("CanvasPreview - canvasElements não é um array:", canvasElements);
       return [];
     }
     
@@ -61,6 +64,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
+    // Se tiver muitos elementos, não centraliza (começa do topo)
     const manyElements = validCanvasElements.length > 3;
     setShouldCenter(centerContent && !manyElements);
   }, [validCanvasElements.length, centerContent]);
@@ -73,7 +77,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const newSessionId = await accessService.logAccess(funnel.id);
           setSessionId(newSessionId);
         } catch (error) {
-          // Erro silencioso
+          console.error("CanvasPreview - Erro ao inicializar sessão:", error);
         }
       }
     };
@@ -84,11 +88,13 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Handler para mudança de etapa com verificação de segurança
   const handleStepChange = useCallback(async (index: number) => {
     if (!funnel) {
+      console.warn("CanvasPreview - No funnel available for navigation");
       return;
     }
     
     // Validar se o índice é válido
     if (index < 0 || index >= funnel.steps.length) {
+      console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
       return;
     }
     
@@ -102,6 +108,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         await accessService.updateProgress(funnel.id, index + 1, sessionId);
       }
     } catch (error) {
+      console.error("CanvasPreview - Error during step interaction:", error);
       // Continue com a navegação mesmo com erro de registro
     }
     
@@ -111,19 +118,26 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Detectar propriedades visuais do funnel com valores padrão seguros
   const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
+  const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
   
   // Estilos de container com valores padrão seguros
   const containerStyles: React.CSSProperties = {
     backgroundColor: 'transparent',
     color: hasBackgroundImage ? 'white' : 'inherit',
     borderRadius: isMobile ? '0' : '0.5rem',
+    padding: isMobile ? '0.25rem' : '1rem',
+    margin: isMobile ? '0 auto' : '0 auto',
     position: 'relative',
+    left: isMobile ? '0' : 'auto',
+    right: isMobile ? '0' : 'auto',
+    width: isMobile ? '100%' : 'auto',
+    overflowY: isMobile ? 'auto' : 'visible', // Permitir scroll vertical no mobile
   };
 
   // Classes condicionais para desktop e mobile
   const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px]" 
-    : "w-full mx-auto min-h-[300px]";
+    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
+    : "w-full mx-auto min-h-[300px] rounded-lg";
   
   // Função para próximo passo
   const handleNextStep = useCallback((event: React.MouseEvent) => {
@@ -132,6 +146,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
       onStepChange(nextStep);
+    } else {
+      console.warn("CanvasPreview - Tentativa de avançar além do último passo");
     }
   }, [activeStep, funnel, onStepChange]);
   
@@ -140,13 +156,29 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   return (
     <div 
+      ref={transitionRef}
       className={`${containerClass} canvas-container w-full`}
       style={{
         ...containerStyles,
+        minHeight: 'max-content',
+        paddingBottom: '1.5rem',
+        paddingTop: '0.5rem',
+        // Garantir que a altura seja preservada durante a transição
+        minWidth: isMobile ? '100%' : 'auto',
+        maxWidth: isMobile ? '100%' : 'auto',
+        transform: 'translate3d(0,0,0)',
+        backfaceVisibility: 'hidden',
+        perspective: 1000,
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: shouldCenter ? 'center' : 'flex-start',
-        opacity: 1
+        width: '100%',
+        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
+        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
+        // Remover qualquer animação de fade-in
+        opacity: 1,
+        transition: 'none'
       }}
     >
       {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
@@ -154,9 +186,10 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
         allFunnelStepsElements.map((stepData) => (
           <div 
             key={`step-${stepData.index}-${stepData.stepId}`} 
+            className="w-full transition-opacity duration-100" 
             style={{ 
               display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1
+              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
             }}
           >
             {stepData.elements.map((element, elementIndex) => {
@@ -170,6 +203,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
                   funnel,
                   isMobile,
                 },
+                // Adicionar flag para evitar loading states
                 skipLoading: true
               };
               
@@ -177,7 +211,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
               const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
               
               return (
-                <div key={element.id} className={elementClassName}>
+                <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
                   <ElementFactory 
                     element={elementWithPreviewProps}
                     isSelected={false} 
@@ -212,7 +246,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
           
           return (
-            <div key={element.id} className={elementClassName}>
+            <div key={element.id} className={elementClassName} style={{ opacity: 1 }}>
               <ElementFactory 
                 element={elementWithPreviewProps}
                 isSelected={false} 
@@ -232,4 +266,20 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   );
 };
 
-export default CanvasPreview;
+// Removemos o estilo de animação fade-in
+const fadeInStyle = `
+<style>
+  /* Estilos removidos para evitar qualquer animação de fade */
+</style>
+`;
+
+const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
+  return (
+    <>
+      {/* Remover a injeção de estilos de animação */}
+      <CanvasPreview {...props} />
+    </>
+  );
+};
+
+export default CanvasPreviewWithStyle;

@@ -7,19 +7,38 @@ export const useCanvasResize = () => {
     // Selecionar os elementos principais relacionados ao canvas
     const viewport = document.querySelector('[data-radix-scroll-area-viewport]');
     const canvasContainer = document.querySelector('.ScrollAreaViewport > div');
+    const canvasElements = document.querySelectorAll('[class*="canvas"] > div');
     
     if (viewport && canvasContainer) {
-      // Garantir tamanho e estrutura sem alterar as propriedades originais
+      // Forçar o viewport a ter altura automática e flex para se expandir corretamente
       const viewportEl = viewport as HTMLElement;
       viewportEl.style.height = 'auto';
       viewportEl.style.minHeight = '100%';
+      viewportEl.style.display = 'flex';
+      viewportEl.style.flexDirection = 'column';
       
-      // Garantir que o container do canvas mantenha sua estrutura original
+      // Garantir que o container do canvas tenha altura automática
       const containerEl = canvasContainer as HTMLElement;
       containerEl.style.flexGrow = '1';
+      containerEl.style.display = 'flex';
+      containerEl.style.flexDirection = 'column';
       
-      // Não devemos alterar padding-bottom ou outras propriedades que afetam o layout
-      // Apenas garantir que a área de arrastar esteja visível
+      // Ajustar qualquer 'padding-bottom' excessivo que possa estar causando o espaço em branco
+      // Mas preservar um pequeno padding para permitir o drag and drop
+      canvasElements.forEach((element) => {
+        const el = element as HTMLElement;
+        const paddingBottom = parseInt(getComputedStyle(el).paddingBottom, 10);
+        
+        // Se o padding-bottom for excessivo (mais de 60px), reduzir para um valor razoável
+        if (paddingBottom > 60) {
+          el.style.paddingBottom = '60px'; // Manter espaço suficiente para drag-and-drop
+        } else if (paddingBottom === 0) {
+          // Garantir um espaço mínimo para permitir drag-and-drop
+          el.style.paddingBottom = '20px';
+        }
+      });
+      
+      // Garantir que a área de arrastar esteja visível
       const dropArea = document.querySelector('[class*="canvas"] > div:last-child');
       if (dropArea) {
         const dropAreaEl = dropArea as HTMLElement;
@@ -96,8 +115,12 @@ export const useCanvasResize = () => {
     
     window.addEventListener('resize', handleResize);
     
-    // Chamar o fix apenas uma vez após 500ms
-    const timeoutId = setTimeout(fixCanvasWhiteSpace, 500);
+    // Chamar o fix periodicamente durante 5 segundos para garantir que seja aplicado
+    // mesmo após todas as renderizações
+    const intervalId = setInterval(fixCanvasWhiteSpace, 500);
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 5000);
     
     // Cleanup
     return () => {
@@ -105,6 +128,7 @@ export const useCanvasResize = () => {
       if (window.canvasResizeObserver) {
         window.canvasResizeObserver.disconnect();
       }
+      clearInterval(intervalId);
       clearTimeout(timeoutId);
     };
   }, [fixCanvasWhiteSpace, setupResizeObserver]);
