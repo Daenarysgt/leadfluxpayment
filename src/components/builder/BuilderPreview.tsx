@@ -1,6 +1,6 @@
 import React from 'react';
+import FunnelPreview from "@/components/FunnelPreview"; // Importação direta do componente principal
 import { useStore } from "@/utils/store";
-import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
 
 const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
   const { currentFunnel, currentStep } = useStore();
@@ -16,31 +16,31 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
     );
   }
 
-  // Obter os elementos do canvas da etapa atual
-  const stepData = currentFunnel.steps[currentStep];
-  const canvasElements = stepData?.canvasElements || [];
+  // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
+  // Determinar se há uma imagem de fundo para aplicar estilo apropriado
+  const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
   
-  // Importante: Definimos apenas as propriedades essenciais de background aqui,
-  // e todo o resto da estrutura, alinhamento, etc é igual ao builder
   return (
-    <div className="builder-canvas-container" 
-      style={{ 
-        backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
-        backgroundImage: currentFunnel.settings?.backgroundImage ? 
-          `url(${currentFunnel.settings.backgroundImage})` : 'none',
-        backgroundSize: currentFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                       currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-      }}>
-      <CanvasPreview
-        canvasElements={canvasElements}
-        activeStep={currentStep}
-        onStepChange={() => {}}
-        funnel={currentFunnel}
-        isMobile={isMobile}
-        builderMode={true}
-      />
+    <div className="w-full flex items-center justify-center" 
+         style={{ 
+           backgroundColor: currentFunnel.settings?.backgroundColor || '#ffffff',
+           backgroundImage: hasBackgroundImage ? `url(${currentFunnel.settings.backgroundImage})` : 'none',
+           backgroundSize: currentFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                           currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+           backgroundPosition: 'center',
+           backgroundRepeat: currentFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+           backgroundAttachment: currentFunnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll',
+           minHeight: '100%',
+           paddingBottom: '3rem'
+         }}>
+      <div className={`${isMobile ? 'max-w-sm' : 'w-full'} py-6`}>
+        <FunnelPreview 
+          funnel={JSON.parse(JSON.stringify(currentFunnel))} 
+          isMobile={isMobile} 
+          stepIndex={currentStep}
+          key={`preview-${currentFunnel.id}-step-${currentStep}`} 
+        />
+      </div>
     </div>
   );
 });
