@@ -1,5 +1,5 @@
 import React from 'react';
-import FunnelPreview from "@/components/FunnelPreview"; // Importação direta do componente principal
+import FunnelPreview from "@/components/funnel-preview/FunnelPreview"; // Import from correct path
 import { useStore } from "@/utils/store";
 
 const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
@@ -16,7 +16,6 @@ const BuilderPreview = React.memo(({ isMobile }: { isMobile: boolean }) => {
     );
   }
 
-  // Using a unique key with both funnel ID, step index, and timestamp ensures a full re-render when switching steps
   // Determinar se há uma imagem de fundo para aplicar estilo apropriado
   const hasBackgroundImage = !!currentFunnel.settings?.backgroundImage;
   

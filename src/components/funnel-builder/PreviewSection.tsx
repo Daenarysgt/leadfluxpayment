@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
-import FunnelPreview from "@/components/FunnelPreview";
+import FunnelPreview from "@/components/funnel-preview/FunnelPreview";
 import { useStore } from "@/utils/store";
 import { useState, useEffect } from "react";
 

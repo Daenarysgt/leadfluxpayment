@@ -1,12 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { useStore } from "@/utils/store";
 import { useEffect, useState } from "react";
-import FunnelPreview from "@/components/FunnelPreview";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Monitor, Smartphone } from "lucide-react";
 import { Funnel } from "@/utils/types";
 import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
-import { CanvasElement } from "@/types/canvasTypes";
+import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
 
 // Detectar mobile no carregamento inicial
 const detectMobile = () => {
@@ -79,11 +78,14 @@ const Preview = () => {
     setCurrentStepIndex(index);
   };
   
-  // Determinar se há imagem de fundo para aplicar estilo apropriado
-  const hasBackgroundImage = !!loadedFunnel?.settings?.backgroundImage;
+  // Obter os canvasElements do step atual
+  const currentStep = loadedFunnel.steps[currentStepIndex];
+  const canvasElements = currentStep && Array.isArray(currentStep.canvasElements) 
+    ? currentStep.canvasElements 
+    : [];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col h-screen">
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm">
         <Link to={`/builder/${funnelId}`}>
           <Button variant="ghost" size="sm" className="gap-1">
@@ -116,27 +118,30 @@ const Preview = () => {
         </div>
       </header>
       
-      {/* Replicar exatamente a mesma estrutura do BuilderCanvas sem wrappers adicionais */}
-      <main className="flex-1 flex overflow-auto" style={{
-        backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
-        backgroundImage: hasBackgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
-        backgroundSize: loadedFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                      loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
-      }}>
-        <div className="w-full mx-auto py-8 px-4">
-          <FunnelPreview 
-            funnel={loadedFunnel} 
-            isMobile={isMobile} 
-            stepIndex={currentStepIndex}
-            onNextStep={handleStepChange} 
-            key={`preview-${loadedFunnel.id}`}
-            // Desativar centralização para manter a mesma estrutura do builder
-            centerContent={false}
+      {/* Container principal com fundo e configurações de background */}
+      <div 
+        className="flex-1 flex justify-center" 
+        style={{
+          backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
+          backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
+          backgroundSize: loadedFunnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                        loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
+        }}
+      >
+        {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
+        <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+          <CanvasPreview
+            canvasElements={canvasElements}
+            activeStep={currentStepIndex}
+            onStepChange={handleStepChange}
+            funnel={loadedFunnel}
+            isMobile={isMobile}
+            isPreviewPage={true}
           />
         </div>
-      </main>
+      </div>
       
       {/* Debugger do Facebook Pixel - apenas em desenvolvimento */}
       {process.env.NODE_ENV === 'development' && <FacebookPixelDebugger />}

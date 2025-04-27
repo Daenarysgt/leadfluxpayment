@@ -11,17 +11,24 @@ interface CanvasPreviewProps {
   funnel?: Funnel;
   isMobile?: boolean;
   centerContent?: boolean;
+  isPreviewPage?: boolean;
+  className?: string;
+  paddingLeftAdjusted?: number;
+  paddingRightAdjusted?: number;
+  paddingTopAdjusted?: number;
+  paddingBottomAdjusted?: number;
 }
 
-const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false }: CanvasPreviewProps) => {
+const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false, isPreviewPage = false, className, paddingLeftAdjusted, paddingRightAdjusted, paddingTopAdjusted, paddingBottomAdjusted }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
-  const transitionRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   
-  // Detectar se estamos na página de preview ou no builder
-  const isPreviewPage = window.location.pathname.includes('/preview/');
+  // Detectar se estamos na página de preview
+  // Tanto pela prop explícita quanto pela URL
+  const isInPreviewMode = isPreviewPage || window.location.pathname.includes('/preview/');
   
   // Usar elementos válidos
   const validCanvasElements = useMemo(() => {
@@ -119,31 +126,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     onStepChange(index);
   }, [funnel, sessionId, onStepChange]);
   
-  // Detectar propriedades visuais do funnel com valores padrão seguros
-  const hasBackgroundImage = !!(funnel?.settings?.backgroundImage);
-  const hasBackgroundOpacity = hasBackgroundImage && typeof funnel?.settings?.backgroundOpacity === 'number';
-  
-  // Estilo do container com valores padrão seguros
-  const containerStyles: React.CSSProperties = {
-    backgroundColor: 'transparent',
-    color: hasBackgroundImage ? 'white' : 'inherit',
-    borderRadius: isMobile ? '0' : '0.5rem',
-    padding: isPreviewPage ? '0' : (isMobile ? '0.25rem' : '1rem'),
-    margin: isMobile ? '0 auto' : '0 auto',
-    position: 'relative',
-    left: isMobile ? '0' : 'auto',
-    right: isMobile ? '0' : 'auto',
-    width: isMobile ? '100%' : 'auto',
-    overflowY: isMobile ? 'auto' : 'visible',
-    paddingTop: isPreviewPage ? '0' : '0.25rem',
-    paddingBottom: isPreviewPage ? '0' : '0.25rem'
-  };
-
-  // Classes condicionais para desktop e mobile
-  const containerClass = isMobile 
-    ? "w-full mx-auto min-h-[300px] mobile-full-width" 
-    : "w-full mx-auto min-h-[300px] rounded-lg";
-  
   // Função para próximo passo
   const handleNextStep = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -159,138 +141,78 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
   
+  // Funções de renderização dos elementos
+  const renderElement = (element: CanvasElement, index?: number, totalElements?: number) => {
+    // Adicionar props de preview
+    const elementWithPreviewProps = {
+      ...element,
+      previewMode: true,
+      previewProps: {
+        activeStep,
+        onStepChange: handleStepChange,
+        funnel,
+        isMobile
+      },
+      skipLoading: true
+    };
+
+    return (
+      <ElementFactory
+        key={element.id}
+        element={elementWithPreviewProps}
+        isSelected={false}
+        isDragging={false}
+        onSelect={noopFunction}
+        onRemove={noopFunction}
+        index={index || 0}
+        totalElements={totalElements || 0}
+        onDragStart={null}
+        onDragEnd={null}
+      />
+    );
+  };
+  
+  // No modo preview, usar absolutamente nenhuma classe ou estilo além do que foi explicitamente passado
+  if (isInPreviewMode) {
+    return (
+      <div className={className || ''}>
+        {validCanvasElements.map((element) => renderElement(element))}
+      </div>
+    );
+  }
+  
+  // Modo normal (builder): manter estrutura original com wrappers e estilos
   return (
-    <div 
-      ref={transitionRef}
-      className={`${containerClass} canvas-container w-full`}
+    <div
+      className={`w-full h-full overflow-y-auto ${className || ''}`}
+      ref={canvasRef}
       style={{
-        ...containerStyles,
-        minHeight: 'max-content',
-        paddingBottom: isPreviewPage ? '0' : '1.5rem',
-        paddingTop: isPreviewPage ? '0' : '0.5rem',
-        // Garantir que a altura seja preservada durante a transição
-        minWidth: isMobile ? '100%' : 'auto',
-        maxWidth: isMobile ? '100%' : 'auto',
-        transform: 'translate3d(0,0,0)',
-        backfaceVisibility: 'hidden',
-        perspective: 1000,
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: shouldCenter ? 'center' : 'flex-start',
-        width: '100%',
-        overflowY: isMobile ? 'auto' : 'visible', // Garantir scroll no mobile
-        maxHeight: isMobile ? 'none' : undefined, // Remover limite de altura no mobile
-        // Remover qualquer animação de fade-in
-        opacity: 1,
-        transition: 'none'
+        backgroundColor: 'transparent',
+        borderRadius: isMobile ? '0' : '0.5rem',
+        padding: isMobile ? '0.25rem' : '1rem',
+        margin: isMobile ? '0 auto' : '0 auto',
+        position: 'relative',
+        width: isMobile ? '100%' : 'auto',
+        overflowY: isMobile ? 'auto' : 'visible',
+        paddingLeft: paddingLeftAdjusted,
+        paddingRight: paddingRightAdjusted,
+        paddingTop: paddingTopAdjusted,
+        paddingBottom: paddingBottomAdjusted
       }}
     >
-      {/* Renderizar todas as etapas do funil, mas mostrar apenas a ativa */}
-      {allFunnelStepsElements.length > 0 ? (
-        allFunnelStepsElements.map((stepData) => (
-          <div 
-            key={`step-${stepData.index}-${stepData.stepId}`} 
-            className="w-full transition-opacity duration-100" 
-            style={{ 
-              display: stepData.index === activeStep ? 'block' : 'none',
-              opacity: 1 // Manter opacidade 1 para evitar efeito de fade
-            }}
-          >
-            {stepData.elements.map((element, elementIndex) => {
-              // Adicionar propriedades de preview para navegação
-              const elementWithPreviewProps = {
-                ...element,
-                previewMode: true,
-                previewProps: {
-                  activeStep,
-                  onStepChange: handleStepChange,
-                  funnel,
-                  isMobile,
-                },
-                // Adicionar flag para evitar loading states
-                skipLoading: true
-              };
-              
-              // Classe específica para mobile ou desktop
-              const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-              
-              return (
-                <div key={element.id} className={elementClassName} style={{ 
-                  opacity: 1,
-                  marginBottom: isPreviewPage ? '0' : '0.5rem' // Remover espaçamento entre elementos no preview
-                }}>
-                  <ElementFactory 
-                    element={elementWithPreviewProps}
-                    isSelected={false} 
-                    isDragging={false}
-                    onSelect={noopFunction}
-                    onRemove={noopFunction}
-                    index={elementIndex}
-                    totalElements={stepData.elements.length}
-                    onDragStart={null}
-                    onDragEnd={null}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ))
-      ) : (
-        // Caso fallback para usar os elementos passados diretamente como prop
-        validCanvasElements.map((element, index) => {
-          const elementWithPreviewProps = {
-            ...element,
-            previewMode: true,
-            previewProps: {
-              activeStep,
-              onStepChange: handleStepChange,
-              funnel,
-              isMobile,
-            },
-            skipLoading: true
-          };
-          
-          const elementClassName = isMobile ? 'canvas-element-mobile' : 'canvas-element';
-          
-          return (
-            <div key={element.id} className={elementClassName} style={{ 
-              opacity: 1,
-              marginBottom: isPreviewPage ? '0' : '0.5rem' // Remover espaçamento entre elementos no preview
-            }}>
-              <ElementFactory 
-                element={elementWithPreviewProps}
-                isSelected={false} 
-                isDragging={false}
-                onSelect={noopFunction}
-                onRemove={noopFunction}
-                index={index}
-                totalElements={validCanvasElements.length}
-                onDragStart={null}
-                onDragEnd={null}
-              />
-            </div>
-          );
-        })
-      )}
+      {validCanvasElements.map((element, index) => (
+        <div
+          key={element.id}
+          style={{
+            marginBottom: '0.5rem',
+            width: '100%',
+          }}
+        >
+          {renderElement(element, index, validCanvasElements.length)}
+        </div>
+      ))}
     </div>
   );
 };
 
-// Removemos o estilo de animação fade-in
-const fadeInStyle = `
-<style>
-  /* Estilos removidos para evitar qualquer animação de fade */
-</style>
-`;
-
-const CanvasPreviewWithStyle = (props: CanvasPreviewProps) => {
-  return (
-    <>
-      {/* Remover a injeção de estilos de animação */}
-      <CanvasPreview {...props} />
-    </>
-  );
-};
-
-export default CanvasPreviewWithStyle;
+export default CanvasPreview;
