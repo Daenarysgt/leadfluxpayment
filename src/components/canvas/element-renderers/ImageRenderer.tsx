@@ -4,7 +4,6 @@ import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useMemo, useState, useEffect, useRef } from "react";
-import OptimizedImage from "@/components/ui/optimized-image";
 
 // Cache global para imagens já carregadas
 const imageCache: Record<string, boolean> = {};
@@ -12,6 +11,8 @@ const imageCache: Record<string, boolean> = {};
 const ImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
   const { content } = element;
+  // Começar com isLoading como false para evitar skeleton em todas as situações
+  const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const imageUrlRef = useRef<string | null>(null);
@@ -19,35 +20,83 @@ const ImageRenderer = (props: ElementRendererProps) => {
   // Verificar se precisamos pular o loading (no modo preview)
   // Usar operador opcional para evitar erro de tipagem
   const skipLoading = (element as any).skipLoading === true || (element as any).previewMode === true;
-  const isPriority = skipLoading || (element as any).priority === true;
   
-  // Configurar src da imagem
+  // Carregamento de imagem com efeito
   useEffect(() => {
     if (!content?.imageUrl) {
+      setIsLoading(false);
       setSrc(null);
       return;
     }
     
     const imageUrl = content.imageUrl;
     
-    // Se a URL é a mesma da anterior, não precisamos fazer nada
+    // Se a URL é a mesma da anterior, não precisamos recarregar
     if (imageUrlRef.current === imageUrl && src) {
+      setIsLoading(false);
       return;
     }
     
-    // Definir o src
+    // Sempre definir o src imediatamente para evitar estado de loading
     setSrc(imageUrl);
-    imageUrlRef.current = imageUrl;
     
-    // Verificar se a imagem existe (para tratar erros)
-    const checkImage = new Image();
-    checkImage.onerror = () => {
+    // Se estamos no modo de preview ou se skipLoading é true, nunca mostrar loading
+    if (skipLoading) {
+      setIsLoading(false);
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Verificar se a imagem já foi carregada anteriormente (cache)
+    if (imageCache[imageUrl]) {
+      // Se já carregamos esta imagem antes, definimos o src diretamente sem mostrar loading
+      setIsLoading(false);
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Para novas imagens, verificamos se já estão no cache do navegador
+    const img = new Image();
+    img.src = imageUrl;
+    
+    if (img.complete) {
+      // A imagem já está no cache do navegador
+      setIsLoading(false);
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
+      return;
+    }
+    
+    // Apenas mostrar loading para novas imagens se não estivermos no modo de preview
+    if (!(element as any).previewMode) {
+      setIsLoading(true);
+    }
+    
+    setIsError(false);
+    
+    // Carregar a imagem em segundo plano
+    img.onload = () => {
+      setIsLoading(false);
+      // Adicionar ao cache para carregamentos futuros
+      imageCache[imageUrl] = true;
+      imageUrlRef.current = imageUrl;
+    };
+    
+    img.onerror = () => {
       console.error("ImageRenderer - Erro ao carregar imagem:", imageUrl);
       setIsError(true);
+      setIsLoading(false);
     };
-    checkImage.src = imageUrl;
     
-  }, [content?.imageUrl, src]);
+    return () => {
+      // Cancelar carregamento da imagem no cleanup
+      if (img) {
+        img.onload = null;
+        img.onerror = null;
+      }
+    };
+  }, [content?.imageUrl, src, skipLoading, element]);
   
   // Determine alignment class based on the content.alignment property
   const alignmentClass = useMemo(() => {
@@ -87,7 +136,17 @@ const ImageRenderer = (props: ElementRendererProps) => {
   const imageStyle = {
     borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
     maxHeight: content?.height ? `${content.height}px` : 'auto',
-    width: content?.width ? `${content.width}px` : 'auto'
+    width: content?.width ? `${content.width}px` : 'auto',
+    opacity: 1, // Sempre visible
+  };
+  
+  // Usar um espaço reservado invisível em vez de um skeleton
+  const placeholderStyle = {
+    height: content?.height ? `${content.height}px` : '150px',
+    width: '100%',
+    borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined,
+    // Tornar o placeholder invisível, mas manter o espaço
+    opacity: 0
   };
   
   // Sempre usar a URL da imagem diretamente para evitar loading
@@ -98,8 +157,13 @@ const ImageRenderer = (props: ElementRendererProps) => {
       <div className={cn("relative w-full flex items-center", alignmentClass)} style={containerStyle}>
         {imageUrl ? (
           <>
+            {/* Nunca mostrar estado de carregamento no modo preview */}
+            {isLoading && !skipLoading && (
+              <div style={placeholderStyle}></div>
+            )}
+            
             {/* Imagem com erro */}
-            {isError && (
+            {isError && !isLoading && (
               <div 
                 className="w-full h-full rounded bg-gray-50 border border-gray-200 flex flex-col items-center justify-center"
                 style={{ 
@@ -112,19 +176,16 @@ const ImageRenderer = (props: ElementRendererProps) => {
               </div>
             )}
             
-            {/* Imagem otimizada com lazy loading e carregamento progressivo */}
+            {/* Imagem - sempre mostrar diretamente no modo preview */}
             {!isError && (
               <>
                 {/* Se for um GIF animado, evitar usar AspectRatio */}
                 {content?.isAnimatedGif ? (
-                  <OptimizedImage
-                    src={imageUrl}
+                  <img 
+                    src={imageUrl} 
                     alt={content?.altText || "Imagem"}
-                    className="max-w-full"
-                    objectFit="contain"
-                    priority={isPriority}
-                    width={content?.width || '100%'}
-                    height={content?.height || 'auto'}
+                    className="max-w-full object-contain"
+                    style={imageStyle}
                   />
                 ) : content?.aspectRatio && content.aspectRatio !== "original" && aspectRatio ? (
                   <div 
@@ -134,26 +195,22 @@ const ImageRenderer = (props: ElementRendererProps) => {
                     }}
                   >
                     <AspectRatio ratio={aspectRatio}>
-                      <OptimizedImage 
+                      <img 
                         src={imageUrl} 
                         alt={content?.altText || "Imagem"} 
-                        className="w-full h-full"
-                        objectFit="cover"
-                        priority={isPriority}
-                        width="100%"
-                        height="100%"
+                        className="w-full h-full object-cover"
+                        style={{ 
+                          borderRadius: content?.borderRadius ? `${content.borderRadius}px` : undefined
+                        }}
                       />
                     </AspectRatio>
                   </div>
                 ) : (
-                  <OptimizedImage
-                    src={imageUrl}
-                    alt={content?.altText || "Imagem"}
-                    className="max-w-full"
-                    objectFit="contain"
-                    priority={isPriority}
-                    width={content?.width || '100%'}
-                    height={content?.height || 'auto'}
+                  <img 
+                    src={imageUrl} 
+                    alt={content?.altText || "Imagem"} 
+                    className="max-w-full object-contain"
+                    style={imageStyle}
                   />
                 )}
               </>

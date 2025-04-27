@@ -44,8 +44,8 @@ const FunnelPreview = ({
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
-  // Usar o hook de pré-carregamento de imagens, passando renderAllSteps
-  const { imagesPreloaded } = useImagePreloader(activeFunnel, activeStep, renderAllSteps);
+  // Usar o hook de pré-carregamento de imagens sem mostrar indicadores visuais
+  const { imagesPreloaded } = useImagePreloader(activeFunnel, activeStep);
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
