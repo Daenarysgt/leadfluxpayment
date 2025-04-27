@@ -1,12 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { useStore } from "@/utils/store";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Monitor, Smartphone } from "lucide-react";
 import { Funnel } from "@/utils/types";
 import FacebookPixelDebugger from "@/components/pixel/FacebookPixelDebugger";
 import CanvasPreview from "@/components/funnel-preview/CanvasPreview";
-import ProgressBar from "@/components/funnel-preview/ProgressBar";
 
 // Detectar mobile no carregamento inicial
 const detectMobile = () => {
@@ -22,7 +21,6 @@ const Preview = () => {
   const [isMobile, setIsMobile] = useState(detectMobile());
   const [loadedFunnel, setLoadedFunnel] = useState<Funnel | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const contentContainerRef = useRef<HTMLDivElement>(null);
   
   // Adicionar listener para redimensionamento
   useEffect(() => {
@@ -80,28 +78,14 @@ const Preview = () => {
     setCurrentStepIndex(index);
   };
   
-  // Efeito para gerenciar o scroll quando o currentStepIndex muda
-  useEffect(() => {
-    if (typeof currentStepIndex === 'number') {
-      const timeout = setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [currentStepIndex]);
-  
   // Obter os canvasElements do step atual
   const currentStep = loadedFunnel.steps[currentStepIndex];
   const canvasElements = currentStep && Array.isArray(currentStep.canvasElements) 
     ? currentStep.canvasElements 
     : [];
-    
-  // Obter configurações de estilo
-  const { primaryColor, logo } = loadedFunnel.settings || {};
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen">
       <header className="bg-white border-b py-3 px-6 flex items-center justify-between shadow-sm">
         <Link to={`/builder/${funnelId}`}>
           <Button variant="ghost" size="sm" className="gap-1">
@@ -136,8 +120,7 @@ const Preview = () => {
       
       {/* Container principal com fundo e configurações de background */}
       <div 
-        ref={contentContainerRef}
-        className="w-full flex-grow" 
+        className="flex-1 flex justify-center" 
         style={{
           backgroundColor: loadedFunnel.settings?.backgroundColor || '#ffffff',
           backgroundImage: loadedFunnel.settings?.backgroundImage ? `url(${loadedFunnel.settings.backgroundImage})` : 'none',
@@ -147,53 +130,16 @@ const Preview = () => {
           backgroundRepeat: loadedFunnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat'
         }}
       >
-        {/* Header normal com logo e barra de progresso (apenas mobile) */}
-        {isMobile && (
-          <div className="w-full bg-white shadow-sm">
-            <div className="px-4">
-              {/* Logo */}
-              {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
-                <div className="w-full flex justify-center py-2">
-                  <img 
-                    src={logo} 
-                    alt="Logo" 
-                    className="max-h-12 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              
-              {/* Progress Bar com margens laterais */}
-              {loadedFunnel.settings?.showProgressBar && (
-                <div className="pb-2">
-                  <ProgressBar 
-                    currentStep={currentStepIndex} 
-                    totalSteps={loadedFunnel.steps.length} 
-                    primaryColor={primaryColor}
-                  />
-                </div>
-              )}
-              <div className="pb-6"></div>
-            </div>
-          </div>
-        )}
-        
-        {/* Conteúdo principal centralizado */}
-        <div className="w-full flex justify-center">
-          {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
-          <div className={`w-full ${isMobile ? 'px-4 max-w-full' : 'max-w-4xl'}`}>
-            <CanvasPreview
-              canvasElements={canvasElements}
-              activeStep={currentStepIndex}
-              onStepChange={handleStepChange}
-              funnel={loadedFunnel}
-              isMobile={isMobile}
-              isPreviewPage={true}
-              className={isMobile ? 'px-4' : ''}
-            />
-          </div>
+        {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
+        <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
+          <CanvasPreview
+            canvasElements={canvasElements}
+            activeStep={currentStepIndex}
+            onStepChange={handleStepChange}
+            funnel={loadedFunnel}
+            isMobile={isMobile}
+            isPreviewPage={true}
+          />
         </div>
       </div>
       

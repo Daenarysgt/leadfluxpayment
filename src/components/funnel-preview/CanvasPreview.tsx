@@ -122,8 +122,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
       // Continue com a navegação mesmo com erro de registro
     }
     
-    // Aplicar a mudança de etapa diretamente - apenas notificar o componente pai
-    // para que ele se encarregue do scroll
+    // Aplicar a mudança de etapa diretamente
     onStepChange(index);
   }, [funnel, sessionId, onStepChange]);
   
@@ -133,8 +132,6 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      // Apenas notificar o componente pai para mudar a etapa
-      // O componente pai se encarregará do scroll
       onStepChange(nextStep);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
