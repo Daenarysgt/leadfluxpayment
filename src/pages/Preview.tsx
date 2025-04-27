@@ -23,6 +23,32 @@ const Preview = () => {
   const [loadedFunnel, setLoadedFunnel] = useState<Funnel | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const contentContainerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  
+  // Calcular a altura do header quando muda o estado mobile/desktop ou quando o componente monta
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current && isMobile) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      } else {
+        setHeaderHeight(0);
+      }
+    };
+    
+    // Atualizar altura inicial
+    updateHeaderHeight();
+    
+    // Configurar observador de redimensionamento para o header
+    if (headerRef.current) {
+      const resizeObserver = new ResizeObserver(() => {
+        updateHeaderHeight();
+      });
+      
+      resizeObserver.observe(headerRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [isMobile, headerRef.current]);
   
   // Adicionar listener para redimensionamento
   useEffect(() => {
@@ -79,11 +105,18 @@ const Preview = () => {
     console.log(`Preview - Changing step to ${index}`);
     setCurrentStepIndex(index);
     
-    // Scrollar automaticamente para o topo do container ou da página
+    // Scrollar automaticamente para o topo do container, considerando a altura do header
     if (contentContainerRef.current) {
-      contentContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      contentContainerRef.current.scrollTo({ 
+        top: 0, 
+        behavior: 'smooth' 
+      });
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Fallback para window scroll
+      window.scrollTo({ 
+        top: 0, 
+        behavior: 'smooth' 
+      });
     }
   };
   
@@ -145,7 +178,10 @@ const Preview = () => {
       >
         {/* Header fixo com logo e barra de progresso (apenas mobile) */}
         {isMobile && (
-          <div className="sticky top-0 bg-white z-10 w-full shadow-sm">
+          <div 
+            ref={headerRef}
+            className="sticky top-0 bg-white z-10 w-full shadow-sm"
+          >
             {/* Logo */}
             {logo && typeof logo === 'string' && logo.startsWith('data:image/') && (
               <div className="w-full flex justify-center py-2">
@@ -174,7 +210,12 @@ const Preview = () => {
         )}
         
         {/* Conteúdo principal centralizado */}
-        <div className="flex-1 flex justify-center">
+        <div 
+          className="flex-1 flex justify-center" 
+          style={{ 
+            paddingTop: isMobile ? `${headerHeight}px` : '0' 
+          }}
+        >
           {/* Contêiner para garantir largura máxima em desktop e responsividade em mobile */}
           <div className={`w-full ${isMobile ? 'max-w-full' : 'max-w-4xl'}`}>
             <CanvasPreview

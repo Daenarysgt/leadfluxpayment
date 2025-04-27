@@ -123,11 +123,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     }
     
     // Scrollar automaticamente para o topo do container ou da página
-    if (canvasRef.current) {
-      canvasRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Em vez de scrollar diretamente aqui, deixamos a responsabilidade para o componente pai
+    // que tem acesso aos headers e containers corretos
     
     // Aplicar a mudança de etapa diretamente
     onStepChange(index);
@@ -139,13 +136,8 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      // Scrollar automaticamente para o topo do container ou da página
-      if (canvasRef.current) {
-        canvasRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      
+      // Em vez de scrollar diretamente aqui, deixamos a responsabilidade para o componente pai
+      // que tem acesso aos headers e containers corretos
       onStepChange(nextStep);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
