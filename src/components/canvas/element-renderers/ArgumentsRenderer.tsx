@@ -87,7 +87,14 @@ const ArgumentsRenderer = (props: ElementRendererProps) => {
               )}
             >
               {showCheckmarks && renderIcon()}
-              <p style={{ color: argumentsColor }}>{arg.text}</p>
+              <p 
+                style={{ 
+                  color: argumentsColor,
+                  textAlign: argumentsAlign
+                }}
+              >
+                {arg.text}
+              </p>
             </div>
           ))}
           
