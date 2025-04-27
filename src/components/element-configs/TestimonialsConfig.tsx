@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AdvancedColorPicker } from "./common/AdvancedColorPicker";
 import { Slider } from "@/components/ui/slider";
+import { supabase } from "@/lib/supabase";
 
 interface TestimonialsConfigProps {
   element: any;
@@ -173,13 +174,151 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     const file = e.target.files[0];
-    const reader = new FileReader();
     
-    reader.onloadend = () => {
-      handleTestimonialChange(id, "avatar", reader.result as string);
-    };
+    try {
+      // Verificar se há uma imagem antiga para excluir
+      const testimonial = element.content?.testimonials?.find((t: any) => t.id === id);
+      if (testimonial?.avatar && testimonial.avatar.includes('supabase.co/storage')) {
+        await deleteOldImage(testimonial.avatar);
+      }
+      
+      // Redimensionar a imagem para um tamanho adequado
+      const resizedFile = await resizeImage(file);
+      
+      // Fazer upload para o Supabase Storage
+      const imageUrl = await uploadImageToStorage(resizedFile, id);
+      
+      // Atualizar o depoimento com a URL da imagem
+      handleTestimonialChange(id, "avatar", imageUrl);
+    } catch (error) {
+      console.error("Erro ao fazer upload da imagem:", error);
+    }
+  };
+  
+  // Função para redimensionar a imagem
+  const resizeImage = (file: File, maxWidth = 300, maxHeight = 300): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const img = new Image();
+        
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          
+          // Calcular dimensões para manter proporção
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round(height * maxWidth / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round(width * maxHeight / height);
+              height = maxHeight;
+            }
+          }
+          
+          // Criar canvas para redimensionar
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Desenhar imagem redimensionada
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Falha ao obter contexto do canvas'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Determinar tipo de saída (manter o tipo original)
+          const outputType = file.type;
+          
+          // Converter para blob com qualidade adequada
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Falha ao redimensionar imagem'));
+              return;
+            }
+            
+            // Criar novo arquivo a partir do blob
+            const resizedFile = new File([blob], file.name, {
+              type: outputType,
+              lastModified: Date.now(),
+            });
+            
+            resolve(resizedFile);
+          }, outputType, outputType === 'image/jpeg' ? 0.9 : undefined);
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Erro ao carregar imagem para redimensionamento'));
+        };
+        
+        img.src = event.target?.result as string;
+      };
+      
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+  
+  // Função para fazer upload para o Supabase Storage
+  const uploadImageToStorage = async (file: File, testimonialId: string): Promise<string> => {
+    try {
+      // Criar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${testimonialId}.${fileExt}`;
+      const filePath = `testimonials/${fileName}`;
+      
+      // Upload do arquivo para o Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) throw error;
+      
+      // Obter a URL pública da imagem
+      const { data: urlData } = supabase
+        .storage
+        .from('images')
+        .getPublicUrl(filePath);
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Erro ao fazer upload da imagem:", error);
+      throw error;
+    }
+  };
+  
+  // Remover imagem antiga do Storage
+  const deleteOldImage = async (imageUrl: string) => {
+    if (!imageUrl || !imageUrl.includes('supabase.co/storage/v1/object/public/images/')) return;
     
-    reader.readAsDataURL(file);
+    try {
+      // Extrair o caminho da imagem da URL
+      const urlParts = imageUrl.split('/public/images/');
+      if (urlParts.length < 2) return;
+      
+      const filePath = urlParts[1];
+      
+      // Excluir do Storage
+      const { error } = await supabase
+        .storage
+        .from('images')
+        .remove([filePath]);
+        
+      if (error) console.error("Erro ao excluir imagem antiga:", error);
+    } catch (error) {
+      console.error("Erro ao tentar excluir imagem antiga:", error);
+    }
   };
 
   const handleMarginTopChange = (value: number[]) => {

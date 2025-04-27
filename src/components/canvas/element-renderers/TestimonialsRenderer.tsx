@@ -108,6 +108,7 @@ const TestimonialsRenderer = (props: ElementRendererProps) => {
                 <AvatarImage 
                   src={testimonial.avatar} 
                   alt={testimonial.name || ""} 
+                  className="object-cover w-full h-full"
                 />
               ) : (
                 <AvatarFallback className="bg-gray-100 text-gray-500">
