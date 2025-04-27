@@ -225,7 +225,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       // Estilos CSS com base no tipo de estilo selecionado
       let cardStyle: React.CSSProperties = { 
         borderRadius: `${globalBorderRadius}px`,
-        maxWidth: "100%", // Garantir que o card não exceda a largura disponível
       };
       
       // Adicionar bordas se estiverem ativadas
@@ -252,7 +251,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         position: "relative",
         width: "100%",
         color: "white", // Garantir que o texto seja visível
-        padding: isMobile ? "10px" : "8px", // Ajustando padding para mobile
+        padding: isMobile ? "12px" : "8px", // Aumentando padding para mobile de 6px para 12px
         minHeight: isMobile ? "40px" : "auto", // Adicionando altura mínima para mobile
         zIndex: 5
       };
@@ -315,7 +314,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       return (
         <div 
           key={option.id} 
-          className={`relative overflow-hidden cursor-pointer transition-all hover:scale-[1.03] option-card ${card3DClass}`}
+          className={`relative overflow-hidden cursor-pointer transition-all hover:scale-[1.03] ${card3DClass}`}
           style={{
             ...cardStyle,
             // Garantir que no mobile a altura mínima seja suficiente
@@ -323,7 +322,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           }}
           onClick={() => handleOptionClick(option)}
         >
-          <div className="relative image-container">
+          <div className="relative">
             {aspectRatio !== "original" && ratio ? (
               <AspectRatio ratio={ratio} className="w-full">
                 {option.image ? (
@@ -367,11 +366,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             )}
             
             {/* Barra de texto com opção - Ajuste para garantir visibilidade em mobile */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 option-label" style={textStyle}>
-              <div className="w-full flex items-center" style={{justifyContent: textAlign === "center" ? "center" : (textAlign === "right" ? "flex-end" : "flex-start")}}>
-                <span className="text-inherit font-medium truncate">{option.text}</span>
-                {showArrows && <ChevronRight className={`text-inherit ml-1 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0`} />}
-              </div>
+            <div className="absolute bottom-0 left-0 right-0 p-3" style={textStyle}>
+              <span className="text-inherit font-medium flex-grow truncate">{option.text}</span>
+              {showArrows && <ChevronRight className={`text-inherit ml-1 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />}
             </div>
           </div>
         </div>
@@ -404,7 +401,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className={`grid grid-cols-2 gap-4 multiple-choice-image-grid`}>
+        <div className={`grid grid-cols-2 gap-4`}>
           {renderedOptions}
         </div>
       </div>
@@ -423,64 +420,17 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         
         /* Preservar estilos desktop em dispositivos móveis */
         @media (max-width: 768px) {
-          .multiple-choice-image-grid > div {
+          .grid-cols-2 > div {
             min-height: inherit !important;
             min-width: inherit !important;
             font-size: inherit !important;
           }
           
-          .multiple-choice-image-grid .option-label {
-            padding: 8px !important;
+          .grid-cols-2 > div .p-3 {
+            padding: inherit !important;
             min-height: 40px !important; /* Garantir altura mínima para tarjas em mobile */
             display: flex !important;
             align-items: center !important;
-          }
-          
-          .option-label > div {
-            width: 100%;
-            display: flex;
-            align-items: center;
-          }
-          
-          .option-label span {
-            max-width: calc(100% - 20px); /* Garantir espaço para o ícone */
-          }
-        }
-        
-        /* Corrigir problemas de exibição em desktop */
-        @media (min-width: 769px) {
-          .option-card {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            max-width: 100%;
-          }
-          
-          .image-container {
-            width: 100%;
-            position: relative;
-            display: block;
-          }
-          
-          .option-label {
-            width: 100%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-          }
-          
-          .multiple-choice-image-grid {
-            width: 100%;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            max-width: 100%;
-          }
-          
-          .multiple-choice-image-grid > div {
-            max-width: 100%;
           }
         }
       `}} />

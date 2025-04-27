@@ -27,10 +27,6 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   const [dataReady, setDataReady] = useState(false);
   const [renderKey, setRenderKey] = useState(`preview-${Date.now()}`);
   
-  // Estados para controlar transição com fade
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [fadeDirection, setFadeDirection] = useState("in");
-  
   // Use provided funnel or fall back to currentFunnel from store
   const activeFunnel = funnel || currentFunnel;
   
@@ -89,11 +85,8 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   
   // Reset active step when funnel changes or stepIndex changes
   useEffect(() => {
-    // Quando o stepIndex muda externamente, aplicar transição simples sem fade
-    if (activeStep !== stepIndex) {
-      setActiveStep(stepIndex);
-    }
-  }, [funnel?.id, currentFunnel?.id, stepIndex, activeStep]);
+    setActiveStep(stepIndex);
+  }, [funnel?.id, currentFunnel?.id, stepIndex]);
 
   // Determinar se deve centralizar com base no número de elementos
   useEffect(() => {
@@ -153,9 +146,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   // Custom styles based on funnel settings
   const customStyles = {
     "--primary-color": primaryColor,
-    // Remover transição do componente pai para evitar efeito de duplo fade
-    transition: 'none',
-    opacity: 1
+    transition: 'none' // Remover transição para evitar o flash
   } as React.CSSProperties;
 
   // Debug log para verificar se o logo está chegando
@@ -186,7 +177,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
       return;
     }
     
-    // Apenas passar a mudança de etapa para o componente filho
+    // Nenhuma animação, apenas mudar diretamente para evitar o flash
     setActiveStep(newStep);
     
     // Notify parent component if callback is provided
@@ -250,14 +241,7 @@ const FunnelPreview = ({ isMobile = false, funnel, stepIndex = 0, onNextStep, ce
   };
 
   return (
-    <div 
-      key={renderKey} 
-      className={`${wrapperClass}`} 
-      style={{
-        ...customStyles, 
-        overflowY: isMobile ? 'auto' : 'visible'
-      }}
-    >
+    <div key={renderKey} className={wrapperClass} style={{...customStyles, overflowY: isMobile ? 'auto' : 'visible'}}>
       {/* Facebook Pixel integration */}
       {activeFunnel.settings?.facebookPixelId && (
         <FacebookPixel 
