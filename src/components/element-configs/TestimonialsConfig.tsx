@@ -198,8 +198,8 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
   // Função para redimensionar a imagem
   const resizeImage = (file: File, maxWidth = 300, maxHeight = 300): Promise<File> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
+    const reader = new FileReader();
+    
       reader.onload = (event) => {
         const img = new Image();
         
@@ -262,7 +262,7 @@ const TestimonialsConfig = ({ element, onUpdate }: TestimonialsConfigProps) => {
       };
       
       reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
     });
   };
   
