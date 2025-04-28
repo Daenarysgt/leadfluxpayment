@@ -490,7 +490,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
                       required
                     />
                     {validationErrors.has(field.id) && (
-                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                      <div className="text-red-500 text-xs mt-1 flex items-center justify-center w-full">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         <span>Este campo é obrigatório</span>
                       </div>
