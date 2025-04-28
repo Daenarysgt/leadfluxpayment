@@ -9,7 +9,11 @@ import { useMemo, useState, useEffect, useRef } from "react";
 
 const VideoRenderer = (props: ElementRendererProps) => {
   const { element, isDragging } = props;
-  const { content = {} } = element;
+  const { content = {
+    showInfo: false,
+    allowFullscreen: true,
+    ...{}
+  } } = element;
   const [isHovering, setIsHovering] = useState(false);
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
   const jsContainerRef = useRef<HTMLDivElement>(null);
@@ -17,6 +21,9 @@ const VideoRenderer = (props: ElementRendererProps) => {
   // State para controlar visibilidade baseada em Intersection Observer
   const [isVisible, setIsVisible] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  
+  // State para controlar carregamento em duas etapas dos iframes
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   
   // Verificar se estamos no modo preview (visualização pública)
   const isPreviewMode = !!element.previewMode;
@@ -170,11 +177,53 @@ const VideoRenderer = (props: ElementRendererProps) => {
     if (!content.controls) params.append('controls', '0');
     if (content.loop) params.append('loop', '1');
     
+    // Adicionar parâmetros para otimização de desempenho
+    params.append('rel', '0');                // Desativa vídeos relacionados
+    params.append('modestbranding', '1');     // Remove a maioria das marcas do YouTube
+    params.append('enablejsapi', '0');        // Desativa a API JS quando não necessária
+    params.append('origin', window.location.origin); // Segurança e otimização
+    
+    // Carregar o player mais leve possível
+    if (!content.showInfo) params.append('showinfo', '0');  // Oculta informações do vídeo
+    params.append('fs', content.allowFullscreen ? '1' : '0'); // Controle de tela cheia
+    
+    // Prevenção de pré-carregamento excessivo
+    if (!content.autoPlay) {
+      // Se não for autoreproduçao, usar modo de carregamento de menor consumo
+      params.append('loading', 'lazy');
+    }
+    
+    // Adicionar parâmetros como string de consulta
     if (params.toString()) {
       embedUrl += `?${params.toString()}`;
     }
     
     return embedUrl;
+  };
+
+  // Função para obter thumbnail do YouTube
+  const getYouTubeThumbnail = (url: string): string => {
+    let videoId = '';
+    
+    // youtu.be format
+    if (url.includes('youtu.be')) {
+      videoId = url.split('/').pop() || '';
+    } 
+    // youtube.com format
+    else if (url.includes('youtube.com')) {
+      const urlParams = new URLSearchParams(url.split('?')[1]);
+      videoId = urlParams.get('v') || '';
+    }
+    
+    if (!videoId) return '';
+    
+    // Usar a thumbnail de alta qualidade do YouTube
+    return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  };
+
+  // Handler para carregar o iframe quando o usuário clicar na thumbnail
+  const handleThumbnailClick = () => {
+    setIframeLoaded(true);
   };
 
   // Usar Intersection Observer para detectar quando o vídeo está visível
@@ -232,6 +281,38 @@ const VideoRenderer = (props: ElementRendererProps) => {
           );
         }
         
+        // Se visível mas ainda não carregou o iframe, mostrar thumbnail clicável
+        if (isVisible && !iframeLoaded && isPreviewMode) {
+          const thumbnailUrl = getYouTubeThumbnail(videoUrl);
+          
+          return (
+            <div 
+              className="w-full h-full overflow-hidden relative cursor-pointer" 
+              style={videoContainerStyle}
+              onClick={handleThumbnailClick}
+            >
+              {thumbnailUrl ? (
+                <>
+                  <img 
+                    src={thumbnailUrl} 
+                    alt="Video thumbnail" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-opacity">
+                    <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center">
+                      <Play className="h-8 w-8 text-white" fill="white" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Play className="h-16 w-16 text-gray-700" />
+                </div>
+              )}
+            </div>
+          );
+        }
+        
         return (
           <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
             <iframe 
@@ -277,6 +358,38 @@ const VideoRenderer = (props: ElementRendererProps) => {
         return (
           <div className="w-full h-full overflow-hidden flex items-center justify-center bg-gray-100" style={videoContainerStyle}>
             <Play className="h-12 w-12 text-gray-600 animate-pulse" />
+          </div>
+        );
+      }
+      
+      // Se for YouTube e tivermos URL, podemos mostrar thumbnail
+      if (isPreviewMode && !iframeLoaded && videoUrl && isYouTubeUrl(videoUrl)) {
+        const thumbnailUrl = getYouTubeThumbnail(videoUrl);
+        
+        return (
+          <div 
+            className="w-full h-full overflow-hidden relative cursor-pointer" 
+            style={videoContainerStyle}
+            onClick={handleThumbnailClick}
+          >
+            {thumbnailUrl ? (
+              <>
+                <img 
+                  src={thumbnailUrl} 
+                  alt="Video thumbnail" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-opacity">
+                  <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center">
+                    <Play className="h-8 w-8 text-white" fill="white" />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Play className="h-16 w-16 text-gray-700" />
+              </div>
+            )}
           </div>
         );
       }
