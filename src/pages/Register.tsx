@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function Register() {
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -68,12 +72,36 @@ export default function Register() {
               </div>
             </div>
 
+            <div className="flex items-start space-x-3 pt-4 border p-4 rounded-md bg-blue-50/30">
+              <Checkbox 
+                id="terms" 
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                className="mt-0.5 h-5 w-5 border-gray-300 bg-white ring-1 ring-gray-300"
+              />
+              <label 
+                htmlFor="terms" 
+                className="text-sm cursor-pointer"
+              >
+                Ao se cadastrar você reconhece que leu, entendeu e concorda com os{' '}
+                <Link to="/termos" className="text-blue-600 font-medium hover:underline">
+                  Termos e Condições de Uso
+                </Link>{' '}
+                da plataforma.
+              </label>
+            </div>
+
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 rounded-lg text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                disabled={!agreedToTerms}
+                className={`w-full flex justify-center py-2 px-4 rounded-lg text-white ${
+                  agreedToTerms 
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                Criar Conta
+                {agreedToTerms ? 'Criar Conta' : 'Aceite os termos para continuar'}
               </button>
             </div>
           </form>
