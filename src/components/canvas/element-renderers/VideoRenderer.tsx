@@ -57,34 +57,63 @@ const VideoRenderer = (props: ElementRendererProps) => {
       // Limpar conteúdo anterior
       jsContainerRef.current.innerHTML = '';
       
-      // Criar um div para o conteúdo JavaScript
-      const container = document.createElement('div');
-      container.innerHTML = content.embedCode;
-      
-      // Processar scripts
-      const scripts = container.querySelectorAll('script');
-      scripts.forEach(oldScript => {
-        const newScript = document.createElement('script');
+      try {
+        // Criar um div para o conteúdo JavaScript
+        const container = document.createElement('div');
+        container.innerHTML = content.embedCode;
         
-        // Copiar todos os atributos do script original
-        Array.from(oldScript.attributes).forEach(attr => {
-          newScript.setAttribute(attr.name, attr.value);
+        // Primeiro adicionar o HTML não-script para melhorar a experiência do usuário
+        // Isso permite que o conteúdo visual apareça antes dos scripts carregarem
+        const htmlContent = container.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
+        const div = document.createElement('div');
+        div.innerHTML = htmlContent;
+        jsContainerRef.current.appendChild(div);
+        
+        // Processar scripts com otimizações
+        const scripts = container.querySelectorAll('script');
+        
+        // Detectar se algum script é externo (src) vs. inline
+        const hasExternalScripts = Array.from(scripts).some(script => script.src);
+        
+        scripts.forEach((oldScript, index) => {
+          const newScript = document.createElement('script');
+          
+          // Copiar todos os atributos do script original
+          Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          
+          // Adicionar atributos de otimização para melhorar o carregamento
+          // Se for um script externo (com src), usar async para não bloquear
+          if (oldScript.src) {
+            newScript.setAttribute('async', 'true');
+          } 
+          // Para scripts inline, usar defer se houver scripts externos
+          // para garantir que eles executam após os scripts externos carregarem
+          else if (hasExternalScripts && index > 0) {
+            newScript.setAttribute('defer', 'true');
+          }
+          
+          // Copiar o conteúdo interno do script
+          newScript.innerHTML = oldScript.innerHTML;
+          
+          // Usar timeout para dar tempo ao DOM renderizar o conteúdo visual primeiro
+          setTimeout(() => {
+            jsContainerRef.current?.appendChild(newScript);
+          }, 50); // Pequeno delay para permitir renderização do conteúdo visual
         });
+      } catch (error) {
+        console.error('Erro ao processar o código JavaScript do vídeo:', error);
         
-        // Copiar o conteúdo interno do script
-        newScript.innerHTML = oldScript.innerHTML;
-        
-        // Substituir o script antigo pelo novo
-        if (oldScript.parentNode) {
-          jsContainerRef.current?.appendChild(newScript);
-        }
-      });
-      
-      // Adicionar o HTML restante
-      const htmlContent = container.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
-      const div = document.createElement('div');
-      div.innerHTML = htmlContent;
-      jsContainerRef.current?.appendChild(div);
+        // Fallback em caso de erro para não quebrar a renderização
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `
+          <div class="p-4 bg-red-50 text-red-600 rounded">
+            <p>Erro ao carregar o vídeo. Verifique o código JavaScript.</p>
+          </div>
+        `;
+        jsContainerRef.current.appendChild(errorDiv);
+      }
     }
   }, [content.videoType, content.embedCode, isPreviewMode]);
   
