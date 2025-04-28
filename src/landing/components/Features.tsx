@@ -3,7 +3,7 @@ import Icons from './icons';
 
 const features = [
   {
-    name: 'Páginas de Captura',
+    name: 'Quizz, VSL, Landing Pages',
     description: 'Crie páginas de alta conversão com nosso editor intuitivo.',
     icon: Icons.ChartIcon
   },
