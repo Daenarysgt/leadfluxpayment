@@ -14,6 +14,10 @@ const VideoRenderer = (props: ElementRendererProps) => {
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
   const jsContainerRef = useRef<HTMLDivElement>(null);
   
+  // State para controlar visibilidade baseada em Intersection Observer
+  const [isVisible, setIsVisible] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  
   // Verificar se estamos no modo preview (visualização pública)
   const isPreviewMode = !!element.previewMode;
   
@@ -173,6 +177,33 @@ const VideoRenderer = (props: ElementRendererProps) => {
     return embedUrl;
   };
 
+  // Usar Intersection Observer para detectar quando o vídeo está visível
+  useEffect(() => {
+    const options = {
+      root: null, // viewport
+      rootMargin: '200px', // carregar um pouco antes de entrar na viewport
+      threshold: 0.1 // 10% do elemento visível é suficiente para carregar
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // Desconectar o observer após detectar visibilidade
+          observer.disconnect();
+        }
+      });
+    }, options);
+
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   // Função para renderizar o vídeo no modo preview (sem bloqueios)
   const renderPreviewVideo = () => {
     const { videoUrl, videoType, embedCode } = content;
@@ -191,11 +222,22 @@ const VideoRenderer = (props: ElementRendererProps) => {
       // Tratamento especial para URLs do YouTube
       if (isYouTubeUrl(videoUrl)) {
         const embedUrl = getYouTubeEmbedUrl(videoUrl);
+        
+        // Renderizar placeholder até que esteja visível
+        if (!isVisible) {
+          return (
+            <div className="w-full h-full overflow-hidden flex items-center justify-center bg-gray-100" style={videoContainerStyle}>
+              <Play className="h-12 w-12 text-gray-600 animate-pulse" />
+            </div>
+          );
+        }
+        
         return (
           <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
             <iframe 
               src={embedUrl}
               className="w-full h-full border-0"
+              loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
@@ -204,6 +246,15 @@ const VideoRenderer = (props: ElementRendererProps) => {
       }
 
       // URLs de vídeo regulares
+      // Renderizar placeholder até que esteja visível
+      if (!isVisible) {
+        return (
+          <div className="w-full h-full overflow-hidden flex items-center justify-center bg-gray-100" style={videoContainerStyle}>
+            <Play className="h-12 w-12 text-gray-600 animate-pulse" />
+          </div>
+        );
+      }
+      
       return (
         <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
           <video 
@@ -221,7 +272,16 @@ const VideoRenderer = (props: ElementRendererProps) => {
     
     // Para embeds iframe
     if (videoType === 'iframe') {
-      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
+      // Renderizar placeholder até que esteja visível
+      if (!isVisible) {
+        return (
+          <div className="w-full h-full overflow-hidden flex items-center justify-center bg-gray-100" style={videoContainerStyle}>
+            <Play className="h-12 w-12 text-gray-600 animate-pulse" />
+          </div>
+        );
+      }
+      
+      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
       
       return (
         <div className="w-full h-full overflow-hidden" style={videoContainerStyle}>
@@ -285,6 +345,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
               <iframe 
                 src={embedUrl}
                 className="w-full h-full border-0"
+                loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 style={{ pointerEvents: shouldBlockInteraction ? 'none' : 'auto' }}
@@ -334,7 +395,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
     
     // Para embeds iframe
     if (videoType === 'iframe') {
-      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
+      const iframeContent = embedCode || `<iframe src="${videoUrl}" frameborder="0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%; height:100%;"></iframe>`;
       
       return (
         <div className="relative w-full h-full overflow-hidden" style={videoContainerStyle}>
@@ -394,6 +455,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
             "relative w-full flex items-center", 
             alignmentClass
           )}
+          ref={videoContainerRef}
         >
           {aspectRatio ? (
             <div className="w-full max-w-full">
@@ -424,6 +486,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         draggable={false}
+        ref={videoContainerRef}
       >
         <div className={cn(
           "w-full relative",
