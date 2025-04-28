@@ -3,12 +3,13 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { CheckCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { CheckCircle, AlertTriangle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { safelyTrackEvent } from "@/utils/pixelUtils";
 import { useStore } from "@/utils/store";
 import { accessService } from "@/services/accessService";
+import { useFormValidation } from "@/utils/FormValidationContext";
 
 interface CaptureField {
   id: string;
@@ -24,6 +25,10 @@ const CaptureRenderer = (props: ElementRendererProps) => {
   // Inicializa o estado para cada campo de captura
   const [formValues, setFormValues] = useState<{[fieldId: string]: string}>({});
   const [submitted, setSubmitted] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
+  
+  // Refs para o componente
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Get capture settings or use defaults
   const title = content?.title || "";
@@ -52,6 +57,56 @@ const CaptureRenderer = (props: ElementRendererProps) => {
       placeholder: content?.placeholder || 'Your email address'
     }];
   }
+  
+  // Acessar o contexto de validação de formulário
+  const { registerElement, unregisterElement } = useFormValidation();
+  
+  // Registrar este elemento para validação
+  useEffect(() => {
+    if (!previewMode || !previewProps?.funnel) return;
+    
+    const stepIndex = previewProps.activeStep;
+    
+    const validateElement = () => {
+      // Verificar se todos os campos estão preenchidos
+      const errors = new Set<string>();
+      
+      const allFieldsFilled = captureFields.every(field => {
+        const isValid = !!formValues[field.id]?.trim();
+        if (!isValid) {
+          errors.add(field.id);
+        }
+        return isValid;
+      });
+      
+      // Atualizar o estado de erros de validação
+      setValidationErrors(errors);
+      
+      return allFieldsFilled;
+    };
+    
+    const scrollToElement = () => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    };
+    
+    // Registrar este elemento no contexto de validação
+    registerElement({
+      id: element.id,
+      validate: validateElement,
+      scrollIntoView: scrollToElement,
+      stepIndex: stepIndex
+    });
+    
+    // Limpar ao desmontar
+    return () => {
+      unregisterElement(element.id);
+    };
+  }, [previewMode, previewProps, element.id, formValues, captureFields, registerElement, unregisterElement]);
   
   // Get style settings or use defaults
   const titleAlignment = content?.style?.titleAlignment || "center";
@@ -113,6 +168,15 @@ const CaptureRenderer = (props: ElementRendererProps) => {
       ...prev,
       [fieldId]: value
     }));
+    
+    // Limpar o erro de validação deste campo quando o usuário digitar
+    if (validationErrors.has(fieldId)) {
+      setValidationErrors(prev => {
+        const newErrors = new Set(prev);
+        newErrors.delete(fieldId);
+        return newErrors;
+      });
+    }
   };
   
   const performNavigation = async () => {
@@ -259,7 +323,18 @@ const CaptureRenderer = (props: ElementRendererProps) => {
     e.preventDefault();
     
     // Valida se todos os campos obrigatórios estão preenchidos
-    const allFieldsFilled = captureFields.every(field => formValues[field.id]?.trim());
+    const errors = new Set<string>();
+    
+    const allFieldsFilled = captureFields.every(field => {
+      const isValid = !!formValues[field.id]?.trim();
+      if (!isValid) {
+        errors.add(field.id);
+      }
+      return isValid;
+    });
+    
+    // Atualizar o estado de erros de validação
+    setValidationErrors(errors);
     
     if (allFieldsFilled) {
       setSubmitted(true);
@@ -384,7 +459,7 @@ const CaptureRenderer = (props: ElementRendererProps) => {
 
   return (
     <BaseElementRenderer {...props}>
-      <div className="p-4 w-full" style={containerStyle}>
+      <div className="p-4 w-full" style={containerStyle} ref={containerRef}>
         {(title || description) && (
           <div className={cn("mb-4", `text-${titleAlignment}`)} style={{ color: textColor }}>
             {title && <h3 className="text-lg font-medium">{title}</h3>}
@@ -397,17 +472,30 @@ const CaptureRenderer = (props: ElementRendererProps) => {
             <div className="w-full flex flex-col items-center">
               <div style={{ width: `${fieldWidth}%` }} className="w-full">
                 {captureFields.map((field) => (
-                  <Input
-                    key={field.id}
-                    type={getInputType(field.type)}
-                    placeholder={field.placeholder}
-                    value={formValues[field.id] || ''}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
-                    onBlur={handleBlur}
-                    className={`w-full mb-2 capture-input-${element.id}`}
-                    style={inputStyle}
-                    required
-                  />
+                  <div key={field.id} className="mb-2 w-full">
+                    <Input
+                      type={getInputType(field.type)}
+                      placeholder={field.placeholder}
+                      value={formValues[field.id] || ''}
+                      onChange={(e) => handleChange(field.id, e.target.value)}
+                      onBlur={handleBlur}
+                      className={cn(
+                        `w-full capture-input-${element.id}`,
+                        validationErrors.has(field.id) && "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      )}
+                      style={{
+                        ...inputStyle,
+                        ...(validationErrors.has(field.id) ? { borderColor: '#ef4444' } : {})
+                      }}
+                      required
+                    />
+                    {validationErrors.has(field.id) && (
+                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        <span>Este campo é obrigatório</span>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               {showButton && (

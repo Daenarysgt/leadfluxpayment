@@ -3,6 +3,9 @@ import { CanvasElement } from "@/types/canvasTypes";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import { Funnel } from '@/utils/types';
 import { accessService } from '@/services/accessService';
+import { FormValidationProvider } from '@/utils/FormValidationContext';
+import { useValidatedNavigation } from '@/hooks/useValidatedNavigation';
+import { cn } from '@/lib/utils';
 
 interface CanvasPreviewProps {
   canvasElements: CanvasElement[];
@@ -18,9 +21,10 @@ interface CanvasPreviewProps {
   paddingTopAdjusted?: number;
   paddingBottomAdjusted?: number;
   renderAllSteps?: boolean;
+  contentMaxWidth?: number;
 }
 
-const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false, isPreviewPage = false, className, paddingLeftAdjusted, paddingRightAdjusted, paddingTopAdjusted, paddingBottomAdjusted, renderAllSteps = false }: CanvasPreviewProps) => {
+const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false, isPreviewPage = false, className, paddingLeftAdjusted, paddingRightAdjusted, paddingTopAdjusted, paddingBottomAdjusted, renderAllSteps = false, contentMaxWidth }: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   // Referência para evitar re-renders desnecessários
@@ -96,48 +100,27 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     initSession();
   }, [funnel, sessionId]);
   
-  // Handler para mudança de etapa com verificação de segurança
-  const handleStepChange = useCallback(async (index: number) => {
-    if (!funnel) {
-      console.warn("CanvasPreview - No funnel available for navigation");
-      return;
-    }
-    
-    // Validar se o índice é válido
-    if (index < 0 || index >= funnel.steps.length) {
-      console.error(`CanvasPreview - Índice de etapa inválido: ${index}. Range válido: 0-${funnel.steps.length - 1}`);
-      return;
-    }
-    
-    try {
-      // Se chegou na última etapa
-      if (index === funnel.steps.length - 1) {
-        // Apenas atualiza o progresso e marca como conversão
-        await accessService.updateProgress(funnel.id, index + 1, sessionId, true);
-      } else {
-        // Se não for a última etapa, apenas atualiza o progresso
-        await accessService.updateProgress(funnel.id, index + 1, sessionId);
-      }
-    } catch (error) {
-      console.error("CanvasPreview - Error during step interaction:", error);
-      // Continue com a navegação mesmo com erro de registro
-    }
-    
-    // Aplicar a mudança de etapa diretamente
-    onStepChange(index);
-  }, [funnel, sessionId, onStepChange]);
+  // Usar o hook de navegação validada
+  const handleValidatedStepChange = useValidatedNavigation(activeStep, onStepChange);
   
-  // Função para próximo passo
+  // Função de mudança de etapa que valida campos obrigatórios
+  const handleStepChange = useCallback((step: number) => {
+    // Usar navegação com validação
+    handleValidatedStepChange(step);
+  }, [handleValidatedStepChange]);
+  
+  // Função para próximo passo com validação
   const handleNextStep = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
     
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
-      onStepChange(nextStep);
+      // Usar navegação com validação
+      handleValidatedStepChange(nextStep);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
     }
-  }, [activeStep, funnel, onStepChange]);
+  }, [activeStep, funnel, handleValidatedStepChange]);
   
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
@@ -220,71 +203,47 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     );
   };
   
-  // No modo preview, usar absolutamente nenhuma classe ou estilo além do que foi explicitamente passado
-  if (isInPreviewMode) {
-    return (
-      <div className={className || ''}>
-        {validCanvasElements.map((element) => renderElement(element))}
-      </div>
-    );
-  }
-
-  // Renderizar todas as etapas se a opção estiver ativada
-  if (renderAllSteps && funnel) {
-    return (
-      <div 
-        className={`w-full h-full overflow-y-auto ${className || ''}`}
-        ref={canvasRef}
-        style={{
-          backgroundColor: 'transparent',
-          borderRadius: isMobile ? '0' : '0.5rem',
-          padding: isMobile ? '0.25rem' : '1rem',
-          margin: isMobile ? '0 auto' : '0 auto',
-          position: 'relative',
-          width: isMobile ? '100%' : 'auto',
-          overflowY: 'auto',
-          paddingLeft: paddingLeftAdjusted,
-          paddingRight: paddingRightAdjusted,
-          paddingTop: paddingTopAdjusted,
-          paddingBottom: paddingBottomAdjusted
-        }}
-      >
-        {renderAllFunnelSteps()}
-      </div>
-    );
-  }
-  
-  // Modo normal (builder): manter estrutura original com wrappers e estilos
+  // Envolver o conteúdo no provedor de validação
   return (
-    <div
-      className={`w-full h-full overflow-y-auto ${className || ''}`}
-      ref={canvasRef}
-      style={{
-        backgroundColor: 'transparent',
-        borderRadius: isMobile ? '0' : '0.5rem',
-        padding: isMobile ? '0.25rem' : '1rem',
-        margin: isMobile ? '0 auto' : '0 auto',
-        position: 'relative',
-        width: isMobile ? '100%' : 'auto',
-        overflowY: isMobile ? 'auto' : 'visible',
-        paddingLeft: paddingLeftAdjusted,
-        paddingRight: paddingRightAdjusted,
-        paddingTop: paddingTopAdjusted,
-        paddingBottom: paddingBottomAdjusted
-      }}
-    >
-      {validCanvasElements.map((element, index) => (
+    <FormValidationProvider>
+      {/* Restante do código de renderização */}
+      {isInPreviewMode ? (
+        <div className={className || ''}>
+          {validCanvasElements.map((element) => renderElement(element))}
+        </div>
+      ) : renderAllSteps ? (
+        <div className="w-full">
+          {renderAllFunnelSteps()}
+        </div>
+      ) : (
         <div
-          key={element.id}
+          className={cn(
+            "canvas-preview w-full mx-auto",
+            centerContent && "flex flex-col items-center",
+            className
+          )}
           style={{
-            marginBottom: '0.5rem',
-            width: '100%',
+            maxWidth: contentMaxWidth ? `${contentMaxWidth}px` : undefined,
+            paddingLeft: paddingLeftAdjusted !== undefined ? `${paddingLeftAdjusted}px` : undefined,
+            paddingRight: paddingRightAdjusted !== undefined ? `${paddingRightAdjusted}px` : undefined,
+            paddingTop: paddingTopAdjusted !== undefined ? `${paddingTopAdjusted}px` : undefined,
+            paddingBottom: paddingBottomAdjusted !== undefined ? `${paddingBottomAdjusted}px` : undefined,
           }}
         >
-          {renderElement(element, index, validCanvasElements.length)}
+          {validCanvasElements.map((element, index) => (
+            <div
+              key={element.id}
+              style={{
+                marginBottom: '0.5rem',
+                width: '100%',
+              }}
+            >
+              {renderElement(element, index, validCanvasElements.length)}
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </FormValidationProvider>
   );
 };
 

@@ -33,6 +33,7 @@ import TermsOfService from '@/pages/TermsOfService';
 import { useNavigate } from 'react-router-dom';
 import ManualCancellationPage from '@/pages/payment/ManualCancellation';
 import SessionManager from '@/components/SessionManager';
+import { FormValidationProvider } from './utils/FormValidationContext';
 
 // Configure the query client with caching options
 const queryClient = new QueryClient({
@@ -131,106 +132,108 @@ const App = () => {
           <SessionManager />
           <Toaster />
           <Sonner />
-          <Routes>
-            {isCustomDomain ? (
-              // Se for um domínio personalizado, renderizar o DomainFunnel
-              <Route path="*" element={<DomainFunnel />} />
-            ) : (
-              // Se não for um domínio personalizado, renderizar as rotas normais
-              <>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/verify-otp" element={<VerifyOtpPage />} />
-                <Route path="/pricing" element={<LandingPage />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                
-                {/* Rota pública para acessar funis pelo slug */}
-                <Route path="/f/:slug" element={<PublicFunnel />} />
-                
-                {/* Rotas de Pagamento */}
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/canceled" element={<PaymentCanceled />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route 
-                  path="/payment/manual-cancellation" 
-                  element={
-                    <ProtectedRoute>
-                      <ManualCancellationPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                {/* Rotas Protegidas */}
-                <Route
-                  path="/account"
-                  element={
-                    <ProtectedRoute>
-                      <Account />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/diagnostic"
-                  element={
-                    <ProtectedRoute>
-                      <DiagnosticPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/builder/:funnelId"
-                  element={
-                    <ProtectedRoute>
-                      <Builder />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/design/:funnelId"
-                  element={
-                    <ProtectedRoute>
-                      <Design />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings/:funnelId"
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/leads/:funnelId"
-                  element={
-                    <ProtectedRoute>
-                      <Leads />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/preview/:funnelId"
-                  element={
-                    <ProtectedRoute>
-                      <Preview />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </>
-            )}
-          </Routes>
+          <FormValidationProvider>
+            <Routes>
+              {isCustomDomain ? (
+                // Se for um domínio personalizado, renderizar o DomainFunnel
+                <Route path="*" element={<DomainFunnel />} />
+              ) : (
+                // Se não for um domínio personalizado, renderizar as rotas normais
+                <>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/verify-otp" element={<VerifyOtpPage />} />
+                  <Route path="/pricing" element={<LandingPage />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  
+                  {/* Rota pública para acessar funis pelo slug */}
+                  <Route path="/f/:slug" element={<PublicFunnel />} />
+                  
+                  {/* Rotas de Pagamento */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/canceled" element={<PaymentCanceled />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route 
+                    path="/payment/manual-cancellation" 
+                    element={
+                      <ProtectedRoute>
+                        <ManualCancellationPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Rotas Protegidas */}
+                  <Route
+                    path="/account"
+                    element={
+                      <ProtectedRoute>
+                        <Account />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/diagnostic"
+                    element={
+                      <ProtectedRoute>
+                        <DiagnosticPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/builder/:funnelId"
+                    element={
+                      <ProtectedRoute>
+                        <Builder />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/design/:funnelId"
+                    element={
+                      <ProtectedRoute>
+                        <Design />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings/:funnelId"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/leads/:funnelId"
+                    element={
+                      <ProtectedRoute>
+                        <Leads />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/preview/:funnelId"
+                    element={
+                      <ProtectedRoute>
+                        <Preview />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </>
+              )}
+            </Routes>
+          </FormValidationProvider>
         </TooltipProvider>
       </Router>
     </QueryClientProvider>

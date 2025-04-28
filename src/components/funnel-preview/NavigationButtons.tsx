@@ -1,14 +1,14 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import { useValidatedNavigation } from "@/hooks/useValidatedNavigation";
 
 interface NavigationButtonsProps {
   currentStep: number;
   totalSteps: number;
-  buttonText: string;
-  primaryColor: string;
-  onStepChange: (newStep: number) => void;
+  buttonText?: string;
+  primaryColor?: string;
+  onStepChange: (step: number) => void;
 }
 
 const NavigationButtons = ({ 
@@ -18,12 +18,15 @@ const NavigationButtons = ({
   primaryColor, 
   onStepChange 
 }: NavigationButtonsProps) => {
+  // Usar o hook de navegação validada
+  const handleStepChange = useValidatedNavigation(currentStep, onStepChange);
+  
   return (
     <div className="flex justify-between pt-4">
       {currentStep > 0 && (
         <Button 
           variant="outline"
-          onClick={() => onStepChange(Math.max(0, currentStep - 1))}
+          onClick={() => handleStepChange(Math.max(0, currentStep - 1), { skipValidation: true })}
         >
           Voltar
         </Button>
@@ -33,7 +36,8 @@ const NavigationButtons = ({
         style={{ backgroundColor: primaryColor }}
         onClick={() => {
           if (currentStep < totalSteps - 1) {
-            onStepChange(currentStep + 1);
+            // Ao avançar, validar os campos obrigatórios
+            handleStepChange(currentStep + 1);
           }
         }}
       >
