@@ -58,10 +58,10 @@ const VideoRenderer = (props: ElementRendererProps) => {
       jsContainerRef.current.innerHTML = '';
       
       try {
-        // Criar um div para o conteúdo JavaScript
-        const container = document.createElement('div');
-        container.innerHTML = content.embedCode;
-        
+      // Criar um div para o conteúdo JavaScript
+      const container = document.createElement('div');
+      container.innerHTML = content.embedCode;
+      
         // Primeiro adicionar o HTML não-script para melhorar a experiência do usuário
         // Isso permite que o conteúdo visual apareça antes dos scripts carregarem
         const htmlContent = container.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
@@ -70,18 +70,18 @@ const VideoRenderer = (props: ElementRendererProps) => {
         jsContainerRef.current.appendChild(div);
         
         // Processar scripts com otimizações
-        const scripts = container.querySelectorAll('script');
+      const scripts = container.querySelectorAll('script');
         
         // Detectar se algum script é externo (src) vs. inline
         const hasExternalScripts = Array.from(scripts).some(script => script.src);
         
         scripts.forEach((oldScript, index) => {
           const newScript = document.createElement('script');
-          
-          // Copiar todos os atributos do script original
-          Array.from(oldScript.attributes).forEach(attr => {
-            newScript.setAttribute(attr.name, attr.value);
-          });
+        
+        // Copiar todos os atributos do script original
+        Array.from(oldScript.attributes).forEach(attr => {
+          newScript.setAttribute(attr.name, attr.value);
+        });
           
           // Adicionar atributos de otimização para melhorar o carregamento
           // Se for um script externo (com src), usar async para não bloquear
@@ -93,13 +93,13 @@ const VideoRenderer = (props: ElementRendererProps) => {
           else if (hasExternalScripts && index > 0) {
             newScript.setAttribute('defer', 'true');
           }
-          
-          // Copiar o conteúdo interno do script
-          newScript.innerHTML = oldScript.innerHTML;
-          
+        
+        // Copiar o conteúdo interno do script
+        newScript.innerHTML = oldScript.innerHTML;
+        
           // Usar timeout para dar tempo ao DOM renderizar o conteúdo visual primeiro
           setTimeout(() => {
-            jsContainerRef.current?.appendChild(newScript);
+          jsContainerRef.current?.appendChild(newScript);
           }, 50); // Pequeno delay para permitir renderização do conteúdo visual
         });
       } catch (error) {
