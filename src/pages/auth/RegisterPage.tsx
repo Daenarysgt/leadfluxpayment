@@ -96,9 +96,9 @@ const RegisterPage = () => {
     const termsCheckbox = document.getElementById('terms')?.parentElement;
     if (termsCheckbox) {
       if (!agreedToTerms) {
-        termsCheckbox.classList.add('animate-pulse');
+        termsCheckbox.classList.add('ring-2', 'ring-blue-300');
       } else {
-        termsCheckbox.classList.remove('animate-pulse');
+        termsCheckbox.classList.remove('ring-2', 'ring-blue-300');
       }
     }
   }, [agreedToTerms]);
@@ -287,7 +287,7 @@ const RegisterPage = () => {
                 id="terms" 
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                className="mt-0.5 h-5 w-5 border-gray-300 data-[state=unchecked]:bg-slate-100 data-[state=checked]:bg-primary"
+                className="mt-0.5 h-5 w-5 border-gray-300 bg-slate-200 data-[state=checked]:bg-primary visible"
               />
               <label 
                 htmlFor="terms" 
