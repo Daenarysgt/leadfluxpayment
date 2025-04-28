@@ -8,13 +8,13 @@ const features = [
     icon: Icons.ChartIcon
   },
   {
-    name: 'Automação de Email',
-    description: 'Automatize o envio de emails para seus leads.',
+    name: 'Criação de Funis Interativos',
+    description: 'Construa jornadas dinâmicas para envolver e converter seus visitantes',
     icon: Icons.AutomationIcon
   },
   {
-    name: 'Integrações',
-    description: 'Integre com suas ferramentas favoritas.',
+    name: 'Trackeamento com Meta Ads',
+    description: 'Acompanhe o desempenho dos seus funis com integração oficial ao Meta Ads.',
     icon: Icons.IntegrationIcon
   },
   {
