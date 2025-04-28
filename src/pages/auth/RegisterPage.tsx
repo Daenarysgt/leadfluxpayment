@@ -287,7 +287,7 @@ const RegisterPage = () => {
                 id="terms" 
                 checked={agreedToTerms}
                 onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                className="mt-0.5 h-5 w-5 border-gray-300"
+                className="mt-0.5 h-5 w-5 border-gray-300 bg-white ring-1 ring-gray-300"
               />
               <label 
                 htmlFor="terms" 
