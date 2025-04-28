@@ -44,12 +44,14 @@ export default function Hero() {
                 </svg>
                 Ver Planos
               </a>
-              <Link
-                to="#demo"
-                className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 border-2 border-transparent hover:border-purple-600 text-base px-6 py-3 rounded-lg transition-all duration-200"
+              <a
+                href="https://www.leadflux.digital/f/funil-leadflux"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black text-white text-base px-6 py-3 rounded-lg transition-all duration-200 hover:bg-gray-800"
               >
                 Ver Demo
-              </Link>
+              </a>
             </div>
             
             {/* Trust Indicators */}
