@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { toast } from '@/components/ui/use-toast';
 
 // Interface para elementos que precisam ser validados
 interface ValidatableElement {
@@ -13,6 +14,14 @@ interface FormValidationContextType {
   unregisterElement: (id: string) => void;
   validateElementsInStep: (stepIndex: number) => boolean;
   getInvalidElements: (stepIndex: number) => ValidatableElement[];
+  
+  // Nova função para navegação centralizada com validação
+  validateAndNavigate: (
+    currentStep: number, 
+    targetStep: number, 
+    onStepChange: (step: number) => void,
+    options?: { skipValidation?: boolean, showToast?: boolean }
+  ) => boolean;
 }
 
 // Criar o contexto com valores iniciais
@@ -20,7 +29,8 @@ const FormValidationContext = createContext<FormValidationContextType>({
   registerElement: () => {},
   unregisterElement: () => {},
   validateElementsInStep: () => true,
-  getInvalidElements: () => []
+  getInvalidElements: () => [],
+  validateAndNavigate: () => false,
 });
 
 // Hook personalizado para usar o contexto
@@ -80,12 +90,56 @@ export const FormValidationProvider: React.FC<{children: ReactNode}> = ({ childr
     return invalidElements;
   };
 
+  // Nova função: Navegação centralizada com validação
+  const validateAndNavigate = (
+    currentStep: number, 
+    targetStep: number, 
+    onStepChange: (step: number) => void,
+    options: { skipValidation?: boolean, showToast?: boolean } = {}
+  ): boolean => {
+    const { skipValidation = false, showToast = true } = options;
+    
+    // Se estamos retrocedendo, não precisamos validar
+    const isGoingBack = targetStep < currentStep;
+    
+    // Permitir navegação se:
+    // - Estamos voltando para uma etapa anterior
+    // - A validação está desativada
+    // - Não há elementos para validar ou todos são válidos
+    if (isGoingBack || skipValidation || validateElementsInStep(currentStep)) {
+      // Navegação permitida
+      onStepChange(targetStep);
+      return true;
+    } else {
+      // Navegação bloqueada: há campos obrigatórios não preenchidos
+      const invalidElements = getInvalidElements(currentStep);
+      
+      // Mostrar feedback visual
+      if (invalidElements.length > 0) {
+        // Rolar para o primeiro elemento inválido
+        invalidElements[0].scrollIntoView();
+        
+        // Exibir toast de erro se solicitado
+        if (showToast) {
+          toast({
+            title: "Campos obrigatórios",
+            description: "Preencha todos os campos obrigatórios para continuar.",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      return false;
+    }
+  };
+
   // Criar o valor do contexto
   const contextValue: FormValidationContextType = {
     registerElement,
     unregisterElement,
     validateElementsInStep,
-    getInvalidElements
+    getInvalidElements,
+    validateAndNavigate
   };
 
   return (

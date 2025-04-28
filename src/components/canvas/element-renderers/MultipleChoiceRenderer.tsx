@@ -5,6 +5,7 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { useCallback, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
 import { Check } from "lucide-react";
+import { useFormValidation } from "@/utils/FormValidationContext";
 
 const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -52,6 +53,9 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
   // Get border radius configuration
   const borderRadiusRaw = style.borderRadius !== undefined ? style.borderRadius : (funnelSettings.borderRadius || 8);
   const borderRadiusValue = typeof borderRadiusRaw === 'string' ? parseInt(borderRadiusRaw) : borderRadiusRaw;
+  
+  // Adicionar o acesso ao contexto de validação
+  const { validateAndNavigate } = useFormValidation();
   
   // Obter os valores do formulário na página
   useEffect(() => {
@@ -102,184 +106,101 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     };
   }, [previewMode, previewProps]);
   
-  // Função para executar a navegação com base na opção selecionada
-  const executeNavigation = useCallback(async (optionId: string) => {
-    // Evita processamento duplicado
-    if (isProcessingInteraction) {
-      console.log("Já existe uma interação em processamento. Aguardando...");
-      return;
-    }
+  // Atualizar a função executeNavigation para usar o validateAndNavigate
+  const executeNavigation = useCallback((selectedOptionId: string) => {
+    console.log("MultipleChoiceRenderer - executeNavigation para opção:", selectedOptionId);
     
-    setIsProcessingInteraction(true);
+    if (!selectedOptionId) return;
     
-    try {
-      const option = content.options.find((opt: any) => opt.id === optionId);
-      if (!option) {
-        console.error("Opção não encontrada:", optionId);
-        setIsProcessingInteraction(false);
-        return;
-      }
-
-      // Verificar se há configuração de navegação
-      if (!option.navigation) {
-        console.warn("Opção sem configuração de navegação:", option.text);
-        setIsProcessingInteraction(false);
-        return;
-      }
-
-      const navigationType = option.navigation.type;
-      console.log("MultipleChoiceRenderer - executeNavigation with option:", option);
-      console.log("Navigation type:", navigationType, "Navigation config:", option.navigation);
-
-      // Se for tipo "none", não realiza navegação
-      if (navigationType === "none") {
-        console.log("Navegação do tipo 'none' - nenhuma ação será executada");
-        setIsProcessingInteraction(false);
-        return;
-      }
-
-      // Handle navigation differently based on preview mode
-      if (previewMode && previewProps) {
-        const { activeStep, onStepChange, funnel } = previewProps;
-        console.log("Preview props:", { activeStep, funnel: funnel?.id });
-        
-        if (funnel) {
-          try {
-            // IMPORTANTE: Primeiro garantir que a sessão existe atualizando o progresso
-            console.log("Garantindo que a sessão existe atualizando o progresso primeiro");
-            await accessService.updateProgress(funnel.id, activeStep + 1, null);
-            
-            // Verificar se há dados do formulário para salvar
-            if (Object.keys(formFields).length > 0) {
-              console.log('Dados do formulário detectados para salvar:', formFields);
-              try {
-                // Salvar os dados do formulário
-                await accessService.saveCaptureFormData(
-                  funnel.id,
-                  null, // sessionId será preenchido pelo serviço
-                  formFields
-                );
-                console.log('Dados do formulário salvos com sucesso junto com a escolha de opção');
-              } catch (formError) {
-                console.error("Erro ao salvar dados do formulário:", formError);
-              }
-            }
-            
-            // Depois registrar a interação de escolha
-            const selection = option.text || option.value;
-            console.log("Registrando interação para funil:", funnel.id, "etapa:", activeStep + 1, "valor:", selection);
-            
-            // RESTAURAÇÃO: Voltar a usar a função original, mas agora com button_id
-            const interactionPromise = accessService.registerStepInteraction(
-              funnel.id,
-              activeStep + 1,
-              null, // usar sessionId atual
-              'choice', // IMPORTANTE: garantir que o tipo seja sempre 'choice' para múltipla escolha
-              selection, // Usar o texto completo da opção
-              `choice-option-${option.id}` // Usar formato de ID que não será bloqueado
-            );
-            
-            // Aguardar explicitamente a conclusão
-            await interactionPromise;
-            
-            // Log para confirmar que os dados foram salvos
-            console.log(`Interação registrada com sucesso para opção: "${selection}" (ID: ${option.id}) na etapa ${activeStep + 1}`);
-            
-            // Executar navegação sem delay para melhorar a experiência do usuário
-            
-            switch (navigationType) {
-              case "next":
-                // Navegar para a próxima etapa
+    const selectedOption = content?.options?.find((opt: any) => opt.id === selectedOptionId);
+    if (!selectedOption) return;
+    
+    // Executar navegação apenas no modo de preview
+    if (previewMode && previewProps) {
+      const { activeStep, onStepChange, funnel } = previewProps;
+      
+      if (funnel) {
+        // Se a opção selecionada tiver configuração de navegação, usar ela
+        if (selectedOption.navigation) {
+          switch (selectedOption.navigation.type) {
+            case "next":
               if (activeStep < funnel.steps.length - 1) {
-                  console.log("Navegando para próxima etapa:", activeStep + 1);
-                  onStepChange(activeStep + 1);
-                } else {
-                  console.log("Já está na última etapa, não é possível avançar");
+                validateAndNavigate(activeStep, activeStep + 1, onStepChange);
+              }
+              break;
+            case "step":
+              if (selectedOption.navigation.stepId) {
+                const stepIndex = funnel.steps.findIndex(step => step.id === selectedOption.navigation.stepId);
+                if (stepIndex !== -1) {
+                  validateAndNavigate(activeStep, stepIndex, onStepChange);
                 }
-                break;
-                
-              case "step":
-                // Navegar para uma etapa específica
-                if (option.navigation.stepId) {
-                  const targetIndex = funnel.steps.findIndex(s => s.id === option.navigation.stepId);
-                  if (targetIndex !== -1) {
-                    console.log("Navegando para etapa específica:", targetIndex);
-                    onStepChange(targetIndex);
-              } else {
-                    console.error("Etapa de destino não encontrada:", option.navigation.stepId);
-                  }
+              }
+              break;
+            case "url":
+              if (selectedOption.navigation.url) {
+                // Para URLs externas, vamos certificar que passou pela validação
+                if (validateAndNavigate(activeStep, activeStep, onStepChange, { skipValidation: true })) {
+                  window.open(selectedOption.navigation.url, "_blank");
                 }
-                break;
-                
-              case "url":
-                // Navegar para uma URL externa
-                if (option.navigation.url) {
-                  console.log("Navegando para URL externa:", option.navigation.url);
-                window.open(option.navigation.url, option.navigation.openInNewTab ? "_blank" : "_self");
-                }
-                break;
-                
-              default:
-                console.log("Tipo de navegação desconhecido ou não implementado:", navigationType);
-                break;
-            }
-          } catch (error) {
-            console.error("Erro durante execução da navegação:", error);
+              }
+              break;
           }
         } else {
-          console.error("Objeto funnel não disponível em previewProps");
+          // Se não tiver configuração específica, ir para o próximo passo por padrão
+          if (activeStep < funnel.steps.length - 1) {
+            validateAndNavigate(activeStep, activeStep + 1, onStepChange);
+          }
+        }
+        
+        // Registrar interação
+        try {
+          const interactionValue = selectedOption.text || selectedOption.value || "Opção";
+          accessService.registerStepInteraction(
+            funnel.id,
+            Number(activeStep + 1),
+            null,
+            'choice',
+            interactionValue,
+            `choice-option-${selectedOption.id}`
+          ).catch(error => {
+            console.error("Erro ao registrar interação de escolha:", error);
+          });
+        } catch (error) {
+          console.error("Erro ao registrar interação:", error);
         }
       }
-      // When in canvas mode (not in preview)
-      else if (currentFunnel) {
-        console.log("Executando navegação no modo canvas (editor)");
-        
-        // Determine the current step index
-        const currentStepIndex = currentFunnel.steps.findIndex(step => 
-          step.canvasElements.some(el => el.id === element.id)
-        );
-        
-        if (currentStepIndex === -1) {
-          console.error("Não foi possível encontrar o índice do passo atual");
-          setIsProcessingInteraction(false);
-          return;
-        }
-        
-        switch (navigationType) {
-          case "next":
-            // Navegar para o próximo passo no editor
-            if (currentStepIndex < currentFunnel.steps.length - 1) {
-              console.log("Navegando para o próximo passo no editor:", currentStepIndex + 1);
-              setCurrentStep(currentStepIndex + 1);
-            }
-            break;
-            
-          case "step":
-            // Navegar para um passo específico no editor
-            if (option.navigation.stepId) {
-              const targetIndex = currentFunnel.steps.findIndex(s => s.id === option.navigation.stepId);
-              if (targetIndex !== -1) {
-                console.log("Navegando para passo específico no editor:", targetIndex);
-                setCurrentStep(targetIndex);
+    } else {
+      // No modo de canvas, usar a navegação simples
+      if (currentFunnel) {
+        if (selectedOption.navigation) {
+          switch (selectedOption.navigation.type) {
+            case "next":
+              if (currentStep < currentFunnel.steps.length - 1) {
+                setCurrentStep(currentStep + 1);
               }
-            }
-            break;
-            
-          case "url":
-            // No editor, apenas mostrar um alerta sobre a navegação externa
-            if (option.navigation.url) {
-              console.log("No editor, a navegação para URL externa seria:", option.navigation.url);
-              // Não vamos abrir a URL de fato no modo editor
-            }
-            break;
+              break;
+            case "step":
+              if (selectedOption.navigation.stepId) {
+                const stepIndex = currentFunnel.steps.findIndex(step => step.id === selectedOption.navigation.stepId);
+                if (stepIndex !== -1) {
+                  setCurrentStep(stepIndex);
+                }
+              }
+              break;
+            case "url":
+              // No modo de canvas, apenas logar a tentativa de navegação
+              console.log("Tentativa de navegação para URL:", selectedOption.navigation.url);
+              break;
+          }
+        } else {
+          // Ir para o próximo passo por padrão
+          if (currentStep < currentFunnel.steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+          }
         }
       }
-    } catch (error) {
-      console.error("Erro durante executeNavigation:", error);
-    } finally {
-      setIsProcessingInteraction(false);
     }
-  }, [previewMode, previewProps, currentFunnel, setCurrentStep, currentStep, content?.options, isProcessingInteraction, formFields]);
+  }, [previewMode, previewProps, content?.options, currentFunnel, currentStep, setCurrentStep, validateAndNavigate]);
   
   const handleOptionClick = useCallback((option: any) => {
     console.log("MultipleChoiceRenderer - Option clicked:", option, "Allow multiple:", allowMultipleSelection);

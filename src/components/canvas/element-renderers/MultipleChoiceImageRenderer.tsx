@@ -6,6 +6,7 @@ import BaseElementRenderer from "./BaseElementRenderer";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { accessService } from "@/services/accessService";
+import { useFormValidation } from "@/utils/FormValidationContext";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
@@ -19,6 +20,9 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   // Verificar se estamos em modo mobile
   const isMobile = previewMode && (previewProps as any)?.isMobile;
+  
+  // Acessar o contexto de validação para navegação
+  const { validateAndNavigate } = useFormValidation();
   
   // Obter os valores do formulário na página
   useEffect(() => {
@@ -99,7 +103,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     
     try {
       // Se estamos no modo de preview, tentamos lidar com a navegação
-    if (previewMode && previewProps) {
+      if (previewMode && previewProps) {
         const { activeStep, onStepChange, funnel } = previewProps;
         
         // Registrar a interação com o valor selecionado
@@ -139,27 +143,30 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           if (option.navigation) {
             console.log("Opção tem navegação configurada:", option.navigation);
             
-            // Executa a navegação com base no tipo
+            // Executa a navegação com base no tipo, mas passando pelo sistema de validação
             switch (option.navigation.type) {
               case "next":
-                // Ir para o próximo passo
+                // Ir para o próximo passo, com validação
                 if (activeStep < funnel.steps.length - 1) {
-                  onStepChange(activeStep + 1);
+                  validateAndNavigate(activeStep, activeStep + 1, onStepChange);
                 }
                 break;
               case "step":
-                // Ir para um passo específico
+                // Ir para um passo específico, com validação
                 if (option.navigation.stepId) {
                   const stepIndex = funnel.steps.findIndex(step => step.id === option.navigation.stepId);
                   if (stepIndex !== -1) {
-                    onStepChange(stepIndex);
+                    validateAndNavigate(activeStep, stepIndex, onStepChange);
                   }
                 }
                 break;
               case "url":
-                // Navegar para uma URL externa
+                // Para URLs externas, ainda precisamos validar antes de navegar
                 if (option.navigation.url) {
-                  window.open(option.navigation.url, "_blank");
+                  // Só abre a URL se a validação passar
+                  if (validateAndNavigate(activeStep, activeStep, onStepChange, { skipValidation: true })) {
+                    window.open(option.navigation.url, "_blank");
+                  }
                 }
                 break;
               default:
@@ -171,7 +178,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             // Comportamento padrão quando não há navegação configurada é ir para o próximo passo
             console.log("Sem navegação configurada, indo para o próximo passo por padrão");
             if (activeStep < funnel.steps.length - 1) {
-              onStepChange(activeStep + 1);
+              validateAndNavigate(activeStep, activeStep + 1, onStepChange);
             }
           }
         }
@@ -184,7 +191,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
         setIsProcessingInteraction(false);
       }, 300);
     }
-  }, [previewMode, previewProps, isProcessingInteraction, formFields]);
+  }, [previewMode, previewProps, isProcessingInteraction, formFields, validateAndNavigate]);
 
   // Function to get the aspect ratio value - memoized
   const getAspectRatioValue = useCallback((aspectRatio: string | undefined): number | undefined => {

@@ -3,7 +3,7 @@ import { CanvasElement } from "@/types/canvasTypes";
 import ElementFactory from "@/components/canvas/element-renderers/ElementFactory";
 import { Funnel } from '@/utils/types';
 import { accessService } from '@/services/accessService';
-import { FormValidationProvider } from '@/utils/FormValidationContext';
+import { FormValidationProvider, useFormValidation } from '@/utils/FormValidationContext';
 import { useValidatedNavigation } from '@/hooks/useValidatedNavigation';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +24,31 @@ interface CanvasPreviewProps {
   contentMaxWidth?: number;
 }
 
-const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funnel, isMobile = false, centerContent = false, isPreviewPage = false, className, paddingLeftAdjusted, paddingRightAdjusted, paddingTopAdjusted, paddingBottomAdjusted, renderAllSteps = false, contentMaxWidth }: CanvasPreviewProps) => {
+// Componente interno que usa o contexto de validação
+const CanvasPreviewInner = ({ 
+  canvasElements, 
+  activeStep, 
+  onStepChange, 
+  funnel, 
+  isMobile, 
+  centerContent, 
+  isPreviewPage, 
+  className, 
+  paddingLeftAdjusted, 
+  paddingRightAdjusted, 
+  paddingTopAdjusted, 
+  paddingBottomAdjusted, 
+  renderAllSteps, 
+  contentMaxWidth 
+}: CanvasPreviewProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [shouldCenter, setShouldCenter] = useState(centerContent);
   // Referência para evitar re-renders desnecessários
   const previousStepRef = useRef<number>(activeStep);
   const canvasRef = useRef<HTMLDivElement>(null);
+  
+  // Acessar o contexto de validação
+  const { validateAndNavigate } = useFormValidation();
   
   // Detectar se estamos na página de preview
   // Tanto pela prop explícita quanto pela URL
@@ -100,14 +119,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     initSession();
   }, [funnel, sessionId]);
   
-  // Usar o hook de navegação validada
-  const handleValidatedStepChange = useValidatedNavigation(activeStep, onStepChange);
-  
-  // Função de mudança de etapa que valida campos obrigatórios
+  // Função de mudança de etapa que valida campos obrigatórios usando o sistema centralizado
   const handleStepChange = useCallback((step: number) => {
-    // Usar navegação com validação
-    handleValidatedStepChange(step);
-  }, [handleValidatedStepChange]);
+    // Usar o validateAndNavigate diretamente do contexto
+    validateAndNavigate(activeStep, step, onStepChange);
+  }, [activeStep, onStepChange, validateAndNavigate]);
   
   // Função para próximo passo com validação
   const handleNextStep = useCallback((event: React.MouseEvent) => {
@@ -116,11 +132,11 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
     const nextStep = activeStep + 1;
     if (funnel && nextStep < funnel.steps.length) {
       // Usar navegação com validação
-      handleValidatedStepChange(nextStep);
+      validateAndNavigate(activeStep, nextStep, onStepChange);
     } else {
       console.warn("CanvasPreview - Tentativa de avançar além do último passo");
     }
-  }, [activeStep, funnel, handleValidatedStepChange]);
+  }, [activeStep, funnel, onStepChange, validateAndNavigate]);
   
   // Funções de placeholder que não fazem nada no modo de visualização
   const noopFunction = () => {};
@@ -205,7 +221,7 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
   
   // Envolver o conteúdo no provedor de validação
   return (
-    <FormValidationProvider>
+    <>
       {/* Restante do código de renderização */}
       {isInPreviewMode ? (
         <div className={className || ''}>
@@ -243,6 +259,15 @@ const CanvasPreview = ({ canvasElements = [], activeStep = 0, onStepChange, funn
           ))}
         </div>
       )}
+    </>
+  );
+};
+
+// Componente principal que fornece o contexto de validação
+const CanvasPreview = (props: CanvasPreviewProps) => {
+  return (
+    <FormValidationProvider>
+      <CanvasPreviewInner {...props} />
     </FormValidationProvider>
   );
 };
