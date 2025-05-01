@@ -76,7 +76,7 @@ const VideoRenderer = (props: ElementRendererProps) => {
         const hasExternalScripts = Array.from(scripts).some(script => script.src);
         
         scripts.forEach((oldScript, index) => {
-          const newScript = document.createElement('script');
+        const newScript = document.createElement('script');
         
         // Copiar todos os atributos do script original
         Array.from(oldScript.attributes).forEach(attr => {

@@ -59,7 +59,6 @@ import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { funnelService } from '@/services/funnelService';
 import ProfileModal from '@/components/ProfileModal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { TestCanceledSubscription } from '@/components/TestCanceledSubscription';
 
 interface DashboardMetrics {
   totalFunnels: number;
@@ -490,7 +489,6 @@ const Dashboard = () => {
                   <Plus className="h-4 w-4 mr-2 text-primary" />
                   Novo Funil
                 </Button>
-                <TestCanceledSubscription />
               </div>
             </div>
           </div>

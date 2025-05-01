@@ -116,34 +116,34 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
     if (!selectedOption) return;
     
     // Executar navegação apenas no modo de preview
-    if (previewMode && previewProps) {
-      const { activeStep, onStepChange, funnel } = previewProps;
-      
-      if (funnel) {
+      if (previewMode && previewProps) {
+        const { activeStep, onStepChange, funnel } = previewProps;
+        
+        if (funnel) {
         // Se a opção selecionada tiver configuração de navegação, usar ela
         if (selectedOption.navigation) {
           switch (selectedOption.navigation.type) {
-            case "next":
+              case "next":
               if (activeStep < funnel.steps.length - 1) {
                 validateAndNavigate(activeStep, activeStep + 1, onStepChange);
-              }
-              break;
-            case "step":
+                }
+                break;
+              case "step":
               if (selectedOption.navigation.stepId) {
                 const stepIndex = funnel.steps.findIndex(step => step.id === selectedOption.navigation.stepId);
                 if (stepIndex !== -1) {
                   validateAndNavigate(activeStep, stepIndex, onStepChange);
                 }
-              }
-              break;
-            case "url":
+                }
+                break;
+              case "url":
               if (selectedOption.navigation.url) {
                 // Para URLs externas, vamos certificar que passou pela validação
                 if (validateAndNavigate(activeStep, activeStep, onStepChange, { skipValidation: true })) {
                   window.open(selectedOption.navigation.url, "_blank");
                 }
               }
-              break;
+                break;
           }
         } else {
           // Se não tiver configuração específica, ir para o próximo passo por padrão
@@ -174,20 +174,20 @@ const MultipleChoiceRenderer = (props: ElementRendererProps) => {
       if (currentFunnel) {
         if (selectedOption.navigation) {
           switch (selectedOption.navigation.type) {
-            case "next":
+          case "next":
               if (currentStep < currentFunnel.steps.length - 1) {
                 setCurrentStep(currentStep + 1);
-              }
-              break;
-            case "step":
+            }
+            break;
+          case "step":
               if (selectedOption.navigation.stepId) {
                 const stepIndex = currentFunnel.steps.findIndex(step => step.id === selectedOption.navigation.stepId);
                 if (stepIndex !== -1) {
                   setCurrentStep(stepIndex);
                 }
-              }
-              break;
-            case "url":
+            }
+            break;
+          case "url":
               // No modo de canvas, apenas logar a tentativa de navegação
               console.log("Tentativa de navegação para URL:", selectedOption.navigation.url);
               break;
