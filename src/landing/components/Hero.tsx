@@ -12,15 +12,14 @@ export default function Hero() {
         {/* Header content - Centered */}
         <div className="text-center max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900">
-            <span className="block">A plataforma completa</span>
+            <span className="block">Seduza. Converta. Venda.</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 block mt-2">
-              para converter tráfego em vendas
+              A plataforma que transforma suas ideias em funis magnéticos
             </span>
           </h1>
           
           <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
-            Um funil interativo, intuitivo e completo para criar, gerenciar e otimizar 
-            seus leads em tempo real.
+            — sem precisar de código.
           </p>
           
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
