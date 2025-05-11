@@ -328,17 +328,7 @@ const BuilderCanvas = ({
         !e.dataTransfer.types.includes("elementId") && 
         !e.dataTransfer.types.includes("text/plain")) {
       
-      // Tentar ler o tipo do componente - armazenar em estado global
-      try {
-        const componentType = e.dataTransfer.getData("componentType");
-        if (componentType && !externalComponentType) {
-          setExternalComponentType(componentType);
-        }
-      } catch (error) {
-        // A DataTransfer API não permite ler os dados durante dragOver
-        // Vamos apenas marcar que há um arrasto externo
-      }
-      
+      // Temos um componente da sidebar sendo arrastado, mostrar indicadores de drop
       setIsExternalDragOver(true);
       setIsDraggingAny(true); // Ativar as zonas de drop para componentes externos também
     }
@@ -428,6 +418,23 @@ const BuilderCanvas = ({
     console.error("BuilderCanvas - Logo não é uma string base64 válida");
     return null;
   };
+  
+  // Adicionar um listener global para detectar quando um componente da sidebar está sendo arrastado
+  useEffect(() => {
+    const handleGlobalDragOver = (e: DragEvent) => {
+      // Verificar se é um drag de componente da sidebar
+      if (e.dataTransfer?.types.includes("componentType") && 
+          !e.dataTransfer?.types.includes("elementId")) {
+        setIsDraggingAny(true);
+      }
+    };
+    
+    document.addEventListener('dragover', handleGlobalDragOver);
+    
+    return () => {
+      document.removeEventListener('dragover', handleGlobalDragOver);
+    };
+  }, []);
   
   return (
     <CanvasDropZone 

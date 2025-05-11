@@ -78,50 +78,62 @@ const ElementsSidebar = () => {
     comp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleDragStart = (e: React.DragEvent, componentType: string, componentName: string) => {
-    // Define o dado chave-valor essencial para a operação de arrastar e soltar
-    e.dataTransfer.setData("componentType", componentType);
+  const handleDragStart = (e: React.DragEvent, componentId: string, componentName: string) => {
+    console.log(`Iniciando arrasto do componente: ${componentName} (${componentId})`);
+    
+    // Garantir que o tipo de componente seja definido corretamente
+    e.dataTransfer.setData("componentType", componentId);
     e.dataTransfer.effectAllowed = "copy";
     
-    // Cria um elemento fantasma personalizado mais bonito para arrastar
-    const ghostElement = document.createElement('div');
-    ghostElement.classList.add(
-      'rounded-md', 'p-3', 'bg-white', 'shadow-lg', 'text-sm', 
-      'flex', 'items-center', 'gap-2', 'border', 'border-violet-200'
-    );
+    // Criar uma imagem de arrasto personalizada para feedback visual
+    const dragIcon = document.createElement('div');
+    dragIcon.style.padding = '10px 15px';
+    dragIcon.style.background = '#8b5cf6';
+    dragIcon.style.borderRadius = '4px';
+    dragIcon.style.color = 'white';
+    dragIcon.style.fontSize = '14px';
+    dragIcon.style.fontWeight = 'bold';
+    dragIcon.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    dragIcon.style.pointerEvents = 'none';
+    dragIcon.innerHTML = `<div style="display: flex; align-items: center; gap: 8px;">
+      <span>${componentName}</span>
+    </div>`;
     
-    // Adiciona um ícone ao elemento fantasma
-    const iconClass = componentType.toLowerCase();
-    ghostElement.innerHTML = `
-      <div class="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
-          stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-          class="text-violet-600">
-          <path d="M12 5v14M5 12h14"></path>
-        </svg>
-      </div>
-      <span class="font-medium text-gray-700">Adicionar: ${componentName}</span>
-    `;
+    document.body.appendChild(dragIcon);
+    e.dataTransfer.setDragImage(dragIcon, 50, 25);
     
-    document.body.appendChild(ghostElement);
-    ghostElement.style.position = 'absolute';
-    ghostElement.style.top = '-1000px';
-    ghostElement.style.left = '-1000px';
-    ghostElement.style.zIndex = '9999';
-    
-    // Define a imagem de arrastar personalizada
-    try {
-      e.dataTransfer.setDragImage(ghostElement, 20, 20);
-    } catch (err) {
-      console.error('Erro ao definir imagem de arrastar:', err);
-    }
-    
-    // Limpa o elemento fantasma após o uso
+    // Remover o elemento após um pequeno delay
     setTimeout(() => {
-      if (document.body.contains(ghostElement)) {
-        document.body.removeChild(ghostElement);
-      }
-    }, 100);
+      document.body.removeChild(dragIcon);
+    }, 0);
+    
+    // Adicionar classe visual durante o arrasto
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add("opacity-50");
+    
+    // Criar e adicionar uma dica visual para o usuário
+    const feedbackEl = document.createElement('div');
+    feedbackEl.textContent = `Arrastando: ${componentName}`;
+    feedbackEl.className = 'fixed top-2 left-1/2 -translate-x-1/2 bg-violet-600 text-white px-3 py-1 rounded-full text-sm shadow-lg z-50';
+    feedbackEl.id = 'drag-feedback';
+    document.body.appendChild(feedbackEl);
+    
+    // Adicionar efeito de vibração leve quando começar a arrastar
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate(50);
+    }
+  };
+  
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Remover classe visual
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove("opacity-50");
+    
+    // Remover feedback visual
+    const feedbackEl = document.getElementById('drag-feedback');
+    if (feedbackEl) {
+      document.body.removeChild(feedbackEl);
+    }
   };
   
   const renderComponentItem = (component: { id: string; name: string; icon: any; color: string }) => {
@@ -132,11 +144,7 @@ const ElementsSidebar = () => {
         className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-grab active:cursor-grabbing border-b group relative transition-all hover:bg-violet-50"
         draggable
         onDragStart={(e) => handleDragStart(e, component.id, component.name)}
-        onDragEnd={() => {
-          // Notificar somente se o drop foi concluído com sucesso
-          // Reduzido para evitar notificações excessivas
-          console.log(`Elemento "${component.name}" arrastado`);
-        }}
+        onDragEnd={handleDragEnd}
       >
         <div className={cn("h-8 w-8 rounded-md flex items-center justify-center mr-3", component.color)}>
           <Icon className="h-4 w-4" />

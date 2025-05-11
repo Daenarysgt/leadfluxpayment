@@ -51,7 +51,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     <div
       className={cn(
         "w-full transition-all duration-200",
-        (isHovered || isActive) ? "h-12 opacity-100" : "h-4 opacity-50"
+        (isHovered || isActive) ? "h-12 opacity-100" : "h-0 opacity-0"
       )}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
@@ -59,23 +59,27 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
       onDrop={handleDrop}
       style={{
         position: "relative",
-        zIndex: 10,
-        cursor: "pointer"
+        zIndex: isActive ? 20 : -1,
+        pointerEvents: (isActive || isHovered) ? "auto" : "none",
+        overflow: "visible"
       }}
     >
       <div 
         className={cn(
           "absolute inset-0 mx-4 rounded-md transition-all", 
-          (isHovered || isActive) ? "bg-violet-200 border-2 border-dashed border-violet-400" : "bg-violet-100 border border-dashed border-violet-300"
+          (isHovered || isActive) ? 
+            "bg-violet-200 border-2 border-dashed border-violet-400" : 
+            "bg-transparent border-0"
         )}
         style={{
           transform: "translateY(-50%)",
           top: "50%",
-          height: (isHovered || isActive) ? "10px" : "3px"
+          height: (isHovered || isActive) ? "12px" : "0px",
+          opacity: (isHovered || isActive) ? 1 : 0
         }}
       >
-        {(isHovered || isActive) && (
-          <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-violet-500 text-white text-xs px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+        {(isHovered) && (
+          <div className="absolute -right-3 top-1/2 -translate-y-1/2 bg-violet-500 text-white text-xs px-2 py-1 rounded shadow-sm whitespace-nowrap font-medium">
             Soltar aqui
           </div>
         )}
