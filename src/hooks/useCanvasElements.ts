@@ -32,9 +32,8 @@ export const useCanvasElements = (
     canUndo,
     canRedo,
     historyLength,
-    currentPosition,
-    clearHistory
-  } = useHistoryState<CanvasElement[]>(initialElements && initialElements.length > 0 ? initialElements : []);
+    currentPosition
+  } = useHistoryState<CanvasElement[]>([]);
   
   // Atualizar os estados reativos de canUndo e canRedo
   useEffect(() => {
@@ -47,15 +46,6 @@ export const useCanvasElements = (
   useEffect(() => {
     onElementsChangeRef.current = onElementsChange;
   }, [onElementsChange]);
-  
-  // Resetar o histórico apenas quando trocar de etapa ou receber um novo conjunto de elementos iniciais
-  useEffect(() => {
-    if (isInitialized && initialElements && JSON.stringify(initialElements) !== JSON.stringify(elements)) {
-      setElements(initialElements);
-      clearHistory();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialElements]);
   
   // Initialize elements from props or defaults
   const initializeElements = useCallback(() => {
