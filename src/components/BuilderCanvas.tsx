@@ -31,6 +31,7 @@ const BuilderCanvas = ({
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
+  const [externalComponentType, setExternalComponentType] = useState<string | null>(null);
   
   // Usar o hook de redimensionamento do canvas para evitar a borda branca
   const { fixCanvasWhiteSpace } = useCanvasResize();
@@ -302,6 +303,7 @@ const BuilderCanvas = ({
       setDraggedElementId(null);
       setDropTargetId(null);
       setIsExternalDragOver(false);
+      setExternalComponentType(null);
       
       // Forçar uma atualização da UI após qualquer operação de drag
       setTimeout(() => {
@@ -321,13 +323,26 @@ const BuilderCanvas = ({
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
-    // Only show the drop indicator for new components, not for reordering
+    // Detectar componentes sendo arrastados da sidebar
     if (e.dataTransfer.types.includes("componentType") && 
         !e.dataTransfer.types.includes("elementId") && 
         !e.dataTransfer.types.includes("text/plain")) {
+      
+      // Tentar ler o tipo do componente - armazenar em estado global
+      try {
+        const componentType = e.dataTransfer.getData("componentType");
+        if (componentType && !externalComponentType) {
+          setExternalComponentType(componentType);
+        }
+      } catch (error) {
+        // A DataTransfer API não permite ler os dados durante dragOver
+        // Vamos apenas marcar que há um arrasto externo
+      }
+      
       setIsExternalDragOver(true);
+      setIsDraggingAny(true); // Ativar as zonas de drop para componentes externos também
     }
-  }, []);
+  }, [externalComponentType]);
   
   const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
     // Only set to false if we're leaving the canvas, not entering a child element
@@ -414,24 +429,6 @@ const BuilderCanvas = ({
     return null;
   };
   
-  // Adicionar um listener global para dragEnd
-  useEffect(() => {
-    const handleGlobalDragEnd = () => {
-      setIsDraggingAny(false);
-      setDraggedElementId(null);
-      setDropTargetId(null);
-      setIsExternalDragOver(false);
-    };
-    
-    document.addEventListener('dragend', handleGlobalDragEnd);
-    document.addEventListener('drop', handleGlobalDragEnd);
-    
-    return () => {
-      document.removeEventListener('dragend', handleGlobalDragEnd);
-      document.removeEventListener('drop', handleGlobalDragEnd);
-    };
-  }, []);
-  
   return (
     <CanvasDropZone 
       onDrop={handleDrop}
@@ -506,21 +503,52 @@ const BuilderCanvas = ({
               e.preventDefault();
               e.stopPropagation();
               
-              const draggedElementId = e.dataTransfer.getData('elementId');
-              if (draggedElementId && elements.length > 0) {
-                const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
-                // Inserir no início
-                if (sourceIndex !== -1 && sourceIndex !== 0) {
-                  reorderElements(sourceIndex, 0);
-                  toast({
-                    title: "Elemento reordenado",
-                    description: "O elemento foi movido para o início."
-                  });
+              // Verificar se é um arrasto de elemento interno ou componente externo
+              if (e.dataTransfer.types.includes("elementId")) {
+                const draggedElementId = e.dataTransfer.getData('elementId');
+                if (draggedElementId && elements.length > 0) {
+                  const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
+                  // Inserir no início
+                  if (sourceIndex !== -1 && sourceIndex !== 0) {
+                    reorderElements(sourceIndex, 0);
+                    toast({
+                      title: "Elemento reordenado",
+                      description: "O elemento foi movido para o início."
+                    });
+                  }
+                  
+                  // Limpar estados
+                  setDraggedElementId(null);
+                  setDropTargetId(null);
                 }
-                
-                // Limpar estados
-                setDraggedElementId(null);
-                setDropTargetId(null);
+              } else if (e.dataTransfer.types.includes("componentType")) {
+                // É um componente da sidebar
+                const componentType = e.dataTransfer.getData("componentType");
+                if (componentType) {
+                  // Adicionar o novo elemento
+                  const newElement = addElement(componentType);
+                  
+                  // Se há outros elementos, mover para o topo
+                  if (newElement && elements.length > 0) {
+                    // Nova id foi adicionada ao final - vamos movê-la para o topo
+                    const newIndex = elements.length;
+                    reorderElements(newIndex, 0);
+                    
+                    toast({
+                      title: "Elemento adicionado",
+                      description: `Novo elemento ${componentType} adicionado no início.`
+                    });
+                    
+                    // Selecionar o novo elemento
+                    if (onElementSelect) {
+                      onElementSelect(newElement);
+                    }
+                  }
+                  
+                  // Limpar os estados
+                  setExternalComponentType(null);
+                  setIsExternalDragOver(false);
+                }
               }
             }}
           />
@@ -572,23 +600,55 @@ const BuilderCanvas = ({
                       e.preventDefault();
                       e.stopPropagation();
                       
-                      const draggedElementId = e.dataTransfer.getData('elementId');
-                      if (draggedElementId) {
-                        const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
-                        // Inserir após o elemento atual (que é index)
-                        const targetIndex = index + 1;
-                        
-                        if (sourceIndex !== -1 && sourceIndex !== targetIndex && sourceIndex !== targetIndex - 1) {
-                          reorderElements(sourceIndex, targetIndex);
-                          toast({
-                            title: "Elemento reordenado",
-                            description: "O elemento foi movido para a nova posição."
-                          });
+                      // Verificar se é um arrasto de elemento interno ou componente externo
+                      if (e.dataTransfer.types.includes("elementId")) {
+                        const draggedElementId = e.dataTransfer.getData('elementId');
+                        if (draggedElementId) {
+                          const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
+                          // Inserir após o elemento atual (que é index)
+                          const targetIndex = index + 1;
+                          
+                          if (sourceIndex !== -1 && sourceIndex !== targetIndex && sourceIndex !== targetIndex - 1) {
+                            reorderElements(sourceIndex, targetIndex);
+                            toast({
+                              title: "Elemento reordenado",
+                              description: "O elemento foi movido para a nova posição."
+                            });
+                          }
+                          
+                          // Limpar estados
+                          setDraggedElementId(null);
+                          setDropTargetId(null);
                         }
-                        
-                        // Limpar estados
-                        setDraggedElementId(null);
-                        setDropTargetId(null);
+                      } else if (e.dataTransfer.types.includes("componentType")) {
+                        // É um componente da sidebar
+                        const componentType = e.dataTransfer.getData("componentType");
+                        if (componentType) {
+                          // Adicionar o novo elemento
+                          const newElement = addElement(componentType);
+                          
+                          // Se adicionou com sucesso, mover para a posição correta
+                          if (newElement) {
+                            // Nova id foi adicionada ao final - vamos movê-la para a posição após o elemento atual
+                            const newIndex = elements.length;
+                            const targetIndex = index + 1;
+                            reorderElements(newIndex, targetIndex);
+                            
+                            toast({
+                              title: "Elemento adicionado",
+                              description: `Novo elemento ${componentType} adicionado na posição ${targetIndex + 1}.`
+                            });
+                            
+                            // Selecionar o novo elemento
+                            if (onElementSelect) {
+                              onElementSelect(newElement);
+                            }
+                          }
+                          
+                          // Limpar os estados
+                          setExternalComponentType(null);
+                          setIsExternalDragOver(false);
+                        }
                       }
                     }}
                   />

@@ -13,8 +13,8 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     e.preventDefault();
     e.stopPropagation();
     
-    // Verificar se é um drag de elemento
-    if (e.dataTransfer.types.includes("elementId")) {
+    // Verificar se é um drag de elemento ou componente
+    if (e.dataTransfer.types.includes("elementId") || e.dataTransfer.types.includes("componentType")) {
       setIsHovered(true);
     }
   };
@@ -33,7 +33,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     e.stopPropagation();
     
     // Alterar o cursor para indicar que um drop é possível
-    if (e.dataTransfer.types.includes("elementId")) {
+    if (e.dataTransfer.types.includes("elementId") || e.dataTransfer.types.includes("componentType")) {
       e.dataTransfer.dropEffect = "move";
     }
   };
@@ -51,7 +51,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     <div
       className={cn(
         "w-full transition-all duration-200",
-        (isHovered || isActive) ? "h-12 opacity-100" : "h-4 opacity-30"
+        (isHovered || isActive) ? "h-12 opacity-100" : "h-4 opacity-50"
       )}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
@@ -66,12 +66,12 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
       <div 
         className={cn(
           "absolute inset-0 mx-4 rounded-md transition-all", 
-          (isHovered || isActive) ? "bg-violet-200 border-2 border-dashed border-violet-400" : "bg-violet-100 border border-dashed border-violet-300",
+          (isHovered || isActive) ? "bg-violet-200 border-2 border-dashed border-violet-400" : "bg-violet-100 border border-dashed border-violet-300"
         )}
         style={{
           transform: "translateY(-50%)",
           top: "50%",
-          height: (isHovered || isActive) ? "8px" : "3px"
+          height: (isHovered || isActive) ? "10px" : "3px"
         }}
       >
         {(isHovered || isActive) && (
