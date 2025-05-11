@@ -12,8 +12,6 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Undo2, Redo2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import DropZoneSeparator from "@/components/canvas/DropZoneSeparator";
-import React from "react";
 
 const BuilderCanvas = ({ 
   isMobile, 
@@ -30,8 +28,6 @@ const BuilderCanvas = ({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
-  const [isDraggingAny, setIsDraggingAny] = useState(false);
-  const [externalComponentType, setExternalComponentType] = useState<string | null>(null);
   
   // Usar o hook de redimensionamento do canvas para evitar a borda branca
   const { fixCanvasWhiteSpace } = useCanvasResize();
@@ -190,7 +186,6 @@ const BuilderCanvas = ({
   const handleDragStart = useCallback((id: string) => {
     console.log("BuilderCanvas - Started dragging element with ID:", id);
     setDraggedElementId(id);
-    setIsDraggingAny(true);
   }, []);
   
   const handleDragEnter = useCallback((e: React.DragEvent, id: string) => {
@@ -224,7 +219,6 @@ const BuilderCanvas = ({
     // Limpar os estados
     setDraggedElementId(null);
     setDropTargetId(null);
-    setIsDraggingAny(false);
     
     // Usar um setTimeout para garantir que a UI atualize após o drag acabar
     setTimeout(() => {
@@ -303,7 +297,6 @@ const BuilderCanvas = ({
       setDraggedElementId(null);
       setDropTargetId(null);
       setIsExternalDragOver(false);
-      setExternalComponentType(null);
       
       // Forçar uma atualização da UI após qualquer operação de drag
       setTimeout(() => {
@@ -320,65 +313,20 @@ const BuilderCanvas = ({
     };
   }, [elements, reorderElements, toast]);
   
-  // Escutar eventos de arrasto da barra lateral
-  useEffect(() => {
-    const handleSidebarDragStart = (e: CustomEvent) => {
-      console.log("BuilderCanvas - Detectado arrasto da barra lateral", e.detail);
-      setIsDraggingAny(true);
-      setExternalComponentType(e.detail.componentId);
-    };
-    
-    const handleSidebarDragEnd = () => {
-      console.log("BuilderCanvas - Fim do arrasto da barra lateral");
-      setIsDraggingAny(false);
-      setExternalComponentType(null);
-    };
-    
-    document.addEventListener('sidebarDragStart', handleSidebarDragStart as EventListener);
-    document.addEventListener('sidebarDragEnd', handleSidebarDragEnd as EventListener);
-    
-    return () => {
-      document.removeEventListener('sidebarDragStart', handleSidebarDragStart as EventListener);
-      document.removeEventListener('sidebarDragEnd', handleSidebarDragEnd as EventListener);
-    };
-  }, []);
-  
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
-    // Detectar componentes sendo arrastados da sidebar
-    if (e.dataTransfer.types.includes("componentType")) {
-      console.log("BuilderCanvas - DragOver - Componente da sidebar sendo arrastado");
-      
-      // Temos um componente da sidebar sendo arrastado, mostrar indicadores de drop
+    // Only show the drop indicator for new components, not for reordering
+    if (e.dataTransfer.types.includes("componentType") && 
+        !e.dataTransfer.types.includes("elementId") && 
+        !e.dataTransfer.types.includes("text/plain")) {
       setIsExternalDragOver(true);
-      
-      // Ativar todas as zonas de drop
-      if (!isDraggingAny) {
-        console.log("BuilderCanvas - Ativando zonas de drop");
-        setIsDraggingAny(true);
-      }
-      
-      // Definir o tipo de componente sendo arrastado, se ainda não estiver definido
-      if (!externalComponentType) {
-        try {
-          const compType = e.dataTransfer.getData("componentType");
-          if (compType) {
-            console.log("BuilderCanvas - Definindo tipo de componente:", compType);
-            setExternalComponentType(compType);
-          }
-        } catch (err) {
-          // Em alguns navegadores, não podemos ler os dados durante o dragover
-          console.log("BuilderCanvas - Não foi possível ler o tipo de componente durante o dragover");
-        }
-      }
     }
-  }, [isDraggingAny, externalComponentType]);
+  }, []);
   
   const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
     // Only set to false if we're leaving the canvas, not entering a child element
     if (canvasRef.current && !canvasRef.current.contains(e.relatedTarget as Node)) {
-      console.log("BuilderCanvas - DragLeave - Deixando o canvas");
       setIsExternalDragOver(false);
     }
   }, []);
@@ -425,18 +373,9 @@ const BuilderCanvas = ({
     }, 100);
   }, [addElement, onElementSelect, toast, fixCanvasWhiteSpace]);
   
-  // Sincronizar mudanças nos elementos com o componente pai
-  useEffect(() => {
-    if (onElementsChange && elements.length > 0) {
-      console.log("BuilderCanvas - Sincronizando elementos com componente pai");
-      onElementsChange(elements);
-    }
-  }, [elements, onElementsChange]);
-  
-  // Force re-render when element updates are received
+  // Force re-render when element updates are received - place all effects after all callbacks
   useEffect(() => {
     if (elementUpdates) {
-      console.log("BuilderCanvas - Updates recebidos, forçando re-renderização");
       setRenderKey(prev => prev + 1);
     }
   }, [elementUpdates]);
@@ -469,55 +408,6 @@ const BuilderCanvas = ({
     console.error("BuilderCanvas - Logo não é uma string base64 válida");
     return null;
   };
-  
-  // Adicionar um listener global para detectar quando um componente da sidebar está sendo arrastado
-  useEffect(() => {
-    const handleGlobalDragStart = (e: DragEvent) => {
-      console.log("BuilderCanvas - Detectado início de arrasto global");
-      
-      // Verificar se é um drag de componente da sidebar
-      if (e.dataTransfer?.types.includes("componentType")) {
-        console.log("BuilderCanvas - Ativando estado de arrasto");
-        setIsDraggingAny(true);
-      }
-    };
-    
-    const handleGlobalDragOver = (e: DragEvent) => {
-      // Verificar se é um drag de componente da sidebar
-      if (e.dataTransfer?.types.includes("componentType") && 
-          !e.dataTransfer?.types.includes("elementId") && 
-          !isDraggingAny) {
-        console.log("BuilderCanvas - DragOver global - Ativando estado de arrasto");
-        setIsDraggingAny(true);
-      }
-    };
-    
-    const handleGlobalDragEnd = () => {
-      console.log("BuilderCanvas - Fim de arrasto global - Limpando estados");
-      setIsDraggingAny(false);
-      setDraggedElementId(null);
-      setDropTargetId(null);
-      setIsExternalDragOver(false);
-      setExternalComponentType(null);
-      
-      // Forçar atualização da UI
-      setTimeout(() => {
-        setRenderKey(prev => prev + 1);
-      }, 100);
-    };
-    
-    document.addEventListener('dragstart', handleGlobalDragStart);
-    document.addEventListener('dragover', handleGlobalDragOver);
-    document.addEventListener('dragend', handleGlobalDragEnd);
-    document.addEventListener('drop', handleGlobalDragEnd);
-    
-    return () => {
-      document.removeEventListener('dragstart', handleGlobalDragStart);
-      document.removeEventListener('dragover', handleGlobalDragOver);
-      document.removeEventListener('dragend', handleGlobalDragEnd);
-      document.removeEventListener('drop', handleGlobalDragEnd);
-    };
-  }, [isDraggingAny]);
   
   return (
     <CanvasDropZone 
@@ -586,216 +476,44 @@ const BuilderCanvas = ({
           marginRight: '-16px',
           marginBottom: '0'
         }}>
-          {/* Zona de drop no topo do canvas, antes do primeiro elemento */}
-          <DropZoneSeparator 
-            isActive={isDraggingAny}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              console.log("BuilderCanvas - Drop no primeiro separador (topo)");
-              console.log("BuilderCanvas - Tipos:", e.dataTransfer.types);
-              
-              // Verificar se é um arrasto de elemento interno ou componente externo
-              if (e.dataTransfer.types.includes("elementId")) {
-                const draggedElementId = e.dataTransfer.getData('elementId');
-                console.log("BuilderCanvas - Arrastando elemento existente:", draggedElementId);
-                
-                if (draggedElementId && elements.length > 0) {
-                  const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
-                  console.log("BuilderCanvas - Movendo do índice", sourceIndex, "para 0");
-                  
-                  // Inserir no início
-                  if (sourceIndex !== -1 && sourceIndex !== 0) {
-                    reorderElements(sourceIndex, 0);
-                    toast({
-                      title: "Elemento reordenado",
-                      description: "O elemento foi movido para o início."
-                    });
-                  }
-                  
-                  // Limpar estados
-                  setDraggedElementId(null);
-                  setDropTargetId(null);
-                }
-              } else if (e.dataTransfer.types.includes("componentType")) {
-                // É um componente da sidebar
-                const componentType = e.dataTransfer.getData("componentType");
-                console.log("BuilderCanvas - Arrastando novo componente:", componentType);
-                
-                if (componentType) {
-                  console.log("BuilderCanvas - Adicionando componente:", componentType);
-                  // Adicionar o novo elemento
-                  const newElement = addElement(componentType);
-                  
-                  // Se há outros elementos, mover para o topo
-                  if (newElement && elements.length > 1) {
-                    console.log("BuilderCanvas - Elementos existentes, movendo para o topo");
-                    // O novo elemento deve ser o último no array
-                    const newElementIndex = elements.length - 1;
-                    // Mover para o topo (índice 0)
-                    reorderElements(newElementIndex, 0);
-                    
-                    // Selecionar o novo elemento
-                    if (onElementSelect) {
-                      onElementSelect(newElement);
-                    }
-                    
-                    toast({
-                      title: "Elemento adicionado",
-                      description: "Novo elemento adicionado no início."
-                    });
-                    
-                    // Corrigir a borda branca após adicionar um elemento
-                    setTimeout(fixCanvasWhiteSpace, 100);
-                    
-                    // Forçar re-renderização
-                    setRenderKey(prev => prev + 1);
-                  } else if (newElement) {
-                    console.log("BuilderCanvas - Primeiro elemento, não precisa reordenar");
-                    // Se for o primeiro elemento, apenas selecione-o
-                    if (onElementSelect) {
-                      onElementSelect(newElement);
-                    }
-                    
-                    toast({
-                      title: "Elemento adicionado",
-                      description: "Novo elemento adicionado."
-                    });
-                    
-                    // Corrigir a borda branca após adicionar um elemento
-                    setTimeout(fixCanvasWhiteSpace, 100);
-                    
-                    // Forçar re-renderização
-                    setRenderKey(prev => prev + 1);
-                  }
-                }
-              }
-            }}
-          />
-          
           {displayElements.map((element, index) => {
             // Create a unique key that forces re-render when elements or selections change
             const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
             
             return (
-              <React.Fragment key={key}>
-                <div 
-                  className={cn(
-                    "relative transition-all",
-                    dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
-                  )}
-                  onDragEnter={(e) => handleDragEnter(e, element.id)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onDrop={handleElementDrop}
-                  style={{ 
-                    marginBottom: '0px',
-                    paddingLeft: '16px',
-                    paddingRight: '16px'
-                  }}
-                >
-                  <CanvasElementRenderer
-                    element={element}
-                    isSelected={element.id === selectedElementId}
-                    onSelect={handleElementSelect}
-                    onRemove={handleElementRemove}
-                    onDuplicate={handleElementDuplicate}
-                    onMoveUp={handleElementMoveUp}
-                    onMoveDown={handleElementMoveDown}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    isDragging={element.id === draggedElementId}
-                    index={index}
-                    totalElements={elements.length}
-                  />
-                </div>
-                
-                {/* Zona de drop após o elemento atual */}
-                {index < displayElements.length - 1 && (
-                  <DropZoneSeparator 
-                    isActive={isDraggingAny}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      console.log("BuilderCanvas - Drop em separador após elemento", index);
-                      console.log("BuilderCanvas - Tipos:", e.dataTransfer.types);
-                      
-                      // Verificar se é um arrasto de elemento interno ou componente externo
-                      if (e.dataTransfer.types.includes("elementId")) {
-                        const draggedElementId = e.dataTransfer.getData('elementId');
-                        console.log("BuilderCanvas - Arrastando elemento existente:", draggedElementId);
-                        
-                        if (draggedElementId) {
-                          const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
-                          // Inserir após o elemento atual (que é index)
-                          const targetIndex = index + 1;
-                          
-                          console.log("BuilderCanvas - Movendo de", sourceIndex, "para", targetIndex);
-                          
-                          if (sourceIndex !== -1 && sourceIndex !== targetIndex && sourceIndex !== targetIndex - 1) {
-                            reorderElements(sourceIndex, targetIndex);
-                            toast({
-                              title: "Elemento reordenado",
-                              description: "O elemento foi movido para a nova posição."
-                            });
-                          }
-                          
-                          // Limpar estados
-                          setDraggedElementId(null);
-                          setDropTargetId(null);
-                        }
-                      } else if (e.dataTransfer.types.includes("componentType")) {
-                        // É um componente da sidebar
-                        const componentType = e.dataTransfer.getData("componentType");
-                        console.log("BuilderCanvas - Arrastando novo componente:", componentType);
-                        
-                        if (componentType) {
-                          console.log("BuilderCanvas - Adicionando componente:", componentType);
-                          // Adicionar o novo elemento
-                          const newElement = addElement(componentType);
-                          
-                          // Se adicionou com sucesso, mover para a posição correta
-                          if (newElement) {
-                            console.log("BuilderCanvas - Elemento adicionado com sucesso:", newElement.id);
-                            
-                            // Encontrar o índice do novo elemento (deve ser o último)
-                            const newElementIndex = elements.length - 1;
-                            
-                            // Mover para a posição após o elemento atual
-                            const targetIndex = index + 1;
-                            
-                            console.log("BuilderCanvas - Reordenando de", newElementIndex, "para", targetIndex);
-                            
-                            if (newElementIndex !== targetIndex) {
-                              reorderElements(newElementIndex, targetIndex);
-                            }
-                            
-                            // Selecionar o novo elemento
-                            if (onElementSelect) {
-                              onElementSelect(newElement);
-                            }
-                            
-                            toast({
-                              title: "Elemento adicionado",
-                              description: `Novo elemento adicionado na posição ${targetIndex + 1}.`
-                            });
-                            
-                            // Corrigir a borda branca após adicionar um elemento
-                            setTimeout(fixCanvasWhiteSpace, 100);
-                            
-                            // Forçar re-renderização
-                            setRenderKey(prev => prev + 1);
-                          }
-                        }
-                      }
-                    }}
-                  />
+              <div 
+                key={key} 
+                className={cn(
+                  "relative transition-all",
+                  dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
                 )}
-              </React.Fragment>
+                onDragEnter={(e) => handleDragEnter(e, element.id)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={handleElementDrop}
+                style={{ 
+                  marginBottom: '0px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px'
+                }}
+              >
+                <CanvasElementRenderer
+                  element={element}
+                  isSelected={element.id === selectedElementId}
+                  onSelect={handleElementSelect}
+                  onRemove={handleElementRemove}
+                  onDuplicate={handleElementDuplicate}
+                  onMoveUp={handleElementMoveUp}
+                  onMoveDown={handleElementMoveDown}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  isDragging={element.id === draggedElementId}
+                  index={index}
+                  totalElements={elements.length}
+                />
+              </div>
             );
           })}
         </div>
