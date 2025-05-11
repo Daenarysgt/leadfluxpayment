@@ -370,10 +370,18 @@ const ButtonRenderer = (props: ElementRendererProps) => {
     <BaseElementWrapper>
       <div className={cn("w-full flex", alignmentClass)} style={{ marginTop: `${marginTop}px` }}>
         <Button
-          className={buttonClass}
+          className={cn(
+            buttonClass,
+            // Usar a classe bg-primary quando estiver usando a cor primária do funnel
+            (variant === "default" || variant === "secondary" || variant === "3d") && 
+            !content.buttonColor && 
+            funnelSettings.primaryColor ? "bg-primary text-primary-foreground" : ""
+          )}
           style={{
             backgroundColor: 
-              variant === "default" || variant === "secondary" || variant === "3d" ? buttonColor : 
+              // Aplicar cor apenas se não estiver usando a cor primária global ou tiver cor específica
+              (variant === "default" || variant === "secondary" || variant === "3d") ? 
+                (content.buttonColor || (!funnelSettings.primaryColor ? "#7c3aed" : undefined)) : 
               variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
               undefined,
             borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
@@ -391,7 +399,7 @@ const ButtonRenderer = (props: ElementRendererProps) => {
             } : {}),
             ...(variant === "3d" ? {
               borderBottomColor: adjustColor(buttonColor, -30),
-              backgroundColor: buttonColor
+              backgroundColor: content.buttonColor || (!funnelSettings.primaryColor ? "#7c3aed" : undefined)
             } : {}),
             "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
             "--glow-color": buttonColor + "80", // Adicionar variável de cor para a animação glow (com 50% de opacidade)

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useStore } from "@/utils/store";
 import { Slider } from "@/components/ui/slider";
+import { updateThemeColor } from "@/lib/utils";
 
 interface ButtonConfigProps {
   element: CanvasElement;
@@ -336,12 +337,18 @@ const ButtonConfig = ({ element, onUpdate }: ButtonConfigProps) => {
                 type="color" 
                 id="button-color" 
                 value={buttonColor}
-                onChange={(e) => handleStyleUpdate({ buttonColor: e.target.value })}
+                onChange={(e) => {
+                  handleStyleUpdate({ buttonColor: e.target.value });
+                  updateThemeColor(e.target.value);
+                }}
                 className="w-10 h-10 rounded-md overflow-hidden cursor-pointer"
               />
               <Input 
                 value={buttonColor}
-                onChange={(e) => handleStyleUpdate({ buttonColor: e.target.value })}
+                onChange={(e) => {
+                  handleStyleUpdate({ buttonColor: e.target.value });
+                  updateThemeColor(e.target.value);
+                }}
                 className="w-32 uppercase"
               />
             </div>
