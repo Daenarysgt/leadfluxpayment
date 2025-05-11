@@ -80,9 +80,9 @@ export default function Hero() {
           <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block z-0"></div>
           
           {/* Workspace Features Section - Repositioned and restyled to match ClickUp */}
-          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-6 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-8 hidden lg:block z-20">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1.5" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-6 w-[340px] bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-10 hidden lg:block z-20">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                 Configure seu Workspace
               </h2>
               <p className="text-sm text-gray-500 font-normal">
@@ -90,10 +90,10 @@ export default function Hero() {
               </p>
             </div>
             
-            <div className="grid grid-cols-3 gap-5 mb-8">
+            <div className="grid grid-cols-3 gap-6 mb-10">
               {workspaceFeatures.slice(0, 9).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className="p-4 rounded-lg mb-2.5 flex items-center justify-center w-[72px] h-[72px] bg-white shadow-sm">
+                  <div className="p-4 rounded-xl mb-3 flex items-center justify-center w-[76px] h-[76px] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-gray-50">
                     <svg
                       className="w-5 h-5 text-gray-700"
                       fill="none"
@@ -114,18 +114,18 @@ export default function Hero() {
             </div>
             
             {/* Feature checkboxes */}
-            <div className="mb-8 space-y-5">
+            <div className="mb-10 space-y-6">
               {[
                 'Acesso a todos templates',
                 'Suporte 24/7',
                 'Personalização completa',
                 'Integrações ilimitadas'
               ].map((feature, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div key={index} className="flex items-center space-x-3">
+                  <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700">{feature}</span>
+                  <span className="text-sm font-medium text-gray-700 leading-relaxed">{feature}</span>
                 </div>
               ))}
             </div>
@@ -133,7 +133,7 @@ export default function Hero() {
             <div className="text-center">
               <a 
                 href="#pricing" 
-                className="w-full inline-flex items-center justify-center px-5 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full inline-flex items-center justify-center px-6 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-base font-bold transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Começar agora
               </a>
@@ -141,9 +141,9 @@ export default function Hero() {
           </div>
           
           {/* Mobile version of Workspace Features - Updated to match desktop style */}
-          <div className="mt-12 bg-white rounded-xl shadow-lg p-8 lg:hidden">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1.5" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+          <div className="mt-12 bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-10 lg:hidden">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                 Configure seu Workspace
               </h2>
               <p className="text-sm text-gray-500 font-normal">
@@ -151,10 +151,10 @@ export default function Hero() {
               </p>
             </div>
             
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-6">
               {workspaceFeatures.slice(0, 8).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className="p-4 rounded-lg mb-2.5 flex items-center justify-center w-full aspect-square bg-white shadow-sm">
+                  <div className="p-4 rounded-xl mb-3 flex items-center justify-center w-full aspect-square bg-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-gray-50">
                     <svg
                       className="w-5 h-5 text-gray-700"
                       fill="none"
@@ -175,18 +175,18 @@ export default function Hero() {
             </div>
             
             {/* Feature checkboxes - Mobile */}
-            <div className="my-8 space-y-5">
+            <div className="my-10 space-y-6">
               {[
                 'Acesso a todos templates',
                 'Suporte 24/7',
                 'Personalização completa',
                 'Integrações ilimitadas'
               ].map((feature, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <div key={index} className="flex items-center space-x-3">
+                  <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700">{feature}</span>
+                  <span className="text-sm font-medium text-gray-700 leading-relaxed">{feature}</span>
                 </div>
               ))}
             </div>
@@ -194,7 +194,7 @@ export default function Hero() {
             <div className="text-center">
               <a 
                 href="#pricing" 
-                className="w-full inline-flex items-center justify-center px-5 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold transition-all duration-200 shadow-md hover:shadow-lg"
+                className="w-full inline-flex items-center justify-center px-6 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-base font-bold transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Começar agora
               </a>
