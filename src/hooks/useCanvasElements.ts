@@ -18,6 +18,7 @@ export const useCanvasElements = (
   const initialElementsRef = useRef(initialElements);
   const onElementsChangeRef = useRef(onElementsChange);
   const previousUpdateRef = useRef<{id: string | null, content: any | null}>({id: null, content: null});
+  const isInternalUpdateRef = useRef(false);
   
   // Usar o history state em vez do useState básico
   const {
@@ -26,7 +27,8 @@ export const useCanvasElements = (
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    clearHistory
   } = useHistoryState<CanvasElement[]>([]);
   
   // Keep the onElementsChange reference up to date
@@ -70,6 +72,20 @@ export const useCanvasElements = (
     }
   }, [initializeElements, initialElements, isInitialized]);
 
+  // When external elements change, update our state and clear history
+  useEffect(() => {
+    if (isInitialized && initialElements && !isInternalUpdateRef.current) {
+      const elementsString = JSON.stringify(initialElements);
+      const currentElementsString = JSON.stringify(elements);
+      
+      if (elementsString !== currentElementsString) {
+        console.log("useCanvasElements - External elements changed, updating history state");
+        setElements(initialElements);
+        clearHistory();
+      }
+    }
+  }, [initialElements, elements, isInitialized, setElements, clearHistory]);
+
   // Process element updates immediately
   useEffect(() => {
     if (!elementUpdates || !selectedElementId) return;
@@ -100,7 +116,9 @@ export const useCanvasElements = (
         updatedElements.map(el => ({id: el.id, type: el.type})));
       
       // Update the state with the new elements
+      isInternalUpdateRef.current = true;
       setElements(updatedElements);
+      isInternalUpdateRef.current = false;
       
       // Notify about the change
       if (onElementsChangeRef.current) {
@@ -115,8 +133,10 @@ export const useCanvasElements = (
 
   // Funções para desfazer e refazer com feedback
   const handleUndo = useCallback(() => {
+    console.log("useCanvasElements - Attempting undo operation");
     const updatedElements = undo();
     if (updatedElements) {
+      console.log("useCanvasElements - Undo successful, new elements:", updatedElements.length);
       toast({
         title: "Ação desfeita",
         description: "A última alteração foi desfeita com sucesso."
@@ -124,17 +144,21 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notifying elements change after undo");
         // Passar os elementos atualizados retornados pela função undo
         onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
+    console.log("useCanvasElements - Undo failed, no more actions to undo");
     return false;
   }, [undo, toast]);
 
   const handleRedo = useCallback(() => {
+    console.log("useCanvasElements - Attempting redo operation");
     const updatedElements = redo();
     if (updatedElements) {
+      console.log("useCanvasElements - Redo successful, new elements:", updatedElements.length);
       toast({
         title: "Ação refeita",
         description: "A alteração foi refeita com sucesso."
@@ -142,11 +166,13 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notifying elements change after redo");
         // Passar os elementos atualizados retornados pela função redo
         onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
+    console.log("useCanvasElements - Redo failed, no more actions to redo");
     return false;
   }, [redo, toast]);
 
@@ -162,6 +188,11 @@ export const useCanvasElements = (
     setElements, 
     onElementsChange
   );
+
+  // Debug helper to log history state
+  useEffect(() => {
+    console.log(`useCanvasElements - History state updated. canUndo: ${canUndo}, canRedo: ${canRedo}`);
+  }, [canUndo, canRedo]);
 
   return {
     elements,

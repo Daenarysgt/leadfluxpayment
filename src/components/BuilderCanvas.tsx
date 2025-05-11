@@ -81,32 +81,37 @@ const BuilderCanvas = ({
   useKeyboardShortcuts({
     onUndo: () => {
       if (canUndo) {
+        console.log("BuilderCanvas - Keyboard shortcut triggered: Undo");
         const success = undo();
         if (success && onElementsChange) {
-          // Garantir que os elementos atualizados são sincronizados
+          // Forçar re-renderização após desfazer
           setTimeout(() => {
-            onElementsChange(elements);
-            // Forçar re-renderização após desfazer
             setRenderKey(prev => prev + 1);
+            console.log("BuilderCanvas - Forced re-render after undo");
           }, 50);
         }
+      } else {
+        console.log("BuilderCanvas - Undo not available");
       }
     },
     onRedo: () => {
       if (canRedo) {
+        console.log("BuilderCanvas - Keyboard shortcut triggered: Redo");
         const success = redo();
         if (success && onElementsChange) {
-          // Garantir que os elementos atualizados são sincronizados
+          // Forçar re-renderização após refazer
           setTimeout(() => {
-            onElementsChange(elements);
-            // Forçar re-renderização após refazer
             setRenderKey(prev => prev + 1);
+            console.log("BuilderCanvas - Forced re-render after redo");
           }, 50);
         }
+      } else {
+        console.log("BuilderCanvas - Redo not available");
       }
     },
     onDelete: () => {
       if (selectedElementId) {
+        console.log(`BuilderCanvas - Keyboard shortcut triggered: Delete element ${selectedElementId}`);
         removeElement(selectedElementId);
         if (onElementSelect) {
           onElementSelect(null);
