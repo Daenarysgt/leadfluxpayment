@@ -23,6 +23,8 @@ export default function Hero() {
         background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb);
         background-size: 200% 200%;
         animation: gradient 5s ease infinite;
+        position: relative;
+        z-index: 10;
       }
     `;
     document.head.appendChild(style);
@@ -35,17 +37,17 @@ export default function Hero() {
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background elements */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 z-0"></div>
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 z-0"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header content - Centered */}
-        <div className="text-center max-w-4xl mx-auto">
+        <div className="text-center max-w-4xl mx-auto relative z-20">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-            <span className="block text-transparent bg-clip-text animated-gradient">
+            <span className="inline-block text-transparent bg-clip-text animated-gradient py-2">
               Seduza. Converta. Venda.
             </span>
-            <span className="block mt-2 text-gray-900">
+            <span className="block mt-4 text-gray-900">
               A plataforma que transforma suas ideias em funis magnéticos
             </span>
           </h1>
