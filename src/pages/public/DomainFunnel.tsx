@@ -69,24 +69,43 @@ const FunnelContent = ({
     ? "w-full mobile-full-width flex flex-col h-full" 
     : "w-full max-w-2xl mx-auto flex flex-col h-full relative z-10";
     
-  // Estilos específicos para mobile
-  const containerStyle = isMobile ? {
-    width: '100%',
-    maxWidth: '100%',
-    padding: '0',
-    margin: '0',
-    overflow: 'auto',
-    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
-    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
-    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
-  } : {
-    // Em desktop, usamos o body como fundo, então aqui só precisamos de um contêiner transparente
-    backgroundColor: 'transparent',
-  };
+  // Força renderização em um contêiner controlado para desktop,
+  // independentemente do estado de autenticação do usuário
+  const shouldUseContainerStyle = !isMobile;
+    
+  // Estilos específicos para desktop e mobile
+  const containerStyle = shouldUseContainerStyle
+    ? {
+        // Estilo para desktop dentro de um contêiner controlado
+        backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+        backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+        backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                      funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+        backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll',
+        width: '100%',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column' as 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+      }
+    : {
+        // Em mobile, estilo padrão
+        width: '100%',
+        maxWidth: '100%',
+        padding: '0',
+        margin: '0',
+        overflow: 'auto',
+        backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+        backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+        backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                      funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+        backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+      };
   
   // Aplicar estilo de página completa para desktop quando o funil é carregado
   useEffect(() => {
