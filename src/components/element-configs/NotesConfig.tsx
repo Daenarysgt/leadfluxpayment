@@ -479,6 +479,19 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
     commitUpdate();
   };
 
+  // Remover destaque do texto selecionado
+  const removeHighlight = () => {
+    // Obter a seleção atual
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      // Remover a cor de fundo (definir como transparente)
+      document.execCommand('backColor', false, 'transparent');
+      
+      // Capturar o conteúdo após a formatação
+      commitUpdate();
+    }
+  };
+
   // Lidar com a alteração no tamanho da fonte
   const handleFontSizeChange = (value: number[]) => {
     const newSize = value[0];
@@ -698,6 +711,21 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
               </PopoverTrigger>
               <PopoverContent className="w-64">
                 <div className="grid grid-cols-5 gap-1">
+                  {/* Botão "sem cor" para remover o destaque */}
+                  <Button 
+                    variant="outline" 
+                    className="w-8 h-8 p-0 relative" 
+                    style={{
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc'
+                    }}
+                    onClick={removeHighlight}
+                    title="Remover destaque"
+                  >
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <line x1="10" y1="10" x2="90" y2="90" stroke="red" strokeWidth="10" />
+                    </svg>
+                  </Button>
                   {["#FFFF00", "#00FFFF", "#FF00FF", "#FFA500", "#A52A2A", "#FFC0CB", "#90EE90", "#ADD8E6", "#F5F5DC", "#E6E6FA"].map(color => (
                     <Button 
                       key={color}

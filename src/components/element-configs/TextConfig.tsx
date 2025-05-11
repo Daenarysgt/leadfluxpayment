@@ -329,6 +329,34 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     }, 50);
   };
 
+  // Função para remover destaque do texto selecionado
+  const removeHighlight = () => {
+    // Capturar o conteúdo atual antes de remover destaque
+    const content = captureEditorContent();
+    if (content) {
+      contentBufferRef.current = content;
+    }
+    
+    // Obter a seleção atual
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      try {
+        // Remover a cor de fundo (definir como transparente)
+        document.execCommand('backColor', false, 'transparent');
+      } catch (error) {
+        console.error('Error removing highlight:', error);
+      }
+    }
+    
+    // Focar o editor novamente
+    editorRef.current?.focus();
+    
+    // Enviar atualização após um breve atraso
+    setTimeout(() => {
+      handleEditorInput();
+    }, 50);
+  };
+
   // Manipulador para mudanças no tamanho da fonte
   const handleFontSizeChange = (value: number[]) => {
     // Atualizar o tamanho da fonte no estado local sem capturar o conteúdo atual
@@ -521,6 +549,18 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
                   </p>
                 </div>
                 <div className="grid grid-cols-10 gap-1">
+                  {/* Botão "sem cor" para remover o destaque */}
+                  <button
+                    type="button"
+                    onClick={removeHighlight}
+                    className="w-5 h-5 rounded hover:ring-2 hover:ring-offset-1 bg-white relative"
+                    title="Remover destaque"
+                    style={{ border: '1px solid #ccc' }}
+                  >
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <line x1="10" y1="10" x2="90" y2="90" stroke="red" strokeWidth="10" />
+                    </svg>
+                  </button>
                   {highlightOptions.map((color) => (
                     <button
                       key={color}
