@@ -83,6 +83,7 @@ const ElementsSidebar = () => {
     
     // Garantir que o tipo de componente seja definido corretamente
     e.dataTransfer.setData("componentType", componentId);
+    e.dataTransfer.setData("text/plain", componentName); // Para compatibilidade
     e.dataTransfer.effectAllowed = "copy";
     
     // Disparar um evento personalizado para informar o BuilderCanvas que estamos arrastando um componente da sidebar

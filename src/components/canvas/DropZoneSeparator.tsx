@@ -13,8 +13,11 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     e.preventDefault();
     e.stopPropagation();
     
+    console.log("DropZoneSeparator - DragEnter - tipos:", e.dataTransfer.types);
+    
     // Verificar se é um drag de elemento ou componente
     if (e.dataTransfer.types.includes("elementId") || e.dataTransfer.types.includes("componentType")) {
+      console.log("DropZoneSeparator - DragEnter - ativando hover");
       setIsHovered(true);
     }
   };
@@ -24,6 +27,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     e.stopPropagation();
     
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      console.log("DropZoneSeparator - DragLeave - desativando hover");
       setIsHovered(false);
     }
   };
@@ -34,6 +38,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     
     // Alterar o cursor para indicar que um drop é possível
     if (e.dataTransfer.types.includes("elementId") || e.dataTransfer.types.includes("componentType")) {
+      console.log("DropZoneSeparator - DragOver - definindo dropEffect");
       e.dataTransfer.dropEffect = "move";
     }
   };
@@ -41,6 +46,10 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log("DropZoneSeparator - Drop - tipos:", e.dataTransfer.types);
+    console.log("DropZoneSeparator - Drop - componentType:", e.dataTransfer.getData("componentType"));
+    
     setIsHovered(false);
     
     // Chamar a função de callback
@@ -51,7 +60,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
     <div
       className={cn(
         "w-full transition-all duration-200",
-        (isHovered || isActive) ? "h-12 opacity-100" : "h-0 opacity-0"
+        (isHovered || isActive) ? "h-16 opacity-100" : "h-0 opacity-0"
       )}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
@@ -59,7 +68,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
       onDrop={handleDrop}
       style={{
         position: "relative",
-        zIndex: isActive ? 20 : -1,
+        zIndex: isActive || isHovered ? 50 : -1,
         pointerEvents: (isActive || isHovered) ? "auto" : "none",
         overflow: "visible"
       }}
@@ -74,7 +83,7 @@ const DropZoneSeparator: React.FC<DropZoneSeparatorProps> = ({ isActive = false,
         style={{
           transform: "translateY(-50%)",
           top: "50%",
-          height: (isHovered || isActive) ? "12px" : "0px",
+          height: (isHovered || isActive) ? "16px" : "0px",
           opacity: (isHovered || isActive) ? 1 : 0
         }}
       >
