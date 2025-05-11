@@ -84,8 +84,6 @@ export const useBuilderCanvas = () => {
     const updatedElement = baseHandleElementUpdate(updates);
     
     if (updatedElement) {
-      console.log("BuilderCanvas - Element update triggered:", updatedElement.id);
-      
       setLocalCanvasElements(prevElements => {
         const elementIndex = prevElements.findIndex(el => el.id === updates.id);
         if (elementIndex === -1) {
@@ -98,14 +96,6 @@ export const useBuilderCanvas = () => {
           return newElements;
         }
       });
-      
-      // Garantir que a alteração seja propagada para o componente pai
-      setTimeout(() => {
-        const currentElements = localCanvasElements.map(el => 
-          el.id === updatedElement.id ? updatedElement : el
-        );
-        handleCanvasElementsChange(currentElements);
-      }, 0);
     }
     
     return updatedElement;
