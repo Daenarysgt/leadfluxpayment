@@ -11,8 +11,8 @@ export default function Hero() {
     { name: 'Integrações', icon: 'M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z', bgColor: 'bg-red-100' },
     { name: 'Templates', icon: 'M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z', bgColor: 'bg-indigo-100' },
     { name: 'Relatórios', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', bgColor: 'bg-cyan-100' },
-    { name: 'Configurações', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', bgColor: 'bg-orange-100' },
     { name: 'Equipe', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', bgColor: 'bg-pink-100' },
+    { name: 'Configurações', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', bgColor: 'bg-orange-100' },
   ];
 
   return (
@@ -59,42 +59,36 @@ export default function Hero() {
           </p>
         </div>
         
-        {/* Dashboard Image - Below text */}
-        <div className="mt-16 max-w-5xl mx-auto relative z-10">
-          <div className="relative">
-            {/* Card-like container for dashboard image */}
-            <div className="rounded-2xl shadow-2xl overflow-hidden bg-white p-3">
-              {/* Dashboard Image */}
-              <div className="rounded-xl overflow-hidden shadow-inner">
-                <img 
-                  src={DashboardImage}
-                  alt="LeadFlux Dashboard" 
-                  className="w-full h-auto"
-                />
-              </div>
+        {/* Main content container with positioning context */}
+        <div className="relative mt-16 max-w-5xl mx-auto">
+          {/* Dashboard Image */}
+          <div className="rounded-2xl shadow-2xl overflow-hidden bg-white p-3">
+            <div className="rounded-xl overflow-hidden shadow-inner">
+              <img 
+                src={DashboardImage}
+                alt="LeadFlux Dashboard" 
+                className="w-full h-auto"
+              />
             </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block"></div>
-            <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block"></div>
-            <div className="absolute top-1/3 -right-4 w-8 h-8 bg-yellow-100 rounded-full hidden lg:block"></div>
           </div>
-        </div>
-        
-        {/* Workspace Features Section (similar to ClickUp's) */}
-        <div className="relative mt-12 sm:mt-16 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-8 mx-auto max-w-4xl">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Configure seu Workspace</h2>
-              <p className="mt-2 text-gray-600">Comece com o que você precisa, personalize conforme necessário</p>
+          
+          {/* Decorative elements */}
+          <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block"></div>
+          <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block"></div>
+          
+          {/* Workspace Features Section - Positioned as floating card on the right */}
+          <div className="absolute top-1/2 -right-8 -translate-y-1/2 w-72 bg-white rounded-xl shadow-xl p-6 hidden lg:block">
+            <div className="text-center mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Configure seu Workspace</h2>
+              <p className="mt-1 text-sm text-gray-600">Comece com o que você precisa</p>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {workspaceFeatures.map((feature, index) => (
+            <div className="grid grid-cols-3 gap-4">
+              {workspaceFeatures.slice(0, 9).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className={`${feature.bgColor} p-4 rounded-xl mb-3 flex items-center justify-center`}>
+                  <div className={`${feature.bgColor} p-2.5 rounded-lg mb-2 flex items-center justify-center`}>
                     <svg
-                      className="w-7 h-7 text-gray-700"
+                      className="w-5 h-5 text-gray-700"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -107,15 +101,55 @@ export default function Hero() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">{feature.name}</span>
+                  <span className="text-xs font-medium text-gray-700">{feature.name}</span>
                 </div>
               ))}
             </div>
             
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <a 
                 href="#pricing" 
-                className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium hover:shadow-lg transition-all duration-200"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
+              >
+                Começar agora
+              </a>
+            </div>
+          </div>
+          
+          {/* Mobile version of Workspace Features - Only visible on small screens */}
+          <div className="mt-12 bg-white rounded-xl shadow-lg p-6 lg:hidden">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Configure seu Workspace</h2>
+              <p className="mt-1 text-sm text-gray-600">Comece com o que você precisa</p>
+            </div>
+            
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+              {workspaceFeatures.slice(0, 8).map((feature, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className={`${feature.bgColor} p-3 rounded-lg mb-2 flex items-center justify-center`}>
+                    <svg
+                      className="w-6 h-6 text-gray-700"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d={feature.icon}
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">{feature.name}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 text-center">
+              <a 
+                href="#pricing" 
+                className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
               >
                 Começar agora
               </a>
@@ -124,7 +158,7 @@ export default function Hero() {
         </div>
         
         {/* Trust indicators */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-y-6 gap-x-12">
+        <div className="mt-16 flex flex-wrap items-center justify-center gap-y-6 gap-x-12">
           <div className="flex items-center">
             <div className="flex -space-x-2">
               {[1, 2, 3, 4].map((i) => (
