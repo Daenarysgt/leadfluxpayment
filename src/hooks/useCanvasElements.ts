@@ -4,6 +4,8 @@ import { getExampleElements } from "@/utils/canvasElementDefaults";
 import { useCanvasElementOperations } from "@/utils/canvasElementOperations";
 import { useCanvasElementMovement } from "@/utils/canvasElementMovement";
 import { updateCanvasElement } from "@/utils/canvasElementUpdates";
+import { useHistoryState } from "./useHistoryState";
+import { useToast } from "./use-toast";
 
 export const useCanvasElements = (
   initialElements?: CanvasElement[],
@@ -11,11 +13,21 @@ export const useCanvasElements = (
   elementUpdates?: CanvasElement,
   selectedElementId?: string | null
 ) => {
-  const [elements, setElements] = useState<CanvasElement[]>([]);
+  const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
   const initialElementsRef = useRef(initialElements);
   const onElementsChangeRef = useRef(onElementsChange);
   const previousUpdateRef = useRef<{id: string | null, content: any | null}>({id: null, content: null});
+  
+  // Usar o history state em vez do useState básico
+  const {
+    state: elements,
+    setState: setElements,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useHistoryState<CanvasElement[]>([]);
   
   // Keep the onElementsChange reference up to date
   useEffect(() => {
@@ -47,7 +59,7 @@ export const useCanvasElements = (
         onElementsChangeRef.current(exampleElements);
       }
     }
-  }, [initialElements, isInitialized]);
+  }, [initialElements, isInitialized, setElements]);
 
   // Run initialization once on mount or when initial elements change
   useEffect(() => {
@@ -99,8 +111,44 @@ export const useCanvasElements = (
     } else {
       console.log("useCanvasElements - No changes detected for element with ID:", selectedElementId);
     }
-  }, [elementUpdates, selectedElementId, elements]);
+  }, [elementUpdates, selectedElementId, elements, setElements]);
 
+  // Funções para desfazer e refazer com feedback
+  const handleUndo = useCallback(() => {
+    const result = undo();
+    if (result) {
+      toast({
+        title: "Ação desfeita",
+        description: "A última alteração foi desfeita com sucesso."
+      });
+      
+      // Notificar sobre a mudança
+      if (onElementsChangeRef.current) {
+        onElementsChangeRef.current(elements);
+      }
+      return true;
+    }
+    return false;
+  }, [undo, toast, elements]);
+
+  const handleRedo = useCallback(() => {
+    const result = redo();
+    if (result) {
+      toast({
+        title: "Ação refeita",
+        description: "A alteração foi refeita com sucesso."
+      });
+      
+      // Notificar sobre a mudança
+      if (onElementsChangeRef.current) {
+        onElementsChangeRef.current(elements);
+      }
+      return true;
+    }
+    return false;
+  }, [redo, toast, elements]);
+
+  // Criar instâncias atualizadas das operações para usar o setElements do histórico
   const { addElement, removeElement, duplicateElement } = useCanvasElementOperations(
     elements, 
     setElements, 
@@ -120,6 +168,10 @@ export const useCanvasElements = (
     duplicateElement,
     moveElementUp,
     moveElementDown,
-    reorderElements
+    reorderElements,
+    undo: handleUndo,
+    redo: handleRedo,
+    canUndo,
+    canRedo
   };
 };
