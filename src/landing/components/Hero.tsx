@@ -51,9 +51,17 @@ export default function Hero() {
           {/* Efeito de brilho/resplandor abaixo/rodapé da imagem */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-blue-100/30 to-transparent rounded-b-xl z-0"></div>
           
-          {/* Dashboard Image */}
-          <div className="relative z-10 rounded-2xl shadow-xl overflow-hidden bg-white p-3 transform scale-95 origin-center">
-            <div className="rounded-xl overflow-hidden shadow-inner">
+          {/* Container com efeito glassmorphism */}
+          <div className="relative z-10 p-6 sm:p-8 rounded-[20px] overflow-hidden" 
+               style={{
+                 background: 'rgba(255, 255, 255, 0.05)',
+                 backdropFilter: 'blur(20px)',
+                 WebkitBackdropFilter: 'blur(20px)',
+                 border: '1px solid rgba(255, 255, 255, 0.1)',
+                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+               }}>
+            {/* Dashboard Image */}
+            <div className="rounded-xl overflow-hidden bg-white shadow-lg">
               <img 
                 src={DashboardImage}
                 alt="LeadFlux Dashboard" 
