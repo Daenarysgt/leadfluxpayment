@@ -12,6 +12,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { Undo2, Redo2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import DropZoneSeparator from "@/components/canvas/DropZoneSeparator";
+import React from "react";
 
 const BuilderCanvas = ({ 
   isMobile, 
@@ -28,6 +30,7 @@ const BuilderCanvas = ({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
+  const [isDraggingAny, setIsDraggingAny] = useState(false);
   
   // Usar o hook de redimensionamento do canvas para evitar a borda branca
   const { fixCanvasWhiteSpace } = useCanvasResize();
@@ -186,6 +189,7 @@ const BuilderCanvas = ({
   const handleDragStart = useCallback((id: string) => {
     console.log("BuilderCanvas - Started dragging element with ID:", id);
     setDraggedElementId(id);
+    setIsDraggingAny(true);
   }, []);
   
   const handleDragEnter = useCallback((e: React.DragEvent, id: string) => {
@@ -219,6 +223,7 @@ const BuilderCanvas = ({
     // Limpar os estados
     setDraggedElementId(null);
     setDropTargetId(null);
+    setIsDraggingAny(false);
     
     // Usar um setTimeout para garantir que a UI atualize após o drag acabar
     setTimeout(() => {
@@ -409,6 +414,24 @@ const BuilderCanvas = ({
     return null;
   };
   
+  // Adicionar um listener global para dragEnd
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setIsDraggingAny(false);
+      setDraggedElementId(null);
+      setDropTargetId(null);
+      setIsExternalDragOver(false);
+    };
+    
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    document.addEventListener('drop', handleGlobalDragEnd);
+    
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+      document.removeEventListener('drop', handleGlobalDragEnd);
+    };
+  }, []);
+  
   return (
     <CanvasDropZone 
       onDrop={handleDrop}
@@ -476,44 +499,101 @@ const BuilderCanvas = ({
           marginRight: '-16px',
           marginBottom: '0'
         }}>
+          {/* Zona de drop para o topo da lista (antes do primeiro elemento) */}
+          <DropZoneSeparator 
+            isActive={isDraggingAny}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              const draggedElementId = e.dataTransfer.getData('elementId');
+              if (draggedElementId && elements.length > 0) {
+                const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
+                // Inserir no início
+                if (sourceIndex !== -1 && sourceIndex !== 0) {
+                  reorderElements(sourceIndex, 0);
+                  toast({
+                    title: "Elemento reordenado",
+                    description: "O elemento foi movido para o início."
+                  });
+                }
+                
+                // Limpar estados
+                setDraggedElementId(null);
+                setDropTargetId(null);
+              }
+            }}
+          />
+          
           {displayElements.map((element, index) => {
             // Create a unique key that forces re-render when elements or selections change
             const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
             
             return (
-              <div 
-                key={key} 
-                className={cn(
-                  "relative transition-all",
-                  dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+              <React.Fragment key={key}>
+                <div 
+                  className={cn(
+                    "relative transition-all",
+                    dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+                  )}
+                  onDragEnter={(e) => handleDragEnter(e, element.id)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={handleElementDrop}
+                  style={{ 
+                    marginBottom: '0px',
+                    paddingLeft: '16px',
+                    paddingRight: '16px'
+                  }}
+                >
+                  <CanvasElementRenderer
+                    element={element}
+                    isSelected={element.id === selectedElementId}
+                    onSelect={handleElementSelect}
+                    onRemove={handleElementRemove}
+                    onDuplicate={handleElementDuplicate}
+                    onMoveUp={handleElementMoveUp}
+                    onMoveDown={handleElementMoveDown}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    isDragging={element.id === draggedElementId}
+                    index={index}
+                    totalElements={elements.length}
+                  />
+                </div>
+                
+                {/* Zona de drop após o elemento atual */}
+                {index < displayElements.length - 1 && (
+                  <DropZoneSeparator 
+                    isActive={isDraggingAny}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      const draggedElementId = e.dataTransfer.getData('elementId');
+                      if (draggedElementId) {
+                        const sourceIndex = elements.findIndex(el => el.id === draggedElementId);
+                        // Inserir após o elemento atual (que é index)
+                        const targetIndex = index + 1;
+                        
+                        if (sourceIndex !== -1 && sourceIndex !== targetIndex && sourceIndex !== targetIndex - 1) {
+                          reorderElements(sourceIndex, targetIndex);
+                          toast({
+                            title: "Elemento reordenado",
+                            description: "O elemento foi movido para a nova posição."
+                          });
+                        }
+                        
+                        // Limpar estados
+                        setDraggedElementId(null);
+                        setDropTargetId(null);
+                      }
+                    }}
+                  />
                 )}
-                onDragEnter={(e) => handleDragEnter(e, element.id)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={handleElementDrop}
-                style={{ 
-                  marginBottom: '0px',
-                  paddingLeft: '16px',
-                  paddingRight: '16px'
-                }}
-              >
-                <CanvasElementRenderer
-                  element={element}
-                  isSelected={element.id === selectedElementId}
-                  onSelect={handleElementSelect}
-                  onRemove={handleElementRemove}
-                  onDuplicate={handleElementDuplicate}
-                  onMoveUp={handleElementMoveUp}
-                  onMoveDown={handleElementMoveDown}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  isDragging={element.id === draggedElementId}
-                  index={index}
-                  totalElements={elements.length}
-                />
-              </div>
+              </React.Fragment>
             );
           })}
         </div>

@@ -192,6 +192,7 @@ const BaseElementRenderer = ({
     }, 50);
   };
 
+  // Essa função não é mais necessária com o novo sistema
   const handleDragOver = (e: React.DragEvent) => {
     // Não permitir soltar sobre si mesmo ou se este elemento estiver sendo arrastado
     if (isDragging) return;
@@ -199,39 +200,20 @@ const BaseElementRenderer = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Verificar se estamos arrastando um elemento
-    const isElementDrag = e.dataTransfer.types.includes('elementId');
-    
-    if (isElementDrag) {
-      try {
-        // Tentar ler o elementId (pode falhar durante o dragOver)
-        // Isso ocorre porque o dataTransfer só pode ser lido durante o evento drop
-        const draggedId = e.dataTransfer.getData('elementId');
-        
-        // Não aceitar soltar sobre si mesmo
-        if (draggedId && draggedId !== element.id) {
-          setDropTarget(true);
-          e.dataTransfer.dropEffect = "move";
-        }
-      } catch (error) {
-        // Apenas definir o estado visual
-        setDropTarget(true);
-        e.dataTransfer.dropEffect = "move";
-      }
-    }
+    // Para garantir consistência com o novo sistema, apenas configurar o efeito visual
+    e.dataTransfer.dropEffect = "move";
   };
   
+  // Essa função não é mais necessária com o novo sistema
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Verificar se realmente saímos deste elemento e não entramos em um filho dele
-    if (!elementRef.current?.contains(e.relatedTarget as Node)) {
-      setDropTarget(false);
-    }
+    // Limpar estado visual
+    setDropTarget(false);
   };
 
-  // Esta é a função crítica que vai lidar com o drop
+  // Esta função será simplificada, já que a reordenação principal será feita pelas zonas de drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -260,12 +242,6 @@ const BaseElementRenderer = ({
         });
         
         elementRef.current.dispatchEvent(dropEvent);
-        
-        // Garantir que qualquer alteração de estado seja limpa após o drop
-        setTimeout(() => {
-          setDropTarget(false);
-          setDragActive(false);
-        }, 50);
       }
     }
   };
@@ -278,34 +254,30 @@ const BaseElementRenderer = ({
       <ContextMenuTrigger>
         <div
           ref={elementRef}
-          className={baseElementClasses}
-          onClick={handleClick}
-          onMouseEnter={() => {
-            if (!isPreviewMode) {
-              setIsHovering(true);
-              setShowFloatingButtons(true);
-            }
+          className={cn(
+            "group relative element-wrapper",
+            isSelected ? "ring-4 ring-violet-400 ring-offset-0" : "hover:ring-2 hover:ring-violet-200/60",
+            dragActive ? "cursor-grabbing opacity-50 scale-[0.98] transition-transform" : "cursor-grab",
+            isHovering ? "bg-gray-50/50" : "bg-transparent",
+            dropTarget ? "ring-4 ring-violet-300 ring-offset-0" : "",
+            "rounded-md transition-all"
+          )}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(element.id);
           }}
-          onMouseLeave={() => {
-            if (!isPreviewMode) {
-              setIsHovering(false);
-            }
-          }}
-          onDragStart={!isPreviewMode ? handleDragStart : undefined}
-          onDragEnd={!isPreviewMode ? handleDragEnd : undefined}
-          onDragOver={!isPreviewMode && !isDragging ? handleDragOver : undefined}
-          onDragLeave={!isPreviewMode && !isDragging ? handleDragLeave : undefined}
-          onDrop={!isPreviewMode && !isDragging ? handleDrop : undefined}
           draggable={!isPreviewMode}
-          data-element-id={element.id}
-          data-element-index={index}
-          data-element-type={element.type}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           style={{
-            // Aplicar estilos consistentes com CanvasPreview
-            marginBottom: '0px', // Remover margem para igualar ao preview
-            transition: 'all 0.2s ease',
-            // Converter para um estilo mais próximo da pré-visualização quando editando
-            ...(element.content?.marginTop && { marginTop: `${element.content.marginTop}px` })
+            transform: dragActive ? 'scale(0.98)' : 'scale(1)',
+            boxShadow: dragActive ? '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' : 'none',
+            transition: 'transform 0.2s, box-shadow 0.2s, opacity 0.2s'
           }}
         >
           {/* Conteúdo real do elemento */}
