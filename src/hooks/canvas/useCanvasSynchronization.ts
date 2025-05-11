@@ -30,14 +30,15 @@ export const useCanvasSynchronization = (
     
     setLocalCanvasElements(prevElements => {
       if (JSON.stringify(prevElements) !== JSON.stringify(elements)) {
-        // Determinar se esta é uma operação de desfazer/refazer/excluir
+        // Determinar se esta é uma operação de desfazer/refazer/excluir ou uma alteração de configuração
         const isUndoOrDeleteOperation = prevElements.length > elements.length || 
           (prevElements.length === elements.length && 
            JSON.stringify(prevElements) !== JSON.stringify(elements));
         
-        // Se for uma operação de desfazer, salvar imediatamente
-        if (isUndoOrDeleteOperation && currentStepIdRef.current) {
-          console.log(`Builder - Detectada operação de desfazer/excluir, salvando imediatamente`);
+        // Salvar imediatamente todas as alterações, não apenas operações de desfazer/refazer
+        if (currentStepIdRef.current) {
+          const operationType = isUndoOrDeleteOperation ? "desfazer/excluir" : "configuração";
+          console.log(`Builder - Detectada operação de ${operationType}, salvando imediatamente`);
           
           // Agendar o salvamento imediato (no próximo ciclo do event loop)
           setTimeout(() => {
@@ -49,7 +50,7 @@ export const useCanvasSynchronization = (
               elements: elementsCopy
             };
             
-            console.log(`Builder - Elementos salvos após operação de desfazer/excluir`);
+            console.log(`Builder - Elementos salvos após operação de ${operationType}`);
           }, 0);
         }
         

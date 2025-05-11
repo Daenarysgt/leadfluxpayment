@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useRef, useEffect } from "react";
 import { CanvasElement } from "@/types/canvasTypes";
 
@@ -159,6 +158,9 @@ export const useElementConfig = (
       
       // Send the update up to the parent component
       onUpdate(fullUpdate);
+      
+      // Garantir que o evento de atualização seja persistido
+      console.log("ElementConfigSidebar - Enviando atualização completa para o sistema");
     } finally {
       processingUpdateRef.current = false;
       
@@ -180,6 +182,14 @@ export const useElementConfig = (
     
     // Process the update (will take only the last one if multiple are queued)
     processUpdates();
+    
+    // Forçar uma atualização adicional após um breve delay
+    setTimeout(() => {
+      if (updateQueueRef.current.length === 0 && selectedElementCopy) {
+        console.log("ElementConfigSidebar - Forçando processamento de atualizações pendentes");
+        processUpdates();
+      }
+    }, 100);
   }, [selectedElementCopy, processUpdates]);
 
   return {
