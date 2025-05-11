@@ -560,15 +560,29 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
                 commitUpdate({ immediate: true });
               }
             }}
+            onKeyDown={(e) => {
+              // Permitir que o comportamento padrão de Ctrl+Z e Ctrl+Y funcione dentro do editor
+              // Não fazemos nada aqui, apenas garantimos que o evento não é propagado para o document
+              if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z' || e.key === 'y' || e.key === 'Y')) {
+                // Não fazer nada, deixar o navegador lidar com isso
+                // Stopamos a propagação para que o listener global não intercepte
+                e.stopPropagation();
+              }
+            }}
             style={{ 
               fontSize: `${fontSize}px`, 
               color: fontColor, 
               backgroundColor: 'transparent',
               lineHeight: String(lineHeight),
-              letterSpacing: `${letterSpacing}px`
+              letterSpacing: `${letterSpacing}px`,
+              fontFamily
             }}
             data-transparent-text="true"
+            role="textbox"
           />
+          <div className="text-xs text-gray-500 mt-1">
+            Use <kbd className="px-1 py-0.5 bg-gray-200 rounded text-xs">Ctrl+Z</kbd> para desfazer alterações dentro do editor
+          </div>
         </TabsContent>
         
         <TabsContent value="style" className="space-y-6 pt-4">

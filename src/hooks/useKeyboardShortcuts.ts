@@ -33,12 +33,25 @@ export const useKeyboardShortcuts = ({
     (event: KeyboardEvent) => {
       if (disabled) return;
 
+      // Verificar se o foco está em um campo de edição de texto
+      const isEditingText = 
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.hasAttribute('contenteditable') ||
+        // Verificar também elementos com role="textbox" que podem ser editores rich text
+        document.activeElement?.getAttribute('role') === 'textbox';
+
       // Atalho para Desfazer (Ctrl+Z ou Command+Z)
       if (
         (event.key === 'z' || event.key === 'Z') &&
         ((isMac && event.metaKey) || (!isMac && event.ctrlKey)) &&
         !event.shiftKey
       ) {
+        // Não interceptar o evento se estiver editando texto
+        if (isEditingText) {
+          return; // Permite que o editor de texto manipule o evento
+        }
+        
         event.preventDefault();
         if (onUndo) onUndo();
         return;
@@ -53,6 +66,11 @@ export const useKeyboardShortcuts = ({
          ((isMac && event.metaKey) || (!isMac && event.ctrlKey)) && 
          event.shiftKey)
       ) {
+        // Não interceptar o evento se estiver editando texto
+        if (isEditingText) {
+          return; // Permite que o editor de texto manipule o evento
+        }
+        
         event.preventDefault();
         if (onRedo) onRedo();
         return;
@@ -61,12 +79,7 @@ export const useKeyboardShortcuts = ({
       // Atalho para excluir (Delete ou Backspace)
       if (event.key === 'Delete' || event.key === 'Backspace') {
         // Não prevenir o comportamento padrão aqui para permitir edição de texto
-        if (
-          document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA' &&
-          !document.activeElement?.hasAttribute('contenteditable') &&
-          onDelete
-        ) {
+        if (!isEditingText && onDelete) {
           onDelete();
           return;
         }
@@ -78,12 +91,7 @@ export const useKeyboardShortcuts = ({
         ((isMac && event.metaKey) || (!isMac && event.ctrlKey))
       ) {
         // Não prevenir se estiver em um campo de texto
-        if (
-          document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA' &&
-          !document.activeElement?.hasAttribute('contenteditable') &&
-          onCopy
-        ) {
+        if (!isEditingText && onCopy) {
           event.preventDefault();
           onCopy();
           return;
@@ -96,12 +104,7 @@ export const useKeyboardShortcuts = ({
         ((isMac && event.metaKey) || (!isMac && event.ctrlKey))
       ) {
         // Não prevenir se estiver em um campo de texto
-        if (
-          document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA' &&
-          !document.activeElement?.hasAttribute('contenteditable') &&
-          onPaste
-        ) {
+        if (!isEditingText && onPaste) {
           event.preventDefault();
           onPaste();
           return;
@@ -114,12 +117,7 @@ export const useKeyboardShortcuts = ({
         ((isMac && event.metaKey) || (!isMac && event.ctrlKey))
       ) {
         // Não prevenir se estiver em um campo de texto
-        if (
-          document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA' &&
-          !document.activeElement?.hasAttribute('contenteditable') &&
-          onCut
-        ) {
+        if (!isEditingText && onCut) {
           event.preventDefault();
           onCut();
           return;
