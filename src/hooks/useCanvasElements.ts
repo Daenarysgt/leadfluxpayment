@@ -19,10 +19,6 @@ export const useCanvasElements = (
   const onElementsChangeRef = useRef(onElementsChange);
   const previousUpdateRef = useRef<{id: string | null, content: any | null}>({id: null, content: null});
   
-  // Estados para controlar undo/redo de forma reativa
-  const [canUndoState, setCanUndoState] = useState(false);
-  const [canRedoState, setCanRedoState] = useState(false);
-  
   // Usar o history state em vez do useState básico
   const {
     state: elements,
@@ -34,13 +30,6 @@ export const useCanvasElements = (
     historyLength,
     currentPosition
   } = useHistoryState<CanvasElement[]>([]);
-  
-  // Atualizar os estados reativos de canUndo e canRedo
-  useEffect(() => {
-    setCanUndoState(canUndo);
-    setCanRedoState(canRedo);
-    console.log(`Builder - Estado de history atualizado: canUndo=${canUndo}, canRedo=${canRedo}, posição=${currentPosition}/${historyLength}`);
-  }, [canUndo, canRedo, currentPosition, historyLength, elements]);
   
   // Keep the onElementsChange reference up to date
   useEffect(() => {
@@ -128,31 +117,41 @@ export const useCanvasElements = (
 
   // Funções para desfazer e refazer com feedback
   const handleUndo = useCallback(() => {
-    const updatedElements = undo();
-    if (updatedElements) {
+    console.log("useCanvasElements - Tentando desfazer, canUndo =", canUndo);
+    
+    if (!canUndo) {
+      console.log("useCanvasElements - Não é possível desfazer, botão deveria estar desabilitado");
+      return false;
+    }
+    
+    const previousElements = undo();
+    if (previousElements) {
       toast({
         title: "Ação desfeita",
-        description: "A última alteração foi desfeita com sucesso."
+        description: "A alteração foi desfeita com sucesso."
       });
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        // Passar os elementos atualizados retornados pela função undo
-        onElementsChangeRef.current(updatedElements);
+        console.log("useCanvasElements - Notificando sobre elementos após desfazer:", 
+          previousElements.length, "elementos");
+        onElementsChangeRef.current(previousElements);
       }
-      
-      // Atualizar estados reativos imediatamente
-      setCanUndoState(currentPosition > 1);
-      setCanRedoState(true);
-      
       return true;
     }
     return false;
-  }, [undo, toast, currentPosition]);
+  }, [undo, toast, canUndo]);
 
   const handleRedo = useCallback(() => {
-    const updatedElements = redo();
-    if (updatedElements) {
+    console.log("useCanvasElements - Tentando refazer, canRedo =", canRedo);
+    
+    if (!canRedo) {
+      console.log("useCanvasElements - Não é possível refazer, botão deveria estar desabilitado");
+      return false;
+    }
+    
+    const nextElements = redo();
+    if (nextElements) {
       toast({
         title: "Ação refeita",
         description: "A alteração foi refeita com sucesso."
@@ -160,18 +159,14 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        // Passar os elementos atualizados retornados pela função redo
-        onElementsChangeRef.current(updatedElements);
+        console.log("useCanvasElements - Notificando sobre elementos após refazer:", 
+          nextElements.length, "elementos");
+        onElementsChangeRef.current(nextElements);
       }
-      
-      // Atualizar estados reativos imediatamente
-      setCanUndoState(true);
-      setCanRedoState(currentPosition < historyLength - 2);
-      
       return true;
     }
     return false;
-  }, [redo, toast, currentPosition, historyLength]);
+  }, [redo, toast, canRedo]);
 
   // Criar instâncias atualizadas das operações para usar o setElements do histórico
   const { addElement, removeElement, duplicateElement } = useCanvasElementOperations(
@@ -196,7 +191,7 @@ export const useCanvasElements = (
     reorderElements,
     undo: handleUndo,
     redo: handleRedo,
-    canUndo: canUndoState,
-    canRedo: canRedoState
+    canUndo,
+    canRedo
   };
 };

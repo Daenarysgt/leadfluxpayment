@@ -51,13 +51,10 @@ const Builder = () => {
   // Estado para armazenar a escala atual
   const [zoomScale] = useState(0.9); // 90% de zoom
 
-  // Força atualizações da UI após ações específicas
-  const [undoRedoCounter, setUndoRedoCounter] = useState(0);
-
   // Para depuração e verificar se os estados estão mudando corretamente
   useEffect(() => {
-    console.log(`Builder - Estado atual: canUndo=${canUndo}, canRedo=${canRedo}, counter=${undoRedoCounter}`);
-  }, [canUndo, canRedo, undoRedoCounter]);
+    console.log(`Builder - Estado atual: canUndo=${canUndo}, canRedo=${canRedo}`);
+  }, [canUndo, canRedo]);
 
   // Registrar hooks globais para permitir comunicação com outras partes da aplicação
   // Inicializado imediatamente para garantir que está disponível antes da duplicação
@@ -262,56 +259,14 @@ const Builder = () => {
 
   // Manipular as ações de desfazer e refazer como callbacks memoizados
   const handleUndo = useCallback(() => {
-    if (canUndo) {
-      console.log("Builder - Ação de desfazer iniciada");
-      const success = undo();
-      
-      if (success) {
-        console.log("Builder - Ação de desfazer bem-sucedida");
-        
-        // Força atualização da UI após operação
-        setTimeout(() => {
-          // Notificar sobre as mudanças
-          if (handleCanvasElementsChange) {
-            handleCanvasElementsChange(localCanvasElements);
-          }
-          
-          // Incrementar contador para forçar re-renderização
-          setUndoRedoCounter(prev => prev + 1);
-        }, 0);
-      } else {
-        console.log("Builder - Falhou ao desfazer");
-      }
-    } else {
-      console.log("Builder - Não é possível desfazer, nenhuma ação no histórico");
-    }
-  }, [canUndo, undo, handleCanvasElementsChange, localCanvasElements]);
+    console.log(`Builder - Chamando undo, canUndo=${canUndo}`);
+    undo();
+  }, [undo, canUndo]);
   
   const handleRedo = useCallback(() => {
-    if (canRedo) {
-      console.log("Builder - Ação de refazer iniciada");
-      const success = redo();
-      
-      if (success) {
-        console.log("Builder - Ação de refazer bem-sucedida");
-        
-        // Força atualização da UI após operação
-        setTimeout(() => {
-          // Notificar sobre as mudanças
-          if (handleCanvasElementsChange) {
-            handleCanvasElementsChange(localCanvasElements);
-          }
-          
-          // Incrementar contador para forçar re-renderização
-          setUndoRedoCounter(prev => prev + 1);
-        }, 0);
-      } else {
-        console.log("Builder - Falhou ao refazer");
-      }
-    } else {
-      console.log("Builder - Não é possível refazer, nenhuma ação no histórico futuro");
-    }
-  }, [canRedo, redo, handleCanvasElementsChange, localCanvasElements]);
+    console.log(`Builder - Chamando redo, canRedo=${canRedo}`);
+    redo();
+  }, [redo, canRedo]);
 
   if (!currentFunnel) {
     return <BuilderEmptyState />;
@@ -343,7 +298,7 @@ const Builder = () => {
         previewActive={previewActive}
         selectedElement={selectedElement}
         localCanvasElements={localCanvasElements}
-        canvasKey={canvasKey + undoRedoCounter} // Forçar re-renderização após undo/redo
+        canvasKey={canvasKey}
         currentStep={currentStep}
         onElementSelect={handleElementSelect}
         onElementUpdate={handleElementUpdate}

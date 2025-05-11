@@ -1,149 +1,117 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Hook personalizado para gerenciar o histórico de estados com funcionalidade de desfazer.
  * @param initialState O estado inicial
  * @param maxHistoryLength Número máximo de estados para manter no histórico (padrão: 50)
- * @returns Um objeto com o estado atual, uma função para atualizar o estado e uma função para desfazer
+ * @returns Um objeto com o estado atual, uma função para atualizar o estado e funções para desfazer/refazer
  */
 export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
-  // Estado atual
+  // Estados principais
+  const [history, setHistory] = useState<T[]>([initialState]);
+  const [position, setPosition] = useState(0);
   const [state, setState] = useState<T>(initialState);
-  const [canUndoState, setCanUndoState] = useState(false);
-  const [canRedoState, setCanRedoState] = useState(false);
   
-  // Histórico de estados
-  const historyRef = useRef<T[]>([initialState]);
+  // Estados derivados para controlar UI
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
-  // Posição atual no histórico
-  const positionRef = useRef<number>(0);
+  // Atualizar estados derivados quando o histórico muda
+  useEffect(() => {
+    setCanUndo(position > 0);
+    setCanRedo(position < history.length - 1);
+    
+    console.log(`useHistoryState - Atualizando estados: pos=${position}, len=${history.length}, canUndo=${position > 0}, canRedo=${position < history.length - 1}`);
+  }, [history, position]);
   
-  // Atualizar estados de canUndo e canRedo
-  const updateButtonStates = useCallback(() => {
-    setCanUndoState(positionRef.current > 0);
-    setCanRedoState(positionRef.current < historyRef.current.length - 1);
-    console.log(`useHistoryState - Atualizando estados: canUndo=${positionRef.current > 0}, canRedo=${positionRef.current < historyRef.current.length - 1}, pos=${positionRef.current}, len=${historyRef.current.length}`);
-  }, []);
-  
-  // Função para atualizar o estado e adicionar ao histórico
+  // Função para adicionar um novo estado ao histórico
   const updateState = useCallback((newState: T | ((prevState: T) => T)) => {
-    setState((prevState: T) => {
-      // Determinar o valor do novo estado
-      const nextState = typeof newState === 'function'
-        ? (newState as ((prevState: T) => T))(prevState)
-        : newState;
-      
-      // Se o novo estado for igual ao estado atual, não fazer nada
-      if (JSON.stringify(nextState) === JSON.stringify(prevState)) {
-        return prevState;
-      }
-      
-      // Atualizar a posição no histórico
-      const newPosition = positionRef.current + 1;
-      positionRef.current = newPosition;
-      
-      // Remover estados futuros se estiver desfazendo e depois adicionando um novo estado
-      if (newPosition < historyRef.current.length) {
-        historyRef.current = historyRef.current.slice(0, newPosition);
-      }
-      
-      // Adicionar o novo estado ao histórico
-      historyRef.current.push(nextState);
-      
-      // Limitar o tamanho do histórico
-      if (historyRef.current.length > maxHistoryLength) {
-        historyRef.current = historyRef.current.slice(historyRef.current.length - maxHistoryLength);
-        positionRef.current = maxHistoryLength - 1;
-      }
-      
-      // Atualizar estados dos botões
-      setTimeout(updateButtonStates, 0);
-      
-      return nextState;
-    });
-  }, [maxHistoryLength, updateButtonStates]);
+    // Obter o valor do novo estado
+    const nextState = typeof newState === 'function'
+      ? (newState as ((prevState: T) => T))(state)
+      : newState;
+    
+    // Se o novo estado for igual ao estado atual, não fazer nada
+    if (JSON.stringify(nextState) === JSON.stringify(state)) {
+      return;
+    }
+    
+    console.log(`useHistoryState - Atualizando estado: pos=${position}, len=${history.length}`);
+    
+    // Remover estados futuros se estiver desfazendo e depois adicionando um novo estado
+    const newHistory = history.slice(0, position + 1);
+    
+    // Adicionar o novo estado ao histórico
+    newHistory.push(nextState);
+    
+    // Limitar o tamanho do histórico
+    const limitedHistory = newHistory.length > maxHistoryLength
+      ? newHistory.slice(newHistory.length - maxHistoryLength)
+      : newHistory;
+    
+    // Ajustar a posição baseado no possível corte do histórico
+    const newPosition = limitedHistory.length - 1;
+    
+    // Atualizar todos os estados em uma única renderização
+    setHistory(limitedHistory);
+    setPosition(newPosition);
+    setState(nextState);
+    
+    console.log(`useHistoryState - Estado atualizado: nova pos=${newPosition}, novo len=${limitedHistory.length}`);
+  }, [history, position, state, maxHistoryLength]);
   
   // Função para desfazer a última alteração
   const undo = useCallback(() => {
-    console.log(`useHistoryState - História atual: pos=${positionRef.current}, len=${historyRef.current.length}`);
-    
-    if (positionRef.current <= 0) {
-      console.log('Não há mais alterações para desfazer');
+    if (position <= 0) {
+      console.log(`useHistoryState - Não é possível desfazer: pos=${position}`);
       return false;
     }
     
-    // Decrementar a posição no histórico
-    positionRef.current--;
+    const newPosition = position - 1;
+    const previousState = history[newPosition];
     
-    // Obter o estado anterior
-    const previousState = historyRef.current[positionRef.current];
+    console.log(`useHistoryState - Desfazendo: pos=${position} -> ${newPosition}`);
     
-    // Atualizar os estados de controle imediatamente para evitar race conditions
-    const canUndoNow = positionRef.current > 0;
-    const canRedoNow = positionRef.current < historyRef.current.length - 1;
-    setCanUndoState(canUndoNow);
-    setCanRedoState(canRedoNow);
-    
-    console.log(`useHistoryState - Após desfazer: pos=${positionRef.current}, canUndo=${canUndoNow}, canRedo=${canRedoNow}`);
-    
-    // Atualizar o estado sem modificar o histórico
+    setPosition(newPosition);
     setState(previousState);
     
     return previousState;
-  }, []);
+  }, [history, position]);
   
   // Função para refazer uma alteração desfeita
   const redo = useCallback(() => {
-    console.log(`useHistoryState - História atual: pos=${positionRef.current}, len=${historyRef.current.length}`);
-    
-    if (positionRef.current >= historyRef.current.length - 1) {
-      console.log('Não há mais alterações para refazer');
+    if (position >= history.length - 1) {
+      console.log(`useHistoryState - Não é possível refazer: pos=${position}, len=${history.length}`);
       return false;
     }
     
-    // Incrementar a posição no histórico
-    positionRef.current++;
+    const newPosition = position + 1;
+    const nextState = history[newPosition];
     
-    // Obter o próximo estado
-    const nextState = historyRef.current[positionRef.current];
+    console.log(`useHistoryState - Refazendo: pos=${position} -> ${newPosition}`);
     
-    // Atualizar os estados de controle imediatamente para evitar race conditions
-    const canUndoNow = positionRef.current > 0;
-    const canRedoNow = positionRef.current < historyRef.current.length - 1;
-    setCanUndoState(canUndoNow);
-    setCanRedoState(canRedoNow);
-    
-    console.log(`useHistoryState - Após refazer: pos=${positionRef.current}, canUndo=${canUndoNow}, canRedo=${canRedoNow}`);
-    
-    // Atualizar o estado sem modificar o histórico
+    setPosition(newPosition);
     setState(nextState);
     
     return nextState;
-  }, []);
+  }, [history, position]);
   
   // Função para limpar o histórico
   const clearHistory = useCallback(() => {
-    historyRef.current = [state];
-    positionRef.current = 0;
-    
-    // Atualizar estados dos botões
-    setTimeout(updateButtonStates, 0);
-  }, [state, updateButtonStates]);
+    setHistory([state]);
+    setPosition(0);
+  }, [state]);
   
-  // Atualizar os estados na montagem e sempre que o histórico mudar
-  useEffect(() => {
-    updateButtonStates();
-  }, [updateButtonStates, state]);
-  
+  // Retornar APIs públicas
   return {
     state,
     setState: updateState,
     undo,
     redo,
     clearHistory,
-    canUndo: canUndoState,
-    canRedo: canRedoState,
-    historyLength: historyRef.current.length,
-    currentPosition: positionRef.current
+    canUndo,
+    canRedo,
+    historyLength: history.length,
+    currentPosition: position
   };
 } 

@@ -3,7 +3,7 @@ import { CanvasElement } from "@/types/canvasTypes";
 import { useCanvasElementSelection } from "./canvas/useCanvasElementSelection";
 import { useCanvasSynchronization } from "./canvas/useCanvasSynchronization";
 import { useCanvasElements } from "./useCanvasElements";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback } from "react";
 
 export const useBuilderCanvas = () => {
   const { 
@@ -12,10 +12,6 @@ export const useBuilderCanvas = () => {
     setCanvasElements: storeSetCanvasElements,
     getCanvasElements: storeGetCanvasElements
   } = useStore();
-  
-  // Estados locais para controlar undo/redo
-  const [canUndoState, setCanUndoState] = useState(false);
-  const [canRedoState, setCanRedoState] = useState(false);
   
   // Use the selection hook
   const {
@@ -54,53 +50,52 @@ export const useBuilderCanvas = () => {
     reorderElements,
     undo: handleUndoAction,
     redo: handleRedoAction,
-    canUndo: canUndoFromElements,
-    canRedo: canRedoFromElements
+    canUndo,
+    canRedo
   } = useCanvasElements(
     localCanvasElements, 
     handleCanvasElementsChange, 
     selectedElement, 
     selectedElement?.id
   );
-  
-  // Atualizar os estados locais quando os estados do useCanvasElements mudarem
-  useEffect(() => {
-    setCanUndoState(canUndoFromElements);
-    setCanRedoState(canRedoFromElements);
-    console.log(`BuilderCanvas - Atualizando estados de undo/redo: canUndo=${canUndoFromElements}, canRedo=${canRedoFromElements}`);
-  }, [canUndoFromElements, canRedoFromElements, localCanvasElements]);
 
   // Função para executar o desfazer
   const undo = useCallback(() => {
+    console.log(`useBuilderCanvas - Ação de desfazer iniciada, canUndo=${canUndo}`);
+    
+    if (!canUndo) return false;
+    
     const success = handleUndoAction();
-    if (success && setSelectedElement) {
+    
+    if (success) {
       // Limpar a seleção após desfazer
       setSelectedElement(null);
-      
-      // Forçar atualização dos estados
-      setTimeout(() => {
-        setCanUndoState(canUndoFromElements);
-        setCanRedoState(true); // Se pudemos desfazer, podemos refazer
-      }, 0);
+      console.log(`useBuilderCanvas - Ação de desfazer concluída com sucesso`);
+    } else {
+      console.log(`useBuilderCanvas - Ação de desfazer falhou`);
     }
+    
     return success;
-  }, [handleUndoAction, setSelectedElement, canUndoFromElements]);
+  }, [handleUndoAction, setSelectedElement, canUndo]);
 
   // Função para executar o refazer
   const redo = useCallback(() => {
+    console.log(`useBuilderCanvas - Ação de refazer iniciada, canRedo=${canRedo}`);
+    
+    if (!canRedo) return false;
+    
     const success = handleRedoAction();
-    if (success && setSelectedElement) {
+    
+    if (success) {
       // Limpar a seleção após refazer
       setSelectedElement(null);
-      
-      // Forçar atualização dos estados
-      setTimeout(() => {
-        setCanUndoState(true); // Se pudemos refazer, podemos desfazer
-        setCanRedoState(canRedoFromElements);
-      }, 0);
+      console.log(`useBuilderCanvas - Ação de refazer concluída com sucesso`);
+    } else {
+      console.log(`useBuilderCanvas - Ação de refazer falhou`);
     }
+    
     return success;
-  }, [handleRedoAction, setSelectedElement, canRedoFromElements]);
+  }, [handleRedoAction, setSelectedElement, canRedo]);
 
   // Enhanced element update function that updates local elements and selected element
   const handleElementUpdate = (updates: CanvasElement) => {
@@ -119,12 +114,6 @@ export const useBuilderCanvas = () => {
           return newElements;
         }
       });
-      
-      // Atualizar estados de undo/redo após uma modificação
-      setTimeout(() => {
-        setCanUndoState(true); // Após uma atualização, sempre pode desfazer
-        setCanRedoState(false); // Após uma atualização, não pode refazer
-      }, 0);
     }
     
     return updatedElement;
@@ -145,7 +134,7 @@ export const useBuilderCanvas = () => {
     preventNextReload,
     undo,
     redo,
-    canUndo: canUndoState,
-    canRedo: canRedoState
+    canUndo,
+    canRedo
   };
 };
