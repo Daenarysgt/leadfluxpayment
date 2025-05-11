@@ -753,6 +753,21 @@ const NotesConfig = ({ element, onUpdate }: NotesConfigProps) => {
             contentEditable
             suppressContentEditableWarning
             onInput={handleEditorInput}
+            onPaste={(e) => {
+              // Prevenir o comportamento padrão de colagem
+              e.preventDefault();
+              
+              // Obter texto puro da área de transferência
+              const text = e.clipboardData.getData('text/plain');
+              
+              // Inserir como texto simples no ponto de inserção
+              document.execCommand('insertText', false, text);
+              
+              // Atualizar o estado depois da colagem
+              setTimeout(() => {
+                handleEditorInput();
+              }, 50);
+            }}
             style={{
               fontFamily,
               fontSize: `${fontSize}px`,

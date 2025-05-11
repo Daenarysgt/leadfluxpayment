@@ -593,6 +593,21 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             contentEditable
             className="min-h-[150px] border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-violet-400 transition-colors bg-transparent"
             onInput={handleEditorInput}
+            onPaste={(e) => {
+              // Prevenir o comportamento padrão de colagem
+              e.preventDefault();
+              
+              // Obter texto puro da área de transferência
+              const text = e.clipboardData.getData('text/plain');
+              
+              // Inserir como texto simples no ponto de inserção
+              document.execCommand('insertText', false, text);
+              
+              // Atualizar o estado depois da colagem
+              setTimeout(() => {
+                handleEditorInput();
+              }, 50);
+            }}
             onBlur={() => {
               const content = captureEditorContent();
               if (content && content !== currentContent) {
