@@ -10,9 +10,32 @@ import { useFormValidation } from "@/utils/FormValidationContext";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
-  // Create a deep clone of the element to ensure we're not working with references that might not update
-  const clonedElement = useMemo(() => JSON.parse(JSON.stringify(element)), [element]);
-  const { content, previewMode, previewProps } = clonedElement;
+  
+  // Verificação de segurança para garantir que element é válido
+  if (!element || !element.content) {
+    console.error("MultipleChoiceImageRenderer - Elemento ou conteúdo inválido:", element);
+    return (
+      <BaseElementRenderer {...props}>
+        <div className="p-4 bg-red-50 text-red-500 rounded-md">
+          Erro ao carregar elemento. Conteúdo inválido.
+        </div>
+      </BaseElementRenderer>
+    );
+  }
+  
+  // Clonar o elemento de forma segura
+  const clonedElement = useMemo(() => {
+    try {
+      return JSON.parse(JSON.stringify(element));
+    } catch (error) {
+      console.error("MultipleChoiceImageRenderer - Erro ao clonar elemento:", error);
+      return element; // Fallback para o elemento original em caso de erro
+    }
+  }, [element]);
+  
+  // Extrair conteúdo, modo de preview e props de preview de forma segura
+  const { content = {}, previewMode = false, previewProps = {} } = clonedElement;
+  
   const { setCurrentStep, currentFunnel } = useStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
@@ -25,6 +48,20 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   // Acessar o contexto de validação para navegação
   const { validateAndNavigate } = useFormValidation();
+  
+  // Obter estilos visuais do tema do funil ou valores padrão
+  const funnelSettings = (previewProps?.funnel?.settings) || {};
+  const headingSize = content?.style?.headingSize || 20;
+  const bodySize = content?.style?.bodySize || 16;
+  const fontFamily = content?.style?.fontFamily || funnelSettings.fontFamily || "Inter";
+  const lineHeight = content?.style?.lineHeight || 1.5;
+  const fontStyle = content?.style?.fontStyle || "normal";
+  const fontWeight = content?.style?.fontWeight || 400;
+  const textDecoration = content?.style?.textDecoration || "none";
+  const textTransform = content?.style?.textTransform || "none";
+  
+  // Arredondar bordas
+  const borderRadiusValue = content?.style?.borderRadius || 4;
   
   // Obter os valores do formulário na página
   useEffect(() => {
@@ -74,22 +111,6 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
       });
     };
   }, [previewMode, previewProps]);
-  
-  // Obter configurações visuais do tema do funil, se houver
-  const funnelSettings = previewProps?.funnel?.settings || {};
-  
-  // Estilo visual a partir das configurações
-  const headingSize = content?.style?.headingSize || 20;
-  const bodySize = content?.style?.bodySize || 16;
-  const fontFamily = content?.style?.fontFamily || funnelSettings.fontFamily || "Inter";
-  const lineHeight = content?.style?.lineHeight || 1.5;
-  const fontStyle = content?.style?.fontStyle || "normal";
-  const fontWeight = content?.style?.fontWeight || 400;
-  const textDecoration = content?.style?.textDecoration || "none";
-  const textTransform = content?.style?.textTransform || "none";
-  
-  // Arredondar bordas
-  const borderRadiusValue = content?.style?.borderRadius || 4;
   
   // Log element content to aid in debugging
   useEffect(() => {
@@ -225,9 +246,24 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
     }
   }, []);
   
+  // Garantir que content.options seja sempre um array
+  const safeOptions = useMemo(() => {
+    if (!content.options) return [];
+    if (!Array.isArray(content.options)) {
+      console.error("MultipleChoiceImageRenderer - content.options não é um array:", content.options);
+      return [];
+    }
+    return content.options;
+  }, [content.options]);
+  
   // Memoize the options rendering to improve performance
   const renderedOptions = useMemo(() => {
-    return content?.options ? content.options.map((option) => {
+    return safeOptions.map((option) => {
+      if (!option || typeof option !== 'object') {
+        console.error("MultipleChoiceImageRenderer - Opção inválida:", option);
+        return null;
+      }
+      
       const optionStyle = option.style || {};
       const backgroundColor = optionStyle.backgroundColor || funnelSettings.primaryColor || "#0F172A";
       const aspectRatio = optionStyle.aspectRatio || "1:1";
@@ -349,7 +385,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                 {option.image ? (
                   <img 
                     src={option.image} 
-                    alt={option.text} 
+                    alt={option.text || 'Opção de imagem'} 
                     className="h-full w-full object-cover" 
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
@@ -369,7 +405,7 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
                 {option.image ? (
                   <img 
                     src={option.image} 
-                    alt={option.text} 
+                    alt={option.text || 'Opção de imagem'} 
                     className="w-full object-contain" 
                     onError={(e) => {
                       console.error("MultipleChoiceImageRenderer - Erro ao carregar imagem:", e);
@@ -394,8 +430,8 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
           </div>
         </div>
       );
-    }) : null;
-  }, [content?.options, content?.showArrows, content?.optionStyle, content?.borderRadius, content?.showBorders, content?.borderColor, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, funnelSettings.primaryColor, isMobile]);
+    }).filter(Boolean);
+  }, [safeOptions, content, getAspectRatioValue, handleOptionClick, fontFamily, bodySize, fontStyle, fontWeight, textDecoration, textTransform, funnelSettings.primaryColor, isMobile]);
   
   // Calcular o estilo para margem superior
   const containerStyle = {
@@ -422,9 +458,15 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
             {content.title}
           </h2>
         )}
-        <div className={`grid grid-cols-2 gap-4`}>
-          {renderedOptions}
-        </div>
+        {renderedOptions && renderedOptions.length > 0 ? (
+          <div className={`grid grid-cols-2 gap-4`}>
+            {renderedOptions}
+          </div>
+        ) : (
+          <div className="p-4 bg-gray-50 text-gray-500 rounded-md text-center">
+            Sem opções de escolha configuradas
+          </div>
+        )}
       </div>
       
       {/* Adicionar estilos CSS para o efeito 3D e compatibilidade mobile */}
