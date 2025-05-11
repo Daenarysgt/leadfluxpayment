@@ -32,8 +32,8 @@ const NavigationButtons = ({
         </Button>
       )}
       <Button 
-        className={`ml-auto ${!primaryColor ? 'bg-primary text-primary-foreground' : ''}`}
-        style={primaryColor ? { backgroundColor: primaryColor } : {}}
+        className="ml-auto" 
+        style={{ backgroundColor: primaryColor }}
         onClick={() => {
           if (currentStep < totalSteps - 1) {
             // Ao avançar, validar os campos obrigatórios

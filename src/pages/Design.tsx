@@ -200,13 +200,14 @@ const Design = () => {
           returnedStepsCount: result.data.steps?.length || 0
         });
         
-        // Garantir que o resultado mantenha os steps originais
-        result.data.steps = [...(currentFunnel.steps || [])];
-        return result.data;
-      })
-      .then((updatedFunnel) => {
+        // Garantir que o estado final tenha os steps preservados
+        const finalFunnel = {
+          ...result.data,
+          steps: originalSteps || result.data.steps || []
+        };
+        
         // Atualizar o estado com o resultado mas preservando os steps
-        updateFunnel(updatedFunnel);
+        updateFunnel(finalFunnel);
         setSaving(false);
         
         toast({
@@ -268,11 +269,6 @@ const Design = () => {
     // Atualizar o estado local imediatamente para feedback rápido
     updateFunnel(updatedFunnel);
     
-    // Atualizar variável CSS global se for a cor primária
-    if (field === 'primaryColor' && typeof value === 'string') {
-      updateThemeColor(value);
-    }
-    
     // Mostrar indicador de loading
     setSaving(true);
     
@@ -282,7 +278,7 @@ const Design = () => {
       ...currentFunnel,
       settings: updatedSettings,
       // Incluir explicitamente os steps para persistenceService
-      steps: [...(currentFunnel.steps || [])]
+      steps: originalSteps
     };
     
     // Enfileirar a operação com recuperação automática
@@ -295,7 +291,7 @@ const Design = () => {
         }
         
         // Garantir que o resultado mantenha os steps originais
-        result.data.steps = [...(currentFunnel.steps || [])];
+        result.data.steps = originalSteps;
         return result.data;
       },
       settingsOnlyFunnel,
@@ -324,58 +320,6 @@ const Design = () => {
       }
     );
   };
-
-  // Função para converter Hex para HSL
-  const hexToHSL = (hex: string) => {
-    // Remove o # se existir
-    hex = hex.replace('#', '');
-
-    // Converte para RGB
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-      }
-      
-      h = Math.round(h * 60);
-    }
-    
-    s = Math.round(s * 100);
-    l = Math.round(l * 100);
-    
-    return { h, s, l };
-  };
-
-  // Função para atualizar a variável CSS de tema
-  const updateThemeColor = (colorHex: string) => {
-    try {
-      const hsl = hexToHSL(colorHex);
-      // Atualizar variáveis CSS globais
-      document.documentElement.style.setProperty('--primary', `${hsl.h} ${hsl.s}% ${hsl.l}%`);
-      console.log(`Atualizada variável CSS --primary para: ${hsl.h} ${hsl.s}% ${hsl.l}%`);
-    } catch (error) {
-      console.error('Erro ao atualizar cor do tema:', error);
-    }
-  };
-
-  // Aplicar a cor do tema quando o componente montar
-  useEffect(() => {
-    if (currentFunnel?.settings?.primaryColor) {
-      updateThemeColor(currentFunnel.settings.primaryColor);
-    }
-  }, [currentFunnel?.id]);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50" ref={designContainerRef}>

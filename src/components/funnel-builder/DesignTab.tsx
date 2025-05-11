@@ -3,11 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Funnel } from "@/utils/types";
 import { useStore } from "@/utils/store";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { updateThemeColor } from "@/lib/utils";
 
 interface DesignTabProps {
   funnel: Funnel;
@@ -16,13 +15,6 @@ interface DesignTabProps {
 const DesignTab = ({ funnel }: DesignTabProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
-
-  // Aplicar a cor do tema quando o componente montar
-  useEffect(() => {
-    if (funnel?.settings?.primaryColor) {
-      updateThemeColor(funnel.settings.primaryColor);
-    }
-  }, [funnel?.id]);
 
   // Função para converter arquivo em base64
   const convertToBase64 = (file: File): Promise<string> => {
@@ -261,7 +253,6 @@ const DesignTab = ({ funnel }: DesignTabProps) => {
                         primaryColor: e.target.value,
                       },
                     };
-                    updateThemeColor(e.target.value);
                     useStore.getState().updateFunnel(updatedFunnel);
                   }}
                   className="w-10 h-10 rounded-md overflow-hidden cursor-pointer"
@@ -276,9 +267,6 @@ const DesignTab = ({ funnel }: DesignTabProps) => {
                         primaryColor: e.target.value,
                       },
                     };
-                    if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                      updateThemeColor(e.target.value);
-                    }
                     useStore.getState().updateFunnel(updatedFunnel);
                   }}
                   className="w-32"
