@@ -7,24 +7,24 @@ export default function Hero() {
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
-      @keyframes gradient {
+      @keyframes textGradient {
         0% {
-          background-position: 0% 50%;
+          color: #2563eb;
         }
         50% {
-          background-position: 100% 50%;
+          color: #7c3aed;
         }
         100% {
-          background-position: 0% 50%;
+          color: #2563eb;
         }
       }
       
-      .animated-gradient {
-        background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb);
-        background-size: 200% 200%;
-        animation: gradient 5s ease infinite;
+      .animated-text {
+        animation: textGradient 5s ease infinite;
         position: relative;
-        z-index: 10;
+        z-index: 30;
+        display: block;
+        font-weight: 800;
       }
     `;
     document.head.appendChild(style);
@@ -44,7 +44,7 @@ export default function Hero() {
         {/* Header content - Centered */}
         <div className="text-center max-w-4xl mx-auto relative z-20">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-            <span className="inline-block text-transparent bg-clip-text animated-gradient py-2">
+            <span className="animated-text py-2 mb-4">
               Seduza. Converta. Venda.
             </span>
             <span className="block mt-4 text-gray-900">
