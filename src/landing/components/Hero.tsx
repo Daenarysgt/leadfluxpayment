@@ -26,7 +26,7 @@ export default function Hero() {
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#pricing"
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base font-medium px-8 py-4 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-violet-600 text-white text-base font-medium px-8 py-4 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl hover:opacity-90"
             >
               Começar Agora
             </a>
