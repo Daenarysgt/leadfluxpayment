@@ -79,17 +79,21 @@ export default function Hero() {
           <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block z-0"></div>
           <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block z-0"></div>
           
-          {/* Workspace Features Section - Positioned as floating card on the right */}
-          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-6 w-[320px] bg-white rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.12),0_0_20px_rgba(100,100,255,0.08)] p-7 hidden lg:block z-20">
-            <div className="text-center mb-5">
-              <h2 className="text-xl font-bold text-gray-900">Configure seu Workspace</h2>
-              <p className="mt-1 text-sm text-gray-600">Comece com o que você precisa</p>
+          {/* Workspace Features Section - Repositioned and restyled to match ClickUp */}
+          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-6 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] p-8 hidden lg:block z-20">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-1.5" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                Configure seu Workspace
+              </h2>
+              <p className="text-sm text-gray-500 font-normal">
+                Comece com o que você precisa
+              </p>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 mb-7">
+            <div className="grid grid-cols-3 gap-5 mb-8">
               {workspaceFeatures.slice(0, 9).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className={`${feature.bgColor} p-3 rounded-lg mb-2 flex items-center justify-center`}>
+                  <div className="p-4 rounded-lg mb-2.5 flex items-center justify-center w-[72px] h-[72px] bg-white shadow-sm">
                     <svg
                       className="w-5 h-5 text-gray-700"
                       fill="none"
@@ -104,62 +108,55 @@ export default function Hero() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-medium text-gray-700">{feature.name}</span>
+                  <span className="text-xs font-medium text-gray-600 text-center">{feature.name}</span>
                 </div>
               ))}
             </div>
             
-            {/* Adicional features para aumentar a altura do card */}
-            <div className="mt-10 mb-6 space-y-4">
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Acesso a todos templates</span>
-                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Suporte 24/7</span>
-                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Personalização completa</span>
-                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Integrações ilimitadas</span>
-                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
+            {/* Feature checkboxes */}
+            <div className="mb-8 space-y-5">
+              {[
+                'Acesso a todos templates',
+                'Suporte 24/7',
+                'Personalização completa',
+                'Integrações ilimitadas'
+              ].map((feature, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-700">{feature}</span>
+                </div>
+              ))}
             </div>
             
-            <div className="mt-8 text-center">
+            <div className="text-center">
               <a 
                 href="#pricing" 
-                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
+                className="w-full inline-flex items-center justify-center px-5 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Começar agora
               </a>
             </div>
           </div>
           
-          {/* Mobile version of Workspace Features - Only visible on small screens */}
-          <div className="mt-12 bg-white rounded-xl shadow-lg p-6 lg:hidden">
+          {/* Mobile version of Workspace Features - Updated to match desktop style */}
+          <div className="mt-12 bg-white rounded-xl shadow-lg p-8 lg:hidden">
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Configure seu Workspace</h2>
-              <p className="mt-1 text-sm text-gray-600">Comece com o que você precisa</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-1.5" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                Configure seu Workspace
+              </h2>
+              <p className="text-sm text-gray-500 font-normal">
+                Comece com o que você precisa
+              </p>
             </div>
             
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-5">
               {workspaceFeatures.slice(0, 8).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className={`${feature.bgColor} p-3 rounded-lg mb-2 flex items-center justify-center`}>
+                  <div className="p-4 rounded-lg mb-2.5 flex items-center justify-center w-full aspect-square bg-white shadow-sm">
                     <svg
-                      className="w-6 h-6 text-gray-700"
+                      className="w-5 h-5 text-gray-700"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -172,15 +169,32 @@ export default function Hero() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-medium text-gray-700">{feature.name}</span>
+                  <span className="text-xs font-medium text-gray-600 text-center">{feature.name}</span>
                 </div>
               ))}
             </div>
             
-            <div className="mt-6 text-center">
+            {/* Feature checkboxes - Mobile */}
+            <div className="my-8 space-y-5">
+              {[
+                'Acesso a todos templates',
+                'Suporte 24/7',
+                'Personalização completa',
+                'Integrações ilimitadas'
+              ].map((feature, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-700">{feature}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center">
               <a 
                 href="#pricing" 
-                className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
+                className="w-full inline-flex items-center justify-center px-5 py-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Começar agora
               </a>
