@@ -341,19 +341,19 @@ const PublicFunnel = () => {
       }
     : {
         // Em mobile, estilo padrão
-        width: '100%',
-        maxWidth: '100%',
-        padding: '0',
-        margin: '0',
-        overflow: 'auto',
-        backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
-        backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
-        backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
-                      funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
-        backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
-      };
+    width: '100%',
+    maxWidth: '100%',
+    padding: '0',
+    margin: '0',
+    overflow: 'auto',
+    backgroundColor: funnel.settings?.backgroundColor || '#ffffff',
+    backgroundImage: funnel.settings?.backgroundImage ? `url(${funnel.settings.backgroundImage})` : 'none',
+    backgroundSize: funnel.settings?.backgroundImageStyle === 'contain' ? 'contain' : 
+                    funnel.settings?.backgroundImageStyle === 'repeat' ? 'auto' : 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: funnel.settings?.backgroundImageStyle === 'repeat' ? 'repeat' : 'no-repeat',
+    backgroundAttachment: funnel.settings?.backgroundImageStyle === 'fixed' ? 'fixed' : 'scroll'
+  };
 
   return (
     <div className={containerClass} style={containerStyle}>

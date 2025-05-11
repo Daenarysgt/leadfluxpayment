@@ -81,36 +81,20 @@ const BuilderCanvas = ({
   useKeyboardShortcuts({
     onUndo: () => {
       if (canUndo) {
-        // Chamar a função de desfazer
         undo();
-        
-        // Forçar re-renderização após desfazer para refletir as mudanças no canvas
+        // Forçar re-renderização após desfazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
-          
-          // Garantir que as mudanças sejam persistidas após renderização
-          if (onElementsChange) {
-            console.log("BuilderCanvas - Notificando sobre mudanças após desfazer");
-            onElementsChange(elements);
-          }
-        }, 100);
+        }, 50);
       }
     },
     onRedo: () => {
       if (canRedo) {
-        // Chamar a função de refazer
         redo();
-        
-        // Forçar re-renderização após refazer para refletir as mudanças no canvas
+        // Forçar re-renderização após refazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
-          
-          // Garantir que as mudanças sejam persistidas após renderização
-          if (onElementsChange) {
-            console.log("BuilderCanvas - Notificando sobre mudanças após refazer");
-            onElementsChange(elements);
-          }
-        }, 100);
+        }, 50);
       }
     },
     onDelete: () => {
