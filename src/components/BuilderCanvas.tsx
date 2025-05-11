@@ -320,6 +320,29 @@ const BuilderCanvas = ({
     };
   }, [elements, reorderElements, toast]);
   
+  // Escutar eventos de arrasto da barra lateral
+  useEffect(() => {
+    const handleSidebarDragStart = (e: CustomEvent) => {
+      console.log("BuilderCanvas - Detectado arrasto da barra lateral", e.detail);
+      setIsDraggingAny(true);
+      setExternalComponentType(e.detail.componentId);
+    };
+    
+    const handleSidebarDragEnd = () => {
+      console.log("BuilderCanvas - Fim do arrasto da barra lateral");
+      setIsDraggingAny(false);
+      setExternalComponentType(null);
+    };
+    
+    document.addEventListener('sidebarDragStart', handleSidebarDragStart as EventListener);
+    document.addEventListener('sidebarDragEnd', handleSidebarDragEnd as EventListener);
+    
+    return () => {
+      document.removeEventListener('sidebarDragStart', handleSidebarDragStart as EventListener);
+      document.removeEventListener('sidebarDragEnd', handleSidebarDragEnd as EventListener);
+    };
+  }, []);
+  
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     
@@ -503,7 +526,7 @@ const BuilderCanvas = ({
           marginRight: '-16px',
           marginBottom: '0'
         }}>
-          {/* Zona de drop para o topo da lista (antes do primeiro elemento) */}
+          {/* Zona de drop no topo do canvas, antes do primeiro elemento */}
           <DropZoneSeparator 
             isActive={isDraggingAny}
             onDrop={(e) => {
@@ -536,25 +559,38 @@ const BuilderCanvas = ({
                   const newElement = addElement(componentType);
                   
                   // Se há outros elementos, mover para o topo
-                  if (newElement && elements.length > 0) {
-                    // Nova id foi adicionada ao final - vamos movê-la para o topo
-                    const newIndex = elements.length;
-                    reorderElements(newIndex, 0);
-                    
-                    toast({
-                      title: "Elemento adicionado",
-                      description: `Novo elemento ${componentType} adicionado no início.`
-                    });
+                  if (newElement && elements.length > 1) {
+                    // O novo elemento deve ser o último no array
+                    const newElementIndex = elements.length - 1;
+                    // Mover para o topo (índice 0)
+                    reorderElements(newElementIndex, 0);
                     
                     // Selecionar o novo elemento
                     if (onElementSelect) {
                       onElementSelect(newElement);
                     }
+                    
+                    toast({
+                      title: "Elemento adicionado",
+                      description: "Novo elemento adicionado no início."
+                    });
+                    
+                    // Corrigir a borda branca após adicionar um elemento
+                    setTimeout(fixCanvasWhiteSpace, 100);
+                  } else if (newElement) {
+                    // Se for o primeiro elemento, apenas selecione-o
+                    if (onElementSelect) {
+                      onElementSelect(newElement);
+                    }
+                    
+                    toast({
+                      title: "Elemento adicionado",
+                      description: "Novo elemento adicionado."
+                    });
+                    
+                    // Corrigir a borda branca após adicionar um elemento
+                    setTimeout(fixCanvasWhiteSpace, 100);
                   }
-                  
-                  // Limpar os estados
-                  setExternalComponentType(null);
-                  setIsExternalDragOver(false);
                 }
               }
             }}
@@ -636,25 +672,29 @@ const BuilderCanvas = ({
                           
                           // Se adicionou com sucesso, mover para a posição correta
                           if (newElement) {
-                            // Nova id foi adicionada ao final - vamos movê-la para a posição após o elemento atual
-                            const newIndex = elements.length;
-                            const targetIndex = index + 1;
-                            reorderElements(newIndex, targetIndex);
+                            // Encontrar o índice do novo elemento (deve ser o último)
+                            const newElementIndex = elements.length - 1;
                             
-                            toast({
-                              title: "Elemento adicionado",
-                              description: `Novo elemento ${componentType} adicionado na posição ${targetIndex + 1}.`
-                            });
+                            // Mover para a posição após o elemento atual
+                            const targetIndex = index + 1;
+                            
+                            if (newElementIndex !== targetIndex) {
+                              reorderElements(newElementIndex, targetIndex);
+                            }
                             
                             // Selecionar o novo elemento
                             if (onElementSelect) {
                               onElementSelect(newElement);
                             }
+                            
+                            toast({
+                              title: "Elemento adicionado",
+                              description: `Novo elemento adicionado na posição ${targetIndex + 1}.`
+                            });
+                            
+                            // Corrigir a borda branca após adicionar um elemento
+                            setTimeout(fixCanvasWhiteSpace, 100);
                           }
-                          
-                          // Limpar os estados
-                          setExternalComponentType(null);
-                          setIsExternalDragOver(false);
                         }
                       }
                     }}

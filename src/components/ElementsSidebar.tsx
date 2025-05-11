@@ -85,6 +85,13 @@ const ElementsSidebar = () => {
     e.dataTransfer.setData("componentType", componentId);
     e.dataTransfer.effectAllowed = "copy";
     
+    // Disparar um evento personalizado para informar o BuilderCanvas que estamos arrastando um componente da sidebar
+    const event = new CustomEvent('sidebarDragStart', { 
+      detail: { componentId, componentName },
+      bubbles: true 
+    });
+    document.dispatchEvent(event);
+    
     // Criar uma imagem de arrasto personalizada para feedback visual
     const dragIcon = document.createElement('div');
     dragIcon.style.padding = '10px 15px';
@@ -134,6 +141,10 @@ const ElementsSidebar = () => {
     if (feedbackEl) {
       document.body.removeChild(feedbackEl);
     }
+    
+    // Disparar evento de fim de arrasto
+    const event = new CustomEvent('sidebarDragEnd', { bubbles: true });
+    document.dispatchEvent(event);
   };
   
   const renderComponentItem = (component: { id: string; name: string; icon: any; color: string }) => {
