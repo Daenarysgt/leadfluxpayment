@@ -62,7 +62,7 @@ export default function Hero() {
         {/* Main content container with positioning context */}
         <div className="relative mt-16 max-w-5xl mx-auto">
           {/* Dashboard Image */}
-          <div className="rounded-2xl shadow-2xl overflow-hidden bg-white p-3">
+          <div className="relative z-10 rounded-2xl shadow-xl overflow-hidden bg-white p-3 transform scale-95 origin-center">
             <div className="rounded-xl overflow-hidden shadow-inner">
               <img 
                 src={DashboardImage}
@@ -73,20 +73,20 @@ export default function Hero() {
           </div>
           
           {/* Decorative elements */}
-          <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block"></div>
-          <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block"></div>
+          <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block z-0"></div>
+          <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block z-0"></div>
           
           {/* Workspace Features Section - Positioned as floating card on the right */}
-          <div className="absolute top-1/2 -right-8 -translate-y-1/2 w-72 bg-white rounded-xl shadow-xl p-6 hidden lg:block">
+          <div className="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-6 w-80 bg-white rounded-xl shadow-[0_4px_30px_rgba(0,0,0,0.12)] p-6 hidden lg:block z-20" style={{boxShadow: '0 0 40px rgba(0, 0, 0, 0.12), 0 0 20px rgba(100, 100, 255, 0.06)'}}>
             <div className="text-center mb-5">
               <h2 className="text-xl font-bold text-gray-900">Configure seu Workspace</h2>
               <p className="mt-1 text-sm text-gray-600">Comece com o que você precisa</p>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 mb-5">
               {workspaceFeatures.slice(0, 9).map((feature, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <div className={`${feature.bgColor} p-2.5 rounded-lg mb-2 flex items-center justify-center`}>
+                  <div className={`${feature.bgColor} p-3 rounded-lg mb-2 flex items-center justify-center`}>
                     <svg
                       className="w-5 h-5 text-gray-700"
                       fill="none"
@@ -106,10 +106,26 @@ export default function Hero() {
               ))}
             </div>
             
+            {/* Adicional features para aumentar a altura do card */}
+            <div className="mt-8 mb-6">
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg mb-3">
+                <span className="text-sm font-medium text-gray-700">Acesso a todos templates</span>
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Suporte 24/7</span>
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            
             <div className="mt-6 text-center">
               <a 
                 href="#pricing" 
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
+                className="w-full inline-flex items-center justify-center px-5 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium hover:shadow-lg transition-all duration-200"
               >
                 Começar agora
               </a>
