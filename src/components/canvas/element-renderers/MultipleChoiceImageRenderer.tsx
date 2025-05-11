@@ -10,7 +10,9 @@ import { useFormValidation } from "@/utils/FormValidationContext";
 
 const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   const { element } = props;
-  const { content, previewMode, previewProps } = element;
+  // Create a deep clone of the element to ensure we're not working with references that might not update
+  const clonedElement = useMemo(() => JSON.parse(JSON.stringify(element)), [element]);
+  const { content, previewMode, previewProps } = clonedElement;
   const { setCurrentStep, currentFunnel } = useStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isProcessingInteraction, setIsProcessingInteraction] = useState(false);
@@ -88,6 +90,18 @@ const MultipleChoiceImageRenderer = (props: ElementRendererProps) => {
   
   // Arredondar bordas
   const borderRadiusValue = content?.style?.borderRadius || 4;
+  
+  // Log element content to aid in debugging
+  useEffect(() => {
+    if (previewMode) {
+      console.log('MultipleChoiceImageRenderer - Element content in preview mode:', content);
+    }
+  }, [content, previewMode]);
+
+  // Reset selected option when element content changes
+  useEffect(() => {
+    setSelectedOption(null);
+  }, [content]);
   
   // Define all hooks consistently at the top level
   const handleOptionClick = useCallback(async (option: any) => {
