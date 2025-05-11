@@ -255,13 +255,41 @@ const Builder = () => {
   // Manipular as ações de desfazer e refazer
   const handleUndo = () => {
     if (canUndo) {
-      undo();
+      console.log("Builder - Ação de desfazer iniciada");
+      const success = undo();
+      if (success) {
+        console.log("Builder - Ação de desfazer bem-sucedida");
+        // Força atualização da UI após operação
+        setTimeout(() => {
+          if (handleCanvasElementsChange) {
+            handleCanvasElementsChange(localCanvasElements);
+          }
+        }, 0);
+      } else {
+        console.log("Builder - Falhou ao desfazer");
+      }
+    } else {
+      console.log("Builder - Não é possível desfazer, nenhuma ação no histórico");
     }
   };
   
   const handleRedo = () => {
     if (canRedo) {
-      redo();
+      console.log("Builder - Ação de refazer iniciada");
+      const success = redo();
+      if (success) {
+        console.log("Builder - Ação de refazer bem-sucedida");
+        // Força atualização da UI após operação
+        setTimeout(() => {
+          if (handleCanvasElementsChange) {
+            handleCanvasElementsChange(localCanvasElements);
+          }
+        }, 0);
+      } else {
+        console.log("Builder - Falhou ao refazer");
+      }
+    } else {
+      console.log("Builder - Não é possível refazer, nenhuma ação no histórico futuro");
     }
   };
 

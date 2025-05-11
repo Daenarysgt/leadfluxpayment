@@ -19,6 +19,10 @@ export const useCanvasElements = (
   const onElementsChangeRef = useRef(onElementsChange);
   const previousUpdateRef = useRef<{id: string | null, content: any | null}>({id: null, content: null});
   
+  // Estados para controlar undo/redo de forma reativa
+  const [canUndoState, setCanUndoState] = useState(false);
+  const [canRedoState, setCanRedoState] = useState(false);
+  
   // Usar o history state em vez do useState básico
   const {
     state: elements,
@@ -26,8 +30,17 @@ export const useCanvasElements = (
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    historyLength,
+    currentPosition
   } = useHistoryState<CanvasElement[]>([]);
+  
+  // Atualizar os estados reativos de canUndo e canRedo
+  useEffect(() => {
+    setCanUndoState(canUndo);
+    setCanRedoState(canRedo);
+    console.log(`Builder - Estado de history atualizado: canUndo=${canUndo}, canRedo=${canRedo}, posição=${currentPosition}/${historyLength}`);
+  }, [canUndo, canRedo, currentPosition, historyLength, elements]);
   
   // Keep the onElementsChange reference up to date
   useEffect(() => {
@@ -127,10 +140,15 @@ export const useCanvasElements = (
         // Passar os elementos atualizados retornados pela função undo
         onElementsChangeRef.current(updatedElements);
       }
+      
+      // Atualizar estados reativos imediatamente
+      setCanUndoState(currentPosition > 1);
+      setCanRedoState(true);
+      
       return true;
     }
     return false;
-  }, [undo, toast]);
+  }, [undo, toast, currentPosition]);
 
   const handleRedo = useCallback(() => {
     const updatedElements = redo();
@@ -145,10 +163,15 @@ export const useCanvasElements = (
         // Passar os elementos atualizados retornados pela função redo
         onElementsChangeRef.current(updatedElements);
       }
+      
+      // Atualizar estados reativos imediatamente
+      setCanUndoState(true);
+      setCanRedoState(currentPosition < historyLength - 2);
+      
       return true;
     }
     return false;
-  }, [redo, toast]);
+  }, [redo, toast, currentPosition, historyLength]);
 
   // Criar instâncias atualizadas das operações para usar o setElements do histórico
   const { addElement, removeElement, duplicateElement } = useCanvasElementOperations(
@@ -173,7 +196,7 @@ export const useCanvasElements = (
     reorderElements,
     undo: handleUndo,
     redo: handleRedo,
-    canUndo,
-    canRedo
+    canUndo: canUndoState,
+    canRedo: canRedoState
   };
 };
