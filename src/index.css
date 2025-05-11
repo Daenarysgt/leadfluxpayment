@@ -98,6 +98,11 @@
     padding: 0;
   }
   
+  /* Forçar atualização das variáveis CSS para botões */
+  .bg-primary {
+    background-color: hsl(var(--primary)) !important;
+  }
+  
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;

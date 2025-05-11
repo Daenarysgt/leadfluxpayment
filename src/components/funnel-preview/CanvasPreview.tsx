@@ -5,7 +5,7 @@ import { Funnel } from '@/utils/types';
 import { accessService } from '@/services/accessService';
 import { FormValidationProvider, useFormValidation } from '@/utils/FormValidationContext';
 import { useValidatedNavigation } from '@/hooks/useValidatedNavigation';
-import { cn } from '@/lib/utils';
+import { cn, updateThemeColor } from '@/lib/utils';
 
 interface CanvasPreviewProps {
   canvasElements: CanvasElement[];
@@ -118,6 +118,14 @@ const CanvasPreviewInner = ({
     
     initSession();
   }, [funnel, sessionId]);
+  
+  // Atualizar as cores do tema quando o componente montar ou o funil mudar
+  useEffect(() => {
+    if (funnel?.settings?.primaryColor) {
+      console.log("CanvasPreview - Atualizando cor do tema:", funnel.settings.primaryColor);
+      updateThemeColor(funnel.settings.primaryColor);
+    }
+  }, [funnel?.settings?.primaryColor]);
   
   // Função de mudança de etapa que valida campos obrigatórios usando o sistema centralizado
   const handleStepChange = useCallback((step: number) => {

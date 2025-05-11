@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import BuilderHeader from "@/components/builder/BuilderHeader";
 import BuilderContent from "@/components/builder/BuilderContent";
 import BuilderEmptyState from "@/components/builder/BuilderEmptyState";
+import { updateThemeColor } from "@/lib/utils";
 
 // Função para converter Hex para HSL
 const hexToHSL = (hex: string) => {
@@ -39,18 +40,6 @@ const hexToHSL = (hex: string) => {
   l = Math.round(l * 100);
   
   return { h, s, l };
-};
-
-// Função para atualizar a variável CSS de tema
-const updateThemeColor = (colorHex: string) => {
-  try {
-    const hsl = hexToHSL(colorHex);
-    // Atualizar variáveis CSS globais
-    document.documentElement.style.setProperty('--primary', `${hsl.h} ${hsl.s}% ${hsl.l}%`);
-    console.log(`Atualizada variável CSS --primary para: ${hsl.h} ${hsl.s}% ${hsl.l}%`);
-  } catch (error) {
-    console.error('Erro ao atualizar cor do tema:', error);
-  }
 };
 
 const Builder = () => {
@@ -160,6 +149,14 @@ const Builder = () => {
   useEffect(() => {
     setSelectedElement(null);
   }, [currentStep, setSelectedElement]);
+
+  // Atualizar a cor do tema sempre que o funil mudar ou o currentStep mudar
+  useEffect(() => {
+    if (currentFunnel?.settings?.primaryColor) {
+      console.log("Builder - Atualizando cor do tema:", currentFunnel.settings.primaryColor);
+      updateThemeColor(currentFunnel.settings.primaryColor);
+    }
+  }, [currentFunnel?.settings?.primaryColor, currentStep]);
 
   // Aplicar zoom de 90% e resolver espaços vazios no rodapé e lateral
   useEffect(() => {

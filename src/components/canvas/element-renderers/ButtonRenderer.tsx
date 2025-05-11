@@ -1,7 +1,7 @@
 import { ElementRendererProps } from "@/types/canvasTypes";
 import BaseElementRenderer from "./BaseElementRenderer";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, updateThemeColor } from "@/lib/utils";
 import { useState, useCallback, useEffect, useMemo, ReactNode } from "react";
 import { useStore } from "@/utils/store";
 import { ArrowRight } from "lucide-react";
@@ -46,6 +46,14 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   console.log("ButtonRenderer - Rendering with props:", JSON.stringify(element));
   console.log("ButtonRenderer - Preview mode:", previewMode, "Preview props:", previewProps);
   
+  // Atualizar a variável CSS quando o componente montar
+  useEffect(() => {
+    if (funnelSettings.primaryColor) {
+      console.log("ButtonRenderer - Atualizando variável CSS com cor:", funnelSettings.primaryColor);
+      updateThemeColor(funnelSettings.primaryColor);
+    }
+  }, [funnelSettings.primaryColor]);
+  
   const [isVisible, setIsVisible] = useState(!content.delayEnabled);
   
   // Destructure all the configurable properties with defaults
@@ -53,6 +61,8 @@ const ButtonRenderer = (props: ElementRendererProps) => {
   const alignment = content.alignment || "center";
   const size = content.size || "default";
   const variant = content.variant || "default";
+  // Sempre use a cor primária do tema se não houver uma cor personalizada definida
+  const useFunnelColor = !content.buttonColor && funnelSettings.primaryColor;
   const buttonColor = content.buttonColor || funnelSettings.primaryColor || "#7c3aed"; // Use funil primary color as fallback
   const textColor = content.textColor || "#ffffff"; // Default white for text
   const animationEnabled = content.animationEnabled || false;
@@ -372,16 +382,16 @@ const ButtonRenderer = (props: ElementRendererProps) => {
         <Button
           className={cn(
             buttonClass,
-            // Usar a classe bg-primary quando estiver usando a cor primária do funnel
-            (variant === "default" || variant === "secondary" || variant === "3d") && 
-            !content.buttonColor && 
-            funnelSettings.primaryColor ? "bg-primary text-primary-foreground" : ""
+            // Usar a classe bg-primary quando não houver cor personalizada definida
+            useFunnelColor && (variant === "default" || variant === "secondary" || variant === "3d") 
+              ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+              : ""
           )}
           style={{
             backgroundColor: 
-              // Aplicar cor apenas se não estiver usando a cor primária global ou tiver cor específica
+              // Aplicar cor apenas se estiver usando uma cor personalizada
               (variant === "default" || variant === "secondary" || variant === "3d") ? 
-                (content.buttonColor || (!funnelSettings.primaryColor ? "#7c3aed" : undefined)) : 
+                (useFunnelColor ? undefined : buttonColor) : 
               variant === "outline" || variant === "ghost" || variant === "link" ? "transparent" : 
               undefined,
             borderColor: variant === "outline" || variant === "3d" ? buttonColor : undefined,
@@ -394,12 +404,12 @@ const ButtonRenderer = (props: ElementRendererProps) => {
               background: `linear-gradient(to right, ${buttonColor}, ${adjustColor(buttonColor, 40)})` 
             } : {}),
             ...(variant === "neon" ? { 
-              backgroundColor: buttonColor,
+              backgroundColor: useFunnelColor ? undefined : buttonColor,
               boxShadow: `0 0 10px ${buttonColor}7A` 
             } : {}),
             ...(variant === "3d" ? {
               borderBottomColor: adjustColor(buttonColor, -30),
-              backgroundColor: content.buttonColor || (!funnelSettings.primaryColor ? "#7c3aed" : undefined)
+              backgroundColor: useFunnelColor ? undefined : buttonColor
             } : {}),
             "--hover-color": variant === "outline" || variant === "ghost" ? `${buttonColor}20` : undefined,
             "--glow-color": buttonColor + "80", // Adicionar variável de cor para a animação glow (com 50% de opacidade)
