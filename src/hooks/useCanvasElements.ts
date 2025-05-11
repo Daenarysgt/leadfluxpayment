@@ -122,9 +122,13 @@ export const useCanvasElements = (
         description: "A última alteração foi desfeita com sucesso."
       });
       
-      // Notificar sobre a mudança
+      // Notificar sobre a mudança e garantir que seja persistida
       if (onElementsChangeRef.current) {
-        onElementsChangeRef.current(elements);
+        // Forçar a persistência dos elementos após desfazer
+        setTimeout(() => {
+          console.log("useCanvasElements - Persistindo alterações após desfazer:", elements);
+          onElementsChangeRef.current(elements);
+        }, 50);
       }
       return true;
     }
@@ -139,9 +143,13 @@ export const useCanvasElements = (
         description: "A alteração foi refeita com sucesso."
       });
       
-      // Notificar sobre a mudança
+      // Notificar sobre a mudança e garantir que seja persistida
       if (onElementsChangeRef.current) {
-        onElementsChangeRef.current(elements);
+        // Forçar a persistência dos elementos após refazer
+        setTimeout(() => {
+          console.log("useCanvasElements - Persistindo alterações após refazer:", elements);
+          onElementsChangeRef.current(elements);
+        }, 50);
       }
       return true;
     }

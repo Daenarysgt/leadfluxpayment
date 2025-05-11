@@ -267,9 +267,28 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Focar o editor novamente
     editorRef.current?.focus();
     
-    // Enviar atualização após um breve atraso
+    // Enviar atualização imediatamente para garantir persistência
     setTimeout(() => {
-      handleEditorInput();
+      const updatedContent = captureEditorContent();
+      if (updatedContent) {
+        // Forçar update imediato para garantir persistência
+        onUpdate({
+          content: {
+            ...element.content,
+            formattedText: updatedContent,
+            fontSize,
+            fontColor,
+            fontFamily,
+            marginTop,
+            lineHeight,
+            letterSpacing
+          }
+        });
+        
+        // Atualizar o conteúdo local também
+        setCurrentContent(updatedContent);
+        contentBufferRef.current = updatedContent;
+      }
     }, 50);
   };
 
@@ -289,9 +308,28 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Focar o editor novamente
     editorRef.current?.focus();
     
-    // Enviar atualização após um breve atraso
+    // Enviar atualização imediatamente para garantir persistência
     setTimeout(() => {
-      handleEditorInput();
+      const updatedContent = captureEditorContent();
+      if (updatedContent) {
+        // Forçar update imediato para garantir persistência
+        onUpdate({
+          content: {
+            ...element.content,
+            formattedText: updatedContent,
+            fontSize,
+            fontColor,
+            fontFamily,
+            marginTop,
+            lineHeight,
+            letterSpacing
+          }
+        });
+        
+        // Atualizar o conteúdo local também
+        setCurrentContent(updatedContent);
+        contentBufferRef.current = updatedContent;
+      }
     }, 50);
   };
   
@@ -323,9 +361,28 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
     // Focar o editor novamente
     editorRef.current?.focus();
     
-    // Enviar atualização após um breve atraso
+    // Enviar atualização imediatamente para garantir persistência
     setTimeout(() => {
-      handleEditorInput();
+      const updatedContent = captureEditorContent();
+      if (updatedContent) {
+        // Forçar update imediato para garantir persistência
+        onUpdate({
+          content: {
+            ...element.content,
+            formattedText: updatedContent,
+            fontSize,
+            fontColor,
+            fontFamily,
+            marginTop,
+            lineHeight,
+            letterSpacing
+          }
+        });
+        
+        // Atualizar o conteúdo local também
+        setCurrentContent(updatedContent);
+        contentBufferRef.current = updatedContent;
+      }
     }, 50);
   };
 
