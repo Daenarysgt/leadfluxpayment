@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 
 interface CanvasDropZoneProps {
-  onDrop: (componentType: string) => void;
+  onDrop: (componentType: string, targetIndex?: number) => void;
   isEmpty: boolean;
   children: React.ReactNode;
 }
@@ -148,6 +148,7 @@ const CanvasDropZone = ({ onDrop, isEmpty, children }: CanvasDropZoneProps) => {
     // Only add new component if we have a component type
     if (componentType) {
       console.log("CanvasDropZone - Handling drop for new component:", componentType);
+      // Não especificamos targetIndex aqui, o que fará com que o elemento seja adicionado ao final
       onDrop(componentType);
     }
   };

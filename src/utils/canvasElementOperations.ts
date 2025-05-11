@@ -1,4 +1,3 @@
-
 import { CanvasElement } from "@/types/canvasTypes";
 import { getDefaultContent } from "./canvasElementDefaults";
 import { useToast } from "@/hooks/use-toast";
@@ -10,15 +9,24 @@ export const useCanvasElementOperations = (
 ) => {
   const { toast } = useToast();
 
-  const addElement = (componentType: string) => {
+  const addElement = (componentType: string, targetIndex?: number) => {
     const newElement: CanvasElement = {
       id: crypto.randomUUID(),
       type: componentType,
       content: getDefaultContent(componentType)
     };
     
-    console.log("useCanvasElements - Adding new element:", newElement);
-    const updatedElements = [...elements, newElement];
+    console.log("useCanvasElements - Adding new element:", newElement, targetIndex !== undefined ? `at index ${targetIndex}` : "at the end");
+    
+    // Se um índice alvo foi fornecido, inserir o elemento nessa posição, caso contrário adicionar ao final
+    let updatedElements;
+    if (targetIndex !== undefined && targetIndex >= 0 && targetIndex <= elements.length) {
+      updatedElements = [...elements];
+      updatedElements.splice(targetIndex, 0, newElement);
+    } else {
+      updatedElements = [...elements, newElement];
+    }
+    
     setElements(updatedElements);
     if (onElementsChange) {
       onElementsChange(updatedElements);

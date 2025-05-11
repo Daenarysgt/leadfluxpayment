@@ -119,8 +119,8 @@ const BuilderCanvas = ({
   const displayElements = adjustElementsForConsistentDisplay(elements);
   
   // Define all callback hooks consistently at the top level
-  const handleDrop = useCallback((componentType: string) => {
-    const newElement = addElement(componentType);
+  const handleDrop = useCallback((componentType: string, targetIndex?: number) => {
+    const newElement = addElement(componentType, targetIndex);
     if (newElement && onElementSelect) {
       onElementSelect(newElement);
     }
@@ -351,6 +351,7 @@ const BuilderCanvas = ({
     // Only add new component if we have a component type
     if (componentType) {
       console.log("BuilderCanvas - Handling direct drop for new component:", componentType);
+      // Aqui passamos undefined como targetIndex, o que fará com que o elemento seja adicionado ao final
       const newElement = addElement(componentType);
       if (newElement && onElementSelect) {
         onElementSelect(newElement);
@@ -408,6 +409,29 @@ const BuilderCanvas = ({
     console.error("BuilderCanvas - Logo não é uma string base64 válida");
     return null;
   };
+  
+  // Criar uma função para processar drops entre elementos existentes
+  const handleInsertElementDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const componentType = e.dataTransfer.getData("componentType");
+    
+    // Se não tivermos um tipo de componente ou se for uma operação de reordenação, ignorar
+    if (!componentType || 
+        e.dataTransfer.types.includes("elementId") || 
+        e.dataTransfer.types.includes("text/plain")) {
+      return;
+    }
+    
+    console.log(`BuilderCanvas - Inserting new component ${componentType} at index ${targetIndex}`);
+    handleDrop(componentType, targetIndex);
+    
+    toast({
+      title: "Elemento inserido",
+      description: `Novo elemento adicionado entre elementos existentes.`
+    });
+  }, [handleDrop, toast]);
   
   return (
     <CanvasDropZone 
@@ -481,39 +505,81 @@ const BuilderCanvas = ({
             const key = `element-${element.id}-${element.id === selectedElementId ? 'selected' : 'unselected'}-${renderKey}-${index}`;
             
             return (
-              <div 
-                key={key} 
-                className={cn(
-                  "relative transition-all",
-                  dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+              <>
+                {/* Área de drop para inserir elementos entre elementos existentes */}
+                {index === 0 && (
+                  <div 
+                    className="h-4 mx-4 my-1 transition-all hover:h-16 group"
+                    onDragOver={(e) => {
+                      // Apenas reagir a operações de arrastar componentes
+                      if (e.dataTransfer.types.includes("componentType") && 
+                          !e.dataTransfer.types.includes("elementId") && 
+                          !e.dataTransfer.types.includes("text/plain")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    onDrop={(e) => handleInsertElementDrop(e, 0)}
+                  >
+                    <div className="h-full w-full rounded-md border-2 border-dashed border-transparent group-hover:border-violet-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                      <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100">Soltar aqui</span>
+                    </div>
+                  </div>
                 )}
-                onDragEnter={(e) => handleDragEnter(e, element.id)}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={handleElementDrop}
-                style={{ 
-                  marginBottom: '0px',
-                  paddingLeft: '16px',
-                  paddingRight: '16px'
-                }}
-              >
-                <CanvasElementRenderer
-                  element={element}
-                  isSelected={element.id === selectedElementId}
-                  onSelect={handleElementSelect}
-                  onRemove={handleElementRemove}
-                  onDuplicate={handleElementDuplicate}
-                  onMoveUp={handleElementMoveUp}
-                  onMoveDown={handleElementMoveDown}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  isDragging={element.id === draggedElementId}
-                  index={index}
-                  totalElements={elements.length}
-                />
-              </div>
+                
+                <div 
+                  key={key} 
+                  className={cn(
+                    "relative transition-all",
+                    dropTargetId === element.id && "outline outline-2 outline-violet-500 rounded-md shadow-lg"
+                  )}
+                  onDragEnter={(e) => handleDragEnter(e, element.id)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={handleElementDrop}
+                  style={{ 
+                    marginBottom: '0px',
+                    paddingLeft: '16px',
+                    paddingRight: '16px'
+                  }}
+                >
+                  <CanvasElementRenderer
+                    element={element}
+                    isSelected={element.id === selectedElementId}
+                    onSelect={handleElementSelect}
+                    onRemove={handleElementRemove}
+                    onDuplicate={handleElementDuplicate}
+                    onMoveUp={handleElementMoveUp}
+                    onMoveDown={handleElementMoveDown}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    isDragging={element.id === draggedElementId}
+                    index={index}
+                    totalElements={elements.length}
+                  />
+                </div>
+                
+                {/* Área de drop após cada elemento para inserir novo elemento */}
+                <div 
+                  className="h-4 mx-4 my-1 transition-all hover:h-16 group"
+                  onDragOver={(e) => {
+                    // Apenas reagir a operações de arrastar componentes
+                    if (e.dataTransfer.types.includes("componentType") && 
+                        !e.dataTransfer.types.includes("elementId") && 
+                        !e.dataTransfer.types.includes("text/plain")) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  onDrop={(e) => handleInsertElementDrop(e, index + 1)}
+                >
+                  <div className="h-full w-full rounded-md border-2 border-dashed border-transparent group-hover:border-violet-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                    <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100">Soltar aqui</span>
+                  </div>
+                </div>
+              </>
             );
           })}
         </div>
