@@ -38,7 +38,11 @@ const Builder = () => {
     handleSave,
     saveCurrentStepElements,
     setSelectedElement,
-    preventNextReload
+    preventNextReload,
+    undo,
+    redo,
+    canUndo,
+    canRedo
   } = useBuilderCanvas();
 
   // Referência ao container principal do Builder
@@ -248,6 +252,19 @@ const Builder = () => {
     };
   }, []);
 
+  // Manipular as ações de desfazer e refazer
+  const handleUndo = () => {
+    if (canUndo) {
+      undo();
+    }
+  };
+  
+  const handleRedo = () => {
+    if (canRedo) {
+      redo();
+    }
+  };
+
   if (!currentFunnel) {
     return <BuilderEmptyState />;
   }
@@ -267,6 +284,10 @@ const Builder = () => {
         onViewModeChange={setViewMode}
         onSave={handleSave}
         onOpenFullPreview={handleOpenFullPreview}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
       
       <BuilderContent

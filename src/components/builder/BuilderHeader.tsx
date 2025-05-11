@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, Users } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Settings as SettingsIcon, ChevronLeft, Users, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BuilderHeaderProps {
   funnelName: string;
@@ -14,6 +15,10 @@ interface BuilderHeaderProps {
   onViewModeChange: (mode: "desktop" | "mobile") => void;
   onSave: () => void;
   onOpenFullPreview: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 const BuilderHeader = ({
@@ -24,7 +29,11 @@ const BuilderHeader = ({
   onTogglePreview,
   onViewModeChange,
   onSave,
-  onOpenFullPreview
+  onOpenFullPreview,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
@@ -48,6 +57,50 @@ const BuilderHeader = ({
       </div>
 
       <div className="flex items-center gap-3">
+        <TooltipProvider>
+          <div className="flex items-center mr-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "h-8 w-8 p-0 border",
+                    canUndo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed"
+                  )}
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                >
+                  <Undo2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Desfazer (Ctrl+Z)</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn(
+                    "h-8 w-8 p-0 border ml-1",
+                    canRedo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed"
+                  )}
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                >
+                  <Redo2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refazer (Ctrl+Shift+Z)</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+        
         <Tabs defaultValue="construtor" className="w-auto">
           <TabsList className="h-8 bg-gray-100 p-0.5">
             <TabsTrigger 
