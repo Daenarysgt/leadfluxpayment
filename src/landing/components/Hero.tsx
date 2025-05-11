@@ -1,7 +1,37 @@
 import { Link } from 'react-router-dom';
 import DashboardImage from '../../assets/leadsflux.png';
+import { useEffect } from 'react';
 
 export default function Hero() {
+  // CSS para a animação do gradiente
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes gradient {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      
+      .animated-gradient {
+        background: linear-gradient(90deg, #2563eb, #7c3aed, #2563eb);
+        background-size: 200% 200%;
+        animation: gradient 5s ease infinite;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background elements */}
@@ -11,9 +41,11 @@ export default function Hero() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header content - Centered */}
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900">
-            <span className="block">Seduza. Converta. Venda.</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 block mt-2">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+            <span className="block text-transparent bg-clip-text animated-gradient">
+              Seduza. Converta. Venda.
+            </span>
+            <span className="block mt-2 text-gray-900">
               A plataforma que transforma suas ideias em funis magnéticos
             </span>
           </h1>
