@@ -67,7 +67,7 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     // Atualizar o estado sem modificar o histórico
     setState(previousState);
     
-    return true;
+    return previousState;
   }, []);
   
   // Função para refazer uma alteração desfeita
@@ -86,7 +86,7 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     // Atualizar o estado sem modificar o histórico
     setState(nextState);
     
-    return true;
+    return nextState;
   }, []);
   
   // Função para limpar o histórico

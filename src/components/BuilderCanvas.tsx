@@ -81,20 +81,28 @@ const BuilderCanvas = ({
   useKeyboardShortcuts({
     onUndo: () => {
       if (canUndo) {
-        undo();
-        // Forçar re-renderização após desfazer
-        setTimeout(() => {
-          setRenderKey(prev => prev + 1);
-        }, 50);
+        const success = undo();
+        if (success && onElementsChange) {
+          // Garantir que os elementos atualizados são sincronizados
+          setTimeout(() => {
+            onElementsChange(elements);
+            // Forçar re-renderização após desfazer
+            setRenderKey(prev => prev + 1);
+          }, 50);
+        }
       }
     },
     onRedo: () => {
       if (canRedo) {
-        redo();
-        // Forçar re-renderização após refazer
-        setTimeout(() => {
-          setRenderKey(prev => prev + 1);
-        }, 50);
+        const success = redo();
+        if (success && onElementsChange) {
+          // Garantir que os elementos atualizados são sincronizados
+          setTimeout(() => {
+            onElementsChange(elements);
+            // Forçar re-renderização após refazer
+            setRenderKey(prev => prev + 1);
+          }, 50);
+        }
       }
     },
     onDelete: () => {

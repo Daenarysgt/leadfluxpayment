@@ -30,13 +30,36 @@ export const useCanvasSynchronization = (
     
     setLocalCanvasElements(prevElements => {
       if (JSON.stringify(prevElements) !== JSON.stringify(elements)) {
+        // Determinar se esta é uma operação de desfazer/refazer/excluir
+        const isUndoOrDeleteOperation = prevElements.length > elements.length || 
+          (prevElements.length === elements.length && 
+           JSON.stringify(prevElements) !== JSON.stringify(elements));
+        
+        // Se for uma operação de desfazer, salvar imediatamente
+        if (isUndoOrDeleteOperation && currentStepIdRef.current) {
+          console.log(`Builder - Detectada operação de desfazer/excluir, salvando imediatamente`);
+          
+          // Agendar o salvamento imediato (no próximo ciclo do event loop)
+          setTimeout(() => {
+            const elementsCopy = JSON.parse(JSON.stringify(elements));
+            storeSetCanvasElements(currentStepIdRef.current!, elementsCopy);
+            
+            lastSavedElementsRef.current = {
+              stepId: currentStepIdRef.current!,
+              elements: elementsCopy
+            };
+            
+            console.log(`Builder - Elementos salvos após operação de desfazer/excluir`);
+          }, 0);
+        }
+        
         return elements;
       }
       return prevElements;
     });
     
     elementsSyncedRef.current = true;
-  }, []);
+  }, [storeSetCanvasElements]);
 
   const saveCurrentStepElements = useCallback(() => {
     if (!currentFunnel || syncingRef.current || isUpdatingCanvasRef.current) return;

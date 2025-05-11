@@ -115,8 +115,8 @@ export const useCanvasElements = (
 
   // Funções para desfazer e refazer com feedback
   const handleUndo = useCallback(() => {
-    const result = undo();
-    if (result) {
+    const updatedElements = undo();
+    if (updatedElements) {
       toast({
         title: "Ação desfeita",
         description: "A última alteração foi desfeita com sucesso."
@@ -124,16 +124,17 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        onElementsChangeRef.current(elements);
+        // Passar os elementos atualizados retornados pela função undo
+        onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
     return false;
-  }, [undo, toast, elements]);
+  }, [undo, toast]);
 
   const handleRedo = useCallback(() => {
-    const result = redo();
-    if (result) {
+    const updatedElements = redo();
+    if (updatedElements) {
       toast({
         title: "Ação refeita",
         description: "A alteração foi refeita com sucesso."
@@ -141,12 +142,13 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        onElementsChangeRef.current(elements);
+        // Passar os elementos atualizados retornados pela função redo
+        onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
     return false;
-  }, [redo, toast, elements]);
+  }, [redo, toast]);
 
   // Criar instâncias atualizadas das operações para usar o setElements do histórico
   const { addElement, removeElement, duplicateElement } = useCanvasElementOperations(
