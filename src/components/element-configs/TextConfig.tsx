@@ -562,11 +562,16 @@ const TextConfig = ({ element, onUpdate }: TextConfigProps) => {
             }}
             onKeyDown={(e) => {
               // Permitir que o comportamento padrão de Ctrl+Z e Ctrl+Y funcione dentro do editor
-              // Não fazemos nada aqui, apenas garantimos que o evento não é propagado para o document
-              if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z' || e.key === 'y' || e.key === 'Y')) {
-                // Não fazer nada, deixar o navegador lidar com isso
-                // Stopamos a propagação para que o listener global não intercepte
-                e.stopPropagation();
+              // O editor nativo já tem seu próprio mecanismo de undo/redo
+              // Apenas cancelamos a propagação do evento para evitar que chegue ao handler global
+              const isUndoRedo = (e.ctrlKey || e.metaKey) && 
+                (e.key === 'z' || e.key === 'Z' || e.key === 'y' || e.key === 'Y');
+              
+              if (isUndoRedo) {
+                // Crucial: não usamos e.preventDefault() aqui, pois isso impediria 
+                // o comportamento padrão de desfazer/refazer do navegador
+                e.stopPropagation(); // Impede que o evento chegue ao handler global
+                return false; // Permite que o navegador processe o evento
               }
             }}
             style={{ 

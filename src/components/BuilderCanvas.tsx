@@ -401,47 +401,6 @@ const BuilderCanvas = ({
     return null;
   };
   
-  // Criar o elemento para os botões de desfazer e refazer
-  const historyButtons = (
-    <div className="absolute top-2 right-2 flex space-x-2 z-20">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={undo} 
-              disabled={!canUndo}
-              className={`p-1 h-8 w-8 ${!canUndo ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <Undo2 className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Desfazer (Ctrl+Z)</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={redo} 
-              disabled={!canRedo}
-              className={`p-1 h-8 w-8 ${!canRedo ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <Redo2 className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Refazer (Ctrl+Shift+Z)</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
-  
   return (
     <CanvasDropZone 
       onDrop={handleDrop}
@@ -466,9 +425,6 @@ const BuilderCanvas = ({
         onDragLeave={handleCanvasDragLeave}
         onDrop={handleCanvasDrop}
       >
-        {/* Botões de histórico (desfazer/refazer) */}
-        {historyButtons}
-        
         {isExternalDragOver && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
             <div className="bg-white/80 rounded-lg shadow-sm px-4 py-2 text-center">
