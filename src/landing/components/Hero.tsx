@@ -3,52 +3,36 @@ import DashboardImage from '../../assets/leadsflux.png';
 
 export default function Hero() {
   return (
-    <section className="relative pt-32 pb-32 overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-purple-50 opacity-70"></div>
+    <section className="relative pt-28 pb-20 overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute top-0 -right-40 w-96 h-96 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
+      <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
       
-      <div className="relative mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-8 items-center">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Column - Text Content */}
-          <div className="text-center lg:text-left">
-            <h1 className="text-5xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Funil interativo{' '}
-              <br className="hidden lg:block" />
-              que transforma{' '}
-              <br className="hidden lg:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                tráfego em vendas!
+          <div className="lg:col-span-5 text-center lg:text-left">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
+              A plataforma 
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 block mt-2">
+                para converter tráfego em vendas
               </span>
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Transforme visitantes em clientes com nossa plataforma intuitiva de criação de funis. 
-              Acompanhe métricas em tempo real e tome decisões baseadas em dados.
+            <p className="text-xl text-gray-600 mb-8 max-w-lg mx-auto lg:mx-0">
+              Um funil interativo, intuitivo e completo para criar, gerenciar e otimizar seus leads em tempo real.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <a
                 href="#pricing"
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-base px-6 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base font-medium px-8 py-4 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                <svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" 
-                  />
-                </svg>
-                Ver Planos
+                Começar Agora
               </a>
               <a
                 href="https://www.leadflux.digital/f/funil-leadflux"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-black text-white text-base px-6 py-3 rounded-lg transition-all duration-200 hover:bg-gray-800"
+                className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 text-base font-medium px-8 py-4 rounded-full transition-all duration-200"
               >
                 Ver Demo
               </a>
@@ -56,7 +40,7 @@ export default function Hero() {
             
             {/* Trust Indicators */}
             <div className="mt-12 pt-6 border-t border-gray-100">
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-4 gap-x-8">
                 <div className="flex items-center">
                   <div className="flex -space-x-2">
                     {[1, 2, 3, 4].map((i) => (
@@ -77,7 +61,7 @@ export default function Hero() {
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
-                        className="w-4 h-4 text-yellow-400"
+                        className="w-5 h-5 text-yellow-400"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -94,20 +78,24 @@ export default function Hero() {
           </div>
 
           {/* Right Column - Dashboard Image */}
-          <div className="relative w-full">
+          <div className="lg:col-span-7 relative">
             <div className="relative">
-              {/* Background decorative elements */}
-              <div className="absolute -top-12 -right-12 w-72 h-72 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full filter blur-3xl opacity-70 animate-pulse"></div>
-              <div className="absolute -bottom-8 -left-8 w-56 h-56 bg-gradient-to-br from-purple-200 to-purple-100 rounded-full filter blur-2xl opacity-70 animate-pulse delay-150"></div>
-              
-              {/* Dashboard Image */}
-              <div className="relative rounded-xl shadow-xl overflow-hidden">
-                <img 
-                  src={DashboardImage}
-                  alt="LeadFlux Dashboard" 
-                  className="w-full h-auto"
-                />
+              {/* Card-like container for dashboard image */}
+              <div className="rounded-2xl shadow-2xl overflow-hidden bg-white p-2 transform lg:translate-x-5 lg:translate-y-5">
+                {/* Dashboard Image */}
+                <div className="rounded-xl overflow-hidden shadow-inner">
+                  <img 
+                    src={DashboardImage}
+                    alt="LeadFlux Dashboard" 
+                    className="w-full h-auto"
+                  />
+                </div>
               </div>
+              
+              {/* Floating elements */}
+              <div className="absolute -top-6 -left-6 w-12 h-12 bg-blue-100 rounded-lg transform rotate-12 hidden lg:block"></div>
+              <div className="absolute -bottom-8 -right-8 w-16 h-16 bg-purple-100 rounded-full hidden lg:block"></div>
+              <div className="absolute top-1/2 -right-4 w-8 h-8 bg-yellow-100 rounded-full transform -translate-y-1/2 hidden lg:block"></div>
             </div>
           </div>
         </div>
