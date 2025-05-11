@@ -26,9 +26,7 @@ export const useCanvasElements = (
     undo,
     redo,
     canUndo,
-    canRedo,
-    historyLength,
-    currentPosition
+    canRedo
   } = useHistoryState<CanvasElement[]>([]);
   
   // Keep the onElementsChange reference up to date
@@ -117,41 +115,26 @@ export const useCanvasElements = (
 
   // Funções para desfazer e refazer com feedback
   const handleUndo = useCallback(() => {
-    console.log("useCanvasElements - Tentando desfazer, canUndo =", canUndo);
-    
-    if (!canUndo) {
-      console.log("useCanvasElements - Não é possível desfazer, botão deveria estar desabilitado");
-      return false;
-    }
-    
-    const previousElements = undo();
-    if (previousElements) {
+    const updatedElements = undo();
+    if (updatedElements) {
       toast({
         title: "Ação desfeita",
-        description: "A alteração foi desfeita com sucesso."
+        description: "A última alteração foi desfeita com sucesso."
       });
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        console.log("useCanvasElements - Notificando sobre elementos após desfazer:", 
-          previousElements.length, "elementos");
-        onElementsChangeRef.current(previousElements);
+        // Passar os elementos atualizados retornados pela função undo
+        onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
     return false;
-  }, [undo, toast, canUndo]);
+  }, [undo, toast]);
 
   const handleRedo = useCallback(() => {
-    console.log("useCanvasElements - Tentando refazer, canRedo =", canRedo);
-    
-    if (!canRedo) {
-      console.log("useCanvasElements - Não é possível refazer, botão deveria estar desabilitado");
-      return false;
-    }
-    
-    const nextElements = redo();
-    if (nextElements) {
+    const updatedElements = redo();
+    if (updatedElements) {
       toast({
         title: "Ação refeita",
         description: "A alteração foi refeita com sucesso."
@@ -159,14 +142,13 @@ export const useCanvasElements = (
       
       // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        console.log("useCanvasElements - Notificando sobre elementos após refazer:", 
-          nextElements.length, "elementos");
-        onElementsChangeRef.current(nextElements);
+        // Passar os elementos atualizados retornados pela função redo
+        onElementsChangeRef.current(updatedElements);
       }
       return true;
     }
     return false;
-  }, [redo, toast, canRedo]);
+  }, [redo, toast]);
 
   // Criar instâncias atualizadas das operações para usar o setElements do histórico
   const { addElement, removeElement, duplicateElement } = useCanvasElementOperations(

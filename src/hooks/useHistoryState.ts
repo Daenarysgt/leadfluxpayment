@@ -1,117 +1,109 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 /**
  * Hook personalizado para gerenciar o histórico de estados com funcionalidade de desfazer.
  * @param initialState O estado inicial
  * @param maxHistoryLength Número máximo de estados para manter no histórico (padrão: 50)
- * @returns Um objeto com o estado atual, uma função para atualizar o estado e funções para desfazer/refazer
+ * @returns Um objeto com o estado atual, uma função para atualizar o estado e uma função para desfazer
  */
 export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
-  // Estados principais
-  const [history, setHistory] = useState<T[]>([initialState]);
-  const [position, setPosition] = useState(0);
+  // Estado atual
   const [state, setState] = useState<T>(initialState);
   
-  // Estados derivados para controlar UI
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
+  // Histórico de estados
+  const historyRef = useRef<T[]>([initialState]);
   
-  // Atualizar estados derivados quando o histórico muda
-  useEffect(() => {
-    setCanUndo(position > 0);
-    setCanRedo(position < history.length - 1);
-    
-    console.log(`useHistoryState - Atualizando estados: pos=${position}, len=${history.length}, canUndo=${position > 0}, canRedo=${position < history.length - 1}`);
-  }, [history, position]);
+  // Posição atual no histórico
+  const positionRef = useRef<number>(0);
   
-  // Função para adicionar um novo estado ao histórico
+  // Função para atualizar o estado e adicionar ao histórico
   const updateState = useCallback((newState: T | ((prevState: T) => T)) => {
-    // Obter o valor do novo estado
-    const nextState = typeof newState === 'function'
-      ? (newState as ((prevState: T) => T))(state)
-      : newState;
-    
-    // Se o novo estado for igual ao estado atual, não fazer nada
-    if (JSON.stringify(nextState) === JSON.stringify(state)) {
-      return;
-    }
-    
-    console.log(`useHistoryState - Atualizando estado: pos=${position}, len=${history.length}`);
-    
-    // Remover estados futuros se estiver desfazendo e depois adicionando um novo estado
-    const newHistory = history.slice(0, position + 1);
-    
-    // Adicionar o novo estado ao histórico
-    newHistory.push(nextState);
-    
-    // Limitar o tamanho do histórico
-    const limitedHistory = newHistory.length > maxHistoryLength
-      ? newHistory.slice(newHistory.length - maxHistoryLength)
-      : newHistory;
-    
-    // Ajustar a posição baseado no possível corte do histórico
-    const newPosition = limitedHistory.length - 1;
-    
-    // Atualizar todos os estados em uma única renderização
-    setHistory(limitedHistory);
-    setPosition(newPosition);
-    setState(nextState);
-    
-    console.log(`useHistoryState - Estado atualizado: nova pos=${newPosition}, novo len=${limitedHistory.length}`);
-  }, [history, position, state, maxHistoryLength]);
+    setState((prevState: T) => {
+      // Determinar o valor do novo estado
+      const nextState = typeof newState === 'function'
+        ? (newState as ((prevState: T) => T))(prevState)
+        : newState;
+      
+      // Se o novo estado for igual ao estado atual, não fazer nada
+      if (JSON.stringify(nextState) === JSON.stringify(prevState)) {
+        return prevState;
+      }
+      
+      // Atualizar a posição no histórico
+      const newPosition = positionRef.current + 1;
+      positionRef.current = newPosition;
+      
+      // Remover estados futuros se estiver desfazendo e depois adicionando um novo estado
+      if (newPosition < historyRef.current.length) {
+        historyRef.current = historyRef.current.slice(0, newPosition);
+      }
+      
+      // Adicionar o novo estado ao histórico
+      historyRef.current.push(nextState);
+      
+      // Limitar o tamanho do histórico
+      if (historyRef.current.length > maxHistoryLength) {
+        historyRef.current = historyRef.current.slice(historyRef.current.length - maxHistoryLength);
+        positionRef.current = maxHistoryLength - 1;
+      }
+      
+      return nextState;
+    });
+  }, [maxHistoryLength]);
   
   // Função para desfazer a última alteração
   const undo = useCallback(() => {
-    if (position <= 0) {
-      console.log(`useHistoryState - Não é possível desfazer: pos=${position}`);
+    if (positionRef.current <= 0) {
+      console.log('Não há mais alterações para desfazer');
       return false;
     }
     
-    const newPosition = position - 1;
-    const previousState = history[newPosition];
+    // Decrementar a posição no histórico
+    positionRef.current--;
     
-    console.log(`useHistoryState - Desfazendo: pos=${position} -> ${newPosition}`);
+    // Obter o estado anterior
+    const previousState = historyRef.current[positionRef.current];
     
-    setPosition(newPosition);
+    // Atualizar o estado sem modificar o histórico
     setState(previousState);
     
     return previousState;
-  }, [history, position]);
+  }, []);
   
   // Função para refazer uma alteração desfeita
   const redo = useCallback(() => {
-    if (position >= history.length - 1) {
-      console.log(`useHistoryState - Não é possível refazer: pos=${position}, len=${history.length}`);
+    if (positionRef.current >= historyRef.current.length - 1) {
+      console.log('Não há mais alterações para refazer');
       return false;
     }
     
-    const newPosition = position + 1;
-    const nextState = history[newPosition];
+    // Incrementar a posição no histórico
+    positionRef.current++;
     
-    console.log(`useHistoryState - Refazendo: pos=${position} -> ${newPosition}`);
+    // Obter o próximo estado
+    const nextState = historyRef.current[positionRef.current];
     
-    setPosition(newPosition);
+    // Atualizar o estado sem modificar o histórico
     setState(nextState);
     
     return nextState;
-  }, [history, position]);
+  }, []);
   
   // Função para limpar o histórico
   const clearHistory = useCallback(() => {
-    setHistory([state]);
-    setPosition(0);
+    historyRef.current = [state];
+    positionRef.current = 0;
   }, [state]);
   
-  // Retornar APIs públicas
   return {
     state,
     setState: updateState,
     undo,
     redo,
     clearHistory,
-    canUndo,
-    canRedo,
-    historyLength: history.length,
-    currentPosition: position
+    canUndo: positionRef.current > 0,
+    canRedo: positionRef.current < historyRef.current.length - 1,
+    historyLength: historyRef.current.length,
+    currentPosition: positionRef.current
   };
 } 

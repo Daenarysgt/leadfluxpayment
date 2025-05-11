@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/utils/store";
 import { useBuilderCanvas } from "@/hooks/useBuilderCanvas";
 import { useBuilderViewMode } from "@/hooks/useBuilderViewMode";
@@ -38,11 +38,7 @@ const Builder = () => {
     handleSave,
     saveCurrentStepElements,
     setSelectedElement,
-    preventNextReload,
-    undo,
-    redo,
-    canUndo,
-    canRedo
+    preventNextReload
   } = useBuilderCanvas();
 
   // Referência ao container principal do Builder
@@ -50,11 +46,6 @@ const Builder = () => {
   
   // Estado para armazenar a escala atual
   const [zoomScale] = useState(0.9); // 90% de zoom
-
-  // Para depuração e verificar se os estados estão mudando corretamente
-  useEffect(() => {
-    console.log(`Builder - Estado atual: canUndo=${canUndo}, canRedo=${canRedo}`);
-  }, [canUndo, canRedo]);
 
   // Registrar hooks globais para permitir comunicação com outras partes da aplicação
   // Inicializado imediatamente para garantir que está disponível antes da duplicação
@@ -257,17 +248,6 @@ const Builder = () => {
     };
   }, []);
 
-  // Manipular as ações de desfazer e refazer como callbacks memoizados
-  const handleUndo = useCallback(() => {
-    console.log(`Builder - Chamando undo, canUndo=${canUndo}`);
-    undo();
-  }, [undo, canUndo]);
-  
-  const handleRedo = useCallback(() => {
-    console.log(`Builder - Chamando redo, canRedo=${canRedo}`);
-    redo();
-  }, [redo, canRedo]);
-
   if (!currentFunnel) {
     return <BuilderEmptyState />;
   }
@@ -287,10 +267,6 @@ const Builder = () => {
         onViewModeChange={setViewMode}
         onSave={handleSave}
         onOpenFullPreview={handleOpenFullPreview}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        canUndo={canUndo}
-        canRedo={canRedo}
       />
       
       <BuilderContent

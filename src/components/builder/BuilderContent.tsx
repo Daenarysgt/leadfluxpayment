@@ -7,7 +7,9 @@ import BuilderPreview from "@/components/builder/BuilderPreview";
 import { CanvasElement } from "@/types/canvasTypes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCanvasResize } from "@/hooks/useCanvasResize";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Keyboard, X } from "lucide-react";
 
 interface BuilderContentProps {
   viewMode: "desktop" | "mobile";
@@ -35,6 +37,21 @@ const BuilderContent = ({
   onCloseElementConfig
 }: BuilderContentProps) => {
   const { fixCanvasWhiteSpace } = useCanvasResize();
+  const [showUndoTip, setShowUndoTip] = useState(true);
+  
+  // Verificar se já mostrou a dica de desfazer antes
+  useEffect(() => {
+    const hasSeenUndoTip = localStorage.getItem('hasSeenUndoTip') === 'true';
+    if (hasSeenUndoTip) {
+      setShowUndoTip(false);
+    }
+  }, []);
+  
+  // Função para fechar o alerta e salvar a preferência
+  const dismissUndoTip = () => {
+    setShowUndoTip(false);
+    localStorage.setItem('hasSeenUndoTip', 'true');
+  };
   
   useEffect(() => {
     if (!previewActive) {
@@ -80,6 +97,23 @@ const BuilderContent = ({
                 flexDirection: 'column', 
                 minHeight: '100%' 
               }}>
+                {/* Alerta de dica para Ctrl+Z */}
+                {showUndoTip && (
+                  <Alert className="mb-4 bg-blue-50 border-blue-200 relative">
+                    <Keyboard className="h-4 w-4 text-blue-600 mr-2" />
+                    <AlertDescription className="text-blue-700 flex items-center">
+                      <span>Nova funcionalidade: <strong>Ctrl+Z</strong> para desfazer alterações no canvas! Use <strong>Ctrl+Shift+Z</strong> para refazer.</span>
+                    </AlertDescription>
+                    <button 
+                      className="absolute right-2 top-2 text-blue-500 hover:text-blue-700"
+                      onClick={dismissUndoTip}
+                      aria-label="Fechar dica"
+                    >
+                      <X size={16} />
+                    </button>
+                  </Alert>
+                )}
+                
                 <BuilderCanvas 
                   key={`canvas-${canvasKey}-${currentStep}`}
                   isMobile={viewMode === 'mobile'} 
@@ -98,7 +132,7 @@ const BuilderContent = ({
           <>
             <ResizableHandle withHandle className="bg-gray-200 hover:bg-violet-200 transition-colors" />
             
-            <ResizablePanel defaultSize={22} minSize={18} maxSize={30}>
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
               <ElementConfigSidebar 
                 selectedElement={selectedElement}
                 onUpdate={onElementUpdate}
