@@ -82,18 +82,38 @@ const BuilderCanvas = ({
     onUndo: () => {
       if (canUndo) {
         undo();
+        
         // Forçar re-renderização após desfazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
+          
+          // Se houver um elemento selecionado, também precisamos atualizar sua visualização
+          if (selectedElementId && onElementSelect) {
+            const updatedElement = elements.find(el => el.id === selectedElementId);
+            if (updatedElement) {
+              console.log("BuilderCanvas - Atualizando elemento selecionado após desfazer:", updatedElement);
+              onElementSelect(updatedElement);
+            }
+          }
         }, 50);
       }
     },
     onRedo: () => {
       if (canRedo) {
         redo();
+        
         // Forçar re-renderização após refazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
+          
+          // Se houver um elemento selecionado, também precisamos atualizar sua visualização
+          if (selectedElementId && onElementSelect) {
+            const updatedElement = elements.find(el => el.id === selectedElementId);
+            if (updatedElement) {
+              console.log("BuilderCanvas - Atualizando elemento selecionado após refazer:", updatedElement);
+              onElementSelect(updatedElement);
+            }
+          }
         }, 50);
       }
     },

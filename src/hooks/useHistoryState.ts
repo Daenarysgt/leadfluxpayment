@@ -65,7 +65,8 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     const previousState = historyRef.current[positionRef.current];
     
     // Atualizar o estado sem modificar o histórico
-    setState(previousState);
+    // Importante: Usamos uma cópia profunda para garantir que todos os valores, incluindo cores, sejam corretamente atualizados
+    setState(JSON.parse(JSON.stringify(previousState)));
     
     return true;
   }, []);
@@ -84,7 +85,8 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     const nextState = historyRef.current[positionRef.current];
     
     // Atualizar o estado sem modificar o histórico
-    setState(nextState);
+    // Importante: Usamos uma cópia profunda para garantir que todos os valores, incluindo cores, sejam corretamente atualizados
+    setState(JSON.parse(JSON.stringify(nextState)));
     
     return true;
   }, []);

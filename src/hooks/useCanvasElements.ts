@@ -122,9 +122,19 @@ export const useCanvasElements = (
         description: "A última alteração foi desfeita com sucesso."
       });
       
-      // Notificar sobre a mudança
+      // Notificar sobre a mudança e garantir que seja sincronizada com o backend
       if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notificando alterações após desfazer", elements);
+        // Importante: Aqui garantimos que a alteração desfeita seja persistida
         onElementsChangeRef.current(elements);
+        
+        // Forçar uma sincronização adicional após um breve delay para garantir que as alterações visuais sejam capturadas
+        setTimeout(() => {
+          if (onElementsChangeRef.current) {
+            console.log("useCanvasElements - Forçando sincronização adicional após desfazer");
+            onElementsChangeRef.current(elements);
+          }
+        }, 100);
       }
       return true;
     }
@@ -139,9 +149,19 @@ export const useCanvasElements = (
         description: "A alteração foi refeita com sucesso."
       });
       
-      // Notificar sobre a mudança
+      // Notificar sobre a mudança e garantir que seja sincronizada com o backend
       if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notificando alterações após refazer", elements);
+        // Importante: Aqui garantimos que a alteração refeita seja persistida
         onElementsChangeRef.current(elements);
+        
+        // Forçar uma sincronização adicional após um breve delay para garantir que as alterações visuais sejam capturadas
+        setTimeout(() => {
+          if (onElementsChangeRef.current) {
+            console.log("useCanvasElements - Forçando sincronização adicional após refazer");
+            onElementsChangeRef.current(elements);
+          }
+        }, 100);
       }
       return true;
     }
