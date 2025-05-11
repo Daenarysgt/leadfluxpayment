@@ -28,6 +28,7 @@ const BuilderCanvas = ({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isExternalDragOver, setIsExternalDragOver] = useState(false);
+  const [activeDropIndex, setActiveDropIndex] = useState<number | null>(null);
   
   // Usar o hook de redimensionamento do canvas para evitar a borda branca
   const { fixCanvasWhiteSpace } = useCanvasResize();
@@ -297,6 +298,7 @@ const BuilderCanvas = ({
       setDraggedElementId(null);
       setDropTargetId(null);
       setIsExternalDragOver(false);
+      setActiveDropIndex(null);
       
       // Forçar uma atualização da UI após qualquer operação de drag
       setTimeout(() => {
@@ -324,10 +326,20 @@ const BuilderCanvas = ({
     }
   }, []);
   
+  const handleCanvasDragEnter = useCallback((e: React.DragEvent) => {
+    // Check if this is a component drag from the sidebar
+    if (e.dataTransfer.types.includes("componentType") && 
+        !e.dataTransfer.types.includes("elementId") && 
+        !e.dataTransfer.types.includes("text/plain")) {
+      setIsExternalDragOver(true);
+    }
+  }, []);
+  
   const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
     // Only set to false if we're leaving the canvas, not entering a child element
     if (canvasRef.current && !canvasRef.current.contains(e.relatedTarget as Node)) {
       setIsExternalDragOver(false);
+      setActiveDropIndex(null);
     }
   }, []);
   
@@ -427,11 +439,35 @@ const BuilderCanvas = ({
     console.log(`BuilderCanvas - Inserting new component ${componentType} at index ${targetIndex}`);
     handleDrop(componentType, targetIndex);
     
+    // Resetar estados
+    setIsExternalDragOver(false);
+    setActiveDropIndex(null);
+    
     toast({
       title: "Elemento inserido",
       description: `Novo elemento adicionado entre elementos existentes.`
     });
   }, [handleDrop, toast]);
+  
+  // Atualizar o handler para detectar quando um elemento está sendo arrastado sobre uma área específica
+  const handleDropAreaDragOver = useCallback((e: React.DragEvent, index: number) => {
+    // Apenas reagir a operações de arrastar componentes da barra lateral
+    if (e.dataTransfer.types.includes("componentType") && 
+        !e.dataTransfer.types.includes("elementId") && 
+        !e.dataTransfer.types.includes("text/plain")) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsExternalDragOver(true);
+      setActiveDropIndex(index);
+    }
+  }, []);
+  
+  const handleDropAreaDragLeave = useCallback((e: React.DragEvent) => {
+    // Verificar se realmente saímos da área e não entramos em um filho
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setActiveDropIndex(null);
+    }
+  }, []);
   
   return (
     <CanvasDropZone 
@@ -454,6 +490,7 @@ const BuilderCanvas = ({
           minHeight: isCanvasEmpty ? '200px' : 'auto'
         }}
         onDragOver={handleCanvasDragOver}
+        onDragEnter={handleCanvasDragEnter}
         onDragLeave={handleCanvasDragLeave}
         onDrop={handleCanvasDrop}
       >
@@ -509,20 +546,15 @@ const BuilderCanvas = ({
                 {/* Área de drop para inserir elementos entre elementos existentes */}
                 {index === 0 && (
                   <div 
-                    className="h-4 mx-4 my-1 transition-all hover:h-16 group"
-                    onDragOver={(e) => {
-                      // Apenas reagir a operações de arrastar componentes
-                      if (e.dataTransfer.types.includes("componentType") && 
-                          !e.dataTransfer.types.includes("elementId") && 
-                          !e.dataTransfer.types.includes("text/plain")) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
+                    className="h-4 mx-4 my-1 transition-all group"
+                    onDragOver={(e) => handleDropAreaDragOver(e, 0)}
+                    onDragLeave={handleDropAreaDragLeave}
                     onDrop={(e) => handleInsertElementDrop(e, 0)}
                   >
-                    <div className="h-full w-full rounded-md border-2 border-dashed border-transparent group-hover:border-violet-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                      <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100">Soltar aqui</span>
+                    <div className={`h-full w-full rounded-md border-2 border-dashed ${activeDropIndex === 0 ? 'border-violet-300 h-16' : 'border-transparent h-4'} flex items-center justify-center transition-all`}>
+                      {activeDropIndex === 0 && (
+                        <span className="text-xs text-violet-400 font-medium">Soltar aqui</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -563,20 +595,15 @@ const BuilderCanvas = ({
                 
                 {/* Área de drop após cada elemento para inserir novo elemento */}
                 <div 
-                  className="h-4 mx-4 my-1 transition-all hover:h-16 group"
-                  onDragOver={(e) => {
-                    // Apenas reagir a operações de arrastar componentes
-                    if (e.dataTransfer.types.includes("componentType") && 
-                        !e.dataTransfer.types.includes("elementId") && 
-                        !e.dataTransfer.types.includes("text/plain")) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}
+                  className="h-4 mx-4 my-1 transition-all group"
+                  onDragOver={(e) => handleDropAreaDragOver(e, index + 1)}
+                  onDragLeave={handleDropAreaDragLeave}
                   onDrop={(e) => handleInsertElementDrop(e, index + 1)}
                 >
-                  <div className="h-full w-full rounded-md border-2 border-dashed border-transparent group-hover:border-violet-300 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                    <span className="text-xs text-violet-400 font-medium opacity-0 group-hover:opacity-100">Soltar aqui</span>
+                  <div className={`h-full w-full rounded-md border-2 border-dashed ${activeDropIndex === index + 1 ? 'border-violet-300 h-16' : 'border-transparent h-4'} flex items-center justify-center transition-all`}>
+                    {activeDropIndex === index + 1 && (
+                      <span className="text-xs text-violet-400 font-medium">Soltar aqui</span>
+                    )}
                   </div>
                 </div>
               </>
