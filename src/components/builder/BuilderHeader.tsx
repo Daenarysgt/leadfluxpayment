@@ -5,6 +5,7 @@ import { ArrowLeft, Monitor, Smartphone, Eye, Save, LayoutGrid, Palette, Setting
 import { cn } from "@/lib/utils";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useEffect } from "react";
 
 interface BuilderHeaderProps {
   funnelName: string;
@@ -37,6 +38,11 @@ const BuilderHeader = ({
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
 
+  // Log estados para ajudar na depuração
+  useEffect(() => {
+    console.log(`BuilderHeader - Estado dos botões: canUndo=${canUndo}, canRedo=${canRedo}`);
+  }, [canUndo, canRedo]);
+
   return (
     <header className="bg-white border-b py-2 px-4 flex items-center justify-between shadow-sm sticky top-0 z-50">
       <div className="flex items-center gap-2">
@@ -66,10 +72,16 @@ const BuilderHeader = ({
                   size="sm" 
                   className={cn(
                     "h-8 w-8 p-0 border",
-                    canUndo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed"
+                    canUndo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed opacity-50"
                   )}
-                  onClick={onUndo}
+                  onClick={() => {
+                    if (canUndo && onUndo) {
+                      onUndo();
+                    }
+                  }}
                   disabled={!canUndo}
+                  data-testid="undo-button"
+                  aria-label="Desfazer"
                 >
                   <Undo2 className="h-4 w-4" />
                 </Button>
@@ -86,10 +98,16 @@ const BuilderHeader = ({
                   size="sm" 
                   className={cn(
                     "h-8 w-8 p-0 border ml-1",
-                    canRedo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed"
+                    canRedo ? "text-violet-700 hover:bg-violet-50" : "text-gray-400 cursor-not-allowed opacity-50"
                   )}
-                  onClick={onRedo}
+                  onClick={() => {
+                    if (canRedo && onRedo) {
+                      onRedo();
+                    }
+                  }}
                   disabled={!canRedo}
+                  data-testid="redo-button"
+                  aria-label="Refazer"
                 >
                   <Redo2 className="h-4 w-4" />
                 </Button>
