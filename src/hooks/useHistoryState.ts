@@ -16,17 +16,6 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
   // Posição atual no histórico
   const positionRef = useRef<number>(0);
   
-  // Função para criar uma cópia profunda garantindo que todos os tipos de dados sejam preservados
-  const deepClone = useCallback((data: any) => {
-    try {
-      return JSON.parse(JSON.stringify(data));
-    } catch (error) {
-      console.error("useHistoryState - Erro ao fazer clone profundo:", error);
-      // Fallback para caso de erro (raro, mas possível)
-      return data;
-    }
-  }, []);
-  
   // Função para atualizar o estado e adicionar ao histórico
   const updateState = useCallback((newState: T | ((prevState: T) => T)) => {
     setState((prevState: T) => {
@@ -50,8 +39,7 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
       }
       
       // Adicionar o novo estado ao histórico
-      // Usar cópia profunda para garantir que não há referências compartilhadas
-      historyRef.current.push(deepClone(nextState));
+      historyRef.current.push(nextState);
       
       // Limitar o tamanho do histórico
       if (historyRef.current.length > maxHistoryLength) {
@@ -61,7 +49,7 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
       
       return nextState;
     });
-  }, [maxHistoryLength, deepClone]);
+  }, [maxHistoryLength]);
   
   // Função para desfazer a última alteração
   const undo = useCallback(() => {
@@ -77,12 +65,10 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     const previousState = historyRef.current[positionRef.current];
     
     // Atualizar o estado sem modificar o histórico
-    // Importante: Usamos uma cópia profunda para garantir que todos os valores, incluindo cores, sejam corretamente atualizados
-    console.log('useHistoryState - Desfazendo para estado anterior:', previousState);
-    setState(deepClone(previousState));
+    setState(previousState);
     
     return true;
-  }, [deepClone]);
+  }, []);
   
   // Função para refazer uma alteração desfeita
   const redo = useCallback(() => {
@@ -98,19 +84,16 @@ export function useHistoryState<T>(initialState: T, maxHistoryLength = 50) {
     const nextState = historyRef.current[positionRef.current];
     
     // Atualizar o estado sem modificar o histórico
-    // Importante: Usamos uma cópia profunda para garantir que todos os valores, incluindo cores, sejam corretamente atualizados
-    console.log('useHistoryState - Refazendo para próximo estado:', nextState);
-    setState(deepClone(nextState));
+    setState(nextState);
     
     return true;
-  }, [deepClone]);
+  }, []);
   
   // Função para limpar o histórico
   const clearHistory = useCallback(() => {
-    const currentStateCopy = deepClone(state);
-    historyRef.current = [currentStateCopy];
+    historyRef.current = [state];
     positionRef.current = 0;
-  }, [state, deepClone]);
+  }, [state]);
   
   return {
     state,

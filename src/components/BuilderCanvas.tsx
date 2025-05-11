@@ -81,59 +81,19 @@ const BuilderCanvas = ({
   useKeyboardShortcuts({
     onUndo: () => {
       if (canUndo) {
-        console.log("BuilderCanvas - Executando undo");
         undo();
-        
         // Forçar re-renderização após desfazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
-          
-          // Se houver um elemento selecionado, também precisamos atualizar sua visualização
-          if (selectedElementId && onElementSelect) {
-            const updatedElement = elements.find(el => el.id === selectedElementId);
-            if (updatedElement) {
-              console.log("BuilderCanvas - Atualizando elemento selecionado após desfazer:", updatedElement);
-              // Criar uma cópia profunda para garantir que não há referências compartilhadas
-              const elementCopy = JSON.parse(JSON.stringify(updatedElement));
-              onElementSelect(elementCopy);
-            }
-          }
-          
-          // Forçar atualização geral do canvas para garantir que todas as alterações sejam refletidas
-          if (onElementsChange) {
-            const elementsCopy = JSON.parse(JSON.stringify(elements));
-            console.log("BuilderCanvas - Forçando atualização completa após desfazer:", elementsCopy.length);
-            onElementsChange(elementsCopy);
-          }
         }, 50);
       }
     },
     onRedo: () => {
       if (canRedo) {
-        console.log("BuilderCanvas - Executando redo");
         redo();
-        
         // Forçar re-renderização após refazer
         setTimeout(() => {
           setRenderKey(prev => prev + 1);
-          
-          // Se houver um elemento selecionado, também precisamos atualizar sua visualização
-          if (selectedElementId && onElementSelect) {
-            const updatedElement = elements.find(el => el.id === selectedElementId);
-            if (updatedElement) {
-              console.log("BuilderCanvas - Atualizando elemento selecionado após refazer:", updatedElement);
-              // Criar uma cópia profunda para garantir que não há referências compartilhadas
-              const elementCopy = JSON.parse(JSON.stringify(updatedElement));
-              onElementSelect(elementCopy);
-            }
-          }
-          
-          // Forçar atualização geral do canvas para garantir que todas as alterações sejam refletidas
-          if (onElementsChange) {
-            const elementsCopy = JSON.parse(JSON.stringify(elements));
-            console.log("BuilderCanvas - Forçando atualização completa após refazer:", elementsCopy.length);
-            onElementsChange(elementsCopy);
-          }
         }, 50);
       }
     },

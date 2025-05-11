@@ -33,38 +33,85 @@ export const useCanvasElements = (
   useEffect(() => {
     onElementsChangeRef.current = onElementsChange;
   }, [onElementsChange]);
-
-  // Handle changes to element updates prop
-  useEffect(() => {
-    if (elementUpdates && isInitialized) {
-      const { id, content } = elementUpdates;
-      // Avoid endless loops by checking if this is a duplicate update
-      if (id !== previousUpdateRef.current.id || 
-          JSON.stringify(content) !== JSON.stringify(previousUpdateRef.current.content)) {
-        
-        previousUpdateRef.current = { id, content };
-        
-        // Find and update the element
-        setElements(prevElements => {
-          return prevElements.map(el => {
-            if (el.id === id) {
-              return updateCanvasElement(el, elementUpdates);
-            }
-            return el;
-          });
-        });
+  
+  // Initialize elements from props or defaults
+  const initializeElements = useCallback(() => {
+    // Skip initialization if already done
+    if (isInitialized) {
+      return;
+    }
+    
+    if (initialElements && initialElements.length > 0) {
+      console.log("useCanvasElements - Using provided elements:", 
+        initialElements.map(el => ({id: el.id, type: el.type, content: el.content})));
+      setElements(initialElements);
+      setIsInitialized(true);
+    } else {
+      const exampleElements = getExampleElements();
+      
+      console.log("useCanvasElements - Setting initial elements:", exampleElements);
+      setElements(exampleElements);
+      setIsInitialized(true);
+      
+      // Only call onElementsChange if it exists and we're setting example elements
+      if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notifying about initial elements");
+        onElementsChangeRef.current(exampleElements);
       }
     }
-  }, [elementUpdates, isInitialized, setElements]);
+  }, [initialElements, isInitialized, setElements]);
 
-  // Initialize from props
+  // Run initialization once on mount or when initial elements change
   useEffect(() => {
-    if (!isInitialized && initialElementsRef.current) {
-      console.log("useCanvasElements - Initializing with", initialElementsRef.current.length, "elements");
-      setElements(initialElementsRef.current);
-      setIsInitialized(true);
+    if (!isInitialized || 
+        JSON.stringify(initialElementsRef.current) !== JSON.stringify(initialElements)) {
+      initialElementsRef.current = initialElements;
+      initializeElements();
     }
-  }, [isInitialized, setElements]);
+  }, [initializeElements, initialElements, isInitialized]);
+
+  // Process element updates immediately
+  useEffect(() => {
+    if (!elementUpdates || !selectedElementId) return;
+    
+    // Skip if this is the exact same update as before (prevents double processing)
+    const currentUpdateString = JSON.stringify(elementUpdates.content);
+    const previousUpdateString = JSON.stringify(previousUpdateRef.current.content);
+    
+    if (previousUpdateRef.current.id === selectedElementId && 
+        currentUpdateString === previousUpdateString) {
+      return;
+    }
+    
+    console.log("useCanvasElements - Processing update for:", selectedElementId, elementUpdates);
+    
+    // Store current update for comparison
+    previousUpdateRef.current = {
+      id: selectedElementId,
+      content: elementUpdates.content ? JSON.parse(JSON.stringify(elementUpdates.content)) : null
+    };
+    
+    // Apply the update to the elements immediately
+    const updatedElements = updateCanvasElement(elements, selectedElementId, elementUpdates);
+    
+    // Check if there were actual changes
+    if (JSON.stringify(updatedElements) !== JSON.stringify(elements)) {
+      console.log("useCanvasElements - Setting updated elements:", 
+        updatedElements.map(el => ({id: el.id, type: el.type})));
+      
+      // Update the state with the new elements
+      setElements(updatedElements);
+      
+      // Notify about the change
+      if (onElementsChangeRef.current) {
+        console.log("useCanvasElements - Notificando sobre mudanças nos elementos (total: " + 
+          updatedElements.length + ")");
+        onElementsChangeRef.current(updatedElements);
+      }
+    } else {
+      console.log("useCanvasElements - No changes detected for element with ID:", selectedElementId);
+    }
+  }, [elementUpdates, selectedElementId, elements, setElements]);
 
   // Funções para desfazer e refazer com feedback
   const handleUndo = useCallback(() => {
@@ -75,29 +122,9 @@ export const useCanvasElements = (
         description: "A última alteração foi desfeita com sucesso."
       });
       
-      // Notificar sobre a mudança e garantir que seja sincronizada com o backend
+      // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        console.log("useCanvasElements - Notificando alterações após desfazer", elements);
-        // Importante: Aqui garantimos que a alteração desfeita seja persistida
         onElementsChangeRef.current(elements);
-        
-        // Forçar uma sincronização adicional após um breve delay para garantir que as alterações visuais sejam capturadas
-        setTimeout(() => {
-          if (onElementsChangeRef.current) {
-            console.log("useCanvasElements - Forçando sincronização adicional após desfazer");
-            // Criar uma cópia profunda para garantir que todas as alterações sejam capturadas
-            const elementsCopy = JSON.parse(JSON.stringify(elements));
-            onElementsChangeRef.current(elementsCopy);
-            
-            // Para garantir a persistência completa, forçar mais uma atualização após um delay
-            setTimeout(() => {
-              if (onElementsChangeRef.current) {
-                console.log("useCanvasElements - Garantindo persistência final");
-                onElementsChangeRef.current(JSON.parse(JSON.stringify(elements)));
-              }
-            }, 300);
-          }
-        }, 100);
       }
       return true;
     }
@@ -112,29 +139,9 @@ export const useCanvasElements = (
         description: "A alteração foi refeita com sucesso."
       });
       
-      // Notificar sobre a mudança e garantir que seja sincronizada com o backend
+      // Notificar sobre a mudança
       if (onElementsChangeRef.current) {
-        console.log("useCanvasElements - Notificando alterações após refazer", elements);
-        // Importante: Aqui garantimos que a alteração refeita seja persistida
         onElementsChangeRef.current(elements);
-        
-        // Forçar uma sincronização adicional após um breve delay para garantir que as alterações visuais sejam capturadas
-        setTimeout(() => {
-          if (onElementsChangeRef.current) {
-            console.log("useCanvasElements - Forçando sincronização adicional após refazer");
-            // Criar uma cópia profunda para garantir que todas as alterações sejam capturadas
-            const elementsCopy = JSON.parse(JSON.stringify(elements));
-            onElementsChangeRef.current(elementsCopy);
-            
-            // Para garantir a persistência completa, forçar mais uma atualização após um delay
-            setTimeout(() => {
-              if (onElementsChangeRef.current) {
-                console.log("useCanvasElements - Garantindo persistência final");
-                onElementsChangeRef.current(JSON.parse(JSON.stringify(elements)));
-              }
-            }, 300);
-          }
-        }, 100);
       }
       return true;
     }

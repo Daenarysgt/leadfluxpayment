@@ -143,12 +143,9 @@ const CanvasPreviewInner = ({
   
   // Funções de renderização dos elementos
   const renderElement = (element: CanvasElement, index?: number, totalElements?: number, stepIndex?: number) => {
-    // Criar uma cópia profunda para garantir que não existam referências compartilhadas
-    const elementCopy = JSON.parse(JSON.stringify(element));
-    
     // Adicionar props de preview
     const elementWithPreviewProps = {
-      ...elementCopy,
+      ...element,
       previewMode: true,
       previewProps: {
         activeStep: stepIndex !== undefined ? stepIndex : activeStep,
@@ -161,7 +158,7 @@ const CanvasPreviewInner = ({
 
     return (
       <ElementFactory
-        key={`${element.id}-${index || 0}`}
+        key={element.id}
         element={elementWithPreviewProps}
         isSelected={false}
         isDragging={false}
