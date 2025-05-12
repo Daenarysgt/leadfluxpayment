@@ -26,7 +26,7 @@ const Navbar = () => {
   ];
 
   // Estilo comum para todos os blocos da navbar
-  const blockStyle = "bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10";
+  const blockStyle = "bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-12";
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3">
@@ -122,7 +122,7 @@ const Navbar = () => {
 
           {/* Botão Mobile Menu */}
           <button 
-            className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-10 w-10 flex items-center justify-center flex-shrink-0"
+            className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-12 w-12 flex items-center justify-center flex-shrink-0"
             onClick={() => setIsOpen(!isOpen)}
           >
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
