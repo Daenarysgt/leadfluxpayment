@@ -30,9 +30,9 @@ const Navbar = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3 px-4 md:px-6">
-      <div className="max-w-5xl mx-auto flex items-center gap-2.5 md:gap-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
         {/* Bloco 1: Logo com divisória e descrição */}
-        <div className={blockStyle}>
+        <div className={blockStyle + " flex-shrink-0"}>
           <Link to="/" className="flex items-center h-full px-3">
             <div className="flex items-center">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-lg font-bold">
@@ -48,7 +48,7 @@ const Navbar = () => {
         </div>
 
         {/* Bloco 2: Navegação Principal - Visível apenas em telas maiores */}
-        <nav className="hidden lg:block">
+        <nav className="hidden lg:block flex-1">
           <div className={blockStyle + " px-2"}>
             <ul className="flex items-center justify-center h-full">
               {navLinks.map((link, index) => (
@@ -84,7 +84,7 @@ const Navbar = () => {
           </div>
         </nav>
 
-        <div className="flex items-center gap-2.5 ml-1">
+        <div className="flex items-center gap-4 flex-shrink-0">
           {/* Bloco 3: Contact Sales */}
           <div className="hidden md:block">
             <div className={blockStyle + " w-[135px]"}>
@@ -121,7 +121,7 @@ const Navbar = () => {
 
         {/* Botão Mobile Menu */}
         <button 
-          className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-10 w-10 flex items-center justify-center"
+          className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-10 w-10 flex items-center justify-center flex-shrink-0"
           onClick={() => setIsOpen(!isOpen)}
         >
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
