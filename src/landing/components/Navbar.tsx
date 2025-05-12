@@ -4,25 +4,23 @@ import { Link } from 'react-router-dom';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Links de navegação com possíveis dropdowns
+  // Links de navegação com as seções da landing page
   const navLinks = [
     { 
-      name: 'Produto', 
+      name: 'Features', 
       dropdown: true,
-      items: ['Funis', 'Leads', 'Analytics', 'Automações']
+      items: ['Construtor de Funis', 'Gestão de Leads', 'Analytics', 'Automações']
     },
     { 
-      name: 'Soluções', 
-      dropdown: true,
-      items: ['Marketing', 'Vendas', 'Agências', 'E-commerce']
+      name: 'Stats', 
+      dropdown: false
     },
     { 
-      name: 'Recursos', 
-      dropdown: true,
-      items: ['Blog', 'Tutoriais', 'Webinars', 'Documentação']
+      name: 'Testimonials', 
+      dropdown: false
     },
-    { name: 'Preços', dropdown: false },
-    { name: 'Empresa', dropdown: false },
+    { name: 'Pricing', dropdown: false },
+    { name: 'FAQ', dropdown: false },
   ];
 
   // Estilo comum para todos os blocos da navbar
