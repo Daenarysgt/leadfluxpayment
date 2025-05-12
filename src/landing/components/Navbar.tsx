@@ -6,21 +6,11 @@ const Navbar = () => {
   
   // Links de navegação com as seções da landing page
   const navLinks = [
-    { 
-      name: 'Features', 
-      dropdown: true,
-      items: ['Construtor de Funis', 'Gestão de Leads', 'Analytics', 'Automações']
-    },
-    { 
-      name: 'Stats', 
-      dropdown: false
-    },
-    { 
-      name: 'Testimonials', 
-      dropdown: false
-    },
-    { name: 'Pricing', dropdown: false },
-    { name: 'FAQ', dropdown: false },
+    { name: 'Recursos', href: '#features' },
+    { name: 'Estatísticas', href: '#stats' },
+    { name: 'Depoimentos', href: '#testimonials' },
+    { name: 'Preços', href: '#pricing' },
+    { name: 'Perguntas', href: '#faq' },
   ];
 
   // Estilo comum para todos os blocos da navbar
@@ -51,32 +41,13 @@ const Navbar = () => {
             <div className={blockStyle + " px-2"}>
               <ul className="flex items-center justify-center h-full">
                 {navLinks.map((link, index) => (
-                  <li key={index} className="relative group mx-1">
-                    <button 
+                  <li key={index} className="relative mx-2">
+                    <a 
+                      href={link.href} 
                       className="py-1 px-2 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full"
-                      onClick={() => link.dropdown && setIsOpen(!isOpen)}
                     >
                       {link.name}
-                      {link.dropdown && (
-                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                      )}
-                    </button>
-                    
-                    {link.dropdown && (
-                      <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-100">
-                        {link.items.map((item, idx) => (
-                          <a 
-                            key={idx} 
-                            href="#" 
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            {item}
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -135,31 +106,12 @@ const Navbar = () => {
           <ul className="space-y-3">
             {navLinks.map((link, index) => (
               <li key={index}>
-                <button 
-                  className="flex justify-between items-center w-full py-2 px-3 text-gray-700 hover:text-blue-600 font-medium text-sm"
-                  onClick={() => link.dropdown && setIsOpen(!isOpen)}
+                <a 
+                  href={link.href}
+                  className="block py-2 px-3 text-gray-700 hover:text-blue-600 font-medium text-sm"
                 >
                   {link.name}
-                  {link.dropdown && (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  )}
-                </button>
-                
-                {link.dropdown && (
-                  <div className="pl-4 mt-2 space-y-2">
-                    {link.items.map((item, idx) => (
-                      <a 
-                        key={idx} 
-                        href="#" 
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg"
-                      >
-                        {item}
-                      </a>
-                    ))}
-                  </div>
-                )}
+                </a>
               </li>
             ))}
             <li className="md:hidden">
