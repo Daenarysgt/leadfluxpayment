@@ -83,7 +83,7 @@ export default function Features() {
             to="/register"
             className="inline-flex items-center px-8 py-4 rounded-full text-white bg-blue-600 hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
           >
-            Começar Gratuitamente
+            Ver Planos
             <svg
               className="ml-2 w-5 h-5"
               fill="none"
