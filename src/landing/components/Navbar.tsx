@@ -87,10 +87,10 @@ const Navbar = () => {
         <div className="flex items-center gap-2.5 ml-1">
           {/* Bloco 3: Contact Sales */}
           <div className="hidden md:block">
-            <div className={blockStyle + " w-[120px]"}>
+            <div className={blockStyle + " w-[135px]"}>
               <a 
                 href="#contact" 
-                className="flex items-center justify-center h-full px-4 text-gray-700 hover:text-blue-600 font-medium text-sm"
+                className="flex items-center justify-center h-full px-4 text-gray-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap"
               >
                 Fale Conosco
               </a>
@@ -98,20 +98,24 @@ const Navbar = () => {
           </div>
 
           {/* Bloco 4: Login/Signup */}
-          <div className={blockStyle + " flex items-center justify-between w-[160px]"}>
-            <a 
-              href="/login" 
-              className="h-full flex items-center px-3 text-gray-700 hover:text-blue-600 font-medium text-sm"
-            >
-              Entrar
-            </a>
-            <div className="h-5 mx-1 w-px bg-gray-100"></div>
-            <a 
-              href="/signup" 
-              className="flex items-center h-full px-3 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm rounded-xl transition-all duration-200 hover:shadow-md mx-1"
-            >
-              Cadastre-se
-            </a>
+          <div className={blockStyle + " flex items-center justify-between w-[180px]"}>
+            <div className="flex items-center justify-center px-4 h-full">
+              <a 
+                href="/login" 
+                className="text-gray-700 hover:text-blue-600 font-medium text-sm"
+              >
+                Entrar
+              </a>
+            </div>
+            <div className="h-5 mx-0.5 w-px bg-gray-100"></div>
+            <div className="flex items-center justify-center px-2 h-full">
+              <a 
+                href="/signup" 
+                className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md whitespace-nowrap"
+              >
+                Cadastre-se
+              </a>
+            </div>
           </div>
         </div>
 
