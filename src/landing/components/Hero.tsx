@@ -54,7 +54,7 @@ export default function Hero() {
           </h1>
           
           <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
-            — sem precisar de código.
+            Arraste, edite e publique — simples assim. Explore um funil em ação e veja como tudo funciona.
           </p>
           
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
@@ -70,7 +70,7 @@ export default function Hero() {
               rel="noopener noreferrer"
               className="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 text-base font-medium px-8 py-4 rounded-full transition-all duration-200"
             >
-              Ver Demo
+              Explorar Funil
             </a>
           </div>
           
