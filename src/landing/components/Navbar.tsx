@@ -18,7 +18,7 @@ const Navbar = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3">
-      <div className="max-w-[1024px] mx-auto px-10">
+      <div className="max-w-[880px] mx-auto px-16">
         <div className="flex items-center justify-center gap-4">
           {/* Bloco 1: Logo com divisória e descrição */}
           <div className={blockStyle + " flex-shrink-0"}>
