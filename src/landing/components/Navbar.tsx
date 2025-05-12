@@ -25,11 +25,14 @@ const Navbar = () => {
     { name: 'Empresa', dropdown: false },
   ];
 
+  // Estilo comum para todos os blocos da navbar
+  const blockStyle = "bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10";
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3 px-4 md:px-6">
       <div className="max-w-5xl mx-auto flex items-center gap-2.5 md:gap-3">
         {/* Bloco 1: Logo com divisória e descrição */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10">
+        <div className={blockStyle}>
           <Link to="/" className="flex items-center h-full px-3">
             <div className="flex items-center">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-lg font-bold">
@@ -46,7 +49,7 @@ const Navbar = () => {
 
         {/* Bloco 2: Navegação Principal - Visível apenas em telas maiores */}
         <nav className="hidden lg:block">
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] px-2 border border-gray-100 h-10">
+          <div className={blockStyle + " px-2"}>
             <ul className="flex items-center justify-center h-full">
               {navLinks.map((link, index) => (
                 <li key={index} className="relative group mx-1">
@@ -84,10 +87,10 @@ const Navbar = () => {
         <div className="flex items-center gap-2.5 ml-1">
           {/* Bloco 3: Contact Sales */}
           <div className="hidden md:block">
-            <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10">
+            <div className={blockStyle}>
               <a 
                 href="#contact" 
-                className="text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full px-4"
+                className="flex items-center justify-center h-full px-4 text-gray-700 hover:text-blue-600 font-medium text-sm"
               >
                 Fale Conosco
               </a>
@@ -95,16 +98,17 @@ const Navbar = () => {
           </div>
 
           {/* Bloco 4: Login/Signup */}
-          <div className="flex items-center bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10 pl-2 pr-1">
+          <div className={blockStyle + " flex items-center justify-between"}>
             <a 
               href="/login" 
-              className="text-gray-700 hover:text-blue-600 font-medium text-sm px-2"
+              className="h-full flex items-center px-3 text-gray-700 hover:text-blue-600 font-medium text-sm"
             >
               Entrar
             </a>
+            <div className="h-5 mx-1 w-px bg-gray-100"></div>
             <a 
               href="/signup" 
-              className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md ml-1"
+              className="flex items-center h-full px-3 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm rounded-xl transition-all duration-200 hover:shadow-md mx-1"
             >
               Cadastre-se
             </a>
