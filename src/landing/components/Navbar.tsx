@@ -87,7 +87,7 @@ const Navbar = () => {
         <div className="flex items-center gap-2.5 ml-1">
           {/* Bloco 3: Contact Sales */}
           <div className="hidden md:block">
-            <div className={blockStyle}>
+            <div className={blockStyle + " w-[120px]"}>
               <a 
                 href="#contact" 
                 className="flex items-center justify-center h-full px-4 text-gray-700 hover:text-blue-600 font-medium text-sm"
@@ -98,7 +98,7 @@ const Navbar = () => {
           </div>
 
           {/* Bloco 4: Login/Signup */}
-          <div className={blockStyle + " flex items-center justify-between"}>
+          <div className={blockStyle + " flex items-center justify-between w-[160px]"}>
             <a 
               href="/login" 
               className="h-full flex items-center px-3 text-gray-700 hover:text-blue-600 font-medium text-sm"
