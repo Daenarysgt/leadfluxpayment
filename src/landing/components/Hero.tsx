@@ -49,7 +49,7 @@ export default function Hero() {
               Seduza. Converta. Venda.
             </span>
             <span className="block mt-1 text-gray-900">
-              A plataforma que transforma suas ideias em funis magnéticos
+              A plataforma de criação de funis interativos
             </span>
           </h1>
           
