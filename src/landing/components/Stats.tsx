@@ -14,8 +14,8 @@ const stats = [
   },
   {
     value: '95%',
-    label: 'Taxa de Entrega',
-    description: 'Garantimos uma alta taxa de entrega das mensagens',
+    label: 'Taxa de Conversão',
+    description: 'Funis otimizados com alta taxa de conversão de visitantes em vendas',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
