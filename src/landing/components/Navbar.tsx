@@ -18,16 +18,16 @@ const Navbar = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3">
-      <div className="max-w-[880px] mx-auto px-16">
-        <div className="flex items-center justify-center gap-4">
+      <div className="max-w-[800px] mx-auto px-8">
+        <div className="flex items-center justify-center gap-3">
           {/* Bloco 1: Logo com divisória e descrição */}
           <div className={blockStyle + " flex-shrink-0"}>
-            <Link to="/" className="flex items-center h-full px-3">
+            <Link to="/" className="flex items-center h-full px-2">
               <div className="flex items-center">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-lg font-bold">
                   LeadFlux
                 </span>
-                <div className="mx-3 h-5 w-px bg-gray-200"></div>
+                <div className="mx-2 h-5 w-px bg-gray-200"></div>
                 <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
                   <span className="block leading-tight">A plataforma completa</span>
                   <span className="block leading-tight">para seu trabalho.</span>
@@ -38,13 +38,13 @@ const Navbar = () => {
 
           {/* Bloco 2: Navegação Principal - Visível apenas em telas maiores */}
           <nav className="hidden lg:block flex-1">
-            <div className={blockStyle + " px-2"}>
+            <div className={blockStyle + " px-1"}>
               <ul className="flex items-center justify-center h-full">
                 {navLinks.map((link, index) => (
-                  <li key={index} className="relative mx-2">
+                  <li key={index} className="relative mx-1">
                     <a 
                       href={link.href} 
-                      className="py-1 px-2 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full"
+                      className="py-1 px-1.5 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full"
                     >
                       {link.name}
                     </a>
@@ -54,13 +54,13 @@ const Navbar = () => {
             </div>
           </nav>
 
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* Bloco 3: Contact Sales */}
             <div className="hidden md:block">
-              <div className={blockStyle + " w-[135px]"}>
+              <div className={blockStyle + " w-[130px]"}>
                 <a 
                   href="#contact" 
-                  className="flex items-center justify-center h-full px-4 text-gray-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap"
+                  className="flex items-center justify-center h-full px-2 text-gray-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap"
                 >
                   Fale Conosco
                 </a>
@@ -68,8 +68,8 @@ const Navbar = () => {
             </div>
 
             {/* Bloco 4: Login/Signup - ajuste para conter botão */}
-            <div className={blockStyle + " flex items-center w-[200px]"}>
-              <div className="flex items-center justify-center w-[90px] h-full border-r border-gray-100">
+            <div className={blockStyle + " flex items-center w-[180px]"}>
+              <div className="flex items-center justify-center w-[80px] h-full border-r border-gray-100">
                 <a 
                   href="/login" 
                   className="text-gray-700 hover:text-blue-600 font-medium text-sm"
@@ -77,10 +77,10 @@ const Navbar = () => {
                   Entrar
                 </a>
               </div>
-              <div className="flex items-center justify-center w-[110px] h-full">
+              <div className="flex items-center justify-center w-[100px] h-full">
                 <a 
                   href="/register" 
-                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-2 px-3 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
                 >
                   Cadastre-se
                 </a>
