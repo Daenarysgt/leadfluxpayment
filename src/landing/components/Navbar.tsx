@@ -27,24 +27,31 @@ const Navbar = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3 px-4 md:px-6">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 md:gap-4">
-        {/* Bloco 1: Logo */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] p-2 border border-gray-100">
-          <Link to="/" className="flex items-center">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-xl font-bold px-2">
-              LeadFlux
-            </span>
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 md:gap-3">
+        {/* Bloco 1: Logo com divisória e descrição */}
+        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100">
+          <Link to="/" className="flex items-center px-3 py-2">
+            <div className="flex items-center">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-xl font-bold">
+                LeadFlux
+              </span>
+              <div className="mx-3 h-6 w-px bg-gray-200"></div>
+              <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
+                <span className="block leading-tight">A plataforma completa</span>
+                <span className="block leading-tight">para seu trabalho.</span>
+              </span>
+            </div>
           </Link>
         </div>
 
         {/* Bloco 2: Navegação Principal - Visível apenas em telas maiores */}
         <nav className="hidden lg:block">
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] px-4 border border-gray-100">
-            <ul className="flex items-center justify-center h-12">
+          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] px-2 border border-gray-100">
+            <ul className="flex items-center justify-center h-10">
               {navLinks.map((link, index) => (
-                <li key={index} className="relative group mx-2">
+                <li key={index} className="relative group mx-1">
                   <button 
-                    className="py-2 px-3 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center"
+                    className="py-1.5 px-2 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center"
                     onClick={() => link.dropdown && setIsOpen(!isOpen)}
                   >
                     {link.name}
@@ -79,7 +86,7 @@ const Navbar = () => {
           <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100">
             <a 
               href="#contact" 
-              className="text-gray-700 hover:text-blue-600 font-medium text-sm py-3 px-5 block"
+              className="text-gray-700 hover:text-blue-600 font-medium text-sm py-2.5 px-4 block"
             >
               Fale Conosco
             </a>
@@ -87,16 +94,16 @@ const Navbar = () => {
         </div>
 
         {/* Bloco 4: Login/Signup */}
-        <div className="flex items-center gap-2 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] p-1.5 border border-gray-100">
+        <div className="flex items-center gap-1 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] p-1 border border-gray-100">
           <a 
             href="/login" 
-            className="text-gray-700 hover:text-blue-600 font-medium text-sm py-2 px-3"
+            className="text-gray-700 hover:text-blue-600 font-medium text-sm py-1.5 px-2.5"
           >
             Entrar
           </a>
           <a 
             href="/signup" 
-            className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-2 px-4 rounded-xl transition-all duration-200 hover:shadow-md"
+            className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md"
           >
             Cadastre-se
           </a>
@@ -107,7 +114,7 @@ const Navbar = () => {
           className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
           </svg>
         </button>
