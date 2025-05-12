@@ -14,7 +14,7 @@ const Navbar = () => {
   ];
 
   // Estilo comum para todos os blocos da navbar
-  const blockStyle = "bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-12";
+  const blockStyle = "bg-white rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.08)] border-[1.5px] border-gray-100 h-12";
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3">
@@ -80,7 +80,7 @@ const Navbar = () => {
               <div className="flex items-center justify-center w-[100px] h-full">
                 <a 
                   href="/register" 
-                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-2.5 px-3 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
                 >
                   Cadastre-se
                 </a>
@@ -90,7 +90,7 @@ const Navbar = () => {
 
           {/* Botão Mobile Menu */}
           <button 
-            className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-12 w-12 flex items-center justify-center flex-shrink-0"
+            className="lg:hidden bg-white p-2 rounded-xl shadow-sm border-[1.5px] border-gray-100 h-12 w-12 flex items-center justify-center flex-shrink-0"
             onClick={() => setIsOpen(!isOpen)}
           >
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@ const Navbar = () => {
 
       {/* Menu Mobile */}
       {isOpen && (
-        <div className="lg:hidden mt-2 bg-white rounded-2xl shadow-lg p-4 mx-auto max-w-sm border border-gray-100">
+        <div className="lg:hidden mt-2 bg-white rounded-2xl shadow-lg p-4 mx-auto max-w-sm border-[1.5px] border-gray-100">
           <ul className="space-y-3">
             {navLinks.map((link, index) => (
               <li key={index}>
