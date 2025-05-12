@@ -99,7 +99,7 @@ const Navbar = () => {
             </div>
 
             {/* Bloco 4: Login/Signup */}
-            <div className={blockStyle + " flex items-center justify-between w-[180px]"}>
+            <div className={blockStyle + " flex items-center justify-between w-[190px]"}>
               <div className="flex items-center justify-center px-4 h-full">
                 <a 
                   href="/login" 
@@ -109,10 +109,10 @@ const Navbar = () => {
                 </a>
               </div>
               <div className="h-5 mx-0.5 w-px bg-gray-100"></div>
-              <div className="flex items-center justify-center px-2 h-full">
+              <div className="flex items-center justify-center pr-4 pl-3 h-full">
                 <a 
                   href="/signup" 
-                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1 px-2.5 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
                 >
                   Cadastre-se
                 </a>
