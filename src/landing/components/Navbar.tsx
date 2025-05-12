@@ -29,8 +29,8 @@ const Navbar = () => {
                 </span>
                 <div className="mx-2 h-5 w-px bg-gray-200"></div>
                 <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
-                  <span className="block leading-tight">A plataforma completa</span>
-                  <span className="block leading-tight">para seu trabalho.</span>
+                  <span className="block leading-tight">A plataforma de criação</span>
+                  <span className="block leading-tight">de funis interativos</span>
                 </span>
               </div>
             </Link>
