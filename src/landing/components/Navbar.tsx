@@ -67,24 +67,21 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Bloco 4: Login/Signup - ajuste para conter botão */}
-            <div className={blockStyle + " flex items-center w-[180px] overflow-hidden"}>
-              <div className="flex items-center justify-center w-[80px] h-full border-r border-gray-100">
-                <a 
-                  href="/login" 
-                  className="text-gray-700 hover:text-blue-600 font-medium text-sm"
-                >
-                  Entrar
-                </a>
-              </div>
-              <div className="flex items-center justify-center w-[100px] h-full">
-                <a 
-                  href="/register" 
-                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-2.5 px-3 rounded-r-2xl transition-all duration-200 hover:shadow-md whitespace-nowrap w-full text-center"
-                >
-                  Cadastre-se
-                </a>
-              </div>
+            {/* Bloco 4: Login/Signup - estilo ClickUp */}
+            <div className="flex items-center gap-2">
+              <a 
+                href="/login" 
+                className="px-4 py-2.5 text-gray-700 hover:text-blue-600 font-medium text-sm rounded-lg transition-colors duration-200"
+              >
+                Entrar
+              </a>
+              
+              <a 
+                href="/register" 
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Cadastre-se
+              </a>
             </div>
           </div>
 
