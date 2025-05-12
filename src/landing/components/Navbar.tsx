@@ -111,7 +111,7 @@ const Navbar = () => {
               <div className="flex items-center justify-center w-[110px] h-full">
                 <a 
                   href="/signup" 
-                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-1 px-2 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                  className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-xs py-2 px-3 rounded-lg transition-all duration-200 hover:shadow-md whitespace-nowrap"
                 >
                   Cadastre-se
                 </a>
