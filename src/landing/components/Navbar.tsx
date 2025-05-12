@@ -27,15 +27,15 @@ const Navbar = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pt-3 px-4 md:px-6">
-      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 md:gap-3">
+      <div className="max-w-5xl mx-auto flex items-center gap-2.5 md:gap-3">
         {/* Bloco 1: Logo com divisória e descrição */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100">
-          <Link to="/" className="flex items-center px-3 py-2">
+        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10">
+          <Link to="/" className="flex items-center h-full px-3">
             <div className="flex items-center">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-xl font-bold">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600 text-lg font-bold">
                 LeadFlux
               </span>
-              <div className="mx-3 h-6 w-px bg-gray-200"></div>
+              <div className="mx-3 h-5 w-px bg-gray-200"></div>
               <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
                 <span className="block leading-tight">A plataforma completa</span>
                 <span className="block leading-tight">para seu trabalho.</span>
@@ -46,12 +46,12 @@ const Navbar = () => {
 
         {/* Bloco 2: Navegação Principal - Visível apenas em telas maiores */}
         <nav className="hidden lg:block">
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] px-2 border border-gray-100">
-            <ul className="flex items-center justify-center h-10">
+          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] px-2 border border-gray-100 h-10">
+            <ul className="flex items-center justify-center h-full">
               {navLinks.map((link, index) => (
                 <li key={index} className="relative group mx-1">
                   <button 
-                    className="py-1.5 px-2 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center"
+                    className="py-1 px-2 text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full"
                     onClick={() => link.dropdown && setIsOpen(!isOpen)}
                   >
                     {link.name}
@@ -81,37 +81,39 @@ const Navbar = () => {
           </div>
         </nav>
 
-        {/* Bloco 3: Contact Sales */}
-        <div className="hidden md:block">
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100">
+        <div className="flex items-center gap-2.5 ml-1">
+          {/* Bloco 3: Contact Sales */}
+          <div className="hidden md:block">
+            <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10">
+              <a 
+                href="#contact" 
+                className="text-gray-700 hover:text-blue-600 font-medium text-sm flex items-center h-full px-4"
+              >
+                Fale Conosco
+              </a>
+            </div>
+          </div>
+
+          {/* Bloco 4: Login/Signup */}
+          <div className="flex items-center bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-gray-100 h-10 pl-2 pr-1">
             <a 
-              href="#contact" 
-              className="text-gray-700 hover:text-blue-600 font-medium text-sm py-2.5 px-4 block"
+              href="/login" 
+              className="text-gray-700 hover:text-blue-600 font-medium text-sm px-2"
             >
-              Fale Conosco
+              Entrar
+            </a>
+            <a 
+              href="/signup" 
+              className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md ml-1"
+            >
+              Cadastre-se
             </a>
           </div>
         </div>
 
-        {/* Bloco 4: Login/Signup */}
-        <div className="flex items-center gap-1 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] p-1 border border-gray-100">
-          <a 
-            href="/login" 
-            className="text-gray-700 hover:text-blue-600 font-medium text-sm py-1.5 px-2.5"
-          >
-            Entrar
-          </a>
-          <a 
-            href="/signup" 
-            className="bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium text-sm py-1.5 px-3 rounded-xl transition-all duration-200 hover:shadow-md"
-          >
-            Cadastre-se
-          </a>
-        </div>
-
         {/* Botão Mobile Menu */}
         <button 
-          className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100"
+          className="lg:hidden bg-white p-2 rounded-xl shadow-sm border border-gray-100 h-10 w-10 flex items-center justify-center"
           onClick={() => setIsOpen(!isOpen)}
         >
           <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
