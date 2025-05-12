@@ -46,7 +46,7 @@ export default function Hero() {
         <div className="text-center max-w-4xl mx-auto relative z-20">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
             <span className="animated-text py-1">
-              Seduza, Converta, Venda.
+              Seduza, Converta e Venda!
             </span>
             <span className="block mt-1 text-gray-900">
               A plataforma de criação de funis interativos
