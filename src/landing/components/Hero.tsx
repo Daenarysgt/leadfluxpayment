@@ -25,6 +25,7 @@ export default function Hero() {
         z-index: 30;
         display: block;
         font-weight: 800;
+        line-height: 1.1;
       }
     `;
     document.head.appendChild(style);
@@ -44,10 +45,10 @@ export default function Hero() {
         {/* Header content - Centered */}
         <div className="text-center max-w-4xl mx-auto relative z-20">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-            <span className="animated-text py-2 mb-4">
+            <span className="animated-text py-1">
               Seduza. Converta. Venda.
             </span>
-            <span className="block mt-4 text-gray-900">
+            <span className="block mt-1 text-gray-900">
               A plataforma que transforma suas ideias em funis magnéticos
             </span>
           </h1>
